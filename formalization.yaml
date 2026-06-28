@@ -1,0 +1,50 @@
+# Project card following math-commons/formalization-assurance conventions.
+
+project:
+  name: percolation
+  authors: [M. R. Douglas]
+  license: Apache-2.0
+  repository: https://github.com/random-fields/percolation
+
+sources:
+  - title: "Grimmett — Percolation, Second Edition"
+    id: grimmett-percolation-1999
+    type: textbook
+    file: kg/textbooks/Grimmett-Percolation-2ed-1999.pdf
+  - title: "Grimmett — The Random-Cluster Model"
+    id: grimmett-random-cluster-2006
+    type: textbook
+    file: kg/textbooks/Grimmett-RandomClusterModel-2006.pdf
+  - title: "random-fields/optimal-transport methodology"
+    id: random-fields-optimal-transport-methodology
+    type: prior_formalization
+    license: Apache-2.0
+  - title: "RandomFields assurance/comparator conventions"
+    id: random-fields-assurance-conventions
+    type: prior_formalization
+    license: Apache-2.0
+
+status:
+  scope: "Design-stage Lean 4 / Mathlib formalization of Bernoulli percolation and the random-cluster model.
+    Initial focus: finite graph configurations, product measures, increasing events, FKG/BK/Russo,
+    critical probability, planar duality, and finite-volume random-cluster measures."
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms:
+    standard: [propext, Classical.choice, Quot.sound]
+    project: []
+  main_results: []
+
+automation:
+  framework: "Lean 4 + Mathlib v4.30.0"
+  tools: ["lean4-skills", "Lean LSP MCP", "formalization-assurance comparator"]
+  ai_authorship: "AI-assisted; definitions/proofs must be source-compared and reviewed."
+
+fidelity:
+  divergences:
+    - "Initial Lean files are scaffolding, not final encodings. Production definitions must be comparator-mapped before theorem claims are marked faithful."
+
+review:
+  status: "design scaffold"
+  reviewers: []
+  notes: "Run two independent design reviews before deep proving."

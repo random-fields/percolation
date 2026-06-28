@@ -1,0 +1,9 @@
+# audit/vetting/policy.yml
+strictness: L1
+project_axioms_allowed: true
+requires_independent_review: true
+standard_axioms:
+  - propext
+  - Classical.choice
+  - Quot.sound
+notes: "Design-stage project. Any project axiom must be true, cited, minimal, and discharge-owned."

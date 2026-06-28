@@ -1,0 +1,52 @@
+{
+  "targets": [
+    {
+      "id": "P1",
+      "source": "grimmett-percolation-1999",
+      "location": "Chapter 1.3",
+      "title": "Bond percolation on a graph/lattice",
+      "layer": "Core/Bernoulli",
+      "status": "target"
+    },
+    {
+      "id": "P5",
+      "source": "grimmett-percolation-1999",
+      "location": "Chapter 2.2",
+      "title": "FKG inequality",
+      "layer": "Bernoulli",
+      "status": "target"
+    },
+    {
+      "id": "P7",
+      "source": "grimmett-percolation-1999",
+      "location": "Chapter 2.4",
+      "title": "Russo's formula",
+      "layer": "Bernoulli",
+      "status": "target"
+    },
+    {
+      "id": "P16",
+      "source": "grimmett-percolation-1999",
+      "location": "Chapter 11",
+      "title": "Square-lattice planar duality and pc = 1/2",
+      "layer": "Planar",
+      "status": "target"
+    },
+    {
+      "id": "RC1",
+      "source": "grimmett-random-cluster-2006",
+      "location": "Chapter 1.2",
+      "title": "Finite random-cluster measure",
+      "layer": "RandomCluster",
+      "status": "target"
+    },
+    {
+      "id": "RC2",
+      "source": "grimmett-random-cluster-2006",
+      "location": "Theorems 1.10 and 1.13",
+      "title": "Edwards-Sokal coupling and marginals",
+      "layer": "RandomCluster",
+      "status": "target"
+    }
+  ]
+}

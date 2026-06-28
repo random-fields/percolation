@@ -1,0 +1,25 @@
+{
+  "sources": [
+    {
+      "id": "grimmett-percolation-1999",
+      "title": "Percolation",
+      "author": "Geoffrey Grimmett",
+      "edition": "Second Edition",
+      "publisher": "Springer",
+      "year": 1999,
+      "file": "kg/textbooks/Grimmett-Percolation-2ed-1999.pdf",
+      "pages_pdf": 459,
+      "msc": ["60K35", "82B43"]
+    },
+    {
+      "id": "grimmett-random-cluster-2006",
+      "title": "The Random-Cluster Model",
+      "author": "Geoffrey Grimmett",
+      "publisher": "Springer",
+      "year": 2006,
+      "file": "kg/textbooks/Grimmett-RandomClusterModel-2006.pdf",
+      "pages_pdf": 390,
+      "msc": ["60K35", "82B20", "82B43"]
+    }
+  ]
+}

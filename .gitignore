@@ -1,0 +1,6 @@
+/.lake
+/build
+/.DS_Store
+/kg/derived/*.txt
+/kg/derived/*.tmp
+/scratch

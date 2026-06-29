@@ -8,6 +8,7 @@ The source corpus lives in `kg/textbooks/`.
 | `textbooks/Grimmett-RandomClusterModel-2006.pdf` | Geoffrey Grimmett, *The Random-Cluster Model*, Springer, 2006 |
 | `source_catalog.json` | source metadata used by docs and comparator cards |
 | `percolation_targets.seed.json` | initial target list; replace/enrich with page-anchored extraction |
+| `TextbookCriterion/` | source-material suitability rubric imported from the optimal-transport repo, plus percolation textbook scorecards |
 
 Regenerate derived text locally when needed, but do not commit full extracted book text:
 
@@ -17,3 +18,7 @@ pdftotext kg/textbooks/Grimmett-RandomClusterModel-2006.pdf kg/derived/random-cl
 ```
 
 The committed plan is `docs/PLAN.md`.
+
+The textbook audit in `TextbookCriterion/textbooks-source-audit-scorecard.md`
+also scores three local candidate PDFs when present in `kg/textbooks/`. They are
+not part of `source_catalog.json` until explicitly promoted to comparator sources.

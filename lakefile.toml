@@ -14,4 +14,4 @@ rev = "v4.30.0"
 
 [[lean_lib]]
 name = "Percolation"
-globs = ["Percolation.+"]
+globs = ["Percolation", "Percolation.+"]

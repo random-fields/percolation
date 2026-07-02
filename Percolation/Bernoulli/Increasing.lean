@@ -203,6 +203,57 @@ theorem IsIncreasingEvent.integral_indicator_thresholdConfiguration_mono {ι Ω 
       ∫ ω, A.indicator (fun _ ↦ (1 : ℝ)) (thresholdConfiguration q (X ω)) ∂μ :=
   hA.indicator_isIncreasingRandomVariable.integral_thresholdConfiguration_mono hpq hp hq
 
+/-- A monotone coupling of two configuration laws: both configurations are built on one sample
+space, have the requested marginal laws, and are ordered pointwise. This is the theorem-facing
+abstraction produced by Grimmett's iid-uniform threshold construction. -/
+def IsMonotoneCoupling {ι Ω : Type*} [MeasurableSpace Ω]
+    (ν : Measure Ω) (μ₁ μ₂ : Measure (Set ι)) (η₁ η₂ : Ω → Set ι) : Prop :=
+  Measurable η₁ ∧ Measurable η₂ ∧ Measure.map η₁ ν = μ₁ ∧ Measure.map η₂ ν = μ₂ ∧
+    ∀ ω, η₁ ω ⊆ η₂ ω
+
+theorem IsMonotoneCoupling.measurable_left {ι Ω : Type*} [MeasurableSpace Ω]
+    {ν : Measure Ω} {μ₁ μ₂ : Measure (Set ι)} {η₁ η₂ : Ω → Set ι}
+    (h : IsMonotoneCoupling ν μ₁ μ₂ η₁ η₂) :
+    Measurable η₁ :=
+  h.1
+
+theorem IsMonotoneCoupling.measurable_right {ι Ω : Type*} [MeasurableSpace Ω]
+    {ν : Measure Ω} {μ₁ μ₂ : Measure (Set ι)} {η₁ η₂ : Ω → Set ι}
+    (h : IsMonotoneCoupling ν μ₁ μ₂ η₁ η₂) :
+    Measurable η₂ :=
+  h.2.1
+
+theorem IsMonotoneCoupling.map_left {ι Ω : Type*} [MeasurableSpace Ω]
+    {ν : Measure Ω} {μ₁ μ₂ : Measure (Set ι)} {η₁ η₂ : Ω → Set ι}
+    (h : IsMonotoneCoupling ν μ₁ μ₂ η₁ η₂) :
+    Measure.map η₁ ν = μ₁ :=
+  h.2.2.1
+
+theorem IsMonotoneCoupling.map_right {ι Ω : Type*} [MeasurableSpace Ω]
+    {ν : Measure Ω} {μ₁ μ₂ : Measure (Set ι)} {η₁ η₂ : Ω → Set ι}
+    (h : IsMonotoneCoupling ν μ₁ μ₂ η₁ η₂) :
+    Measure.map η₂ ν = μ₂ :=
+  h.2.2.2.1
+
+theorem IsMonotoneCoupling.ordered {ι Ω : Type*} [MeasurableSpace Ω]
+    {ν : Measure Ω} {μ₁ μ₂ : Measure (Set ι)} {η₁ η₂ : Ω → Set ι}
+    (h : IsMonotoneCoupling ν μ₁ μ₂ η₁ η₂) (ω : Ω) :
+    η₁ ω ⊆ η₂ ω :=
+  h.2.2.2.2 ω
+
+/-- The event-probability conclusion of Grimmett's Theorem (2.1), abstracted from the
+construction of the coupling. -/
+theorem IsIncreasingEvent.measureReal_le_of_monotoneCoupling {ι Ω : Type*}
+    [MeasurableSpace Ω] {ν : Measure Ω} [IsFiniteMeasure ν]
+    {μ₁ μ₂ : Measure (Set ι)} {η₁ η₂ : Ω → Set ι}
+    {A : Set (Set ι)} (hA : IsIncreasingEvent A) (hAmeas : MeasurableSet A)
+    (hc : IsMonotoneCoupling ν μ₁ μ₂ η₁ η₂) :
+    μ₁.real A ≤ μ₂.real A := by
+  rw [← hc.map_left, ← hc.map_right]
+  rw [map_measureReal_apply hc.measurable_left hAmeas,
+    map_measureReal_apply hc.measurable_right hAmeas]
+  exact measureReal_mono fun ω hω ↦ hA (hc.ordered ω) hω
+
 /-- Restrict an arbitrary configuration to a finite coordinate support. -/
 noncomputable def restrictTo {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (ω : Set ι) : Finset ι := by
@@ -488,6 +539,17 @@ theorem isIncreasingEvent_existsOpenWalkIn {d : ℕ} {u v : Cubic d}
   intro ω η hωη hω
   rcases hω with ⟨b, hb, hbopen⟩
   exact ⟨b, hb, isIncreasingEvent_walkIsOpen (walk b) hωη hbopen⟩
+
+/-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
+two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply
+this coupling from iid uniform thresholds. -/
+theorem IsIncreasingEvent.bernoulliBondMeasure_real_le_of_monotoneCoupling (d : ℕ)
+    {p q : I} {Ω : Type*} [MeasurableSpace Ω] {ν : Measure Ω} [IsFiniteMeasure ν]
+    {ηp ηq : Ω → EdgeConfiguration d} {A : Set (EdgeConfiguration d)}
+    (hA : IsIncreasingEvent A) (hAmeas : MeasurableSet A)
+    (hc : IsMonotoneCoupling ν (bernoulliBondMeasure d p) (bernoulliBondMeasure d q) ηp ηq) :
+    (bernoulliBondMeasure d p).real A ≤ (bernoulliBondMeasure d q).real A :=
+  hA.measureReal_le_of_monotoneCoupling hAmeas hc
 
 /-- A finite all-open cylinder monotonicity corollary of Grimmett's Theorem (2.1). -/
 theorem bernoulliBondMeasure_real_openEdgeSetEvent_mono (d : ℕ)

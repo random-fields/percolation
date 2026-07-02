@@ -727,11 +727,13 @@ Dated milestones and anti-library notes.
     the finite uniform Harris/FKG cardinal and normalized probability inequalities via Mathlib's
     Harris-Kleitman theorem. Proved the source-faithful core of Theorem (2.1): common thresholds
     satisfy `η_p₁ ≤ η_p₂` for `p₁ ≤ p₂`, so increasing random variables/events have monotone
-    integrals/probabilities under any finite coupling measure. The iid-uniform marginal
-    identification with `bernoulliBondMeasure` remains a later theorem-facing step. Proved that
-    the existing cubic open-edge, open-walk, finite open-path, and infinite open-cluster events are
-    increasing, that finite closed-edge cylinders are decreasing, and that finite all-open/all-
-    closed cylinders are monotone/antitone in the Bernoulli parameter. Added
+    integrals/probabilities under any finite coupling measure. Added the monotone-coupling bridge
+    saying that any ordered coupling with Bernoulli bond marginals gives monotone real
+    probabilities for arbitrary measurable increasing cubic events. The iid-uniform construction
+    of such a coupling remains a later theorem-facing step. Proved that the existing cubic
+    open-edge, open-walk, finite open-path, and infinite open-cluster events are increasing, that
+    finite closed-edge cylinders are decreasing, and that finite all-open/all-closed cylinders are
+    monotone/antitone in the Bernoulli parameter. Added
     `Percolation.Bernoulli.Russo` with `forceOpen`, `forceClosed`, pivotal events, pivotal counts,
     the set identity behind Grimmett's equation (2.29), and the finite-support fact that the event
     "`e` is pivotal" depends on all relevant coordinates except the state of `e`.

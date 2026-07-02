@@ -1372,6 +1372,48 @@ theorem finiteTraceInter_insert {ι κ : Type*} [DecidableEq κ]
   ext s
   simp [finiteTraceInter]
 
+/-- Finite intersection of a family of configuration events. This is the event-level version of
+`finiteTraceInter`. -/
+def finiteEventInter {ι κ : Type*} (J : Finset κ) (A : κ → Set (Set ι)) :
+    Set (Set ι) :=
+  {ω | ∀ i, i ∈ J → ω ∈ A i}
+
+@[simp]
+theorem mem_finiteEventInter_iff {ι κ : Type*} (J : Finset κ)
+    (A : κ → Set (Set ι)) (ω : Set ι) :
+    ω ∈ finiteEventInter J A ↔ ∀ i, i ∈ J → ω ∈ A i :=
+  Iff.rfl
+
+@[simp]
+theorem finiteEventInter_empty {ι κ : Type*} (A : κ → Set (Set ι)) :
+    finiteEventInter (∅ : Finset κ) A = Set.univ := by
+  ext ω
+  simp [finiteEventInter]
+
+theorem finiteEventInter_insert {ι κ : Type*} [DecidableEq κ]
+    (a : κ) (J : Finset κ) (A : κ → Set (Set ι)) :
+    finiteEventInter (insert a J) A = A a ∩ finiteEventInter J A := by
+  ext ω
+  simp [finiteEventInter]
+
+/-- A finite intersection of increasing configuration events is increasing. -/
+theorem isIncreasingEvent_finiteEventInter {ι κ : Type*} {J : Finset κ}
+    {A : κ → Set (Set ι)} (hA : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    IsIncreasingEvent (finiteEventInter J A) := by
+  intro ω η hωη hω i hi
+  exact hA i hi hωη (hω i hi)
+
+/-- A finite intersection of finite-support events still depends on the common finite support. -/
+theorem dependsOn_finiteEventInter {ι κ : Type*} {E : Finset ι} {J : Finset κ}
+    {A : κ → Set (Set ι)} (hA : ∀ i ∈ J, DependsOn E (A i)) :
+    DependsOn E (finiteEventInter J A) := by
+  intro ω η hcoord
+  constructor
+  · intro hω i hi
+    exact (hA i hi hcoord).mp (hω i hi)
+  · intro hη i hi
+    exact (hA i hi hcoord).mpr (hη i hi)
+
 /-- A finite intersection of increasing traces is increasing. -/
 theorem isIncreasingTrace_finiteTraceInter {ι κ : Type*} {E : Finset ι}
     {J : Finset κ} {T : κ → Set (Finset ι)}
@@ -1379,6 +1421,13 @@ theorem isIncreasingTrace_finiteTraceInter {ι κ : Type*} {E : Finset ι}
     IsIncreasingTrace E (finiteTraceInter J T) := by
   intro s t hst htE hs i hi
   exact hT i hi hst htE (hs i hi)
+
+theorem mem_eventTrace_finiteEventInter_iff {ι κ : Type*} [DecidableEq ι]
+    {E : Finset ι} {J : Finset κ} {A : κ → Set (Set ι)} {s : Finset ι}
+    (hsE : s ⊆ E) :
+    s ∈ eventTrace E (finiteEventInter J A) ↔
+      s ∈ finiteTraceInter J (fun i ↦ eventTrace E (A i)) := by
+  simp [mem_eventTrace_iff, finiteEventInter, finiteTraceInter, hsE]
 
 /-- The indicator of an increasing finite trace is an increasing finite-cube observable. -/
 theorem IsIncreasingTrace.indicator_isIncreasingFinsetFunction {ι : Type*}
@@ -1538,6 +1587,24 @@ theorem finiteBernoulliEventTrace_iterated_fkg {ι κ : Type*}
       finiteBernoulliEventProbability E p (finiteTraceInter J fun i ↦ eventTrace E (A i)) :=
   finiteBernoulliEventProbability_iterated_fkg hp0 hp1 fun i hi ↦ (hA i hi).eventTrace
 
+/-- Grimmett's iterated FKG inequality (2.7), finite-trace form with an event-level
+intersection on the right. -/
+theorem finiteBernoulliEventTrace_iterated_fkg_eventInter {ι κ : Type*}
+    [DecidableEq ι] [DecidableEq κ]
+    {E : Finset ι} {p : ℝ} {J : Finset κ} {A : κ → Set (Set ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hA : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    J.prod (fun i ↦ finiteBernoulliEventProbability E p (eventTrace E (A i))) ≤
+      finiteBernoulliEventProbability E p (eventTrace E (finiteEventInter J A)) := by
+  have h := finiteBernoulliEventTrace_iterated_fkg (E := E) (p := p) (J := J) hp0 hp1 hA
+  have hprob :
+      finiteBernoulliEventProbability E p (finiteTraceInter J fun i ↦ eventTrace E (A i)) =
+        finiteBernoulliEventProbability E p (eventTrace E (finiteEventInter J A)) := by
+    apply finiteBernoulliEventProbability_congr
+    intro s hsE
+    exact (mem_eventTrace_finiteEventInter_iff (E := E) (J := J) (A := A) hsE).symm
+  exact h.trans_eq hprob
+
 /-- Finite-support FKG for increasing events stated directly in the Bernoulli product measure. -/
 theorem setBernoulli_real_fkg_of_dependsOn {ι : Type*} [DecidableEq ι]
     {E F : Finset ι} {A B : Set (Set ι)} (p : I)
@@ -1591,6 +1658,33 @@ theorem setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn {ι : Type*}
     hABdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p]
   exact finiteBernoulliEventTrace_le_mul_of_increasing_decreasing (E := G) (p := (p : ℝ))
     p.2.1 p.2.2 hAinc hBdec
+
+/-- Finite-support iterated FKG for increasing events stated directly in the Bernoulli product
+measure. -/
+theorem setBernoulli_real_iterated_fkg_of_dependsOn {ι κ : Type*}
+    [DecidableEq ι] [DecidableEq κ] {E : κ → Finset ι} {J : Finset κ}
+    {A : κ → Set (Set ι)} (p : I)
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i))
+    (hAdep : ∀ i ∈ J, DependsOn (E i) (A i)) :
+    J.prod (fun i ↦ setBer((Set.univ : Set ι), p).real (A i)) ≤
+      setBer((Set.univ : Set ι), p).real (finiteEventInter J A) := by
+  let G : Finset ι := J.biUnion E
+  have hAdepG : ∀ i ∈ J, DependsOn G (A i) := by
+    intro i hi
+    exact (hAdep i hi).mono (Finset.subset_biUnion_of_mem E hi)
+  have hInterDep : DependsOn G (finiteEventInter J A) :=
+    dependsOn_finiteEventInter hAdepG
+  calc
+    J.prod (fun i ↦ setBer((Set.univ : Set ι), p).real (A i)) =
+        J.prod (fun i ↦ finiteBernoulliEventProbability G (p : ℝ) (eventTrace G (A i))) := by
+      apply Finset.prod_congr rfl
+      intro i hi
+      exact hAdepG i hi |>.setBernoulli_real_eq_finiteBernoulliEventProbability p
+    _ ≤ finiteBernoulliEventProbability G (p : ℝ) (eventTrace G (finiteEventInter J A)) :=
+      finiteBernoulliEventTrace_iterated_fkg_eventInter (E := G) (p := (p : ℝ)) (J := J)
+        p.2.1 p.2.2 hAinc
+    _ = setBer((Set.univ : Set ι), p).real (finiteEventInter J A) := by
+      rw [hInterDep.setBernoulli_real_eq_finiteBernoulliEventProbability p]
 
 section Cubic
 
@@ -1724,6 +1818,17 @@ theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_dependsOn (d :
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn (ι := CubicEdge d) p
       hAinc hBdec hAdep hBdep
+
+/-- Finite-support iterated FKG for increasing cubic bond events. -/
+theorem bernoulliBondMeasure_real_iterated_fkg_of_dependsOn (d : ℕ)
+    {κ : Type*} [DecidableEq κ] {E : κ → Finset (CubicEdge d)} {J : Finset κ}
+    {A : κ → Set (EdgeConfiguration d)} (p : I)
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i))
+    (hAdep : ∀ i ∈ J, DependsOn (E i) (A i)) :
+    J.prod (fun i ↦ (bernoulliBondMeasure d p).real (A i)) ≤
+      (bernoulliBondMeasure d p).real (finiteEventInter J A) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_iterated_fkg_of_dependsOn (ι := CubicEdge d) p hAinc hAdep
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

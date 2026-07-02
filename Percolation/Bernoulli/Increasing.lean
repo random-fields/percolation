@@ -101,6 +101,108 @@ theorem IsDecreasingEvent.union {ι : Type*} {A B : Set (Set ι)}
   · exact Or.inl (hA.antitone hωη hη)
   · exact Or.inr (hB.antitone hωη hη)
 
+/-- A random variable on configurations is increasing if opening more coordinates can only
+increase its value. This is Grimmett's Chapter 2 order notion for random variables, separated
+from measurability/integrability hypotheses. -/
+def IsIncreasingRandomVariable {ι α : Type*} [Preorder α] (N : Set ι → α) : Prop :=
+  ∀ ⦃ω η : Set ι⦄, ω ⊆ η → N ω ≤ N η
+
+theorem IsIncreasingRandomVariable.mono {ι α : Type*} [Preorder α] {N : Set ι → α}
+    (hN : IsIncreasingRandomVariable N) {ω η : Set ι} (hωη : ω ⊆ η) :
+    N ω ≤ N η :=
+  hN hωη
+
+/-- Grimmett's uniform-threshold configuration: the coordinate `e` is open at parameter `p`
+when the coupled uniform variable `X e` is below `p`. -/
+def thresholdConfiguration {ι : Type*} (p : I) (X : ι → ℝ) : Set ι :=
+  {e | X e < (p : ℝ)}
+
+@[simp]
+theorem mem_thresholdConfiguration_iff {ι : Type*} (p : I) (X : ι → ℝ) (e : ι) :
+    e ∈ thresholdConfiguration p X ↔ X e < (p : ℝ) :=
+  Iff.rfl
+
+/-- The core deterministic step in Grimmett's proof of Theorem (2.1): using the same threshold
+variables for both parameters gives an ordered pair of configurations. -/
+theorem thresholdConfiguration_subset_of_le {ι : Type*} {p q : I}
+    (hpq : (p : ℝ) ≤ q) (X : ι → ℝ) :
+    thresholdConfiguration p X ⊆ thresholdConfiguration q X := by
+  intro e he
+  exact lt_of_lt_of_le he hpq
+
+theorem IsIncreasingRandomVariable.thresholdConfiguration_mono {ι α : Type*} [Preorder α]
+    {N : Set ι → α} (hN : IsIncreasingRandomVariable N) {p q : I}
+    (hpq : (p : ℝ) ≤ q) (X : ι → ℝ) :
+    N (thresholdConfiguration p X) ≤ N (thresholdConfiguration q X) :=
+  hN (thresholdConfiguration_subset_of_le hpq X)
+
+theorem IsIncreasingEvent.thresholdConfiguration_mem_mono {ι : Type*} {A : Set (Set ι)}
+    (hA : IsIncreasingEvent A) {p q : I} (hpq : (p : ℝ) ≤ q) (X : ι → ℝ)
+    (hmem : thresholdConfiguration p X ∈ A) :
+    thresholdConfiguration q X ∈ A :=
+  hA (thresholdConfiguration_subset_of_le hpq X) hmem
+
+/-- Indicator functions of increasing events are increasing random variables, exactly as in
+Grimmett's proof of the event part of Theorem (2.1). -/
+theorem IsIncreasingEvent.indicator_isIncreasingRandomVariable {ι : Type*}
+    {A : Set (Set ι)} (hA : IsIncreasingEvent A) :
+    IsIncreasingRandomVariable (fun ω : Set ι ↦ A.indicator (fun _ ↦ (1 : ℝ)) ω) := by
+  intro ω η hωη
+  change A.indicator (fun _ ↦ (1 : ℝ)) ω ≤ A.indicator (fun _ ↦ (1 : ℝ)) η
+  by_cases hω : ω ∈ A
+  · have hη : η ∈ A := hA hωη hω
+    rw [Set.indicator_of_mem hω, Set.indicator_of_mem hη]
+  · rw [Set.indicator_of_notMem hω]
+    by_cases hη : η ∈ A
+    · rw [Set.indicator_of_mem hη]
+      norm_num
+    · rw [Set.indicator_of_notMem hη]
+
+/-- The expectation step in Grimmett's proof of Theorem (2.1), isolated from the later fact that
+thresholding iid uniforms has Bernoulli law. The hypotheses `hp` and `hq` are the formal version
+of "so long as these mean values exist". -/
+theorem IsIncreasingRandomVariable.integral_thresholdConfiguration_mono {ι Ω : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ι → ℝ} {N : Set ι → ℝ}
+    (hN : IsIncreasingRandomVariable N) {p q : I} (hpq : (p : ℝ) ≤ q)
+    (hp : Integrable (fun ω ↦ N (thresholdConfiguration p (X ω))) μ)
+    (hq : Integrable (fun ω ↦ N (thresholdConfiguration q (X ω))) μ) :
+    (∫ ω, N (thresholdConfiguration p (X ω)) ∂μ) ≤
+      ∫ ω, N (thresholdConfiguration q (X ω)) ∂μ := by
+  exact integral_mono hp hq fun ω ↦ hN.thresholdConfiguration_mono hpq (X ω)
+
+theorem IsIncreasingEvent.thresholdConfiguration_event_subset {ι Ω : Type*}
+    {A : Set (Set ι)} (hA : IsIncreasingEvent A) {p q : I} (hpq : (p : ℝ) ≤ q)
+    (X : Ω → ι → ℝ) :
+    {ω : Ω | thresholdConfiguration p (X ω) ∈ A} ⊆
+      {ω : Ω | thresholdConfiguration q (X ω) ∈ A} := by
+  intro ω hω
+  exact hA.thresholdConfiguration_mem_mono hpq (X ω) hω
+
+theorem IsIncreasingEvent.measure_thresholdConfiguration_event_mono {ι Ω : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} {A : Set (Set ι)} (hA : IsIncreasingEvent A)
+    {p q : I} (hpq : (p : ℝ) ≤ q) (X : Ω → ι → ℝ) :
+    μ {ω : Ω | thresholdConfiguration p (X ω) ∈ A} ≤
+      μ {ω : Ω | thresholdConfiguration q (X ω) ∈ A} :=
+  measure_mono (hA.thresholdConfiguration_event_subset hpq X)
+
+theorem IsIncreasingEvent.measureReal_thresholdConfiguration_event_mono {ι Ω : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ] {A : Set (Set ι)}
+    (hA : IsIncreasingEvent A) {p q : I} (hpq : (p : ℝ) ≤ q) (X : Ω → ι → ℝ) :
+    μ.real {ω : Ω | thresholdConfiguration p (X ω) ∈ A} ≤
+      μ.real {ω : Ω | thresholdConfiguration q (X ω) ∈ A} :=
+  measureReal_mono (hA.thresholdConfiguration_event_subset hpq X)
+
+theorem IsIncreasingEvent.integral_indicator_thresholdConfiguration_mono {ι Ω : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ι → ℝ} {A : Set (Set ι)}
+    (hA : IsIncreasingEvent A) {p q : I} (hpq : (p : ℝ) ≤ q)
+    (hp : Integrable
+      (fun ω ↦ A.indicator (fun _ ↦ (1 : ℝ)) (thresholdConfiguration p (X ω))) μ)
+    (hq : Integrable
+      (fun ω ↦ A.indicator (fun _ ↦ (1 : ℝ)) (thresholdConfiguration q (X ω))) μ) :
+    (∫ ω, A.indicator (fun _ ↦ (1 : ℝ)) (thresholdConfiguration p (X ω)) ∂μ) ≤
+      ∫ ω, A.indicator (fun _ ↦ (1 : ℝ)) (thresholdConfiguration q (X ω)) ∂μ :=
+  hA.indicator_isIncreasingRandomVariable.integral_thresholdConfiguration_mono hpq hp hq
+
 /-- Restrict an arbitrary configuration to a finite coordinate support. -/
 noncomputable def restrictTo {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (ω : Set ι) : Finset ι := by
@@ -237,6 +339,56 @@ theorem finiteUniform_fkg_card {ι : Type*} [Fintype ι] [DecidableEq ι]
     simp [finiteEventFamily]
   simpa [hInter] using hHK
 
+/-- Uniform probability of an event on a finite coordinate cube. This is the `p = 1/2` product
+measure written as normalized counting measure on `Finset ι`. -/
+noncomputable def finiteUniformEventProbability {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Set (Set ι)) : ℝ :=
+  (finiteEventFamily A).card / (2 ^ Fintype.card ι : ℝ)
+
+theorem finiteUniformEventProbability_nonneg {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Set (Set ι)) :
+    0 ≤ finiteUniformEventProbability A := by
+  classical
+  unfold finiteUniformEventProbability
+  positivity
+
+theorem finiteUniformEventProbability_le_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Set (Set ι)) :
+    finiteUniformEventProbability A ≤ 1 := by
+  classical
+  unfold finiteUniformEventProbability
+  have hcard : (finiteEventFamily A).card ≤ Fintype.card (Finset ι) :=
+    Finset.card_le_univ _
+  rw [Fintype.card_finset] at hcard
+  have hden_pos : (0 : ℝ) < (2 ^ Fintype.card ι : ℝ) := by positivity
+  have hcard_real :
+      ((finiteEventFamily A).card : ℝ) ≤ (2 ^ Fintype.card ι : ℝ) := by
+    exact_mod_cast hcard
+  exact (div_le_one hden_pos).mpr hcard_real
+
+/-- The uniform finite-product FKG/Harris inequality in probability form. -/
+theorem finiteUniform_fkg_probability {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {A B : Set (Set ι)} (hA : IsIncreasingEvent A) (hB : IsIncreasingEvent B) :
+    finiteUniformEventProbability A * finiteUniformEventProbability B ≤
+      finiteUniformEventProbability (A ∩ B) := by
+  classical
+  let d : ℝ := (2 : ℝ) ^ Fintype.card ι
+  have hd_pos : 0 < d := by
+    dsimp [d]
+    positivity
+  have hcard := finiteUniform_fkg_card hA hB
+  have hreal :
+      ((finiteEventFamily A).card * (finiteEventFamily B).card : ℝ) ≤
+        d * (finiteEventFamily (A ∩ B)).card := by
+    dsimp [d]
+    exact_mod_cast hcard
+  unfold finiteUniformEventProbability
+  change ((finiteEventFamily A).card : ℝ) / d *
+      (((finiteEventFamily B).card : ℝ) / d) ≤
+    ((finiteEventFamily (A ∩ B)).card : ℝ) / d
+  field_simp [hd_pos.ne']
+  nlinarith
+
 section Cubic
 
 theorem isIncreasingEvent_openEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
@@ -337,7 +489,7 @@ theorem isIncreasingEvent_existsOpenWalkIn {d : ℕ} {u v : Cubic d}
   rcases hω with ⟨b, hb, hbopen⟩
   exact ⟨b, hb, isIncreasingEvent_walkIsOpen (walk b) hωη hbopen⟩
 
-/-- Grimmett's monotonicity theorem 2.1 for finite all-open cylinder events. -/
+/-- A finite all-open cylinder monotonicity corollary of Grimmett's Theorem (2.1). -/
 theorem bernoulliBondMeasure_real_openEdgeSetEvent_mono (d : ℕ)
     (s : Finset (CubicEdge d)) {p q : I} (hpq : (p : ℝ) ≤ q) :
     (bernoulliBondMeasure d p).real (openEdgeSetEvent d s) ≤

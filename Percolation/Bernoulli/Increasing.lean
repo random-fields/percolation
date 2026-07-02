@@ -674,6 +674,28 @@ theorem finiteBernoulliExpectation_const_mul {ι : Type*} [DecidableEq ι]
         (fun s ↦ p ^ s.card * (1 - p) ^ (E.card - s.card) * X s) := by
       rw [Finset.mul_sum]
 
+/-- Additivity of finite Bernoulli expectation. -/
+theorem finiteBernoulliExpectation_add {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X Y : Finset ι → ℝ) :
+    finiteBernoulliExpectation E p (fun s ↦ X s + Y s) =
+      finiteBernoulliExpectation E p X + finiteBernoulliExpectation E p Y := by
+  unfold finiteBernoulliExpectation
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro s _hs
+  ring
+
+/-- Subtractivity of finite Bernoulli expectation. -/
+theorem finiteBernoulliExpectation_sub {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X Y : Finset ι → ℝ) :
+    finiteBernoulliExpectation E p (fun s ↦ X s - Y s) =
+      finiteBernoulliExpectation E p X - finiteBernoulliExpectation E p Y := by
+  unfold finiteBernoulliExpectation
+  rw [← Finset.sum_sub_distrib]
+  apply Finset.sum_congr rfl
+  intro s _hs
+  ring
+
 /-- Expectation of a random variable on one Bernoulli coordinate, with values `x0` at the closed
 state and `x1` at the open state. This is the scalar base case used in Grimmett's proof of the
 finite FKG inequality. -/
@@ -734,6 +756,22 @@ theorem finiteBernoulliExpectation_insert {ι : Type*} [DecidableEq ι]
   rw [hsucc_sub_closed]
   rw [pow_succ, pow_succ]
   ring
+
+/-- Split a finite Bernoulli expectation according to whether a fresh coordinate is closed or
+open. -/
+theorem finiteBernoulliExpectation_insert_split {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation (insert a E) p X =
+      (1 - p) * finiteBernoulliExpectation E p X +
+        p * finiteBernoulliExpectation E p (fun s ↦ X (insert a s)) := by
+  rw [finiteBernoulliExpectation_insert ha]
+  unfold twoPointBernoulliExpectation
+  rw [show finiteBernoulliExpectation E p
+        (fun s ↦ (1 - p) * X s + p * X (insert a s)) =
+      finiteBernoulliExpectation E p (fun s ↦ (1 - p) * X s) +
+        finiteBernoulliExpectation E p (fun s ↦ p * X (insert a s)) by
+    exact finiteBernoulliExpectation_add E p _ _]
+  rw [finiteBernoulliExpectation_const_mul, finiteBernoulliExpectation_const_mul]
 
 /-- A constant observable has expectation equal to that constant under the one-coordinate
 Bernoulli law. -/

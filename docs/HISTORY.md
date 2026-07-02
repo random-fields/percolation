@@ -755,7 +755,10 @@ Dated milestones and anti-library notes.
     increasing finite traces: `d/dp P_p(T)` is the sum, over the finite support, of the pivotal
     probabilities. The proof follows Grimmett's conditioning induction by splitting on a fresh
     coordinate, identifying the fresh pivotal term with the open-minus-closed section difference,
-    and decomposing old-coordinate pivotality across the closed and open sections.
+    and decomposing old-coordinate pivotality across the closed and open sections. Extended the
+    finite Russo infrastructure from indicators to real-valued observables by defining the finite
+    difference `δ_e X = X(ω^e_open) - X(ω^e_closed)` and proving
+    `d/dp E_p[X] = Σ_e E_p[δ_e X]` for finite Bernoulli cubes.
 
 ## Axiom Ledger
 

@@ -578,4 +578,120 @@ theorem finiteBernoulliEventProbability_hasDerivAt {ι : Type*} [DecidableEq ι]
       simp [Topen]
       ring
 
+/-- Finite difference of an observable when coordinate `e` is forced open instead of closed. This
+is Grimmett's `δ_e X` on a finite cube. -/
+def finiteDifference {ι : Type*} [DecidableEq ι]
+    (e : ι) (X : Finset ι → ℝ) (s : Finset ι) : ℝ :=
+  X (finiteForceOpen e s) - X (finiteForceClosed e s)
+
+/-- If a fresh coordinate `a` is already open, the finite difference in another coordinate passes
+to the open section. -/
+theorem finiteDifference_insert_fresh {ι : Type*} [DecidableEq ι]
+    {a e : ι} (hae : a ≠ e) (X : Finset ι → ℝ) (s : Finset ι) :
+    finiteDifference e X (insert a s) =
+      finiteDifference e (fun u ↦ X (insert a u)) s := by
+  unfold finiteDifference finiteForceOpen finiteForceClosed
+  have hopen : insert e (insert a s) = insert a (insert e s) := by
+    ext x
+    simp [or_left_comm]
+  have hclosed : (insert a s).erase e = insert a (s.erase e) := by
+    ext x
+    by_cases hxe : x = e
+    · subst x
+      simp [hae.symm]
+    · simp [hxe]
+  rw [hopen, hclosed]
+
+/-- The expected finite difference in a fresh coordinate is the open-section expectation minus the
+closed-section expectation. -/
+theorem finiteBernoulliExpectation_finiteDifference_fresh {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation (insert a E) p (finiteDifference a X) =
+      finiteBernoulliExpectation E p (fun s ↦ X (insert a s)) -
+        finiteBernoulliExpectation E p X := by
+  rw [finiteBernoulliExpectation_insert_split ha]
+  have hclosed : finiteBernoulliExpectation E p (finiteDifference a X) =
+      finiteBernoulliExpectation E p (fun s ↦ X (insert a s) - X s) := by
+    apply finiteBernoulliExpectation_congr
+    intro s hsE
+    have hnot : a ∉ s := Finset.notMem_mono hsE ha
+    simp [finiteDifference, finiteForceOpen, finiteForceClosed, hnot]
+  have hopen :
+      finiteBernoulliExpectation E p (fun s ↦ finiteDifference a X (insert a s)) =
+        finiteBernoulliExpectation E p (fun s ↦ X (insert a s) - X s) := by
+    apply finiteBernoulliExpectation_congr
+    intro s hsE
+    have hnot : a ∉ s := Finset.notMem_mono hsE ha
+    simp [finiteDifference, finiteForceOpen, finiteForceClosed, hnot]
+  rw [hclosed, hopen]
+  rw [finiteBernoulliExpectation_sub]
+  ring
+
+/-- Conditioning decomposition for finite differences in an old coordinate after inserting a fresh
+coordinate. -/
+theorem finiteBernoulliExpectation_finiteDifference_old_insert_split {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {a e : ι} (ha : a ∉ E) (he : e ∈ E) (p : ℝ)
+    (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation (insert a E) p (finiteDifference e X) =
+      (1 - p) * finiteBernoulliExpectation E p (finiteDifference e X) +
+        p * finiteBernoulliExpectation E p
+          (finiteDifference e (fun s ↦ X (insert a s))) := by
+  rw [finiteBernoulliExpectation_insert_split ha]
+  congr 2
+  apply finiteBernoulliExpectation_congr
+  intro s _hsE
+  have hae : a ≠ e := by
+    intro h
+    exact ha (by simpa [h] using he)
+  exact finiteDifference_insert_fresh hae X s
+
+/-- Finite Russo formula for real-valued observables on a finite Bernoulli cube. The derivative of
+`E_p[X]` is the sum of the expectations of the finite differences `δ_e X`. This is the finite
+random-variable form behind Grimmett's later Russo formulas. -/
+theorem finiteBernoulliExpectation_hasDerivAt {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} (X : Finset ι → ℝ) :
+    HasDerivAt (fun x : ℝ ↦ finiteBernoulliExpectation E x X)
+      (E.sum fun e ↦ finiteBernoulliExpectation E p (finiteDifference e X)) p := by
+  induction E using Finset.induction generalizing X with
+  | empty =>
+      simpa [finiteBernoulliExpectation]
+        using hasDerivAt_const p (X (∅ : Finset ι))
+  | insert a E ha ih =>
+      let Xopen : Finset ι → ℝ := fun s ↦ X (insert a s)
+      have hclosed_deriv := ih X
+      have hopen_deriv := ih Xopen
+      have hsplit_fun :
+          (fun x : ℝ ↦ finiteBernoulliExpectation (insert a E) x X) =
+            (fun x : ℝ ↦ (1 - x) * finiteBernoulliExpectation E x X +
+              x * finiteBernoulliExpectation E x Xopen) := by
+        funext x
+        simpa [Xopen] using finiteBernoulliExpectation_insert_split ha x X
+      rw [hsplit_fun]
+      have hone_sub : HasDerivAt (fun x : ℝ ↦ 1 - x) (-1) p := by
+        simpa using (hasDerivAt_const p (1 : ℝ)).sub (hasDerivAt_id p)
+      have hleft := hone_sub.mul hclosed_deriv
+      have hright := (hasDerivAt_id p).mul hopen_deriv
+      have hderiv := hleft.add hright
+      apply hderiv.congr_deriv
+      rw [Finset.sum_insert ha]
+      have hfresh := finiteBernoulliExpectation_finiteDifference_fresh ha p X
+      have hold : ∀ e ∈ E,
+          finiteBernoulliExpectation (insert a E) p (finiteDifference e X) =
+            (1 - p) * finiteBernoulliExpectation E p (finiteDifference e X) +
+              p * finiteBernoulliExpectation E p (finiteDifference e Xopen) := by
+        intro e he
+        simpa [Xopen] using finiteBernoulliExpectation_finiteDifference_old_insert_split ha he p X
+      rw [hfresh]
+      rw [show E.sum (fun e ↦ finiteBernoulliExpectation (insert a E) p
+              (finiteDifference e X)) =
+            E.sum (fun e ↦
+              (1 - p) * finiteBernoulliExpectation E p (finiteDifference e X) +
+                p * finiteBernoulliExpectation E p (finiteDifference e Xopen)) by
+        apply Finset.sum_congr rfl
+        intro e he
+        exact hold e he]
+      rw [Finset.sum_add_distrib, Finset.mul_sum, Finset.mul_sum]
+      simp [Xopen]
+      ring
+
 end Percolation

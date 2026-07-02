@@ -440,6 +440,30 @@ theorem restrictTo_subset_configuration {ι : Type*} [DecidableEq ι]
 def DependsOn {ι : Type*} (E : Finset ι) (A : Set (Set ι)) : Prop :=
   ∀ ⦃ω η : Set ι⦄, (∀ e ∈ E, (e ∈ ω ↔ e ∈ η)) → (ω ∈ A ↔ η ∈ A)
 
+theorem DependsOn.mono {ι : Type*} {E F : Finset ι} {A : Set (Set ι)}
+    (hA : DependsOn E A) (hEF : E ⊆ F) :
+    DependsOn F A := by
+  intro ω η hcoord
+  exact hA fun e he ↦ hcoord e (hEF he)
+
+theorem DependsOn.inter {ι : Type*} {E : Finset ι} {A B : Set (Set ι)}
+    (hA : DependsOn E A) (hB : DependsOn E B) :
+    DependsOn E (A ∩ B) := by
+  intro ω η hcoord
+  exact and_congr (hA hcoord) (hB hcoord)
+
+theorem DependsOn.union {ι : Type*} {E : Finset ι} {A B : Set (Set ι)}
+    (hA : DependsOn E A) (hB : DependsOn E B) :
+    DependsOn E (A ∪ B) := by
+  intro ω η hcoord
+  exact or_congr (hA hcoord) (hB hcoord)
+
+theorem DependsOn.compl {ι : Type*} {E : Finset ι} {A : Set (Set ι)}
+    (hA : DependsOn E A) :
+    DependsOn E Aᶜ := by
+  intro ω η hcoord
+  exact not_congr (hA hcoord)
+
 /-- The finite trace of an event on a support `E`. Its elements are finite configurations contained
 in `E` that make the event occur. -/
 noncomputable def eventTrace {ι : Type*} [DecidableEq ι]
@@ -500,12 +524,24 @@ theorem restrictTo_mem_eventTrace_iff_of_dependsOn {ι : Type*} [DecidableEq ι]
 def IsIncreasingTrace {ι : Type*} (E : Finset ι) (T : Set (Finset ι)) : Prop :=
   ∀ ⦃s t : Finset ι⦄, s ⊆ t → t ⊆ E → s ∈ T → t ∈ T
 
+/-- A finite trace is decreasing relative to its ambient support. -/
+def IsDecreasingTrace {ι : Type*} (E : Finset ι) (T : Set (Finset ι)) : Prop :=
+  ∀ ⦃s t : Finset ι⦄, s ⊆ t → t ⊆ E → t ∈ T → s ∈ T
+
 theorem IsIncreasingEvent.eventTrace {ι : Type*} [DecidableEq ι]
     {E : Finset ι} {A : Set (Set ι)} (hA : IsIncreasingEvent A) :
     IsIncreasingTrace E (eventTrace E A) := by
   intro s t hst htE hs
   exact (mem_eventTrace_iff E A t).mpr
     ⟨htE, hA (by intro e he; exact hst he) ((mem_eventTrace_iff E A s).mp hs).2⟩
+
+theorem IsDecreasingEvent.eventTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {A : Set (Set ι)} (hA : IsDecreasingEvent A) :
+    IsDecreasingTrace E (eventTrace E A) := by
+  intro s t hst hsE ht
+  exact (mem_eventTrace_iff E A s).mpr
+    ⟨hst.trans hsE,
+      hA.antitone (by intro e he; exact hst he) ((mem_eventTrace_iff E A t).mp ht).2⟩
 
 theorem IsIncreasingTrace.eventOfTrace {ι : Type*} [DecidableEq ι]
     {E : Finset ι} {T : Set (Finset ι)} (hT : IsIncreasingTrace E T) :
@@ -543,10 +579,33 @@ used in Grimmett's induction proof of FKG. -/
 def IsIncreasingFinsetFunction {ι : Type*} (E : Finset ι) (X : Finset ι → ℝ) : Prop :=
   ∀ ⦃s t : Finset ι⦄, s ⊆ t → t ⊆ E → X s ≤ X t
 
+/-- A real-valued observable on a finite cube is decreasing when it is antitone under adding
+coordinates inside the ambient support. -/
+def IsDecreasingFinsetFunction {ι : Type*} (E : Finset ι) (X : Finset ι → ℝ) : Prop :=
+  ∀ ⦃s t : Finset ι⦄, s ⊆ t → t ⊆ E → X t ≤ X s
+
 theorem IsIncreasingFinsetFunction.mono {ι : Type*} {E : Finset ι} {X : Finset ι → ℝ}
     (hX : IsIncreasingFinsetFunction E X) {s t : Finset ι} (hst : s ⊆ t) (htE : t ⊆ E) :
     X s ≤ X t :=
   hX hst htE
+
+theorem IsDecreasingFinsetFunction.antitone {ι : Type*} {E : Finset ι}
+    {X : Finset ι → ℝ} (hX : IsDecreasingFinsetFunction E X) {s t : Finset ι}
+    (hst : s ⊆ t) (htE : t ⊆ E) :
+    X t ≤ X s :=
+  hX hst htE
+
+theorem IsIncreasingFinsetFunction.neg_isDecreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} {X : Finset ι → ℝ} (hX : IsIncreasingFinsetFunction E X) :
+    IsDecreasingFinsetFunction E (fun s ↦ -X s) := by
+  intro s t hst htE
+  exact neg_le_neg (hX.mono hst htE)
+
+theorem IsDecreasingFinsetFunction.neg_isIncreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} {X : Finset ι → ℝ} (hX : IsDecreasingFinsetFunction E X) :
+    IsIncreasingFinsetFunction E (fun s ↦ -X s) := by
+  intro s t hst htE
+  exact neg_le_neg (hX.antitone hst htE)
 
 theorem IsIncreasingFinsetFunction.empty_le_singleton {ι : Type*} {a : ι}
     {X : Finset ι → ℝ} (hX : IsIncreasingFinsetFunction ({a} : Finset ι) X) :
@@ -673,6 +732,17 @@ theorem finiteBernoulliExpectation_const_mul {ι : Type*} [DecidableEq ι]
     _ = c * E.powerset.sum
         (fun s ↦ p ^ s.card * (1 - p) ^ (E.card - s.card) * X s) := by
       rw [Finset.mul_sum]
+
+/-- Negation commutes with finite Bernoulli expectation. -/
+theorem finiteBernoulliExpectation_neg {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation E p (fun s ↦ -X s) =
+      -finiteBernoulliExpectation E p X := by
+  rw [show (fun s ↦ -X s) = fun s ↦ (-1 : ℝ) * X s by
+    funext s
+    ring]
+  rw [finiteBernoulliExpectation_const_mul]
+  ring
 
 /-- Additivity of finite Bernoulli expectation. -/
 theorem finiteBernoulliExpectation_add {ι : Type*} [DecidableEq ι]
@@ -907,6 +977,45 @@ theorem finiteBernoulliExpectation_fkg {ι : Type*} [DecidableEq ι]
               (Finset.insert_subset_insert a hsE)))
       exact le_trans hind hfiber
 
+/-- Finite-coordinate weighted FKG for two decreasing observables. -/
+theorem finiteBernoulliExpectation_fkg_of_decreasing {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsDecreasingFinsetFunction E X) (hY : IsDecreasingFinsetFunction E Y) :
+    finiteBernoulliExpectation E p X * finiteBernoulliExpectation E p Y ≤
+      finiteBernoulliExpectation E p (fun s ↦ X s * Y s) := by
+  have h := finiteBernoulliExpectation_fkg hp0 hp1
+    hX.neg_isIncreasingFinsetFunction hY.neg_isIncreasingFinsetFunction
+  rw [finiteBernoulliExpectation_neg, finiteBernoulliExpectation_neg] at h
+  have hprod :
+      finiteBernoulliExpectation E p (fun s ↦ -X s * -Y s) =
+        finiteBernoulliExpectation E p (fun s ↦ X s * Y s) := by
+    apply finiteBernoulliExpectation_congr
+    intro s _hsE
+    ring
+  rw [hprod] at h
+  simpa using h
+
+/-- Finite-coordinate weighted negative correlation for an increasing observable and a decreasing
+observable. -/
+theorem finiteBernoulliExpectation_le_mul_of_increasing_decreasing {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsIncreasingFinsetFunction E X) (hY : IsDecreasingFinsetFunction E Y) :
+    finiteBernoulliExpectation E p (fun s ↦ X s * Y s) ≤
+      finiteBernoulliExpectation E p X * finiteBernoulliExpectation E p Y := by
+  have h := finiteBernoulliExpectation_fkg hp0 hp1 hX hY.neg_isIncreasingFinsetFunction
+  rw [finiteBernoulliExpectation_neg] at h
+  have hprod :
+      finiteBernoulliExpectation E p (fun s ↦ X s * -Y s) =
+        -finiteBernoulliExpectation E p (fun s ↦ X s * Y s) := by
+    rw [show (fun s ↦ X s * -Y s) = fun s ↦ -(X s * Y s) by
+      funext s
+      ring]
+    exact finiteBernoulliExpectation_neg E p (fun s ↦ X s * Y s)
+  rw [hprod] at h
+  nlinarith
+
 /-- Weighted Bernoulli probability of a finite trace on the cube of subsets of `E`. -/
 noncomputable def finiteBernoulliEventProbability {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) : ℝ :=
@@ -941,6 +1050,150 @@ theorem finiteBernoulliEventProbability_congr {ι : Type*} [DecidableEq ι]
       intro h
       exact hT ((hTU hsE).2 h)
     simp [hT, hU]
+
+/-- The product-measure cylinder where the finite trace on `E` is exactly `s`. -/
+noncomputable def finiteTraceCylinder {ι : Type*} [DecidableEq ι]
+    (E s : Finset ι) : Set (Set ι) :=
+  {ω | restrictTo E ω = s}
+
+@[simp]
+theorem mem_finiteTraceCylinder_iff {ι : Type*} [DecidableEq ι]
+    (E s : Finset ι) (ω : Set ι) :
+    ω ∈ finiteTraceCylinder E s ↔ restrictTo E ω = s :=
+  Iff.rfl
+
+theorem finiteTraceCylinder_eq_open_closed_of_subset {ι : Type*} [DecidableEq ι]
+    {E s : Finset ι} (hsE : s ⊆ E) :
+    finiteTraceCylinder E s =
+      {ω : Set ι | (s : Set ι) ⊆ ω ∧ Disjoint ((E \ s : Finset ι) : Set ι) ω} := by
+  ext ω
+  constructor
+  · intro hω
+    constructor
+    · intro e hes
+      have he : e ∈ restrictTo E ω := by
+        rw [hω]
+        exact hes
+      exact (mem_restrictTo_iff E ω e).mp he |>.2
+    · rw [Set.disjoint_left]
+      intro e heEs heω
+      have heE : e ∈ E := (Finset.mem_sdiff.mp heEs).1
+      have hes : e ∉ s := (Finset.mem_sdiff.mp heEs).2
+      have he : e ∈ restrictTo E ω := (mem_restrictTo_iff E ω e).mpr ⟨heE, heω⟩
+      rw [hω] at he
+      exact hes he
+  · rintro ⟨hsω, hclosed⟩
+    ext e
+    constructor
+    · intro he
+      have heEω := (mem_restrictTo_iff E ω e).mp he
+      by_contra hes
+      exact (Set.disjoint_left.mp hclosed) (Finset.mem_sdiff.mpr ⟨heEω.1, hes⟩) heEω.2
+    · intro hes
+      exact (mem_restrictTo_iff E ω e).mpr ⟨hsE hes, hsω hes⟩
+
+/-- Exact finite traces are measurable product cylinders. -/
+theorem measurableSet_finiteTraceCylinder {ι : Type*} [DecidableEq ι]
+    (E s : Finset ι) :
+    MeasurableSet (finiteTraceCylinder E s) := by
+  classical
+  by_cases hsE : s ⊆ E
+  · rw [finiteTraceCylinder_eq_open_closed_of_subset hsE]
+    exact (measurableSet_superset_finset s).inter (measurableSet_disjoint_finset (E \ s))
+  · have hempty : finiteTraceCylinder E s = ∅ := by
+      ext ω
+      constructor
+      · intro hω
+        have hs : s ⊆ E := by
+          intro e he
+          rw [← hω] at he
+          exact restrictTo_subset E ω he
+        exact (hsE hs).elim
+      · intro hω
+        exact hω.elim
+    rw [hempty]
+    exact MeasurableSet.empty
+
+/-- Product-measure probability of an exact finite trace. -/
+theorem setBernoulli_real_finiteTraceCylinder {ι : Type*} [DecidableEq ι]
+    (E s : Finset ι) (p : I) (hsE : s ⊆ E) :
+    setBer((Set.univ : Set ι), p).real (finiteTraceCylinder E s) =
+      (p : ℝ) ^ s.card * (1 - (p : ℝ)) ^ (E.card - s.card) := by
+  rw [finiteTraceCylinder_eq_open_closed_of_subset hsE]
+  have hdisj : Disjoint (s : Set ι) ((E \ s : Finset ι) : Set ι) := by
+    rw [Set.disjoint_left]
+    intro e hes heEs
+    exact (Finset.mem_sdiff.mp heEs).2 hes
+  rw [setBernoulli_real_open_closed_on_finset_univ s (E \ s) p hdisj]
+  rw [Finset.card_sdiff_of_subset hsE]
+
+theorem eventOfTrace_eq_iUnion_finiteTraceCylinder {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) [DecidablePred fun s : Finset ι ↦ s ∈ T] :
+    eventOfTrace E T =
+      ⋃ s ∈ E.powerset.filter (fun s ↦ s ∈ T), finiteTraceCylinder E s := by
+  classical
+  ext ω
+  constructor
+  · intro hω
+    refine Set.mem_iUnion.mpr ⟨restrictTo E ω, ?_⟩
+    refine Set.mem_iUnion.mpr ⟨?_, ?_⟩
+    · exact Finset.mem_filter.mpr
+        ⟨Finset.mem_powerset.mpr (restrictTo_subset E ω), hω⟩
+    · rfl
+  · intro hω
+    rcases Set.mem_iUnion.mp hω with ⟨s, hsω⟩
+    rcases Set.mem_iUnion.mp hsω with ⟨hsT, hωs⟩
+    have hT : s ∈ T := (Finset.mem_filter.mp hsT).2
+    change restrictTo E ω ∈ T
+    rw [hωs]
+    exact hT
+
+theorem pairwiseDisjoint_finiteTraceCylinder {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) [DecidablePred fun s : Finset ι ↦ s ∈ T] :
+    Set.PairwiseDisjoint (↑(E.powerset.filter (fun s ↦ s ∈ T)))
+      (finiteTraceCylinder E) := by
+  intro s _hs t _ht hst
+  change Disjoint (finiteTraceCylinder E s) (finiteTraceCylinder E t)
+  rw [Set.disjoint_left]
+  intro ω hωs hωt
+  exact hst (hωs.symm.trans hωt)
+
+/-- The finite trace probability agrees with the actual Bernoulli product-measure probability
+of the event reconstructed from that trace. -/
+theorem setBernoulli_real_eventOfTrace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) (p : I) :
+    setBer((Set.univ : Set ι), p).real (eventOfTrace E T) =
+      finiteBernoulliEventProbability E (p : ℝ) T := by
+  classical
+  rw [eventOfTrace_eq_iUnion_finiteTraceCylinder]
+  rw [measureReal_biUnion_finset
+    (μ := setBer((Set.univ : Set ι), p))
+    (s := E.powerset.filter (fun s ↦ s ∈ T))
+    (f := finiteTraceCylinder E)
+    (pairwiseDisjoint_finiteTraceCylinder E T)
+    (fun s _hs ↦ measurableSet_finiteTraceCylinder E s)]
+  unfold finiteBernoulliEventProbability finiteBernoulliExpectation
+  rw [Finset.sum_filter]
+  apply Finset.sum_congr rfl
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  rw [setBernoulli_real_finiteTraceCylinder E s p hsE]
+  by_cases hT : s ∈ T <;> simp [hT]
+
+/-- A finite-support event has the same Bernoulli product probability as its finite trace. -/
+theorem DependsOn.setBernoulli_real_eq_finiteBernoulliEventProbability {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A) (p : I) :
+    setBer((Set.univ : Set ι), p).real A =
+      finiteBernoulliEventProbability E (p : ℝ) (eventTrace E A) := by
+  have hAeq : A = eventOfTrace E (eventTrace E A) := by
+    ext ω
+    exact (restrictTo_mem_eventTrace_iff_of_dependsOn hA ω).symm
+  calc
+    setBer((Set.univ : Set ι), p).real A =
+        setBer((Set.univ : Set ι), p).real (eventOfTrace E (eventTrace E A)) := by
+      exact congrArg (fun B : Set (Set ι) ↦ setBer((Set.univ : Set ι), p).real B) hAeq
+    _ = finiteBernoulliEventProbability E (p : ℝ) (eventTrace E A) :=
+      setBernoulli_real_eventOfTrace E (eventTrace E A) p
 
 /-- Split a finite Bernoulli event probability according to whether a fresh coordinate is closed
 or open. This is the finite conditioning identity used in the Russo induction. -/
@@ -1142,6 +1395,21 @@ theorem IsIncreasingTrace.indicator_isIncreasingFinsetFunction {ι : Type*}
       norm_num
     · rw [Set.indicator_of_notMem ht]
 
+/-- The indicator of a decreasing finite trace is a decreasing finite-cube observable. -/
+theorem IsDecreasingTrace.indicator_isDecreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} {T : Set (Finset ι)} (hT : IsDecreasingTrace E T) :
+    IsDecreasingFinsetFunction E (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) := by
+  intro s t hst htE
+  change T.indicator (fun _ ↦ (1 : ℝ)) t ≤ T.indicator (fun _ ↦ (1 : ℝ)) s
+  by_cases ht : t ∈ T
+  · have hs : s ∈ T := hT hst htE ht
+    rw [Set.indicator_of_mem ht, Set.indicator_of_mem hs]
+  · rw [Set.indicator_of_notMem ht]
+    by_cases hs : s ∈ T
+    · rw [Set.indicator_of_mem hs]
+      norm_num
+    · rw [Set.indicator_of_notMem hs]
+
 theorem indicator_mul_indicator_inter {ι : Type*} (T U : Set (Finset ι)) (s : Finset ι) :
     T.indicator (fun _ ↦ (1 : ℝ)) s * U.indicator (fun _ ↦ (1 : ℝ)) s =
       (T ∩ U).indicator (fun _ ↦ (1 : ℝ)) s := by
@@ -1159,6 +1427,30 @@ theorem finiteBernoulliEventProbability_fkg {ι : Type*} [DecidableEq ι]
     hT.indicator_isIncreasingFinsetFunction hU.indicator_isIncreasingFinsetFunction
   unfold finiteBernoulliEventProbability at hfgk ⊢
   simpa [indicator_mul_indicator_inter] using hfgk
+
+/-- Finite-trace weighted FKG/Harris inequality for decreasing events. -/
+theorem finiteBernoulliEventProbability_fkg_of_decreasing {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {T U : Set (Finset ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hT : IsDecreasingTrace E T) (hU : IsDecreasingTrace E U) :
+    finiteBernoulliEventProbability E p T * finiteBernoulliEventProbability E p U ≤
+      finiteBernoulliEventProbability E p (T ∩ U) := by
+  have hfkg := finiteBernoulliExpectation_fkg_of_decreasing hp0 hp1
+    hT.indicator_isDecreasingFinsetFunction hU.indicator_isDecreasingFinsetFunction
+  unfold finiteBernoulliEventProbability at hfkg ⊢
+  simpa [indicator_mul_indicator_inter] using hfkg
+
+/-- Finite-trace negative correlation for an increasing event and a decreasing event. -/
+theorem finiteBernoulliEventProbability_le_mul_of_increasing_decreasing
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ} {T U : Set (Finset ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hT : IsIncreasingTrace E T) (hU : IsDecreasingTrace E U) :
+    finiteBernoulliEventProbability E p (T ∩ U) ≤
+      finiteBernoulliEventProbability E p T * finiteBernoulliEventProbability E p U := by
+  have hcorr := finiteBernoulliExpectation_le_mul_of_increasing_decreasing hp0 hp1
+    hT.indicator_isIncreasingFinsetFunction hU.indicator_isDecreasingFinsetFunction
+  unfold finiteBernoulliEventProbability at hcorr ⊢
+  simpa [indicator_mul_indicator_inter] using hcorr
 
 /-- Grimmett's iterated FKG inequality (2.7), finite-trace form. For any finite family of
 increasing traces, the probability of their simultaneous occurrence dominates the product of the
@@ -1210,6 +1502,31 @@ theorem finiteBernoulliEventTrace_fkg {ι : Type*} [DecidableEq ι]
     hp0 hp1 (hA.eventTrace (E := E)) (hB.eventTrace (E := E))
   simpa [eventTrace_inter] using h
 
+/-- Finite-coordinate weighted FKG for traces of decreasing configuration events. -/
+theorem finiteBernoulliEventTrace_fkg_of_decreasing {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {A B : Set (Set ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hA : IsDecreasingEvent A) (hB : IsDecreasingEvent B) :
+    finiteBernoulliEventProbability E p (eventTrace E A) *
+        finiteBernoulliEventProbability E p (eventTrace E B) ≤
+      finiteBernoulliEventProbability E p (eventTrace E (A ∩ B)) := by
+  have h := finiteBernoulliEventProbability_fkg_of_decreasing (E := E)
+    (T := (eventTrace E A : Set (Finset ι))) (U := (eventTrace E B : Set (Finset ι)))
+    hp0 hp1 (hA.eventTrace (E := E)) (hB.eventTrace (E := E))
+  simpa [eventTrace_inter] using h
+
+/-- Finite-coordinate negative correlation for an increasing and a decreasing configuration
+event. -/
+theorem finiteBernoulliEventTrace_le_mul_of_increasing_decreasing {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {p : ℝ} {A B : Set (Set ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hA : IsIncreasingEvent A) (hB : IsDecreasingEvent B) :
+    finiteBernoulliEventProbability E p (eventTrace E (A ∩ B)) ≤
+      finiteBernoulliEventProbability E p (eventTrace E A) *
+        finiteBernoulliEventProbability E p (eventTrace E B) := by
+  have h := finiteBernoulliEventProbability_le_mul_of_increasing_decreasing (E := E)
+    (T := (eventTrace E A : Set (Finset ι))) (U := (eventTrace E B : Set (Finset ι)))
+    hp0 hp1 (hA.eventTrace (E := E)) (hB.eventTrace (E := E))
+  simpa [eventTrace_inter] using h
+
 /-- Grimmett's iterated FKG inequality (2.7) for finite traces of increasing configuration
 events. -/
 theorem finiteBernoulliEventTrace_iterated_fkg {ι κ : Type*}
@@ -1220,6 +1537,60 @@ theorem finiteBernoulliEventTrace_iterated_fkg {ι κ : Type*}
     J.prod (fun i ↦ finiteBernoulliEventProbability E p (eventTrace E (A i))) ≤
       finiteBernoulliEventProbability E p (finiteTraceInter J fun i ↦ eventTrace E (A i)) :=
   finiteBernoulliEventProbability_iterated_fkg hp0 hp1 fun i hi ↦ (hA i hi).eventTrace
+
+/-- Finite-support FKG for increasing events stated directly in the Bernoulli product measure. -/
+theorem setBernoulli_real_fkg_of_dependsOn {ι : Type*} [DecidableEq ι]
+    {E F : Finset ι} {A B : Set (Set ι)} (p : I)
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B)
+    (hAdep : DependsOn E A) (hBdep : DependsOn F B) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  let G : Finset ι := E ∪ F
+  have hAdepG : DependsOn G A := hAdep.mono (by intro e he; exact Finset.mem_union_left F he)
+  have hBdepG : DependsOn G B := hBdep.mono (by intro e he; exact Finset.mem_union_right E he)
+  have hABdepG : DependsOn G (A ∩ B) := hAdepG.inter hBdepG
+  rw [hAdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p,
+    hBdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p,
+    hABdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p]
+  exact finiteBernoulliEventTrace_fkg (E := G) (p := (p : ℝ)) p.2.1 p.2.2 hAinc hBinc
+
+/-- Finite-support FKG for decreasing events stated directly in the Bernoulli product measure. -/
+theorem setBernoulli_real_fkg_of_decreasing_dependsOn {ι : Type*} [DecidableEq ι]
+    {E F : Finset ι} {A B : Set (Set ι)} (p : I)
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAdep : DependsOn E A) (hBdep : DependsOn F B) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  let G : Finset ι := E ∪ F
+  have hAdepG : DependsOn G A := hAdep.mono (by intro e he; exact Finset.mem_union_left F he)
+  have hBdepG : DependsOn G B := hBdep.mono (by intro e he; exact Finset.mem_union_right E he)
+  have hABdepG : DependsOn G (A ∩ B) := hAdepG.inter hBdepG
+  rw [hAdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p,
+    hBdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p,
+    hABdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p]
+  exact finiteBernoulliEventTrace_fkg_of_decreasing (E := G) (p := (p : ℝ))
+    p.2.1 p.2.2 hAdec hBdec
+
+/-- Finite-support negative correlation for an increasing event and a decreasing event under the
+Bernoulli product measure. -/
+theorem setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn {ι : Type*}
+    [DecidableEq ι] {E F : Finset ι} {A B : Set (Set ι)} (p : I)
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAdep : DependsOn E A) (hBdep : DependsOn F B) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B := by
+  let G : Finset ι := E ∪ F
+  have hAdepG : DependsOn G A := hAdep.mono (by intro e he; exact Finset.mem_union_left F he)
+  have hBdepG : DependsOn G B := hBdep.mono (by intro e he; exact Finset.mem_union_right E he)
+  have hABdepG : DependsOn G (A ∩ B) := hAdepG.inter hBdepG
+  rw [hAdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p,
+    hBdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p,
+    hABdepG.setBernoulli_real_eq_finiteBernoulliEventProbability p]
+  exact finiteBernoulliEventTrace_le_mul_of_increasing_decreasing (E := G) (p := (p : ℝ))
+    p.2.1 p.2.2 hAinc hBdec
 
 section Cubic
 
@@ -1320,6 +1691,39 @@ theorem isIncreasingEvent_existsOpenWalkIn {d : ℕ} {u v : Cubic d}
   intro ω η hωη hω
   rcases hω with ⟨b, hb, hbopen⟩
   exact ⟨b, hb, isIncreasingEvent_walkIsOpen (walk b) hωη hbopen⟩
+
+/-- Finite-support FKG for increasing cubic bond events. -/
+theorem bernoulliBondMeasure_real_fkg_of_dependsOn (d : ℕ)
+    {E F : Finset (CubicEdge d)} {A B : Set (EdgeConfiguration d)} (p : I)
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B)
+    (hAdep : DependsOn E A) (hBdep : DependsOn F B) :
+    (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B ≤
+      (bernoulliBondMeasure d p).real (A ∩ B) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_of_dependsOn (ι := CubicEdge d) p hAinc hBinc hAdep hBdep
+
+/-- Finite-support FKG for decreasing cubic bond events. -/
+theorem bernoulliBondMeasure_real_fkg_of_decreasing_dependsOn (d : ℕ)
+    {E F : Finset (CubicEdge d)} {A B : Set (EdgeConfiguration d)} (p : I)
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAdep : DependsOn E A) (hBdep : DependsOn F B) :
+    (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B ≤
+      (bernoulliBondMeasure d p).real (A ∩ B) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_of_decreasing_dependsOn (ι := CubicEdge d) p hAdec hBdec
+      hAdep hBdep
+
+/-- Finite-support negative correlation for an increasing cubic event and a decreasing cubic
+event. -/
+theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_dependsOn (d : ℕ)
+    {E F : Finset (CubicEdge d)} {A B : Set (EdgeConfiguration d)} (p : I)
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAdep : DependsOn E A) (hBdep : DependsOn F B) :
+    (bernoulliBondMeasure d p).real (A ∩ B) ≤
+      (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn (ι := CubicEdge d) p
+      hAinc hBdec hAdep hBdep
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

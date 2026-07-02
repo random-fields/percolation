@@ -725,10 +725,11 @@ Dated milestones and anti-library notes.
     on `Set ι` configurations, increasing random variables, Grimmett's threshold coupling
     configuration `η_p(e)=1[X(e)<p]`, finite restrictions/traces, finite support dependence, and
     the finite uniform Harris/FKG cardinal and normalized probability inequalities via Mathlib's
-    Harris-Kleitman theorem. Added the finite weighted Bernoulli expectation API and Grimmett's
-    weighted one-coordinate FKG base computation for Theorem (2.4), including the exact covariance
-    identity and singleton finite-cube FKG statement. Proved Theorem (2.1) by Grimmett's
-    iid-threshold coupling:
+    Harris-Kleitman theorem. Added the finite weighted Bernoulli expectation API and proved
+    Grimmett's finite-coordinate weighted FKG induction for Theorem (2.4): the exact
+    one-coordinate covariance identity, the split-coordinate conditioning identity, increasing
+    conditional expectations, the random-variable finite FKG theorem, and finite trace/event
+    indicator corollaries. Proved Theorem (2.1) by Grimmett's iid-threshold coupling:
     `unitInterval.volume_Iio` gives `P[X(e)<p]=p`, the infinite product threshold map has
     Bernoulli product law, common thresholds satisfy `η_p₁ ≤ η_p₂` for `p₁ ≤ p₂`, and therefore
     expectations of integrable increasing random variables and probabilities of measurable

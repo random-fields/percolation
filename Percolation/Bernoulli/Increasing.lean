@@ -454,6 +454,12 @@ theorem mem_eventTrace_iff {ι : Type*} [DecidableEq ι]
   classical
   simp [eventTrace]
 
+theorem eventTrace_inter {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (A B : Set (Set ι)) :
+    eventTrace E (A ∩ B) = eventTrace E A ∩ eventTrace E B := by
+  ext s
+  simp [eventTrace, and_assoc, and_left_comm]
+
 /-- Rebuild an event from a finite trace by looking only at the coordinates in `E`. -/
 noncomputable def eventOfTrace {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (T : Set (Finset ι)) : Set (Set ι) :=
@@ -647,6 +653,55 @@ finite FKG inequality. -/
 noncomputable def twoPointBernoulliExpectation (p x0 x1 : ℝ) : ℝ :=
   (1 - p) * x0 + p * x1
 
+/-- Monotonicity of the one-coordinate Bernoulli expectation in both endpoint values. -/
+theorem twoPointBernoulliExpectation_mono {p x0 x1 y0 y1 : ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (h0 : x0 ≤ y0) (h1 : x1 ≤ y1) :
+    twoPointBernoulliExpectation p x0 x1 ≤ twoPointBernoulliExpectation p y0 y1 := by
+  unfold twoPointBernoulliExpectation
+  have hq0 : 0 ≤ 1 - p := sub_nonneg.mpr hp1
+  nlinarith [mul_le_mul_of_nonneg_left h0 hq0, mul_le_mul_of_nonneg_left h1 hp0]
+
+/-- Split a finite Bernoulli expectation according to whether a fresh coordinate is closed or
+open. This is the conditioning identity used in Grimmett's finite-coordinate FKG induction. -/
+theorem finiteBernoulliExpectation_insert {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation (insert a E) p X =
+      finiteBernoulliExpectation E p
+        (fun s ↦ twoPointBernoulliExpectation p (X s) (X (insert a s))) := by
+  unfold finiteBernoulliExpectation twoPointBernoulliExpectation
+  rw [Finset.powerset_insert]
+  have hdisj : Disjoint E.powerset (E.powerset.image (insert a)) := by
+    rw [Finset.disjoint_left]
+    intro s hs himg
+    rcases Finset.mem_image.mp himg with ⟨t, _ht, hts⟩
+    rw [← hts] at hs
+    have ha_not_insert : a ∉ insert a t := Finset.notMem_of_mem_powerset_of_notMem hs ha
+    exact ha_not_insert (Finset.mem_insert_self a t)
+  rw [Finset.sum_union hdisj]
+  have hinj : Set.InjOn (insert a) (↑E.powerset : Set (Finset ι)) := by
+    intro s hs t ht hst
+    have hsa : a ∉ s := Finset.notMem_of_mem_powerset_of_notMem hs ha
+    have hta : a ∉ t := Finset.notMem_of_mem_powerset_of_notMem ht ha
+    calc
+      s = (insert a s).erase a := by simp [hsa]
+      _ = (insert a t).erase a := by rw [hst]
+      _ = t := by simp [hta]
+  rw [Finset.sum_image hinj]
+  have hcard_insert_E : #(insert a E) = #E + 1 := Finset.card_insert_of_notMem ha
+  simp only [hcard_insert_E]
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  have hsa : a ∉ s := Finset.notMem_mono hsE ha
+  have hcard_insert_s : #(insert a s) = #s + 1 := Finset.card_insert_of_notMem hsa
+  have hcard_le : #s ≤ #E := Finset.card_le_card hsE
+  simp [hcard_insert_s]
+  have hsucc_sub_closed : #E + 1 - #s = (#E - #s) + 1 := by omega
+  rw [hsucc_sub_closed]
+  rw [pow_succ, pow_succ]
+  ring
+
 /-- The exact covariance identity behind the one-coordinate base case of Grimmett's FKG
 induction. -/
 theorem twoPointBernoulliExpectation_mul_sub (p x0 x1 y0 y1 : ℝ) :
@@ -705,6 +760,99 @@ theorem finiteBernoulliExpectation_singleton_fkg_of_increasing {ι : Type*} [Dec
       finiteBernoulliExpectation ({a} : Finset ι) p (fun s ↦ X s * Y s) :=
   finiteBernoulliExpectation_singleton_fkg a hp0 hp1 hX.empty_le_singleton
     hY.empty_le_singleton
+
+/-- Finite-coordinate weighted FKG/Harris inequality. This is Grimmett's induction step before
+the martingale limiting argument: condition on one coordinate, apply the one-coordinate FKG
+inside each fiber, and use the induction hypothesis for the conditional expectations. -/
+theorem finiteBernoulliExpectation_fkg {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsIncreasingFinsetFunction E X) (hY : IsIncreasingFinsetFunction E Y) :
+    finiteBernoulliExpectation E p X * finiteBernoulliExpectation E p Y ≤
+      finiteBernoulliExpectation E p (fun s ↦ X s * Y s) := by
+  induction E using Finset.induction generalizing X Y with
+  | empty =>
+      simp [finiteBernoulliExpectation]
+  | insert a E ha ih =>
+      rw [finiteBernoulliExpectation_insert ha p X,
+        finiteBernoulliExpectation_insert ha p Y,
+        finiteBernoulliExpectation_insert ha p (fun s ↦ X s * Y s)]
+      have hXbar : IsIncreasingFinsetFunction E
+          (fun s ↦ twoPointBernoulliExpectation p (X s) (X (insert a s))) := by
+        intro s t hst htE
+        exact twoPointBernoulliExpectation_mono hp0 hp1
+          (hX.mono hst (by intro e he; exact Finset.mem_insert.mpr (Or.inr (htE he))))
+          (hX.mono (Finset.insert_subset_insert a hst) (Finset.insert_subset_insert a htE))
+      have hYbar : IsIncreasingFinsetFunction E
+          (fun s ↦ twoPointBernoulliExpectation p (Y s) (Y (insert a s))) := by
+        intro s t hst htE
+        exact twoPointBernoulliExpectation_mono hp0 hp1
+          (hY.mono hst (by intro e he; exact Finset.mem_insert.mpr (Or.inr (htE he))))
+          (hY.mono (Finset.insert_subset_insert a hst) (Finset.insert_subset_insert a htE))
+      have hind := ih hXbar hYbar
+      have hfiber : finiteBernoulliExpectation E p
+            (fun s ↦ twoPointBernoulliExpectation p (X s) (X (insert a s)) *
+              twoPointBernoulliExpectation p (Y s) (Y (insert a s))) ≤
+          finiteBernoulliExpectation E p
+            (fun s ↦ twoPointBernoulliExpectation p (X s * Y s)
+              (X (insert a s) * Y (insert a s))) := by
+        exact finiteBernoulliExpectation_mono hp0 hp1 (fun _s hsE ↦
+          twoPointBernoulliExpectation_fkg hp0 hp1
+            (hX.mono (by intro e he; exact Finset.mem_insert.mpr (Or.inr he))
+              (Finset.insert_subset_insert a hsE))
+            (hY.mono (by intro e he; exact Finset.mem_insert.mpr (Or.inr he))
+              (Finset.insert_subset_insert a hsE)))
+      exact le_trans hind hfiber
+
+/-- Weighted Bernoulli probability of a finite trace on the cube of subsets of `E`. -/
+noncomputable def finiteBernoulliEventProbability {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) : ℝ :=
+  finiteBernoulliExpectation E p (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)
+
+/-- The indicator of an increasing finite trace is an increasing finite-cube observable. -/
+theorem IsIncreasingTrace.indicator_isIncreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} {T : Set (Finset ι)} (hT : IsIncreasingTrace E T) :
+    IsIncreasingFinsetFunction E (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) := by
+  intro s t hst htE
+  change T.indicator (fun _ ↦ (1 : ℝ)) s ≤ T.indicator (fun _ ↦ (1 : ℝ)) t
+  by_cases hs : s ∈ T
+  · have ht : t ∈ T := hT hst htE hs
+    rw [Set.indicator_of_mem hs, Set.indicator_of_mem ht]
+  · rw [Set.indicator_of_notMem hs]
+    by_cases ht : t ∈ T
+    · rw [Set.indicator_of_mem ht]
+      norm_num
+    · rw [Set.indicator_of_notMem ht]
+
+theorem indicator_mul_indicator_inter {ι : Type*} (T U : Set (Finset ι)) (s : Finset ι) :
+    T.indicator (fun _ ↦ (1 : ℝ)) s * U.indicator (fun _ ↦ (1 : ℝ)) s =
+      (T ∩ U).indicator (fun _ ↦ (1 : ℝ)) s := by
+  by_cases hT : s ∈ T <;> by_cases hU : s ∈ U <;> simp [hT, hU]
+
+/-- Finite-trace weighted FKG/Harris inequality for increasing events. This is the event
+specialization of Grimmett's finite-coordinate FKG induction. -/
+theorem finiteBernoulliEventProbability_fkg {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {T U : Set (Finset ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hT : IsIncreasingTrace E T) (hU : IsIncreasingTrace E U) :
+    finiteBernoulliEventProbability E p T * finiteBernoulliEventProbability E p U ≤
+      finiteBernoulliEventProbability E p (T ∩ U) := by
+  have hfgk := finiteBernoulliExpectation_fkg hp0 hp1
+    hT.indicator_isIncreasingFinsetFunction hU.indicator_isIncreasingFinsetFunction
+  unfold finiteBernoulliEventProbability at hfgk ⊢
+  simpa [indicator_mul_indicator_inter] using hfgk
+
+/-- Finite-coordinate weighted FKG for traces of increasing configuration events. -/
+theorem finiteBernoulliEventTrace_fkg {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {A B : Set (Set ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hA : IsIncreasingEvent A) (hB : IsIncreasingEvent B) :
+    finiteBernoulliEventProbability E p (eventTrace E A) *
+        finiteBernoulliEventProbability E p (eventTrace E B) ≤
+      finiteBernoulliEventProbability E p (eventTrace E (A ∩ B)) := by
+  have h := finiteBernoulliEventProbability_fkg (E := E)
+    (T := (eventTrace E A : Set (Finset ι))) (U := (eventTrace E B : Set (Finset ι)))
+    hp0 hp1 (hA.eventTrace (E := E)) (hB.eventTrace (E := E))
+  simpa [eventTrace_inter] using h
 
 section Cubic
 

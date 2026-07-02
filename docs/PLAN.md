@@ -11,7 +11,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P2 | Ch. 1.4 | Critical probability and percolation probability | Critical | absent |
 | P3 | Ch. 1.6 | Site percolation and bond-to-site transformation | Core/Bernoulli | absent |
 | P4 | Ch. 2.1 | Increasing events and stochastic order | Bernoulli | partial: order APIs exist |
-| P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | partial: finite products/order likely reusable |
+| P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | finite weighted product FKG proved; infinite martingale lift target |
 | P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | absent/deep |
 | P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | absent |
 | P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |

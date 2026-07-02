@@ -51,6 +51,160 @@ theorem finiteBernoulliExpectation_finiteOpenCount {ι : Type*} [DecidableEq ι]
       simp [Finset.card_insert_of_notMem ha]
       ring
 
+/-- For the open-count observable, forcing any coordinate open rather than closed changes the
+count by exactly one. -/
+theorem finiteDifference_finiteOpenCount {ι : Type*} [DecidableEq ι]
+    (e : ι) (s : Finset ι) :
+    finiteDifference e finiteOpenCount s = 1 := by
+  unfold finiteDifference finiteForceOpen finiteForceClosed finiteOpenCount
+  by_cases he : e ∈ s
+  · rw [Finset.insert_eq_of_mem he, Finset.card_erase_of_mem he]
+    have hcardpos : 0 < s.card := Finset.card_pos.mpr ⟨e, he⟩
+    have hpos : 1 ≤ s.card := hcardpos
+    rw [Nat.cast_sub hpos]
+    ring
+  · rw [Finset.erase_eq_of_notMem he, Finset.card_insert_of_notMem he]
+    rw [Nat.cast_add, Nat.cast_one]
+    ring
+
+/-- Expected finite difference of the open-count observable. -/
+theorem finiteBernoulliExpectation_finiteDifference_finiteOpenCount {ι : Type*}
+    [DecidableEq ι] (E : Finset ι) (p : ℝ) (e : ι) :
+    finiteBernoulliExpectation E p (finiteDifference e finiteOpenCount) = 1 := by
+  rw [show finiteBernoulliExpectation E p (finiteDifference e finiteOpenCount) =
+      finiteBernoulliExpectation E p (fun _ ↦ (1 : ℝ)) by
+    apply finiteBernoulliExpectation_congr
+    intro s _hsE
+    exact finiteDifference_finiteOpenCount e s]
+  exact finiteBernoulliExpectation_const E p 1
+
+/-- Squaring an event indicator leaves it unchanged. -/
+theorem indicator_mul_self {ι : Type*} (T : Set (Finset ι)) (s : Finset ι) :
+    T.indicator (fun _ ↦ (1 : ℝ)) s * T.indicator (fun _ ↦ (1 : ℝ)) s =
+      T.indicator (fun _ ↦ (1 : ℝ)) s := by
+  by_cases hs : s ∈ T
+  · simp [Set.indicator_of_mem hs]
+  · simp [Set.indicator_of_notMem hs]
+
+/-- Variance of a finite event indicator is `P(A)(1-P(A))`. -/
+theorem finiteBernoulliCovariance_indicator_self {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliCovariance E p
+        (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)
+        (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) =
+      finiteBernoulliEventProbability E p T *
+        (1 - finiteBernoulliEventProbability E p T) := by
+  unfold finiteBernoulliCovariance finiteBernoulliEventProbability
+  rw [show finiteBernoulliExpectation E p
+        (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s *
+          T.indicator (fun _ ↦ (1 : ℝ)) s) =
+      finiteBernoulliExpectation E p (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) by
+    apply finiteBernoulliExpectation_congr
+    intro s _hsE
+    exact indicator_mul_self T s]
+  ring
+
+/-- Covariance is nonnegative for increasing finite-cube observables, by finite FKG. -/
+theorem finiteBernoulliCovariance_nonneg_of_increasing {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsIncreasingFinsetFunction E X) (hY : IsIncreasingFinsetFunction E Y) :
+    0 ≤ finiteBernoulliCovariance E p X Y := by
+  unfold finiteBernoulliCovariance
+  have h := finiteBernoulliExpectation_fkg hp0 hp1 hX hY
+  linarith
+
+/-- Covariance is linear in the left observable under subtraction. -/
+theorem finiteBernoulliCovariance_sub_left {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X Y Z : Finset ι → ℝ) :
+    finiteBernoulliCovariance E p (fun s ↦ X s - Y s) Z =
+      finiteBernoulliCovariance E p X Z - finiteBernoulliCovariance E p Y Z := by
+  unfold finiteBernoulliCovariance
+  have hprod :
+      finiteBernoulliExpectation E p (fun s ↦ (X s - Y s) * Z s) =
+        finiteBernoulliExpectation E p (fun s ↦ X s * Z s - Y s * Z s) := by
+    apply finiteBernoulliExpectation_congr
+    intro s _hsE
+    ring
+  rw [hprod, finiteBernoulliExpectation_sub, finiteBernoulliExpectation_sub]
+  ring
+
+/-- For an increasing finite trace, `N - 1_A` is increasing. This is the monotonicity input
+behind Grimmett's S-shape/reliability lower bound. -/
+theorem IsIncreasingTrace.finiteOpenCount_sub_indicator_isIncreasingFinsetFunction
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {T : Set (Finset ι)}
+    (hT : IsIncreasingTrace E T) :
+    IsIncreasingFinsetFunction E
+      (fun s ↦ finiteOpenCount s - T.indicator (fun _ ↦ (1 : ℝ)) s) := by
+  intro s t hst htE
+  change finiteOpenCount s - T.indicator (fun _ ↦ (1 : ℝ)) s ≤
+    finiteOpenCount t - T.indicator (fun _ ↦ (1 : ℝ)) t
+  by_cases hs : s ∈ T
+  · have ht : t ∈ T := hT hst htE hs
+    simp [finiteOpenCount, Set.indicator_of_mem hs, Set.indicator_of_mem ht]
+    exact Finset.card_le_card hst
+  · rw [Set.indicator_of_notMem hs]
+    by_cases ht : t ∈ T
+    · have hne : s ≠ t := by
+        intro hst_eq
+        exact hs (by simpa [hst_eq] using ht)
+      have hss : s ⊂ t := Finset.ssubset_iff_subset_ne.mpr ⟨hst, hne⟩
+      have hcardlt : s.card < t.card := Finset.card_lt_card hss
+      have hsucc : s.card + 1 ≤ t.card := Nat.succ_le_of_lt hcardlt
+      have hsucc_real : (s.card : ℝ) + 1 ≤ (t.card : ℝ) := by
+        exact_mod_cast hsucc
+      simp [finiteOpenCount, Set.indicator_of_mem ht]
+      linarith
+    · simp [finiteOpenCount, Set.indicator_of_notMem ht]
+      exact Finset.card_le_card hst
+
+/-- Finite monotone reliability covariance lower bound: for increasing `A`,
+`cov(N,1_A) ≥ var(1_A) = P(A)(1-P(A))`. This is the numerator form of Grimmett's
+inequality (2.37). -/
+theorem finiteBernoulliEventProbability_mul_compl_le_covariance_finiteOpenCount
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hT : IsIncreasingTrace E T) :
+    finiteBernoulliEventProbability E p T * (1 - finiteBernoulliEventProbability E p T) ≤
+      finiteBernoulliCovariance E p finiteOpenCount
+        (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) := by
+  let I : Finset ι → ℝ := fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s
+  have hsub_mono :
+      IsIncreasingFinsetFunction E (fun s ↦ finiteOpenCount s - I s) := by
+    simpa [I] using hT.finiteOpenCount_sub_indicator_isIncreasingFinsetFunction
+  have hI_mono : IsIncreasingFinsetFunction E I := by
+    simpa [I] using hT.indicator_isIncreasingFinsetFunction
+  have hcov_nonneg :
+      0 ≤ finiteBernoulliCovariance E p (fun s ↦ finiteOpenCount s - I s) I :=
+    finiteBernoulliCovariance_nonneg_of_increasing hp0 hp1 hsub_mono hI_mono
+  have hlin := finiteBernoulliCovariance_sub_left E p finiteOpenCount I I
+  have hvar := finiteBernoulliCovariance_indicator_self E p T
+  rw [hlin] at hcov_nonneg
+  change 0 ≤ finiteBernoulliCovariance E p finiteOpenCount I -
+      finiteBernoulliCovariance E p I I at hcov_nonneg
+  rw [show finiteBernoulliCovariance E p I I =
+      finiteBernoulliEventProbability E p T *
+        (1 - finiteBernoulliEventProbability E p T) by
+    simpa [I] using hvar] at hcov_nonneg
+  exact sub_nonneg.mp hcov_nonneg
+
+/-- Divided form of the finite monotone reliability lower bound. Together with
+`finiteBernoulliEventProbability_hasDerivAt_covariance_finiteOpenCount`, this is the finite-cube
+version of Grimmett's inequality (2.37). -/
+theorem finiteBernoulliEventProbability_mul_compl_div_le_covariance_div_finiteOpenCount
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    (hp0 : 0 < p) (hp1 : p < 1) (hT : IsIncreasingTrace E T) :
+    finiteBernoulliEventProbability E p T * (1 - finiteBernoulliEventProbability E p T) /
+        (p * (1 - p)) ≤
+      finiteBernoulliCovariance E p finiteOpenCount
+          (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) /
+        (p * (1 - p)) := by
+  have hnum :=
+    finiteBernoulliEventProbability_mul_compl_le_covariance_finiteOpenCount
+      (E := E) (p := p) (T := T) hp0.le hp1.le hT
+  have hden : 0 ≤ p * (1 - p) := by
+    exact (mul_pos hp0 (sub_pos.mpr hp1)).le
+  exact div_le_div_of_nonneg_right hnum hden
+
 /-- Split the expectation of `finiteOpenCount * X` after inserting a fresh coordinate. -/
 theorem finiteBernoulliExpectation_finiteOpenCount_mul_insert_split {ι : Type*}
     [DecidableEq ι] {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ)
@@ -144,6 +298,20 @@ theorem finiteBernoulliCovariance_finiteOpenCount_eq_mul_derivativeSum {ι : Typ
       rw [← Finset.mul_sum, ← Finset.mul_sum]
       simp [Xopen]
       ring
+
+/-- Variance of the number of open coordinates in a finite Bernoulli cube. -/
+theorem finiteBernoulliCovariance_finiteOpenCount_self {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) :
+    finiteBernoulliCovariance E p finiteOpenCount finiteOpenCount =
+      p * (1 - p) * E.card := by
+  rw [finiteBernoulliCovariance_finiteOpenCount_eq_mul_derivativeSum]
+  rw [show E.sum (fun e ↦
+        finiteBernoulliExpectation E p (finiteDifference e finiteOpenCount)) =
+      E.sum (fun _ ↦ (1 : ℝ)) by
+    apply Finset.sum_congr rfl
+    intro e _he
+    exact finiteBernoulliExpectation_finiteDifference_finiteOpenCount E p e]
+  simp
 
 /-- The derivative of a finite-cube expectation written in Grimmett's reliability covariance
 form. This is the random-variable version of Theorem (2.34). -/

@@ -772,6 +772,15 @@ Dated milestones and anti-library notes.
     finite event indicators. The Cauchy-Schwarz/S-shape reliability inequalities remain separate
     Chapter 2.5 targets.
 
+68. **Finite monotone reliability lower bound (2026-07-02).** Extended
+    `Percolation.Bernoulli.Reliability` toward Grimmett's Theorem (2.36). Proved the finite
+    variance identities `Var_p(N)=p(1-p)|E|` and `Var_p(1_A)=P_p(A)(1-P_p(A))`, plus general
+    covariance nonnegativity for increasing finite-cube observables via finite FKG. For increasing
+    finite traces, proved that `N-1_A` is increasing, hence `cov_p(N-1_A,1_A) ≥ 0`; rearranging
+    gives the finite numerator lower bound `P_p(A)(1-P_p(A)) ≤ cov_p(N,1_A)`, and division by
+    `p(1-p)>0` gives the lower-bound side of Grimmett's equation (2.37). The Cauchy-Schwarz upper
+    bound (2.36)(a) and log-ratio theorem (2.38) remain targets.
+
 ## Axiom Ledger
 
 Empty.

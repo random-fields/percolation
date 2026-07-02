@@ -762,6 +762,16 @@ Dated milestones and anti-library notes.
     second-difference precursor `δ_f δ_e X` and proved the double-sum derivative
     `d/dp Σ_e E_p[δ_e X] = Σ_e Σ_f E_p[δ_f δ_e X]`.
 
+67. **Finite reliability covariance identity (2026-07-02).** Added
+    `Percolation.Bernoulli.Reliability` for Grimmett's reliability-theory section. Defined the
+    finite open-coordinate count `finiteOpenCount` and finite Bernoulli covariance
+    `finiteBernoulliCovariance`, proved `E_p[N] = p |E|`, and proved the source-shaped finite
+    covariance identity behind Theorem (2.34): covariance with `N` is `p(1-p)` times the finite
+    Russo derivative sum. Combined this with the finite observable Russo formula to obtain the
+    derivative form `d/dp E_p[X] = cov_p(N,X)/(p(1-p))` for `p ≠ 0,1`, and specialized it to
+    finite event indicators. The Cauchy-Schwarz/S-shape reliability inequalities remain separate
+    Chapter 2.5 targets.
+
 ## Axiom Ledger
 
 Empty.

@@ -531,6 +531,22 @@ theorem IsIncreasingEvent.isUpperSet_finiteEventFamily {ι : Type*}
   exact (mem_finiteEventFamily_iff A t).mpr
     (hA (by intro e he; exact hst he) ((mem_finiteEventFamily_iff A s).mp hs))
 
+/-- A real-valued observable on a finite cube is increasing when it is monotone under adding
+coordinates inside the ambient support. This is the finite-coordinate random-variable predicate
+used in Grimmett's induction proof of FKG. -/
+def IsIncreasingFinsetFunction {ι : Type*} (E : Finset ι) (X : Finset ι → ℝ) : Prop :=
+  ∀ ⦃s t : Finset ι⦄, s ⊆ t → t ⊆ E → X s ≤ X t
+
+theorem IsIncreasingFinsetFunction.mono {ι : Type*} {E : Finset ι} {X : Finset ι → ℝ}
+    (hX : IsIncreasingFinsetFunction E X) {s t : Finset ι} (hst : s ⊆ t) (htE : t ⊆ E) :
+    X s ≤ X t :=
+  hX hst htE
+
+theorem IsIncreasingFinsetFunction.empty_le_singleton {ι : Type*} {a : ι}
+    {X : Finset ι → ℝ} (hX : IsIncreasingFinsetFunction ({a} : Finset ι) X) :
+    X ∅ ≤ X {a} :=
+  hX.mono (Finset.empty_subset _) (by intro e he; exact he)
+
 /-- The uniform-measure finite FKG/Harris cardinal inequality. This is the `p = 1/2` finite
 product-space core of Grimmett's Theorem 2.4, delegated to Mathlib's Harris-Kleitman theorem. -/
 theorem finiteUniform_fkg_card {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -596,6 +612,99 @@ theorem finiteUniform_fkg_probability {ι : Type*} [Fintype ι] [DecidableEq ι]
     ((finiteEventFamily (A ∩ B)).card : ℝ) / d
   field_simp [hd_pos.ne']
   nlinarith
+
+/-- Weighted Bernoulli expectation for a real-valued observable on the finite cube of subsets of
+`E`. This is the finite-coordinate product measure used in Grimmett's proof of FKG before the
+martingale limiting step. -/
+noncomputable def finiteBernoulliExpectation {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) : ℝ :=
+  E.powerset.sum fun s ↦ p ^ s.card * (1 - p) ^ (E.card - s.card) * X s
+
+@[simp]
+theorem finiteBernoulliExpectation_empty {ι : Type*} [DecidableEq ι]
+    (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation (∅ : Finset ι) p X = X ∅ := by
+  simp [finiteBernoulliExpectation]
+
+/-- Finite Bernoulli expectation preserves pointwise inequalities on the supporting cube when
+`0 ≤ p ≤ 1`. -/
+theorem finiteBernoulliExpectation_mono {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hXY : ∀ ⦃s : Finset ι⦄, s ⊆ E → X s ≤ Y s) :
+    finiteBernoulliExpectation E p X ≤ finiteBernoulliExpectation E p Y := by
+  unfold finiteBernoulliExpectation
+  refine Finset.sum_le_sum ?_
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  have hq0 : 0 ≤ 1 - p := sub_nonneg.mpr hp1
+  have hweight : 0 ≤ p ^ s.card * (1 - p) ^ (E.card - s.card) :=
+    mul_nonneg (pow_nonneg hp0 _) (pow_nonneg hq0 _)
+  exact mul_le_mul_of_nonneg_left (hXY hsE) hweight
+
+/-- Expectation of a random variable on one Bernoulli coordinate, with values `x0` at the closed
+state and `x1` at the open state. This is the scalar base case used in Grimmett's proof of the
+finite FKG inequality. -/
+noncomputable def twoPointBernoulliExpectation (p x0 x1 : ℝ) : ℝ :=
+  (1 - p) * x0 + p * x1
+
+/-- The exact covariance identity behind the one-coordinate base case of Grimmett's FKG
+induction. -/
+theorem twoPointBernoulliExpectation_mul_sub (p x0 x1 y0 y1 : ℝ) :
+    twoPointBernoulliExpectation p (x0 * y0) (x1 * y1) -
+        twoPointBernoulliExpectation p x0 x1 * twoPointBernoulliExpectation p y0 y1 =
+      p * (1 - p) * ((x1 - x0) * (y1 - y0)) := by
+  unfold twoPointBernoulliExpectation
+  ring
+
+/-- Grimmett's one-coordinate FKG computation: if the two observables are increasing in the
+single Bernoulli coordinate, their covariance is nonnegative. This is the `n = 1` base of the
+finite-coordinate conditioning induction for Theorem (2.4). -/
+theorem twoPointBernoulliExpectation_fkg {p x0 x1 y0 y1 : ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hx : x0 ≤ x1) (hy : y0 ≤ y1) :
+    twoPointBernoulliExpectation p x0 x1 *
+        twoPointBernoulliExpectation p y0 y1 ≤
+      twoPointBernoulliExpectation p (x0 * y0) (x1 * y1) := by
+  have hp01 : 0 ≤ p * (1 - p) := mul_nonneg hp0 (sub_nonneg.mpr hp1)
+  have hxy : 0 ≤ (x1 - x0) * (y1 - y0) :=
+    mul_nonneg (sub_nonneg.mpr hx) (sub_nonneg.mpr hy)
+  have hnonneg : 0 ≤ p * (1 - p) * ((x1 - x0) * (y1 - y0)) :=
+    mul_nonneg hp01 hxy
+  rw [← twoPointBernoulliExpectation_mul_sub p x0 x1 y0 y1] at hnonneg
+  linarith
+
+/-- On a singleton support, the finite Bernoulli expectation is exactly the two-point
+expectation used in Grimmett's `n = 1` FKG computation. -/
+theorem finiteBernoulliExpectation_singleton {ι : Type*} [DecidableEq ι]
+    (a : ι) (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation ({a} : Finset ι) p X =
+      twoPointBernoulliExpectation p (X ∅) (X {a}) := by
+  have hpowerset : ({a} : Finset ι).powerset = ({∅, {a}} : Finset (Finset ι)) := by
+    ext s
+    simp [Finset.mem_powerset, Finset.subset_singleton_iff]
+  simp [finiteBernoulliExpectation, twoPointBernoulliExpectation, hpowerset]
+
+/-- The finite-cube singleton form of the weighted FKG base case. -/
+theorem finiteBernoulliExpectation_singleton_fkg {ι : Type*} [DecidableEq ι]
+    (a : ι) {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hX : X ∅ ≤ X {a}) (hY : Y ∅ ≤ Y {a}) :
+    finiteBernoulliExpectation ({a} : Finset ι) p X *
+        finiteBernoulliExpectation ({a} : Finset ι) p Y ≤
+      finiteBernoulliExpectation ({a} : Finset ι) p (fun s ↦ X s * Y s) := by
+  rw [finiteBernoulliExpectation_singleton, finiteBernoulliExpectation_singleton,
+    finiteBernoulliExpectation_singleton]
+  exact twoPointBernoulliExpectation_fkg hp0 hp1 hX hY
+
+/-- The one-coordinate finite FKG theorem stated with the finite-cube monotonicity predicate. -/
+theorem finiteBernoulliExpectation_singleton_fkg_of_increasing {ι : Type*} [DecidableEq ι]
+    (a : ι) {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsIncreasingFinsetFunction ({a} : Finset ι) X)
+    (hY : IsIncreasingFinsetFunction ({a} : Finset ι) Y) :
+    finiteBernoulliExpectation ({a} : Finset ι) p X *
+        finiteBernoulliExpectation ({a} : Finset ι) p Y ≤
+      finiteBernoulliExpectation ({a} : Finset ι) p (fun s ↦ X s * Y s) :=
+  finiteBernoulliExpectation_singleton_fkg a hp0 hp1 hX.empty_le_singleton
+    hY.empty_le_singleton
 
 section Cubic
 

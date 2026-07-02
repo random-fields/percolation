@@ -643,6 +643,33 @@ def hasInfiniteOpenCluster (d : ℕ) (ω : EdgeConfiguration d) : Prop :=
 def hasInfiniteOpenClusterFrom (d : ℕ) (ω : EdgeConfiguration d) (x : Cubic d) : Prop :=
   (cubicOpenClusterFrom d ω x).Infinite
 
+/-- If an open walk connects `x` to `y`, then the open cluster of `y` is contained in the open
+cluster of `x`. This is the deterministic cluster-inclusion step used in Grimmett's proof that
+the critical point does not depend on the chosen origin. -/
+theorem cubicOpenClusterFrom_subset_of_walkIsOpen {d : ℕ} {ω : EdgeConfiguration d}
+    {x y : Cubic d} (w : (cubicGraph d).Walk x y) (hopen : walkIsOpen ω w) :
+    cubicOpenClusterFrom d ω y ⊆ cubicOpenClusterFrom d ω x := by
+  intro z hz
+  rcases hz with ⟨q, hqopen⟩
+  exact ⟨w.append q, walkIsOpen_append hopen hqopen⟩
+
+/-- An open walk from `x` to `y` transfers infinitude of the open cluster at `y` to infinitude
+of the open cluster at `x`. -/
+theorem hasInfiniteOpenClusterFrom_of_walkIsOpen {d : ℕ} {ω : EdgeConfiguration d}
+    {x y : Cubic d} (w : (cubicGraph d).Walk x y) (hopen : walkIsOpen ω w) :
+    hasInfiniteOpenClusterFrom d ω y → hasInfiniteOpenClusterFrom d ω x := by
+  intro hy
+  exact hy.mono (cubicOpenClusterFrom_subset_of_walkIsOpen w hopen)
+
+/-- Along an open walk, the vertex-rooted infinite-cluster event is independent of which endpoint
+is used as the root. -/
+theorem hasInfiniteOpenClusterFrom_iff_of_walkIsOpen {d : ℕ} {ω : EdgeConfiguration d}
+    {x y : Cubic d} (w : (cubicGraph d).Walk x y) (hopen : walkIsOpen ω w) :
+    hasInfiniteOpenClusterFrom d ω x ↔ hasInfiniteOpenClusterFrom d ω y := by
+  constructor
+  · exact hasInfiniteOpenClusterFrom_of_walkIsOpen w.reverse (walkIsOpen_reverse hopen)
+  · exact hasInfiniteOpenClusterFrom_of_walkIsOpen w hopen
+
 @[simp]
 theorem hasArbitrarilyLongOpenPathsFrom_origin {d : ℕ} {ω : EdgeConfiguration d} :
     hasArbitrarilyLongOpenPathsFrom d ω cubicOrigin ↔

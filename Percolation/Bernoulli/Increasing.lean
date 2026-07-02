@@ -1816,6 +1816,15 @@ theorem isIncreasingEvent_openEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) 
   intro ω η hωη hω
   exact Set.Subset.trans hω hωη
 
+theorem dependsOn_openEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
+    DependsOn s (openEdgeSetEvent d s) := by
+  intro ω η hcoord
+  constructor
+  · intro hω e he
+    exact (hcoord e he).mp (hω he)
+  · intro hη e he
+    exact (hcoord e he).mpr (hη he)
+
 theorem isDecreasingEvent_closedEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
     IsDecreasingEvent (closedEdgeSetEvent d s) := by
   rw [isDecreasingEvent_iff]
@@ -1827,6 +1836,12 @@ theorem isIncreasingEvent_walkIsOpen {d : ℕ} {u v : Cubic d}
     IsIncreasingEvent {ω : EdgeConfiguration d | walkIsOpen ω w} := by
   intro ω η hωη hω e he
   exact hωη (hω e he)
+
+theorem dependsOn_walkIsOpen {d : ℕ} {u v : Cubic d}
+    (w : (cubicGraph d).Walk u v) :
+    DependsOn (walkEdgeFinset w) {ω : EdgeConfiguration d | walkIsOpen ω w} := by
+  simpa [openEdgeSetEvent, walkIsOpen_event_eq_openOn_walkEdgeFinset w] using
+    dependsOn_openEdgeSetEvent d (walkEdgeFinset w)
 
 theorem isIncreasingEvent_selfAvoidingWalkIsOpen {d n : ℕ}
     (steps : SelfAvoidingWalk d n) :
@@ -2009,6 +2024,91 @@ theorem bernoulliBondMeasure_real_fkg_iInter_finiteSupport (d : ℕ) (p : I)
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_fkg_iInter_finiteSupport (ι := CubicEdge d) p
       hAanti hBanti hAmeas hBmeas hAinc hBinc hAdep hBdep
+
+/-- Deterministic event inclusion behind Grimmett's origin-independence theorem: if a fixed walk
+from `x` to `y` is open and `y` has an infinite open cluster, then `x` has one too. -/
+theorem walkIsOpen_inter_hasInfiniteOpenClusterFrom_subset {d : ℕ} {x y : Cubic d}
+    (w : (cubicGraph d).Walk x y) :
+    {ω : EdgeConfiguration d | walkIsOpen ω w} ∩
+        {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω y} ⊆
+      {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x} := by
+  intro ω hω
+  exact hasInfiniteOpenClusterFrom_of_walkIsOpen w hω.1 hω.2
+
+/-- Source-shaped FKG step for Grimmett's Theorem (2.8): once FKG supplies the lower bound for
+the fixed connector event and the infinite-cluster event at `y`, the percolation probability at
+`x` dominates their product. -/
+theorem bernoulliBondMeasure_real_walkIsOpen_mul_thetaFrom_le_thetaFrom_of_fkg
+    {d : ℕ} {x y : Cubic d} (p : I) (w : (cubicGraph d).Walk x y)
+    (hFKG :
+      (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+          thetaFrom d y p ≤
+        (bernoulliBondMeasure d p).real
+          ({ω : EdgeConfiguration d | walkIsOpen ω w} ∩
+            {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω y})) :
+    (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+        thetaFrom d y p ≤
+      thetaFrom d x p := by
+  have hmono :
+      (bernoulliBondMeasure d p).real
+          ({ω : EdgeConfiguration d | walkIsOpen ω w} ∩
+            {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω y}) ≤
+        (bernoulliBondMeasure d p).real
+          {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x} :=
+    measureReal_mono (walkIsOpen_inter_hasInfiniteOpenClusterFrom_subset w) (by
+      change setBer((Set.univ : Set (CubicEdge d)), p)
+          {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x} ≠ ∞
+      refine ne_of_lt ((measure_mono (Set.subset_univ _)).trans_lt ?_)
+      rw [MeasureTheory.IsProbabilityMeasure.measure_univ]
+      exact ENNReal.one_lt_top)
+  exact hFKG.trans (by simpa [thetaFrom] using hmono)
+
+/-- If a fixed open trail from `x` to `y` has positive probability and the FKG lower bound for
+the connector event is available, then vanishing of the rooted percolation probability at `x`
+forces vanishing at `y`. This is the zero-transfer half of Grimmett's Theorem (2.8). -/
+theorem thetaFrom_eq_zero_of_open_trail_fkg {d : ℕ} {x y : Cubic d} {p : I}
+    (w : (cubicGraph d).Walk x y) (htrail : w.IsTrail) (hp : 0 < (p : ℝ))
+    (hFKG :
+      (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+          thetaFrom d y p ≤
+        (bernoulliBondMeasure d p).real
+          ({ω : EdgeConfiguration d | walkIsOpen ω w} ∩
+            {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω y}))
+    (hx : thetaFrom d x p = 0) :
+    thetaFrom d y p = 0 := by
+  have hle :=
+    bernoulliBondMeasure_real_walkIsOpen_mul_thetaFrom_le_thetaFrom_of_fkg p w hFKG
+  have hwalk_pos :
+      0 < (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} :=
+    bernoulliBondMeasure_real_walkIsOpen_pos p w htrail hp
+  have hy_nonneg : 0 ≤ thetaFrom d y p := measureReal_nonneg
+  apply le_antisymm ?_ hy_nonneg
+  have hprod :
+      (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+          thetaFrom d y p ≤ 0 := by
+    simpa [hx] using hle
+  nlinarith
+
+/-- Two-sided zero-set transfer along a fixed trail, stated with the two FKG instances that will
+come from the full measurable-event FKG theorem. -/
+theorem thetaFrom_eq_zero_iff_of_open_trail_fkg {d : ℕ} {x y : Cubic d} {p : I}
+    (w : (cubicGraph d).Walk x y) (htrail : w.IsTrail) (hp : 0 < (p : ℝ))
+    (hFKGxy :
+      (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+          thetaFrom d y p ≤
+        (bernoulliBondMeasure d p).real
+          ({ω : EdgeConfiguration d | walkIsOpen ω w} ∩
+            {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω y}))
+    (hFKGyx :
+      (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w.reverse} *
+          thetaFrom d x p ≤
+        (bernoulliBondMeasure d p).real
+          ({ω : EdgeConfiguration d | walkIsOpen ω w.reverse} ∩
+            {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x})) :
+    thetaFrom d x p = 0 ↔ thetaFrom d y p = 0 := by
+  constructor
+  · exact thetaFrom_eq_zero_of_open_trail_fkg w htrail hp hFKGxy
+  · exact thetaFrom_eq_zero_of_open_trail_fkg w.reverse (htrail.reverse w) hp hFKGyx
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

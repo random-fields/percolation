@@ -840,6 +840,17 @@ formulation proved in `hasInfiniteOpenCluster_iff_hasArbitrarilyLongOpenPaths`. 
 noncomputable def theta (d : ℕ) (p : I) : ℝ :=
   (bernoulliBondMeasure d p).real {ω | hasInfiniteOpenCluster d ω}
 
+/-- Vertex-rooted percolation probability: the probability that the open cluster of `x` is
+infinite. Grimmett's Theorem (2.8) says that the zero set of this function is independent of
+the root. -/
+noncomputable def thetaFrom (d : ℕ) (x : Cubic d) (p : I) : ℝ :=
+  (bernoulliBondMeasure d p).real {ω | hasInfiniteOpenClusterFrom d ω x}
+
+@[simp]
+theorem thetaFrom_origin (d : ℕ) (p : I) :
+    thetaFrom d cubicOrigin p = theta d p :=
+  rfl
+
 /-- Increasing the ambient cubic-lattice dimension can only increase the origin percolation
 probability. This is the measure-theoretic half of Grimmett's dimension-monotonicity argument,
 using the coordinate embedding of lower-dimensional configurations. -/

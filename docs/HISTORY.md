@@ -758,7 +758,9 @@ Dated milestones and anti-library notes.
     and decomposing old-coordinate pivotality across the closed and open sections. Extended the
     finite Russo infrastructure from indicators to real-valued observables by defining the finite
     difference `δ_e X = X(ω^e_open) - X(ω^e_closed)` and proving
-    `d/dp E_p[X] = Σ_e E_p[δ_e X]` for finite Bernoulli cubes.
+    `d/dp E_p[X] = Σ_e E_p[δ_e X]` for finite Bernoulli cubes. Added the finite
+    second-difference precursor `δ_f δ_e X` and proved the double-sum derivative
+    `d/dp Σ_e E_p[δ_e X] = Σ_e Σ_f E_p[δ_f δ_e X]`.
 
 ## Axiom Ledger
 

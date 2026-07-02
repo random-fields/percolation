@@ -694,4 +694,26 @@ theorem finiteBernoulliExpectation_hasDerivAt {ι : Type*} [DecidableEq ι]
       simp [Xopen]
       ring
 
+/-- Iterated finite difference `δ_f δ_e X`. -/
+def finiteSecondDifference {ι : Type*} [DecidableEq ι]
+    (e f : ι) (X : Finset ι → ℝ) : Finset ι → ℝ :=
+  finiteDifference f (finiteDifference e X)
+
+/-- Finite second-derivative Russo formula for real-valued observables, stated as the derivative
+of the first-difference sum. This is the finite double-sum precursor to Grimmett's second
+derivative identities. -/
+theorem finiteBernoulliExpectation_derivativeSum_hasDerivAt {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {p : ℝ} (X : Finset ι → ℝ) :
+    HasDerivAt
+      (fun x : ℝ ↦ E.sum fun e ↦ finiteBernoulliExpectation E x (finiteDifference e X))
+      (E.sum fun e ↦ E.sum fun f ↦
+        finiteBernoulliExpectation E p (finiteSecondDifference e f X)) p := by
+  simpa [finiteSecondDifference] using
+    HasDerivAt.fun_sum (u := E)
+      (A := fun e x ↦ finiteBernoulliExpectation E x (finiteDifference e X))
+      (A' := fun e ↦ E.sum fun f ↦
+        finiteBernoulliExpectation E p (finiteDifference f (finiteDifference e X)))
+      (x := p) (fun e _he ↦ finiteBernoulliExpectation_hasDerivAt (E := E)
+        (p := p) (finiteDifference e X))
+
 end Percolation

@@ -1,0 +1,360 @@
+import Percolation.Bernoulli.Basic
+import Mathlib.Combinatorics.SetFamily.HarrisKleitman
+
+/-!
+# Increasing events for Bernoulli percolation
+
+This file starts the Chapter 2 infrastructure from Grimmett's *Percolation*: events on
+edge-configuration spaces that are preserved when more edges are opened.  The definitions are
+kept for arbitrary coordinate types, and the final section specializes them to the cubic-lattice
+events already developed in `Percolation.Bernoulli.Basic`.
+-/
+
+namespace Percolation
+
+open MeasureTheory ProbabilityTheory
+open scoped ENNReal Finset unitInterval BigOperators
+
+/-- An event on configurations `Set ι` is increasing if opening additional coordinates preserves
+membership. This is the production version of Grimmett's Chapter 2 increasing events. -/
+def IsIncreasingEvent {ι : Type*} (A : Set (Set ι)) : Prop :=
+  ∀ ⦃ω η : Set ι⦄, ω ⊆ η → ω ∈ A → η ∈ A
+
+/-- An event is decreasing if its complement is increasing. Equivalently, membership is preserved
+when open coordinates are removed. -/
+def IsDecreasingEvent {ι : Type*} (A : Set (Set ι)) : Prop :=
+  IsIncreasingEvent Aᶜ
+
+theorem IsIncreasingEvent.mono {ι : Type*} {A : Set (Set ι)}
+    (hA : IsIncreasingEvent A) {ω η : Set ι} (hωη : ω ⊆ η) (hω : ω ∈ A) :
+    η ∈ A :=
+  hA hωη hω
+
+theorem isIncreasingEvent_empty {ι : Type*} :
+    IsIncreasingEvent (∅ : Set (Set ι)) := by
+  intro ω η hωη hω
+  exact hω.elim
+
+theorem isIncreasingEvent_univ {ι : Type*} :
+    IsIncreasingEvent (Set.univ : Set (Set ι)) := by
+  intro ω η hωη hω
+  exact Set.mem_univ η
+
+theorem IsIncreasingEvent.inter {ι : Type*} {A B : Set (Set ι)}
+    (hA : IsIncreasingEvent A) (hB : IsIncreasingEvent B) :
+    IsIncreasingEvent (A ∩ B) := by
+  intro ω η hωη hω
+  exact ⟨hA hωη hω.1, hB hωη hω.2⟩
+
+theorem IsIncreasingEvent.union {ι : Type*} {A B : Set (Set ι)}
+    (hA : IsIncreasingEvent A) (hB : IsIncreasingEvent B) :
+    IsIncreasingEvent (A ∪ B) := by
+  intro ω η hωη hω
+  rcases hω with hω | hω
+  · exact Or.inl (hA hωη hω)
+  · exact Or.inr (hB hωη hω)
+
+theorem isIncreasingEvent_iInter {ι κ : Type*} {A : κ → Set (Set ι)}
+    (hA : ∀ k, IsIncreasingEvent (A k)) :
+    IsIncreasingEvent (⋂ k, A k) := by
+  intro ω η hωη hω
+  rw [Set.mem_iInter] at hω ⊢
+  intro k
+  exact hA k hωη (hω k)
+
+theorem isIncreasingEvent_iUnion {ι κ : Type*} {A : κ → Set (Set ι)}
+    (hA : ∀ k, IsIncreasingEvent (A k)) :
+    IsIncreasingEvent (⋃ k, A k) := by
+  intro ω η hωη hω
+  rw [Set.mem_iUnion] at hω ⊢
+  rcases hω with ⟨k, hk⟩
+  exact ⟨k, hA k hωη hk⟩
+
+theorem isDecreasingEvent_iff {ι : Type*} {A : Set (Set ι)} :
+    IsDecreasingEvent A ↔
+      ∀ ⦃ω η : Set ι⦄, ω ⊆ η → η ∈ A → ω ∈ A := by
+  constructor
+  · intro hA ω η hωη hη
+    by_contra hω
+    exact hA hωη hω hη
+  · intro hA ω η hωη hω hη
+    exact hω (hA hωη hη)
+
+theorem IsDecreasingEvent.antitone {ι : Type*} {A : Set (Set ι)}
+    (hA : IsDecreasingEvent A) {ω η : Set ι} (hωη : ω ⊆ η) (hη : η ∈ A) :
+    ω ∈ A :=
+  isDecreasingEvent_iff.mp hA hωη hη
+
+theorem IsDecreasingEvent.inter {ι : Type*} {A B : Set (Set ι)}
+    (hA : IsDecreasingEvent A) (hB : IsDecreasingEvent B) :
+    IsDecreasingEvent (A ∩ B) := by
+  rw [isDecreasingEvent_iff]
+  intro ω η hωη hη
+  exact ⟨hA.antitone hωη hη.1, hB.antitone hωη hη.2⟩
+
+theorem IsDecreasingEvent.union {ι : Type*} {A B : Set (Set ι)}
+    (hA : IsDecreasingEvent A) (hB : IsDecreasingEvent B) :
+    IsDecreasingEvent (A ∪ B) := by
+  rw [isDecreasingEvent_iff]
+  intro ω η hωη hη
+  rcases hη with hη | hη
+  · exact Or.inl (hA.antitone hωη hη)
+  · exact Or.inr (hB.antitone hωη hη)
+
+/-- Restrict an arbitrary configuration to a finite coordinate support. -/
+noncomputable def restrictTo {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (ω : Set ι) : Finset ι := by
+  classical
+  exact E.filter fun e ↦ e ∈ ω
+
+@[simp]
+theorem mem_restrictTo_iff {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (ω : Set ι) (e : ι) :
+    e ∈ restrictTo E ω ↔ e ∈ E ∧ e ∈ ω := by
+  classical
+  simp [restrictTo]
+
+theorem restrictTo_subset {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (ω : Set ι) :
+    restrictTo E ω ⊆ E := by
+  intro e he
+  exact (mem_restrictTo_iff E ω e).mp he |>.1
+
+theorem restrictTo_subset_configuration {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (ω : Set ι) :
+    ((restrictTo E ω : Finset ι) : Set ι) ⊆ ω := by
+  intro e he
+  exact (mem_restrictTo_iff E ω e).mp he |>.2
+
+/-- A finite-support event only depends on the coordinates in `E`. -/
+def DependsOn {ι : Type*} (E : Finset ι) (A : Set (Set ι)) : Prop :=
+  ∀ ⦃ω η : Set ι⦄, (∀ e ∈ E, (e ∈ ω ↔ e ∈ η)) → (ω ∈ A ↔ η ∈ A)
+
+/-- The finite trace of an event on a support `E`. Its elements are finite configurations contained
+in `E` that make the event occur. -/
+noncomputable def eventTrace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (A : Set (Set ι)) : Finset (Finset ι) := by
+  classical
+  exact E.powerset.filter fun s ↦ ((s : Finset ι) : Set ι) ∈ A
+
+@[simp]
+theorem mem_eventTrace_iff {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (A : Set (Set ι)) (s : Finset ι) :
+    s ∈ eventTrace E A ↔ s ⊆ E ∧ ((s : Finset ι) : Set ι) ∈ A := by
+  classical
+  simp [eventTrace]
+
+/-- Rebuild an event from a finite trace by looking only at the coordinates in `E`. -/
+noncomputable def eventOfTrace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) : Set (Set ι) :=
+  {ω | restrictTo E ω ∈ T}
+
+theorem dependsOn_eventOfTrace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) :
+    DependsOn E (eventOfTrace E T) := by
+  intro ω η hcoord
+  have hrestrict : restrictTo E ω = restrictTo E η := by
+    ext e
+    by_cases he : e ∈ E
+    · simp [restrictTo, he, hcoord e he]
+    · simp [restrictTo, he]
+  simp [eventOfTrace, hrestrict]
+
+theorem restrictTo_mem_eventTrace_iff_of_dependsOn {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A) (ω : Set ι) :
+    restrictTo E ω ∈ eventTrace E A ↔ ω ∈ A := by
+  classical
+  rw [mem_eventTrace_iff]
+  constructor
+  · intro hω
+    have hcoord :
+        ∀ e ∈ E, (e ∈ ((restrictTo E ω : Finset ι) : Set ι) ↔ e ∈ ω) := by
+      intro e he
+      simp [restrictTo, he]
+    exact (hA hcoord).mp hω.2
+  · intro hω
+    refine ⟨restrictTo_subset E ω, ?_⟩
+    have hcoord :
+        ∀ e ∈ E, (e ∈ ω ↔ e ∈ ((restrictTo E ω : Finset ι) : Set ι)) := by
+      intro e he
+      simp [restrictTo, he]
+    exact (hA hcoord).mp hω
+
+/-- A finite trace is increasing relative to its ambient support. -/
+def IsIncreasingTrace {ι : Type*} (E : Finset ι) (T : Set (Finset ι)) : Prop :=
+  ∀ ⦃s t : Finset ι⦄, s ⊆ t → t ⊆ E → s ∈ T → t ∈ T
+
+theorem IsIncreasingEvent.eventTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {A : Set (Set ι)} (hA : IsIncreasingEvent A) :
+    IsIncreasingTrace E (eventTrace E A) := by
+  intro s t hst htE hs
+  exact (mem_eventTrace_iff E A t).mpr
+    ⟨htE, hA (by intro e he; exact hst he) ((mem_eventTrace_iff E A s).mp hs).2⟩
+
+theorem IsIncreasingTrace.eventOfTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {T : Set (Finset ι)} (hT : IsIncreasingTrace E T) :
+    IsIncreasingEvent (eventOfTrace E T) := by
+  intro ω η hωη hω
+  exact hT (by
+    intro e he
+    rw [mem_restrictTo_iff] at he ⊢
+    exact ⟨he.1, hωη he.2⟩) (restrictTo_subset E η) hω
+
+/-- The finite family of configurations of a finite coordinate type that realize an event. -/
+noncomputable def finiteEventFamily {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Set (Set ι)) : Finset (Finset ι) := by
+  classical
+  exact Finset.univ.filter fun s ↦ ((s : Finset ι) : Set ι) ∈ A
+
+@[simp]
+theorem mem_finiteEventFamily_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Set (Set ι)) (s : Finset ι) :
+    s ∈ finiteEventFamily A ↔ ((s : Finset ι) : Set ι) ∈ A := by
+  classical
+  simp [finiteEventFamily]
+
+theorem IsIncreasingEvent.isUpperSet_finiteEventFamily {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {A : Set (Set ι)}
+    (hA : IsIncreasingEvent A) :
+    IsUpperSet (finiteEventFamily A : Set (Finset ι)) := by
+  intro s t hst hs
+  exact (mem_finiteEventFamily_iff A t).mpr
+    (hA (by intro e he; exact hst he) ((mem_finiteEventFamily_iff A s).mp hs))
+
+/-- The uniform-measure finite FKG/Harris cardinal inequality. This is the `p = 1/2` finite
+product-space core of Grimmett's Theorem 2.4, delegated to Mathlib's Harris-Kleitman theorem. -/
+theorem finiteUniform_fkg_card {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {A B : Set (Set ι)} (hA : IsIncreasingEvent A) (hB : IsIncreasingEvent B) :
+    (finiteEventFamily A).card * (finiteEventFamily B).card ≤
+      2 ^ Fintype.card ι * (finiteEventFamily (A ∩ B)).card := by
+  classical
+  have hHK :=
+    (hA.isUpperSet_finiteEventFamily).le_card_inter_finset
+      (hB.isUpperSet_finiteEventFamily)
+  have hInter :
+      finiteEventFamily (A ∩ B) = finiteEventFamily A ∩ finiteEventFamily B := by
+    ext s
+    simp [finiteEventFamily]
+  simpa [hInter] using hHK
+
+section Cubic
+
+theorem isIncreasingEvent_openEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
+    IsIncreasingEvent (openEdgeSetEvent d s) := by
+  intro ω η hωη hω
+  exact Set.Subset.trans hω hωη
+
+theorem isDecreasingEvent_closedEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
+    IsDecreasingEvent (closedEdgeSetEvent d s) := by
+  rw [isDecreasingEvent_iff]
+  intro ω η hωη hη
+  exact hη.mono_right hωη
+
+theorem isIncreasingEvent_walkIsOpen {d : ℕ} {u v : Cubic d}
+    (w : (cubicGraph d).Walk u v) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | walkIsOpen ω w} := by
+  intro ω η hωη hω e he
+  exact hωη (hω e he)
+
+theorem isIncreasingEvent_selfAvoidingWalkIsOpen {d n : ℕ}
+    (steps : SelfAvoidingWalk d n) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | selfAvoidingWalkIsOpen ω steps} := by
+  simpa [selfAvoidingWalkIsOpen] using
+    isIncreasingEvent_walkIsOpen (selfAvoidingWalkWalk steps)
+
+theorem isIncreasingEvent_existsOpenSelfAvoidingWalk (d n : ℕ) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | existsOpenSelfAvoidingWalk d n ω} := by
+  intro ω η hωη hω
+  rcases hω with ⟨steps, hsteps⟩
+  exact ⟨steps, isIncreasingEvent_selfAvoidingWalkIsOpen steps hωη hsteps⟩
+
+theorem isIncreasingEvent_hasOpenPathOfLengthExactly (d n : ℕ) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasOpenPathOfLengthExactly d ω n} := by
+  intro ω η hωη hω
+  change hasOpenPathOfLengthExactly d ω n at hω
+  change hasOpenPathOfLengthExactly d η n
+  rw [hasOpenPathOfLengthExactly_iff_existsOpenSelfAvoidingWalk] at hω ⊢
+  exact isIncreasingEvent_existsOpenSelfAvoidingWalk d n hωη hω
+
+theorem isIncreasingEvent_hasOpenPathOfLengthAtLeast (d n : ℕ) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeast d ω n} := by
+  intro ω η hωη hω
+  change hasOpenPathOfLengthAtLeast d ω n at hω
+  change hasOpenPathOfLengthAtLeast d η n
+  rw [hasOpenPathOfLengthAtLeast_iff_hasOpenPathOfLengthExactly] at hω ⊢
+  exact isIncreasingEvent_hasOpenPathOfLengthExactly d n hωη hω
+
+theorem isIncreasingEvent_hasOpenPathOfLengthExactlyFrom (d : ℕ) (x : Cubic d) (n : ℕ) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasOpenPathOfLengthExactlyFrom d ω x n} := by
+  intro ω η hωη hω
+  rcases hω with ⟨v, w, hwpath, hwlen, hopen⟩
+  exact ⟨v, w, hwpath, hwlen, isIncreasingEvent_walkIsOpen w hωη hopen⟩
+
+theorem isIncreasingEvent_hasOpenPathOfLengthAtLeastFrom (d : ℕ) (x : Cubic d) (n : ℕ) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω x n} := by
+  intro ω η hωη hω
+  change hasOpenPathOfLengthAtLeastFrom d ω x n at hω
+  change hasOpenPathOfLengthAtLeastFrom d η x n
+  rw [hasOpenPathOfLengthAtLeastFrom_iff_hasOpenPathOfLengthExactlyFrom] at hω ⊢
+  exact isIncreasingEvent_hasOpenPathOfLengthExactlyFrom d x n hωη hω
+
+theorem isIncreasingEvent_hasArbitrarilyLongOpenPaths (d : ℕ) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasArbitrarilyLongOpenPaths d ω} := by
+  intro ω η hωη hω n
+  exact isIncreasingEvent_hasOpenPathOfLengthAtLeast d n hωη (hω n)
+
+theorem isIncreasingEvent_hasArbitrarilyLongOpenPathsFrom (d : ℕ) (x : Cubic d) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasArbitrarilyLongOpenPathsFrom d ω x} := by
+  intro ω η hωη hω n
+  exact isIncreasingEvent_hasOpenPathOfLengthAtLeastFrom d x n hωη (hω n)
+
+theorem isIncreasingEvent_hasInfiniteOpenCluster (d : ℕ) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasInfiniteOpenCluster d ω} := by
+  intro ω η hωη hω
+  change hasInfiniteOpenCluster d ω at hω
+  change hasInfiniteOpenCluster d η
+  rw [hasInfiniteOpenCluster_iff_hasArbitrarilyLongOpenPaths] at hω ⊢
+  exact isIncreasingEvent_hasArbitrarilyLongOpenPaths d hωη hω
+
+theorem isIncreasingEvent_hasInfiniteOpenClusterFrom (d : ℕ) (x : Cubic d) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x} := by
+  intro ω η hωη hω
+  change hasInfiniteOpenClusterFrom d ω x at hω
+  change hasInfiniteOpenClusterFrom d η x
+  rw [hasInfiniteOpenClusterFrom_iff_hasArbitrarilyLongOpenPathsFrom] at hω ⊢
+  exact isIncreasingEvent_hasArbitrarilyLongOpenPathsFrom d x hωη hω
+
+/-- A finite indexed family of walks with common endpoints has an increasing open-path event. -/
+def existsOpenWalkIn {d : ℕ} {u v : Cubic d} {β : Type*}
+    (s : Finset β) (walk : β → (cubicGraph d).Walk u v)
+    (ω : EdgeConfiguration d) : Prop :=
+  ∃ b ∈ s, walkIsOpen ω (walk b)
+
+theorem isIncreasingEvent_existsOpenWalkIn {d : ℕ} {u v : Cubic d}
+    {β : Type*} (s : Finset β) (walk : β → (cubicGraph d).Walk u v) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | existsOpenWalkIn s walk ω} := by
+  intro ω η hωη hω
+  rcases hω with ⟨b, hb, hbopen⟩
+  exact ⟨b, hb, isIncreasingEvent_walkIsOpen (walk b) hωη hbopen⟩
+
+/-- Grimmett's monotonicity theorem 2.1 for finite all-open cylinder events. -/
+theorem bernoulliBondMeasure_real_openEdgeSetEvent_mono (d : ℕ)
+    (s : Finset (CubicEdge d)) {p q : I} (hpq : (p : ℝ) ≤ q) :
+    (bernoulliBondMeasure d p).real (openEdgeSetEvent d s) ≤
+      (bernoulliBondMeasure d q).real (openEdgeSetEvent d s) := by
+  rw [bernoulliBondMeasure_real_openEdgeSetEvent,
+    bernoulliBondMeasure_real_openEdgeSetEvent]
+  exact pow_le_pow_left₀ p.2.1 hpq s.card
+
+/-- Closed finite cylinders are antitone in the Bernoulli edge parameter. -/
+theorem bernoulliBondMeasure_real_closedEdgeSetEvent_antitone (d : ℕ)
+    (s : Finset (CubicEdge d)) {p q : I} (hpq : (p : ℝ) ≤ q) :
+    (bernoulliBondMeasure d q).real (closedEdgeSetEvent d s) ≤
+      (bernoulliBondMeasure d p).real (closedEdgeSetEvent d s) := by
+  rw [bernoulliBondMeasure_real_closedEdgeSetEvent,
+    bernoulliBondMeasure_real_closedEdgeSetEvent]
+  exact pow_le_pow_left₀ (sub_nonneg.mpr q.2.2) (by linarith) s.card
+
+end Cubic
+
+end Percolation

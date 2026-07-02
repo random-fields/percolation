@@ -720,6 +720,17 @@ Dated milestones and anti-library notes.
     percolation probability now matches the textbook definition while retaining the existing
     Grimmett path-counting estimates.
 
+66. **Chapter 2 increasing-event and pivotal-edge foundation (2026-07-02).** Added the production
+    Chapter 2 event vocabulary in `Percolation.Bernoulli.Increasing`: increasing/decreasing events
+    on `Set ι` configurations, finite restrictions/traces, finite support dependence, and the
+    finite uniform Harris/FKG cardinal inequality via Mathlib's Harris-Kleitman theorem. Proved
+    that the existing cubic open-edge, open-walk, finite open-path, and infinite open-cluster events
+    are increasing, that finite closed-edge cylinders are decreasing, and that finite all-open/all-
+    closed cylinders are monotone/antitone in the Bernoulli parameter. Added
+    `Percolation.Bernoulli.Russo` with `forceOpen`, `forceClosed`, pivotal events, pivotal counts,
+    the set identity behind Grimmett's equation (2.29), and the finite-support fact that the event
+    "`e` is pivotal" depends on all relevant coordinates except the state of `e`.
+
 ## Axiom Ledger
 
 Empty.

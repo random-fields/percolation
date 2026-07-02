@@ -1,5 +1,6 @@
 import Percolation.Bernoulli.Basic
 import Mathlib.Combinatorics.SetFamily.HarrisKleitman
+import Mathlib.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # Increasing events for Bernoulli percolation
@@ -203,6 +204,98 @@ theorem IsIncreasingEvent.integral_indicator_thresholdConfiguration_mono {ι Ω 
       ∫ ω, A.indicator (fun _ ↦ (1 : ℝ)) (thresholdConfiguration q (X ω)) ∂μ :=
   hA.indicator_isIncreasingRandomVariable.integral_thresholdConfiguration_mono hpq hp hq
 
+/-- A single uniform variable thresholded at `p` has Bernoulli law with parameter `p`. -/
+theorem unitInterval_volume_map_lt (p : I) :
+    Measure.map (fun x : I ↦ (x : ℝ) < (p : ℝ)) volume =
+      unitInterval.toNNReal p • Measure.dirac True +
+        unitInterval.toNNReal (σ p) • Measure.dirac False := by
+  ext s hs
+  rw [Measure.map_apply]
+  · by_cases htrue : True ∈ s <;> by_cases hfalse : False ∈ s
+    · have hs_univ : s = Set.univ := by
+        ext b
+        by_cases hb : b <;> simp [hb, htrue, hfalse]
+      simp [hs_univ]
+    · have hs_true : s = ({True} : Set Prop) := by
+        ext b
+        by_cases hb : b <;> simp [hb, htrue, hfalse]
+      rw [hs_true]
+      simp [unitInterval.toNNReal]
+      calc
+        volume (Set.Iio p) = ENNReal.ofReal (p : ℝ) := unitInterval.volume_Iio p
+        _ = (unitInterval.toNNReal p : ℝ≥0∞) := by
+          rw [ENNReal.coe_nnreal_eq, unitInterval.coe_toNNReal]
+    · have hs_false : s = ({False} : Set Prop) := by
+        ext b
+        by_cases hb : b <;> simp [hb, htrue, hfalse]
+      rw [hs_false]
+      simp [unitInterval.toNNReal]
+      calc
+        volume (Set.Ici p) = ENNReal.ofReal (1 - (p : ℝ)) := unitInterval.volume_Ici p
+        _ = (unitInterval.toNNReal (σ p) : ℝ≥0∞) := by
+          rw [ENNReal.coe_nnreal_eq, unitInterval.coe_toNNReal]
+          rfl
+    · have hs_empty : s = ∅ := by
+        ext b
+        by_cases hb : b <;> simp [hb, htrue, hfalse]
+      simp [hs_empty]
+  · fun_prop
+  · exact hs
+
+/-- Iid unit-interval thresholds give the product Bernoulli law on Boolean coordinate functions. -/
+theorem infinitePi_volume_map_lt {ι : Type*} (p : I) :
+    Measure.map (fun X : ι → I ↦ fun i ↦ (X i : ℝ) < (p : ℝ))
+        (Measure.infinitePi fun _ : ι ↦ (volume : Measure I)) =
+      Measure.infinitePi fun _ : ι ↦
+        unitInterval.toNNReal p • Measure.dirac True +
+          unitInterval.toNNReal (σ p) • Measure.dirac False := by
+  let μB : ι → Measure Prop := fun _ ↦
+    unitInterval.toNNReal p • Measure.dirac True +
+      unitInterval.toNNReal (σ p) • Measure.dirac False
+  change Measure.map (fun X : ι → I ↦ fun i ↦ (X i : ℝ) < (p : ℝ))
+        (Measure.infinitePi fun _ : ι ↦ (volume : Measure I)) = Measure.infinitePi μB
+  refine Measure.eq_infinitePi μB ?_
+  intro s t ht
+  rw [Measure.map_apply]
+  · have hpre :
+        (fun X : ι → I ↦ fun i ↦ (X i : ℝ) < (p : ℝ)) ⁻¹'
+            Set.pi ((s : Finset ι) : Set ι) t =
+          Set.pi ((s : Finset ι) : Set ι)
+            (fun i ↦ {x : I | ((x : ℝ) < (p : ℝ)) ∈ t i}) := by
+      ext X
+      simp [Set.mem_pi]
+    rw [hpre, Measure.infinitePi_pi]
+    · apply Finset.prod_congr rfl
+      intro i hi
+      have hcoord := congrArg (fun μ : Measure Prop ↦ μ (t i)) (unitInterval_volume_map_lt p)
+      change (Measure.map (fun x : I ↦ (x : ℝ) < (p : ℝ)) volume) (t i) =
+        μB i (t i) at hcoord
+      rw [Measure.map_apply] at hcoord
+      · exact hcoord
+      · fun_prop
+      · exact ht i
+    · intro i hi
+      exact (ht i).preimage (by fun_prop : Measurable fun x : I ↦ (x : ℝ) < (p : ℝ))
+  · fun_prop
+  · exact MeasurableSet.pi (Finset.countable_toSet s) fun i hi ↦ ht i
+
+/-- Grimmett's iid-uniform threshold construction has Bernoulli product marginal law. -/
+theorem infinitePi_volume_map_thresholdConfiguration {ι : Type*} (p : I) :
+    Measure.map (fun X : ι → I ↦ thresholdConfiguration p (fun i ↦ (X i : ℝ)))
+        (Measure.infinitePi fun _ : ι ↦ (volume : Measure I)) =
+      setBer((Set.univ : Set ι), p) := by
+  rw [setBernoulli_eq_map]
+  simp only [Set.mem_univ]
+  rw [← infinitePi_volume_map_lt (ι := ι) p]
+  change Measure.map (fun X : ι → I ↦ thresholdConfiguration p (fun i ↦ (X i : ℝ)))
+      (Measure.infinitePi fun _ : ι ↦ (volume : Measure I)) =
+    Measure.map (⇑(MeasurableEquiv.setOf : (ι → Prop) ≃ᵐ Set ι))
+      (Measure.map (fun X : ι → I ↦ fun i ↦ (X i : ℝ) < (p : ℝ))
+        (Measure.infinitePi fun _ : ι ↦ (volume : Measure I)))
+  rw [Measure.map_map MeasurableEquiv.setOf.measurable]
+  · rfl
+  · fun_prop
+
 /-- A monotone coupling of two configuration laws: both configurations are built on one sample
 space, have the requested marginal laws, and are ordered pointwise. This is the theorem-facing
 abstraction produced by Grimmett's iid-uniform threshold construction. -/
@@ -253,6 +346,70 @@ theorem IsIncreasingEvent.measureReal_le_of_monotoneCoupling {ι Ω : Type*}
   rw [map_measureReal_apply hc.measurable_left hAmeas,
     map_measureReal_apply hc.measurable_right hAmeas]
   exact measureReal_mono fun ω hω ↦ hA (hc.ordered ω) hω
+
+theorem measurable_thresholdConfiguration_unitInterval {ι : Type*} (p : I) :
+    Measurable (fun X : ι → I ↦ thresholdConfiguration p (fun i ↦ (X i : ℝ))) := by
+  change Measurable
+    ((MeasurableEquiv.setOf : (ι → Prop) ≃ᵐ Set ι) ∘
+      (fun X : ι → I ↦ fun i ↦ (X i : ℝ) < (p : ℝ)))
+  exact MeasurableEquiv.setOf.measurable.comp (by fun_prop)
+
+/-- The monotone coupling in Grimmett's proof of Theorem (2.1), built from iid unit-interval
+threshold variables. -/
+theorem infinitePi_volume_thresholdConfiguration_isMonotoneCoupling {ι : Type*}
+    {p q : I} (hpq : (p : ℝ) ≤ q) :
+    IsMonotoneCoupling (Measure.infinitePi fun _ : ι ↦ (volume : Measure I))
+      setBer((Set.univ : Set ι), p) setBer((Set.univ : Set ι), q)
+      (fun X : ι → I ↦ thresholdConfiguration p (fun i ↦ (X i : ℝ)))
+      (fun X : ι → I ↦ thresholdConfiguration q (fun i ↦ (X i : ℝ))) := by
+  refine ⟨measurable_thresholdConfiguration_unitInterval p,
+    measurable_thresholdConfiguration_unitInterval q,
+    infinitePi_volume_map_thresholdConfiguration p,
+    infinitePi_volume_map_thresholdConfiguration q, ?_⟩
+  intro X
+  exact thresholdConfiguration_subset_of_le hpq (fun i ↦ (X i : ℝ))
+
+/-- Grimmett's Theorem (2.1), event part, for Bernoulli product measures on arbitrary coordinates:
+probabilities of measurable increasing events are non-decreasing in `p`. -/
+theorem IsIncreasingEvent.setBernoulli_real_mono {ι : Type*} {A : Set (Set ι)}
+    (hA : IsIncreasingEvent A) (hAmeas : MeasurableSet A) {p q : I}
+    (hpq : (p : ℝ) ≤ q) :
+    setBer((Set.univ : Set ι), p).real A ≤ setBer((Set.univ : Set ι), q).real A :=
+  hA.measureReal_le_of_monotoneCoupling hAmeas
+    (infinitePi_volume_thresholdConfiguration_isMonotoneCoupling hpq)
+
+/-- Grimmett's Theorem (2.1), random-variable part, for Bernoulli product measures on arbitrary
+coordinates. The integrability hypotheses are the formal version of "so long as these mean values
+exist". -/
+theorem IsIncreasingRandomVariable.setBernoulli_integral_mono {ι : Type*}
+    {N : Set ι → ℝ} (hN : IsIncreasingRandomVariable N) {p q : I} (hpq : (p : ℝ) ≤ q)
+    (hp : Integrable N setBer((Set.univ : Set ι), p))
+    (hq : Integrable N setBer((Set.univ : Set ι), q)) :
+    (∫ ω, N ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, N ω ∂setBer((Set.univ : Set ι), q) := by
+  let ν : Measure (ι → I) := Measure.infinitePi fun _ : ι ↦ (volume : Measure I)
+  let ηp : (ι → I) → Set ι := fun X ↦ thresholdConfiguration p (fun i ↦ (X i : ℝ))
+  let ηq : (ι → I) → Set ι := fun X ↦ thresholdConfiguration q (fun i ↦ (X i : ℝ))
+  have hηp : Measurable ηp := measurable_thresholdConfiguration_unitInterval p
+  have hηq : Measurable ηq := measurable_thresholdConfiguration_unitInterval q
+  have hpmap : Measure.map ηp ν = setBer((Set.univ : Set ι), p) := by
+    simpa [ν, ηp] using infinitePi_volume_map_thresholdConfiguration (ι := ι) p
+  have hqmap : Measure.map ηq ν = setBer((Set.univ : Set ι), q) := by
+    simpa [ν, ηq] using infinitePi_volume_map_thresholdConfiguration (ι := ι) q
+  have hp_map_int : Integrable N (Measure.map ηp ν) := by
+    rw [hpmap]
+    exact hp
+  have hq_map_int : Integrable N (Measure.map ηq ν) := by
+    rw [hqmap]
+    exact hq
+  have hp_comp : Integrable (fun X ↦ N (ηp X)) ν := by
+    simpa [Function.comp_def, ηp] using hp_map_int.comp_measurable hηp
+  have hq_comp : Integrable (fun X ↦ N (ηq X)) ν := by
+    simpa [Function.comp_def, ηq] using hq_map_int.comp_measurable hηq
+  rw [← hpmap, ← hqmap]
+  rw [integral_map hηp.aemeasurable hp_map_int.aestronglyMeasurable]
+  rw [integral_map hηq.aemeasurable hq_map_int.aestronglyMeasurable]
+  exact hN.integral_thresholdConfiguration_mono hpq hp_comp hq_comp
 
 /-- Restrict an arbitrary configuration to a finite coordinate support. -/
 noncomputable def restrictTo {ι : Type*} [DecidableEq ι]
@@ -550,6 +707,22 @@ theorem IsIncreasingEvent.bernoulliBondMeasure_real_le_of_monotoneCoupling (d : 
     (hc : IsMonotoneCoupling ν (bernoulliBondMeasure d p) (bernoulliBondMeasure d q) ηp ηq) :
     (bernoulliBondMeasure d p).real A ≤ (bernoulliBondMeasure d q).real A :=
   hA.measureReal_le_of_monotoneCoupling hAmeas hc
+
+/-- Grimmett's Theorem (2.1), event part, for Bernoulli bond percolation on `ℤ^d`. -/
+theorem IsIncreasingEvent.bernoulliBondMeasure_real_mono (d : ℕ)
+    {A : Set (EdgeConfiguration d)} (hA : IsIncreasingEvent A) (hAmeas : MeasurableSet A)
+    {p q : I} (hpq : (p : ℝ) ≤ q) :
+    (bernoulliBondMeasure d p).real A ≤ (bernoulliBondMeasure d q).real A := by
+  simpa [bernoulliBondMeasure] using hA.setBernoulli_real_mono hAmeas hpq
+
+/-- Grimmett's Theorem (2.1), random-variable part, for Bernoulli bond percolation on `ℤ^d`. -/
+theorem IsIncreasingRandomVariable.bernoulliBondMeasure_integral_mono (d : ℕ)
+    {N : EdgeConfiguration d → ℝ} (hN : IsIncreasingRandomVariable N)
+    {p q : I} (hpq : (p : ℝ) ≤ q)
+    (hp : Integrable N (bernoulliBondMeasure d p))
+    (hq : Integrable N (bernoulliBondMeasure d q)) :
+    (∫ ω, N ω ∂bernoulliBondMeasure d p) ≤ ∫ ω, N ω ∂bernoulliBondMeasure d q := by
+  simpa [bernoulliBondMeasure] using hN.setBernoulli_integral_mono hpq hp hq
 
 /-- A finite all-open cylinder monotonicity corollary of Grimmett's Theorem (2.1). -/
 theorem bernoulliBondMeasure_real_openEdgeSetEvent_mono (d : ℕ)

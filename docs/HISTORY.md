@@ -725,15 +725,14 @@ Dated milestones and anti-library notes.
     on `Set ι` configurations, increasing random variables, Grimmett's threshold coupling
     configuration `η_p(e)=1[X(e)<p]`, finite restrictions/traces, finite support dependence, and
     the finite uniform Harris/FKG cardinal and normalized probability inequalities via Mathlib's
-    Harris-Kleitman theorem. Proved the source-faithful core of Theorem (2.1): common thresholds
-    satisfy `η_p₁ ≤ η_p₂` for `p₁ ≤ p₂`, so increasing random variables/events have monotone
-    integrals/probabilities under any finite coupling measure. Added the monotone-coupling bridge
-    saying that any ordered coupling with Bernoulli bond marginals gives monotone real
-    probabilities for arbitrary measurable increasing cubic events. The iid-uniform construction
-    of such a coupling remains a later theorem-facing step. Proved that the existing cubic
-    open-edge, open-walk, finite open-path, and infinite open-cluster events are increasing, that
-    finite closed-edge cylinders are decreasing, and that finite all-open/all-closed cylinders are
-    monotone/antitone in the Bernoulli parameter. Added
+    Harris-Kleitman theorem. Proved Theorem (2.1) by Grimmett's iid-threshold coupling:
+    `unitInterval.volume_Iio` gives `P[X(e)<p]=p`, the infinite product threshold map has
+    Bernoulli product law, common thresholds satisfy `η_p₁ ≤ η_p₂` for `p₁ ≤ p₂`, and therefore
+    expectations of integrable increasing random variables and probabilities of measurable
+    increasing events are non-decreasing in the Bernoulli parameter. Proved that the existing
+    cubic open-edge, open-walk, finite open-path, and infinite open-cluster events are increasing,
+    that finite closed-edge cylinders are decreasing, and that finite all-open/all-closed cylinders
+    are monotone/antitone in the Bernoulli parameter. Added
     `Percolation.Bernoulli.Russo` with `forceOpen`, `forceClosed`, pivotal events, pivotal counts,
     the set identity behind Grimmett's equation (2.29), and the finite-support fact that the event
     "`e` is pivotal" depends on all relevant coordinates except the state of `e`.

@@ -969,6 +969,31 @@ theorem finiteBernoulliHeteroExpectation_insert {ι : Type*} [DecidableEq ι]
   rw [hprod_closed, hprod_open]
   ring
 
+/-- The heterogeneous finite Bernoulli expectation specializes to the homogeneous one when all
+coordinate probabilities are the same. -/
+theorem finiteBernoulliHeteroExpectation_const {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliHeteroExpectation E (fun _ ↦ p) X = finiteBernoulliExpectation E p X := by
+  induction E using Finset.induction generalizing X with
+  | empty =>
+      simp [finiteBernoulliHeteroExpectation, finiteBernoulliExpectation]
+  | insert a E ha ih =>
+      rw [finiteBernoulliHeteroExpectation_insert ha, finiteBernoulliExpectation_insert ha]
+      rw [ih]
+      apply finiteBernoulliExpectation_congr
+      intro s _hsE
+      unfold twoPointBernoulliExpectation
+      ring
+
+/-- The heterogeneous finite Bernoulli event probability specializes to the homogeneous one when
+all coordinate probabilities are the same. -/
+theorem finiteBernoulliHeteroEventProbability_const {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliHeteroEventProbability E (fun _ ↦ p) T =
+      finiteBernoulliEventProbability E p T := by
+  unfold finiteBernoulliHeteroEventProbability finiteBernoulliEventProbability
+  rw [finiteBernoulliHeteroExpectation_const]
+
 /-- If a finite trace is invariant under opening a fresh coordinate, then its heterogeneous
 probability on the enlarged support agrees with its probability on the old support. -/
 theorem finiteBernoulliHeteroEventProbability_insert_invariant {ι : Type*} [DecidableEq ι]

@@ -1,4 +1,6 @@
 import Percolation.Bernoulli.Increasing
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Pivotal edges for Russo's formula
@@ -368,5 +370,65 @@ theorem finiteBernoulliHeteroEventProbability_single_coordinate_difference {ι :
   simp only
   rw [← hdiffP]
   ring
+
+/-- Partial-derivative form of the finite heterogeneous Russo identity. Varying only coordinate
+`e`, at the current coordinate value, has derivative equal to the pivotal probability. This is the
+coordinate derivative used before summing directions to obtain the usual finite uniform-parameter
+Russo formula. -/
+theorem finiteBernoulliHeteroEventProbability_hasDerivAt_update {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) {q : ι → ℝ}
+    {T : Set (Finset ι)} (hT : IsIncreasingTrace (insert e E) T) :
+    HasDerivAt
+      (fun x : ℝ ↦ finiteBernoulliHeteroEventProbability (insert e E)
+        (Function.update q e x) T)
+      (finiteBernoulliHeteroEventProbability (insert e E) q
+        {s : Finset ι | IsPivotalTrace T e s})
+      (q e) := by
+  let piv : ℝ := finiteBernoulliHeteroEventProbability (insert e E) q
+    {s : Finset ι | IsPivotalTrace T e s}
+  have h_affine :
+      (fun x : ℝ ↦ finiteBernoulliHeteroEventProbability (insert e E)
+        (Function.update q e x) T) =
+        (fun x : ℝ ↦ finiteBernoulliHeteroEventProbability (insert e E) q T +
+          (x - q e) * piv) := by
+    funext x
+    have hqr : ∀ f ∈ E, Function.update q e x f = q f := by
+      intro f hf
+      have hfe : f ≠ e := by
+        intro h
+        exact he (by simpa [h] using hf)
+      exact Function.update_of_ne hfe x q
+    have hdiff :=
+      finiteBernoulliHeteroEventProbability_single_coordinate_difference he hqr hT
+    dsimp [piv]
+    rw [Function.update_self] at hdiff
+    nlinarith [hdiff]
+  rw [h_affine]
+  have hsub : HasDerivAt (fun x : ℝ ↦ x - q e) 1 (q e) := by
+    exact (hasDerivAt_id (q e)).sub_const (q e)
+  have hderiv : HasDerivAt
+      (fun x : ℝ ↦ finiteBernoulliHeteroEventProbability (insert e E) q T +
+        (x - q e) * piv) (1 * piv) (q e) := by
+    simpa only [Pi.add_apply, zero_add] using
+      HasDerivAt.add
+        (hasDerivAt_const (q e) (finiteBernoulliHeteroEventProbability (insert e E) q T))
+        (hsub.mul_const piv)
+  simpa [piv] using hderiv
+
+/-- Homogeneous-point corollary of the finite heterogeneous coordinate derivative. If all
+coordinates currently have probability `p`, then varying only coordinate `e` has derivative equal
+to the ordinary homogeneous pivotal probability. -/
+theorem finiteBernoulliHeteroEventProbability_hasDerivAt_update_const {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    {T : Set (Finset ι)} (hT : IsIncreasingTrace (insert e E) T) :
+    HasDerivAt
+      (fun x : ℝ ↦ finiteBernoulliHeteroEventProbability (insert e E)
+        (Function.update (fun _ ↦ p) e x) T)
+      (finiteBernoulliEventProbability (insert e E) p
+        {s : Finset ι | IsPivotalTrace T e s})
+      p := by
+  have h := finiteBernoulliHeteroEventProbability_hasDerivAt_update
+    (E := E) (e := e) he (q := fun _ ↦ p) hT
+  simpa [finiteBernoulliHeteroEventProbability_const] using h
 
 end Percolation

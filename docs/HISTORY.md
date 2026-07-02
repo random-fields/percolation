@@ -748,7 +748,10 @@ Dated milestones and anti-library notes.
     Bernoulli product measure needed for Grimmett's Russo proof and proved the finite
     one-coordinate difference identity: if two product measures differ only in coordinate `e`,
     then the probability change of an increasing trace is `(r e - q e)` times the pivotal
-    probability.
+    probability. Proved the corresponding one-coordinate `HasDerivAt` statement, including at
+    homogeneous product measures, and added the bridge showing the heterogeneous finite product
+    probability specializes to the existing homogeneous finite Bernoulli probability when all
+    coordinates have the same parameter.
 
 ## Axiom Ledger
 

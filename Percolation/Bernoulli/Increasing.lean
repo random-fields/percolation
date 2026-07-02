@@ -702,6 +702,38 @@ theorem finiteBernoulliExpectation_insert {ι : Type*} [DecidableEq ι]
   rw [pow_succ, pow_succ]
   ring
 
+/-- A constant observable has expectation equal to that constant under the one-coordinate
+Bernoulli law. -/
+theorem twoPointBernoulliExpectation_const (p c : ℝ) :
+    twoPointBernoulliExpectation p c c = c := by
+  unfold twoPointBernoulliExpectation
+  ring
+
+/-- Finite Bernoulli weights sum to one. -/
+theorem finiteBernoulliExpectation_const {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p c : ℝ) :
+    finiteBernoulliExpectation E p (fun _ ↦ c) = c := by
+  induction E using Finset.induction with
+  | empty =>
+      simp [finiteBernoulliExpectation]
+  | insert _a E ha ih =>
+      rw [finiteBernoulliExpectation_insert ha]
+      simpa [twoPointBernoulliExpectation_const] using ih
+
+/-- Finite Bernoulli expectation of a nonnegative observable is nonnegative. -/
+theorem finiteBernoulliExpectation_nonneg {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {X : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hX : ∀ ⦃s : Finset ι⦄, s ⊆ E → 0 ≤ X s) :
+    0 ≤ finiteBernoulliExpectation E p X := by
+  unfold finiteBernoulliExpectation
+  refine Finset.sum_nonneg ?_
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  have hq0 : 0 ≤ 1 - p := sub_nonneg.mpr hp1
+  have hweight : 0 ≤ p ^ s.card * (1 - p) ^ (E.card - s.card) :=
+    mul_nonneg (pow_nonneg hp0 _) (pow_nonneg hq0 _)
+  exact mul_nonneg hweight (hX hsE)
+
 /-- The exact covariance identity behind the one-coordinate base case of Grimmett's FKG
 induction. -/
 theorem twoPointBernoulliExpectation_mul_sub (p x0 x1 y0 y1 : ℝ) :
@@ -809,6 +841,52 @@ noncomputable def finiteBernoulliEventProbability {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) : ℝ :=
   finiteBernoulliExpectation E p (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)
 
+/-- Finite Bernoulli event probabilities are nonnegative for `0 ≤ p ≤ 1`. -/
+theorem finiteBernoulliEventProbability_nonneg {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) {p : ℝ} (T : Set (Finset ι)) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
+    0 ≤ finiteBernoulliEventProbability E p T := by
+  unfold finiteBernoulliEventProbability
+  exact finiteBernoulliExpectation_nonneg hp0 hp1 (fun s _hs ↦ by
+    by_cases h : s ∈ T <;> simp [h])
+
+@[simp]
+theorem finiteBernoulliEventProbability_univ {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) :
+    finiteBernoulliEventProbability E p (Set.univ : Set (Finset ι)) = 1 := by
+  simp [finiteBernoulliEventProbability, finiteBernoulliExpectation_const]
+
+/-- Finite intersection of a family of finite traces. This is the finite-family event appearing
+in Grimmett's iterated FKG inequality (2.7). -/
+def finiteTraceInter {ι κ : Type*} (J : Finset κ) (T : κ → Set (Finset ι)) :
+    Set (Finset ι) :=
+  {s | ∀ i, i ∈ J → s ∈ T i}
+
+@[simp]
+theorem mem_finiteTraceInter_iff {ι κ : Type*} (J : Finset κ)
+    (T : κ → Set (Finset ι)) (s : Finset ι) :
+    s ∈ finiteTraceInter J T ↔ ∀ i, i ∈ J → s ∈ T i :=
+  Iff.rfl
+
+@[simp]
+theorem finiteTraceInter_empty {ι κ : Type*} (T : κ → Set (Finset ι)) :
+    finiteTraceInter (∅ : Finset κ) T = Set.univ := by
+  ext s
+  simp [finiteTraceInter]
+
+theorem finiteTraceInter_insert {ι κ : Type*} [DecidableEq κ]
+    (a : κ) (J : Finset κ) (T : κ → Set (Finset ι)) :
+    finiteTraceInter (insert a J) T = T a ∩ finiteTraceInter J T := by
+  ext s
+  simp [finiteTraceInter]
+
+/-- A finite intersection of increasing traces is increasing. -/
+theorem isIncreasingTrace_finiteTraceInter {ι κ : Type*} {E : Finset ι}
+    {J : Finset κ} {T : κ → Set (Finset ι)}
+    (hT : ∀ i ∈ J, IsIncreasingTrace E (T i)) :
+    IsIncreasingTrace E (finiteTraceInter J T) := by
+  intro s t hst htE hs i hi
+  exact hT i hi hst htE (hs i hi)
+
 /-- The indicator of an increasing finite trace is an increasing finite-cube observable. -/
 theorem IsIncreasingTrace.indicator_isIncreasingFinsetFunction {ι : Type*}
     {E : Finset ι} {T : Set (Finset ι)} (hT : IsIncreasingTrace E T) :
@@ -842,6 +920,44 @@ theorem finiteBernoulliEventProbability_fkg {ι : Type*} [DecidableEq ι]
   unfold finiteBernoulliEventProbability at hfgk ⊢
   simpa [indicator_mul_indicator_inter] using hfgk
 
+/-- Grimmett's iterated FKG inequality (2.7), finite-trace form. For any finite family of
+increasing traces, the probability of their simultaneous occurrence dominates the product of the
+individual probabilities. -/
+theorem finiteBernoulliEventProbability_iterated_fkg {ι κ : Type*}
+    [DecidableEq ι] [DecidableEq κ]
+    {E : Finset ι} {p : ℝ} {J : Finset κ} {T : κ → Set (Finset ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hT : ∀ i ∈ J, IsIncreasingTrace E (T i)) :
+    J.prod (fun i ↦ finiteBernoulliEventProbability E p (T i)) ≤
+      finiteBernoulliEventProbability E p (finiteTraceInter J T) := by
+  induction J using Finset.induction with
+  | empty =>
+      simp
+  | insert a J ha ih =>
+      have hJ : ∀ i ∈ J, IsIncreasingTrace E (T i) := by
+        intro i hi
+        exact hT i (Finset.mem_insert.mpr (Or.inr hi))
+      have hInter : IsIncreasingTrace E (finiteTraceInter J T) :=
+        isIncreasingTrace_finiteTraceInter hJ
+      have hstep := finiteBernoulliEventProbability_fkg hp0 hp1
+        (hT a (Finset.mem_insert_self a J)) hInter
+      have hprod_le : finiteBernoulliEventProbability E p (T a) *
+            J.prod (fun i ↦ finiteBernoulliEventProbability E p (T i)) ≤
+          finiteBernoulliEventProbability E p (T a) *
+            finiteBernoulliEventProbability E p (finiteTraceInter J T) :=
+        mul_le_mul_of_nonneg_left (ih hJ)
+          (finiteBernoulliEventProbability_nonneg E (T a) hp0 hp1)
+      calc
+        (insert a J).prod (fun i ↦ finiteBernoulliEventProbability E p (T i)) =
+            finiteBernoulliEventProbability E p (T a) *
+              J.prod (fun i ↦ finiteBernoulliEventProbability E p (T i)) := by
+          rw [Finset.prod_insert ha]
+        _ ≤ finiteBernoulliEventProbability E p (T a) *
+            finiteBernoulliEventProbability E p (finiteTraceInter J T) := hprod_le
+        _ ≤ finiteBernoulliEventProbability E p (T a ∩ finiteTraceInter J T) := hstep
+        _ = finiteBernoulliEventProbability E p (finiteTraceInter (insert a J) T) := by
+          rw [finiteTraceInter_insert]
+
 /-- Finite-coordinate weighted FKG for traces of increasing configuration events. -/
 theorem finiteBernoulliEventTrace_fkg {ι : Type*} [DecidableEq ι]
     {E : Finset ι} {p : ℝ} {A B : Set (Set ι)}
@@ -853,6 +969,17 @@ theorem finiteBernoulliEventTrace_fkg {ι : Type*} [DecidableEq ι]
     (T := (eventTrace E A : Set (Finset ι))) (U := (eventTrace E B : Set (Finset ι)))
     hp0 hp1 (hA.eventTrace (E := E)) (hB.eventTrace (E := E))
   simpa [eventTrace_inter] using h
+
+/-- Grimmett's iterated FKG inequality (2.7) for finite traces of increasing configuration
+events. -/
+theorem finiteBernoulliEventTrace_iterated_fkg {ι κ : Type*}
+    [DecidableEq ι] [DecidableEq κ]
+    {E : Finset ι} {p : ℝ} {J : Finset κ} {A : κ → Set (Set ι)}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hA : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    J.prod (fun i ↦ finiteBernoulliEventProbability E p (eventTrace E (A i))) ≤
+      finiteBernoulliEventProbability E p (finiteTraceInter J fun i ↦ eventTrace E (A i)) :=
+  finiteBernoulliEventProbability_iterated_fkg hp0 hp1 fun i hi ↦ (hA i hi).eventTrace
 
 section Cubic
 

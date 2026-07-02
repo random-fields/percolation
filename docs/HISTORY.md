@@ -729,7 +729,9 @@ Dated milestones and anti-library notes.
     Grimmett's finite-coordinate weighted FKG induction for Theorem (2.4): the exact
     one-coordinate covariance identity, the split-coordinate conditioning identity, increasing
     conditional expectations, the random-variable finite FKG theorem, and finite trace/event
-    indicator corollaries. Proved Theorem (2.1) by Grimmett's iid-threshold coupling:
+    indicator corollaries. Proved the finite-family iterated FKG inequality corresponding to
+    Equation (2.7), using finite intersections of increasing traces and induction over the
+    index set. Proved Theorem (2.1) by Grimmett's iid-threshold coupling:
     `unitInterval.volume_Iio` gives `P[X(e)<p]=p`, the infinite product threshold map has
     Bernoulli product law, common thresholds satisfy `η_p₁ ≤ η_p₂` for `p₁ ≤ p₂`, and therefore
     expectations of integrable increasing random variables and probabilities of measurable

@@ -1686,6 +1686,42 @@ theorem setBernoulli_real_iterated_fkg_of_dependsOn {ι κ : Type*}
     _ = setBer((Set.univ : Set ι), p).real (finiteEventInter J A) := by
       rw [hInterDep.setBernoulli_real_eq_finiteBernoulliEventProbability p]
 
+/-- Pass a product inequality through limits of real sequences. This is the analytic skeleton of
+Grimmett's martingale/limit step after the finite-coordinate FKG proof. -/
+theorem mul_le_of_tendsto_atTop_of_forall_le {x y z : ℕ → ℝ} {a b c : ℝ}
+    (hx : Filter.Tendsto x Filter.atTop (nhds a))
+    (hy : Filter.Tendsto y Filter.atTop (nhds b))
+    (hz : Filter.Tendsto z Filter.atTop (nhds c))
+    (hxyz : ∀ n, x n * y n ≤ z n) :
+    a * b ≤ c :=
+  le_of_tendsto_of_tendsto' (hx.mul hy) hz hxyz
+
+/-- FKG passes from finite-support increasing approximations to their probability limits. This is
+the theorem-facing limit bridge for Grimmett's full FKG theorem: the remaining source-specific
+work is to construct approximants and prove the three convergence hypotheses. -/
+theorem setBernoulli_real_fkg_of_finiteSupport_tendsto {ι : Type*} [DecidableEq ι]
+    (p : I) {A B : Set (Set ι)}
+    {Aapprox Bapprox : ℕ → Set (Set ι)}
+    {EA EB : ℕ → Finset ι}
+    (hAinc : ∀ n, IsIncreasingEvent (Aapprox n))
+    (hBinc : ∀ n, IsIncreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Bapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n ∩ Bapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B)))) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  exact mul_le_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
+    setBernoulli_real_fkg_of_dependsOn p (hAinc n) (hBinc n) (hAdep n) (hBdep n)
+
 section Cubic
 
 theorem isIncreasingEvent_openEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
@@ -1829,6 +1865,31 @@ theorem bernoulliBondMeasure_real_iterated_fkg_of_dependsOn (d : ℕ)
       (bernoulliBondMeasure d p).real (finiteEventInter J A) := by
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_iterated_fkg_of_dependsOn (ι := CubicEdge d) p hAinc hAdep
+
+/-- FKG passes from finite-support increasing approximations to their probability limits for
+Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_real_fkg_of_finiteSupport_tendsto (d : ℕ) (p : I)
+    {A B : Set (EdgeConfiguration d)}
+    {Aapprox Bapprox : ℕ → Set (EdgeConfiguration d)}
+    {EA EB : ℕ → Finset (CubicEdge d)}
+    (hAinc : ∀ n, IsIncreasingEvent (Aapprox n))
+    (hBinc : ∀ n, IsIncreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Bapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n ∩ Bapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real (A ∩ B)))) :
+    (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B ≤
+      (bernoulliBondMeasure d p).real (A ∩ B) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_of_finiteSupport_tendsto (ι := CubicEdge d) p
+      hAinc hBinc hAdep hBdep hAtend hBtend hABtend
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

@@ -160,4 +160,137 @@ theorem dependsOn_pivotalEvent {ι : Type*} [DecidableEq ι]
       simpa [forceClosed, hfe] using hcoord f hfErase
   exact and_congr hopen (not_congr hclosed)
 
+/-- Force a finite-cube coordinate open. This is the finite trace analogue of `forceOpen`. -/
+def finiteForceOpen {ι : Type*} [DecidableEq ι] (e : ι) (s : Finset ι) : Finset ι :=
+  insert e s
+
+/-- Force a finite-cube coordinate closed. This is the finite trace analogue of `forceClosed`. -/
+def finiteForceClosed {ι : Type*} [DecidableEq ι] (e : ι) (s : Finset ι) : Finset ι :=
+  s.erase e
+
+@[simp]
+theorem finiteForceOpen_eq_self {ι : Type*} [DecidableEq ι]
+    {e : ι} {s : Finset ι} (he : e ∈ s) :
+    finiteForceOpen e s = s := by
+  exact Finset.insert_eq_of_mem he
+
+@[simp]
+theorem finiteForceClosed_eq_self {ι : Type*} [DecidableEq ι]
+    {e : ι} {s : Finset ι} (he : e ∉ s) :
+    finiteForceClosed e s = s := by
+  simp [finiteForceClosed, he]
+
+/-- Coordinate `e` is pivotal for a finite trace if opening `e` puts the trace in the event and
+closing `e` removes it. -/
+def IsPivotalTrace {ι : Type*} [DecidableEq ι]
+    (T : Set (Finset ι)) (e : ι) (s : Finset ι) : Prop :=
+  finiteForceOpen e s ∈ T ∧ finiteForceClosed e s ∉ T
+
+theorem finset_insert_erase_eq_insert {ι : Type*} [DecidableEq ι] (e : ι) (s : Finset ι) :
+    insert e (s.erase e) = insert e s := by
+  ext f
+  by_cases hfe : f = e
+  · subst f
+    simp
+  · simp [hfe]
+
+/-- Finite pivotality is unchanged by forcing the pivotal coordinate open. -/
+theorem isPivotalTrace_insert {ι : Type*} [DecidableEq ι]
+    (T : Set (Finset ι)) (e : ι) (s : Finset ι) :
+    IsPivotalTrace T e (insert e s) ↔ IsPivotalTrace T e s := by
+  simp [IsPivotalTrace, finiteForceOpen, finiteForceClosed]
+
+/-- Finite pivotality is unchanged by forcing the pivotal coordinate closed. -/
+theorem isPivotalTrace_erase {ι : Type*} [DecidableEq ι]
+    (T : Set (Finset ι)) (e : ι) (s : Finset ι) :
+    IsPivotalTrace T e (s.erase e) ↔ IsPivotalTrace T e s := by
+  simp [IsPivotalTrace, finiteForceOpen, finiteForceClosed, finset_insert_erase_eq_insert]
+
+/-- Finite trace version of the set identity behind Grimmett's equation (2.29):
+open-and-pivotal equals event-and-pivotal. -/
+theorem open_inter_pivotalTrace_eq_event_inter_pivotalTrace {ι : Type*} [DecidableEq ι]
+    (T : Set (Finset ι)) (e : ι) :
+    ({s : Finset ι | e ∈ s} ∩ {s : Finset ι | IsPivotalTrace T e s}) =
+      (T ∩ {s : Finset ι | IsPivotalTrace T e s}) := by
+  ext s
+  constructor
+  · rintro ⟨he, hpiv⟩
+    exact ⟨by simpa [finiteForceOpen_eq_self he] using hpiv.1, hpiv⟩
+  · rintro ⟨hT, hpiv⟩
+    by_cases he : e ∈ s
+    · exact ⟨he, hpiv⟩
+    · have hclosed : finiteForceClosed e s = s := finiteForceClosed_eq_self he
+      exact (hpiv.2 (by simpa [hclosed] using hT)).elim
+
+/-- If a finite event is invariant under opening a fresh coordinate, then its probability on
+the enlarged support agrees with its probability on the old support. -/
+theorem finiteBernoulliEventProbability_insert_invariant {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ) (P : Set (Finset ι))
+    (hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert e s ∈ P ↔ s ∈ P)) :
+    finiteBernoulliEventProbability (insert e E) p P =
+      finiteBernoulliEventProbability E p P := by
+  unfold finiteBernoulliEventProbability
+  rw [finiteBernoulliExpectation_insert he]
+  apply finiteBernoulliExpectation_congr
+  intro s hsE
+  by_cases hs : s ∈ P
+  · have hsins : insert e s ∈ P := (hP hsE).2 hs
+    simp [Set.indicator_of_mem hs, Set.indicator_of_mem hsins,
+      twoPointBernoulliExpectation_const]
+  · have hsins : insert e s ∉ P := by
+      intro h
+      exact hs ((hP hsE).1 h)
+    simp [Set.indicator_of_notMem hs, Set.indicator_of_notMem hsins,
+      twoPointBernoulliExpectation_const]
+
+/-- If a finite event is invariant under opening a fresh coordinate, then intersecting it with
+the event that the fresh coordinate is open multiplies its probability by `p`. -/
+theorem finiteBernoulliEventProbability_insert_open_invariant {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    (P : Set (Finset ι))
+    (hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert e s ∈ P ↔ s ∈ P)) :
+    finiteBernoulliEventProbability (insert e E) p ({s | e ∈ s} ∩ P) =
+      p * finiteBernoulliEventProbability E p P := by
+  unfold finiteBernoulliEventProbability
+  rw [finiteBernoulliExpectation_insert he]
+  rw [← finiteBernoulliExpectation_const_mul E p p
+    (fun s ↦ P.indicator (fun _ ↦ (1 : ℝ)) s)]
+  apply finiteBernoulliExpectation_congr
+  intro s hsE
+  have hnot : e ∉ s := Finset.notMem_mono hsE he
+  by_cases hs : s ∈ P
+  · have hsins : insert e s ∈ P := (hP hsE).2 hs
+    simp [hnot, hs, hsins, twoPointBernoulliExpectation_zero_left]
+  · have hsins : insert e s ∉ P := by
+      intro h
+      exact hs ((hP hsE).1 h)
+    simp [hnot, hs, hsins, twoPointBernoulliExpectation_zero_left]
+
+/-- Finite-cube independence form of Grimmett's observation before equation (2.29): the pivotal
+event ignores the state of `e`, so open-and-pivotal has probability `p` times pivotal. -/
+theorem finiteBernoulliEventProbability_open_pivotalTrace_eq_mul {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    (T : Set (Finset ι)) :
+    finiteBernoulliEventProbability (insert e E) p
+        ({s : Finset ι | e ∈ s} ∩ {s : Finset ι | IsPivotalTrace T e s}) =
+      p * finiteBernoulliEventProbability (insert e E) p
+        {s : Finset ι | IsPivotalTrace T e s} := by
+  let P : Set (Finset ι) := {s | IsPivotalTrace T e s}
+  have hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert e s ∈ P ↔ s ∈ P) := by
+    intro s _hsE
+    exact isPivotalTrace_insert T e s
+  rw [finiteBernoulliEventProbability_insert_open_invariant he p P hP]
+  rw [finiteBernoulliEventProbability_insert_invariant he p P hP]
+
+/-- Finite-cube equation (2.29) input: event-and-pivotal has probability `p` times pivotal. -/
+theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    (T : Set (Finset ι)) :
+    finiteBernoulliEventProbability (insert e E) p
+        (T ∩ {s : Finset ι | IsPivotalTrace T e s}) =
+      p * finiteBernoulliEventProbability (insert e E) p
+        {s : Finset ι | IsPivotalTrace T e s} := by
+  rw [← open_inter_pivotalTrace_eq_event_inter_pivotalTrace T e]
+  exact finiteBernoulliEventProbability_open_pivotalTrace_eq_mul he p T
+
 end Percolation

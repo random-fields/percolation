@@ -647,6 +647,33 @@ theorem finiteBernoulliExpectation_mono {ι : Type*} [DecidableEq ι]
     mul_nonneg (pow_nonneg hp0 _) (pow_nonneg hq0 _)
   exact mul_le_mul_of_nonneg_left (hXY hsE) hweight
 
+/-- Finite Bernoulli expectation only depends on values on the supporting cube. -/
+theorem finiteBernoulliExpectation_congr {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {X Y : Finset ι → ℝ}
+    (hXY : ∀ ⦃s : Finset ι⦄, s ⊆ E → X s = Y s) :
+    finiteBernoulliExpectation E p X = finiteBernoulliExpectation E p Y := by
+  unfold finiteBernoulliExpectation
+  apply Finset.sum_congr rfl
+  intro s hs
+  rw [hXY (Finset.mem_powerset.mp hs)]
+
+/-- Pull a scalar out of a finite Bernoulli expectation. -/
+theorem finiteBernoulliExpectation_const_mul {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p c : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliExpectation E p (fun s ↦ c * X s) =
+      c * finiteBernoulliExpectation E p X := by
+  unfold finiteBernoulliExpectation
+  calc
+    E.powerset.sum (fun s ↦ p ^ s.card * (1 - p) ^ (E.card - s.card) * (c * X s)) =
+        E.powerset.sum
+          (fun s ↦ c * (p ^ s.card * (1 - p) ^ (E.card - s.card) * X s)) := by
+      apply Finset.sum_congr rfl
+      intro s _hs
+      ring
+    _ = c * E.powerset.sum
+        (fun s ↦ p ^ s.card * (1 - p) ^ (E.card - s.card) * X s) := by
+      rw [Finset.mul_sum]
+
 /-- Expectation of a random variable on one Bernoulli coordinate, with values `x0` at the closed
 state and `x1` at the open state. This is the scalar base case used in Grimmett's proof of the
 finite FKG inequality. -/
@@ -660,6 +687,12 @@ theorem twoPointBernoulliExpectation_mono {p x0 x1 y0 y1 : ℝ}
   unfold twoPointBernoulliExpectation
   have hq0 : 0 ≤ 1 - p := sub_nonneg.mpr hp1
   nlinarith [mul_le_mul_of_nonneg_left h0 hq0, mul_le_mul_of_nonneg_left h1 hp0]
+
+/-- One-coordinate expectation when the closed value is zero. -/
+theorem twoPointBernoulliExpectation_zero_left (p c : ℝ) :
+    twoPointBernoulliExpectation p 0 c = p * c := by
+  unfold twoPointBernoulliExpectation
+  ring
 
 /-- Split a finite Bernoulli expectation according to whether a fresh coordinate is closed or
 open. This is the conditioning identity used in Grimmett's finite-coordinate FKG induction. -/

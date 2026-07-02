@@ -13,7 +13,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P4 | Ch. 2.1 | Increasing events and stochastic order | Bernoulli | partial: order APIs exist |
 | P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | finite weighted product FKG proved; infinite martingale lift target |
 | P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | absent/deep |
-| P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | absent |
+| P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | finite pivotal identities proved; derivative formula target |
 | P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |
 | P9 | Ch. 4 | Number of open clusters per vertex | Critical | absent |
 | P10 | Ch. 5 | Menshikov/Aizenman-Barsky subcritical threshold methods | Critical | absent/deep |

@@ -741,7 +741,10 @@ Dated milestones and anti-library notes.
     are monotone/antitone in the Bernoulli parameter. Added
     `Percolation.Bernoulli.Russo` with `forceOpen`, `forceClosed`, pivotal events, pivotal counts,
     the set identity behind Grimmett's equation (2.29), and the finite-support fact that the event
-    "`e` is pivotal" depends on all relevant coordinates except the state of `e`.
+    "`e` is pivotal" depends on all relevant coordinates except the state of `e`. Extended the
+    same observation to finite traces by proving the finite-cube probability identity behind
+    (2.29): on support `insert e E`, open-and-pivotal has probability `p` times pivotal, and
+    event-and-pivotal is the same event for pivotal traces.
 
 ## Axiom Ledger
 

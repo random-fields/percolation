@@ -1722,6 +1722,93 @@ theorem setBernoulli_real_fkg_of_finiteSupport_tendsto {ι : Type*} [DecidableEq
   exact mul_le_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
     setBernoulli_real_fkg_of_dependsOn p (hAinc n) (hBinc n) (hAdep n) (hBdep n)
 
+/-- Continuity from below for real-valued finite measures. This is the `Measure.real` version of
+`tendsto_measure_iUnion_atTop`, used to pass finite FKG inequalities to increasing limits. -/
+theorem tendsto_measureReal_iUnion_atTop {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {A : ℕ → Set Ω} (hAmono : Monotone A) :
+    Filter.Tendsto (fun n ↦ μ.real (A n)) Filter.atTop
+      (nhds (μ.real (⋃ n, A n))) := by
+  have h := tendsto_measure_iUnion_atTop (μ := μ) hAmono
+  have hne : μ (⋃ n, A n) ≠ ∞ := by finiteness
+  simpa [Measure.real, Function.comp_def] using (ENNReal.tendsto_toReal hne).comp h
+
+/-- Continuity from above for real-valued finite measures. This is the `Measure.real` version of
+`tendsto_measure_iInter_atTop`, used to pass finite FKG inequalities to decreasing limits. -/
+theorem tendsto_measureReal_iInter_atTop {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {A : ℕ → Set Ω}
+    (hAmeas : ∀ n, MeasurableSet (A n)) (hAanti : Antitone A) :
+    Filter.Tendsto (fun n ↦ μ.real (A n)) Filter.atTop
+      (nhds (μ.real (⋂ n, A n))) := by
+  have h := tendsto_measure_iInter_atTop (μ := μ)
+    (fun n ↦ (hAmeas n).nullMeasurableSet) hAanti ⟨0, by finiteness⟩
+  have hne : μ (⋂ n, A n) ≠ ∞ := by finiteness
+  simpa [Measure.real, Function.comp_def] using (ENNReal.tendsto_toReal hne).comp h
+
+/-- FKG for increasing limits of finite-support increasing events. This is the common
+continuity-from-below form of Grimmett's limiting step: each finite stage is a cylinder event,
+and the target events are their increasing countable unions. -/
+theorem setBernoulli_real_fkg_iUnion_finiteSupport {ι : Type*} [DecidableEq ι]
+    (p : I) {A B : ℕ → Set (Set ι)} {EA EB : ℕ → Finset ι}
+    (hAmono : Monotone A) (hBmono : Monotone B)
+    (hAinc : ∀ n, IsIncreasingEvent (A n))
+    (hBinc : ∀ n, IsIncreasingEvent (B n))
+    (hAdep : ∀ n, DependsOn (EA n) (A n))
+    (hBdep : ∀ n, DependsOn (EB n) (B n)) :
+    setBer((Set.univ : Set ι), p).real (⋃ n, A n) *
+        setBer((Set.univ : Set ι), p).real (⋃ n, B n) ≤
+      setBer((Set.univ : Set ι), p).real ((⋃ n, A n) ∩ (⋃ n, B n)) := by
+  let μ : Measure (Set ι) := setBer((Set.univ : Set ι), p)
+  have hABmono : Monotone fun n ↦ A n ∩ B n := by
+    intro n m hnm ω hω
+    exact ⟨hAmono hnm hω.1, hBmono hnm hω.2⟩
+  have hABUnion : (⋃ n, A n ∩ B n) = (⋃ n, A n) ∩ (⋃ n, B n) := by
+    ext ω
+    constructor
+    · intro hω
+      rcases Set.mem_iUnion.mp hω with ⟨n, hn⟩
+      exact ⟨Set.mem_iUnion.mpr ⟨n, hn.1⟩, Set.mem_iUnion.mpr ⟨n, hn.2⟩⟩
+    · intro hω
+      rcases Set.mem_iUnion.mp hω.1 with ⟨n, hn⟩
+      rcases Set.mem_iUnion.mp hω.2 with ⟨m, hm⟩
+      refine Set.mem_iUnion.mpr ⟨max n m, ?_⟩
+      exact ⟨hAmono (Nat.le_max_left n m) hn, hBmono (Nat.le_max_right n m) hm⟩
+  refine setBernoulli_real_fkg_of_finiteSupport_tendsto (p := p)
+    (A := ⋃ n, A n) (B := ⋃ n, B n) (Aapprox := A) (Bapprox := B)
+    (EA := EA) (EB := EB) hAinc hBinc hAdep hBdep ?_ ?_ ?_
+  · exact tendsto_measureReal_iUnion_atTop (μ := μ) hAmono
+  · exact tendsto_measureReal_iUnion_atTop (μ := μ) hBmono
+  · simpa [μ, hABUnion] using tendsto_measureReal_iUnion_atTop (μ := μ) hABmono
+
+/-- FKG for decreasing limits of finite-support increasing events. This covers events such as
+countable intersections of increasing cylinder events, for example "arbitrarily long open paths"
+after each finite-length event has been localized. -/
+theorem setBernoulli_real_fkg_iInter_finiteSupport {ι : Type*} [DecidableEq ι]
+    (p : I) {A B : ℕ → Set (Set ι)} {EA EB : ℕ → Finset ι}
+    (hAanti : Antitone A) (hBanti : Antitone B)
+    (hAmeas : ∀ n, MeasurableSet (A n))
+    (hBmeas : ∀ n, MeasurableSet (B n))
+    (hAinc : ∀ n, IsIncreasingEvent (A n))
+    (hBinc : ∀ n, IsIncreasingEvent (B n))
+    (hAdep : ∀ n, DependsOn (EA n) (A n))
+    (hBdep : ∀ n, DependsOn (EB n) (B n)) :
+    setBer((Set.univ : Set ι), p).real (⋂ n, A n) *
+        setBer((Set.univ : Set ι), p).real (⋂ n, B n) ≤
+      setBer((Set.univ : Set ι), p).real ((⋂ n, A n) ∩ (⋂ n, B n)) := by
+  let μ : Measure (Set ι) := setBer((Set.univ : Set ι), p)
+  have hABanti : Antitone fun n ↦ A n ∩ B n := by
+    intro n m hnm ω hω
+    exact ⟨hAanti hnm hω.1, hBanti hnm hω.2⟩
+  have hABmeas : ∀ n, MeasurableSet (A n ∩ B n) := fun n ↦ (hAmeas n).inter (hBmeas n)
+  have hABInter : (⋂ n, A n ∩ B n) = (⋂ n, A n) ∩ (⋂ n, B n) := by
+    ext ω
+    simp [forall_and]
+  refine setBernoulli_real_fkg_of_finiteSupport_tendsto (p := p)
+    (A := ⋂ n, A n) (B := ⋂ n, B n) (Aapprox := A) (Bapprox := B)
+    (EA := EA) (EB := EB) hAinc hBinc hAdep hBdep ?_ ?_ ?_
+  · exact tendsto_measureReal_iInter_atTop (μ := μ) hAmeas hAanti
+  · exact tendsto_measureReal_iInter_atTop (μ := μ) hBmeas hBanti
+  · simpa [μ, hABInter] using tendsto_measureReal_iInter_atTop (μ := μ) hABmeas hABanti
+
 section Cubic
 
 theorem isIncreasingEvent_openEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
@@ -1890,6 +1977,38 @@ theorem bernoulliBondMeasure_real_fkg_of_finiteSupport_tendsto (d : ℕ) (p : I)
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_fkg_of_finiteSupport_tendsto (ι := CubicEdge d) p
       hAinc hBinc hAdep hBdep hAtend hBtend hABtend
+
+/-- FKG for increasing limits of finite-support increasing cubic bond events. -/
+theorem bernoulliBondMeasure_real_fkg_iUnion_finiteSupport (d : ℕ) (p : I)
+    {A B : ℕ → Set (EdgeConfiguration d)} {EA EB : ℕ → Finset (CubicEdge d)}
+    (hAmono : Monotone A) (hBmono : Monotone B)
+    (hAinc : ∀ n, IsIncreasingEvent (A n))
+    (hBinc : ∀ n, IsIncreasingEvent (B n))
+    (hAdep : ∀ n, DependsOn (EA n) (A n))
+    (hBdep : ∀ n, DependsOn (EB n) (B n)) :
+    (bernoulliBondMeasure d p).real (⋃ n, A n) *
+        (bernoulliBondMeasure d p).real (⋃ n, B n) ≤
+      (bernoulliBondMeasure d p).real ((⋃ n, A n) ∩ (⋃ n, B n)) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_iUnion_finiteSupport (ι := CubicEdge d) p
+      hAmono hBmono hAinc hBinc hAdep hBdep
+
+/-- FKG for decreasing limits of finite-support increasing cubic bond events. -/
+theorem bernoulliBondMeasure_real_fkg_iInter_finiteSupport (d : ℕ) (p : I)
+    {A B : ℕ → Set (EdgeConfiguration d)} {EA EB : ℕ → Finset (CubicEdge d)}
+    (hAanti : Antitone A) (hBanti : Antitone B)
+    (hAmeas : ∀ n, MeasurableSet (A n))
+    (hBmeas : ∀ n, MeasurableSet (B n))
+    (hAinc : ∀ n, IsIncreasingEvent (A n))
+    (hBinc : ∀ n, IsIncreasingEvent (B n))
+    (hAdep : ∀ n, DependsOn (EA n) (A n))
+    (hBdep : ∀ n, DependsOn (EB n) (B n)) :
+    (bernoulliBondMeasure d p).real (⋂ n, A n) *
+        (bernoulliBondMeasure d p).real (⋂ n, B n) ≤
+      (bernoulliBondMeasure d p).real ((⋂ n, A n) ∩ (⋂ n, B n)) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_iInter_finiteSupport (ι := CubicEdge d) p
+      hAanti hBanti hAmeas hBmeas hAinc hBinc hAdep hBdep
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

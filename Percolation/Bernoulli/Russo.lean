@@ -293,4 +293,80 @@ theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul {ι : Ty
   rw [← open_inter_pivotalTrace_eq_event_inter_pivotalTrace T e]
   exact finiteBernoulliEventProbability_open_pivotalTrace_eq_mul he p T
 
+/-- For an increasing finite trace, the difference between the indicators with `e` forced open
+and closed is exactly the pivotal indicator. This is the pointwise identity behind Grimmett's
+finite-coordinate Russo difference computation. -/
+theorem indicator_insert_sub_eq_pivotalTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {e : ι} (he : e ∉ E) {T : Set (Finset ι)}
+    (hT : IsIncreasingTrace (insert e E) T) {s : Finset ι} (hsE : s ⊆ E) :
+    T.indicator (fun _ ↦ (1 : ℝ)) (insert e s) - T.indicator (fun _ ↦ (1 : ℝ)) s =
+      ({u : Finset ι | IsPivotalTrace T e u}).indicator (fun _ ↦ (1 : ℝ)) s := by
+  have hnot : e ∉ s := Finset.notMem_mono hsE he
+  have hclosed : finiteForceClosed e s = s := finiteForceClosed_eq_self hnot
+  have hopen : finiteForceOpen e s = insert e s := rfl
+  by_cases hs : s ∈ T
+  · have hins : insert e s ∈ T := by
+      exact hT (by intro x hx; exact Finset.mem_insert.mpr (Or.inr hx))
+        (Finset.insert_subset_insert e hsE) hs
+    have hnotpiv : ¬ IsPivotalTrace T e s := by
+      intro hpiv
+      exact hpiv.2 (by simpa [hclosed] using hs)
+    simp [hs, hins, hnotpiv]
+  · by_cases hins : insert e s ∈ T
+    · have hpiv : IsPivotalTrace T e s := by
+        simpa [IsPivotalTrace, hopen, hclosed] using And.intro hins hs
+      simp [hs, hins, hpiv]
+    · have hnotpiv : ¬ IsPivotalTrace T e s := by
+        intro hpiv
+        exact hins (by simpa [hopen] using hpiv.1)
+      simp [hs, hins, hnotpiv]
+
+/-- Finite heterogeneous one-coordinate Russo identity. If the two product measures differ only
+in the fresh coordinate `e`, then changing the probability of `e` changes the probability of an
+increasing trace by `(r e - q e)` times the pivotal probability. This is the finite algebraic
+step in Grimmett's proof of Theorem (2.25). -/
+theorem finiteBernoulliHeteroEventProbability_single_coordinate_difference {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) {q r : ι → ℝ}
+    {T : Set (Finset ι)} (hqr : ∀ f ∈ E, r f = q f)
+    (hT : IsIncreasingTrace (insert e E) T) :
+    finiteBernoulliHeteroEventProbability (insert e E) r T -
+        finiteBernoulliHeteroEventProbability (insert e E) q T =
+      (r e - q e) * finiteBernoulliHeteroEventProbability (insert e E) q
+        {s : Finset ι | IsPivotalTrace T e s} := by
+  let P : Set (Finset ι) := {s | IsPivotalTrace T e s}
+  have hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert e s ∈ P ↔ s ∈ P) := by
+    intro s _hsE
+    exact isPivotalTrace_insert T e s
+  rw [show finiteBernoulliHeteroEventProbability (insert e E) r T =
+      finiteBernoulliHeteroExpectation E q
+        (fun s ↦ (1 - r e) * T.indicator (fun _ ↦ (1 : ℝ)) s +
+          r e * T.indicator (fun _ ↦ (1 : ℝ)) (insert e s)) by
+    unfold finiteBernoulliHeteroEventProbability
+    rw [finiteBernoulliHeteroExpectation_insert he]
+    exact finiteBernoulliHeteroExpectation_congr hqr (fun _s _hsE ↦ rfl)]
+  rw [show finiteBernoulliHeteroEventProbability (insert e E) q T =
+      finiteBernoulliHeteroExpectation E q
+        (fun s ↦ (1 - q e) * T.indicator (fun _ ↦ (1 : ℝ)) s +
+          q e * T.indicator (fun _ ↦ (1 : ℝ)) (insert e s)) by
+    unfold finiteBernoulliHeteroEventProbability
+    rw [finiteBernoulliHeteroExpectation_insert he]]
+  rw [show finiteBernoulliHeteroEventProbability (insert e E) q P =
+      finiteBernoulliHeteroEventProbability E q P by
+    exact finiteBernoulliHeteroEventProbability_insert_invariant he q P hP]
+  unfold finiteBernoulliHeteroEventProbability
+  unfold finiteBernoulliHeteroExpectation
+  rw [← Finset.sum_sub_distrib, Finset.mul_sum]
+  apply Finset.sum_congr rfl
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  have hdiff := indicator_insert_sub_eq_pivotalTrace he hT hsE
+  have hdiffP :
+      T.indicator (fun _ ↦ (1 : ℝ)) (insert e s) -
+          T.indicator (fun _ ↦ (1 : ℝ)) s =
+        P.indicator (fun _ ↦ (1 : ℝ)) s := by
+    simpa [P] using hdiff
+  simp only
+  rw [← hdiffP]
+  ring
+
 end Percolation

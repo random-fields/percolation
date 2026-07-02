@@ -888,6 +888,108 @@ theorem finiteBernoulliEventProbability_univ {ι : Type*} [DecidableEq ι]
     finiteBernoulliEventProbability E p (Set.univ : Set (Finset ι)) = 1 := by
   simp [finiteBernoulliEventProbability, finiteBernoulliExpectation_const]
 
+/-- Heterogeneous finite Bernoulli expectation on the finite cube of subsets of `E`, with
+coordinate-dependent open probabilities `q`. This is the product measure used in Grimmett's
+Russo proof before specializing all coordinates to the same parameter. -/
+noncomputable def finiteBernoulliHeteroExpectation {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (q : ι → ℝ) (X : Finset ι → ℝ) : ℝ :=
+  E.powerset.sum fun s ↦ E.prod (fun e ↦ if e ∈ s then q e else 1 - q e) * X s
+
+/-- Heterogeneous finite Bernoulli probability of a finite trace. -/
+noncomputable def finiteBernoulliHeteroEventProbability {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (q : ι → ℝ) (T : Set (Finset ι)) : ℝ :=
+  finiteBernoulliHeteroExpectation E q (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)
+
+/-- Heterogeneous finite Bernoulli expectation only depends on coordinate probabilities on `E`
+and observable values on the supporting cube. -/
+theorem finiteBernoulliHeteroExpectation_congr {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {q r : ι → ℝ} {X Y : Finset ι → ℝ}
+    (hqr : ∀ e ∈ E, q e = r e)
+    (hXY : ∀ ⦃s : Finset ι⦄, s ⊆ E → X s = Y s) :
+    finiteBernoulliHeteroExpectation E q X = finiteBernoulliHeteroExpectation E r Y := by
+  unfold finiteBernoulliHeteroExpectation
+  apply Finset.sum_congr rfl
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  have hprod :
+      E.prod (fun e ↦ if e ∈ s then q e else 1 - q e) =
+        E.prod (fun e ↦ if e ∈ s then r e else 1 - r e) := by
+    apply Finset.prod_congr rfl
+    intro e he
+    rw [hqr e he]
+  rw [hprod, hXY hsE]
+
+/-- Split a heterogeneous finite Bernoulli expectation according to a fresh coordinate. -/
+theorem finiteBernoulliHeteroExpectation_insert {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (q : ι → ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliHeteroExpectation (insert a E) q X =
+      finiteBernoulliHeteroExpectation E q
+        (fun s ↦ (1 - q a) * X s + q a * X (insert a s)) := by
+  unfold finiteBernoulliHeteroExpectation
+  rw [Finset.powerset_insert]
+  have hdisj : Disjoint E.powerset (E.powerset.image (insert a)) := by
+    rw [Finset.disjoint_left]
+    intro s hs himg
+    rcases Finset.mem_image.mp himg with ⟨t, _ht, hts⟩
+    rw [← hts] at hs
+    have ha_not_insert : a ∉ insert a t := Finset.notMem_of_mem_powerset_of_notMem hs ha
+    exact ha_not_insert (Finset.mem_insert_self a t)
+  rw [Finset.sum_union hdisj]
+  have hinj : Set.InjOn (insert a) (↑E.powerset : Set (Finset ι)) := by
+    intro s hs t ht hst
+    have hsa : a ∉ s := Finset.notMem_of_mem_powerset_of_notMem hs ha
+    have hta : a ∉ t := Finset.notMem_of_mem_powerset_of_notMem ht ha
+    calc
+      s = (insert a s).erase a := by simp [hsa]
+      _ = (insert a t).erase a := by rw [hst]
+      _ = t := by simp [hta]
+  rw [Finset.sum_image hinj]
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  have hsa : a ∉ s := Finset.notMem_mono hsE ha
+  have hprod_closed :
+      (insert a E).prod (fun e ↦ if e ∈ s then q e else 1 - q e) =
+        (1 - q a) * E.prod (fun e ↦ if e ∈ s then q e else 1 - q e) := by
+    rw [Finset.prod_insert ha]
+    simp [hsa]
+  have hprod_open :
+      (insert a E).prod (fun e ↦ if e ∈ insert a s then q e else 1 - q e) =
+        q a * E.prod (fun e ↦ if e ∈ s then q e else 1 - q e) := by
+    rw [Finset.prod_insert ha]
+    congr 1
+    · simp
+    · apply Finset.prod_congr rfl
+      intro e heE
+      have hne : e ≠ a := by
+        intro h
+        exact ha (by simpa [h] using heE)
+      simp [Finset.mem_insert, hne]
+  rw [hprod_closed, hprod_open]
+  ring
+
+/-- If a finite trace is invariant under opening a fresh coordinate, then its heterogeneous
+probability on the enlarged support agrees with its probability on the old support. -/
+theorem finiteBernoulliHeteroEventProbability_insert_invariant {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {e : ι} (he : e ∉ E) (q : ι → ℝ) (P : Set (Finset ι))
+    (hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert e s ∈ P ↔ s ∈ P)) :
+    finiteBernoulliHeteroEventProbability (insert e E) q P =
+      finiteBernoulliHeteroEventProbability E q P := by
+  unfold finiteBernoulliHeteroEventProbability
+  rw [finiteBernoulliHeteroExpectation_insert he]
+  apply finiteBernoulliHeteroExpectation_congr
+  · intro f _hf
+    rfl
+  · intro s hsE
+    by_cases hs : s ∈ P
+    · have hsins : insert e s ∈ P := (hP hsE).2 hs
+      simp [Set.indicator_of_mem hs, Set.indicator_of_mem hsins]
+    · have hsins : insert e s ∉ P := by
+        intro h
+        exact hs ((hP hsE).1 h)
+      simp [Set.indicator_of_notMem hs, Set.indicator_of_notMem hsins]
+
 /-- Finite intersection of a family of finite traces. This is the finite-family event appearing
 in Grimmett's iterated FKG inequality (2.7). -/
 def finiteTraceInter {ι κ : Type*} (J : Finset κ) (T : κ → Set (Finset ι)) :

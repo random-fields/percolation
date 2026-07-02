@@ -744,7 +744,11 @@ Dated milestones and anti-library notes.
     "`e` is pivotal" depends on all relevant coordinates except the state of `e`. Extended the
     same observation to finite traces by proving the finite-cube probability identity behind
     (2.29): on support `insert e E`, open-and-pivotal has probability `p` times pivotal, and
-    event-and-pivotal is the same event for pivotal traces.
+    event-and-pivotal is the same event for pivotal traces. Added the heterogeneous finite
+    Bernoulli product measure needed for Grimmett's Russo proof and proved the finite
+    one-coordinate difference identity: if two product measures differ only in coordinate `e`,
+    then the probability change of an increasing trace is `(r e - q e)` times the pivotal
+    probability.
 
 ## Axiom Ledger
 

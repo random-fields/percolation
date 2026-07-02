@@ -431,4 +431,151 @@ theorem finiteBernoulliHeteroEventProbability_hasDerivAt_update_const {ι : Type
     (E := E) (e := e) he (q := fun _ ↦ p) hT
   simpa [finiteBernoulliHeteroEventProbability_const] using h
 
+/-- The closed section of an increasing trace is increasing. -/
+theorem IsIncreasingTrace.closedSection {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {a : ι} {T : Set (Finset ι)}
+    (hT : IsIncreasingTrace (insert a E) T) :
+    IsIncreasingTrace E T := by
+  intro s t hst htE hs
+  exact hT hst (by intro x hx; exact Finset.mem_insert.mpr (Or.inr (htE hx))) hs
+
+/-- The open section of an increasing trace is increasing. -/
+theorem IsIncreasingTrace.openSection {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {a : ι} {T : Set (Finset ι)}
+    (hT : IsIncreasingTrace (insert a E) T) :
+    IsIncreasingTrace E {s : Finset ι | insert a s ∈ T} := by
+  intro s t hst htE hs
+  exact hT (Finset.insert_subset_insert a hst) (Finset.insert_subset_insert a htE) hs
+
+/-- If a fresh coordinate `a` is already open, pivotality of another coordinate `e` is pivotality
+inside the open section. -/
+theorem isPivotalTrace_insert_fresh_iff_openSection {ι : Type*} [DecidableEq ι]
+    (T : Set (Finset ι)) {a e : ι} (hae : a ≠ e) (s : Finset ι) :
+    IsPivotalTrace T e (insert a s) ↔
+      IsPivotalTrace {u : Finset ι | insert a u ∈ T} e s := by
+  unfold IsPivotalTrace finiteForceOpen finiteForceClosed
+  have hopen : insert e (insert a s) = insert a (insert e s) := by
+    ext x
+    simp [or_left_comm]
+  have hclosed : (insert a s).erase e = insert a (s.erase e) := by
+    ext x
+    by_cases hxe : x = e
+    · subst x
+      simp [hae.symm]
+    · simp [hxe]
+  rw [hopen, hclosed]
+  rfl
+
+/-- The pivotal probability of the fresh coordinate is the difference between the open and closed
+section probabilities. This is the finite-coordinate version of the first term in Russo's
+formula. -/
+theorem finiteBernoulliEventProbability_pivotal_fresh_eq_open_sub_closed {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ)
+    {T : Set (Finset ι)} (hT : IsIncreasingTrace (insert a E) T) :
+    finiteBernoulliEventProbability (insert a E) p
+        {s : Finset ι | IsPivotalTrace T a s} =
+      finiteBernoulliEventProbability E p {s : Finset ι | insert a s ∈ T} -
+        finiteBernoulliEventProbability E p T := by
+  let P : Set (Finset ι) := {s | IsPivotalTrace T a s}
+  have hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert a s ∈ P ↔ s ∈ P) := by
+    intro s _hsE
+    exact isPivotalTrace_insert T a s
+  rw [finiteBernoulliEventProbability_insert_invariant ha p P hP]
+  unfold finiteBernoulliEventProbability
+  unfold finiteBernoulliExpectation
+  rw [← Finset.sum_sub_distrib]
+  apply Finset.sum_congr rfl
+  intro s hs
+  have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+  have hdiff := indicator_insert_sub_eq_pivotalTrace ha hT hsE
+  have hdiffP :
+      T.indicator (fun _ ↦ (1 : ℝ)) (insert a s) -
+          T.indicator (fun _ ↦ (1 : ℝ)) s =
+        P.indicator (fun _ ↦ (1 : ℝ)) s := by
+    simpa [P] using hdiff
+  have hsec :
+      ({u : Finset ι | insert a u ∈ T}).indicator (fun _ ↦ (1 : ℝ)) s =
+        T.indicator (fun _ ↦ (1 : ℝ)) (insert a s) := by
+    by_cases hsT : insert a s ∈ T <;> simp [hsT]
+  simp only
+  rw [hsec, ← hdiffP]
+  ring
+
+/-- Conditioning decomposition for pivotality of an old coordinate after inserting a fresh
+coordinate. -/
+theorem finiteBernoulliEventProbability_pivotal_old_insert_split {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {a e : ι} (ha : a ∉ E) (he : e ∈ E) (p : ℝ)
+    (T : Set (Finset ι)) :
+    finiteBernoulliEventProbability (insert a E) p
+        {s : Finset ι | IsPivotalTrace T e s} =
+      (1 - p) * finiteBernoulliEventProbability E p
+          {s : Finset ι | IsPivotalTrace T e s} +
+        p * finiteBernoulliEventProbability E p
+          {s : Finset ι | IsPivotalTrace {u : Finset ι | insert a u ∈ T} e s} := by
+  rw [finiteBernoulliEventProbability_insert_split ha]
+  congr 2
+  apply finiteBernoulliEventProbability_congr
+  intro s _hsE
+  have hae : a ≠ e := by
+    intro h
+    exact ha (by simpa [h] using he)
+  exact isPivotalTrace_insert_fresh_iff_openSection T hae s
+
+/-- Finite homogeneous Russo formula for increasing finite traces. For a finite increasing event,
+the derivative of its Bernoulli probability is the sum of the probabilities that each coordinate
+is pivotal. -/
+theorem finiteBernoulliEventProbability_hasDerivAt {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {T : Set (Finset ι)} (hT : IsIncreasingTrace E T) :
+    HasDerivAt (fun x : ℝ ↦ finiteBernoulliEventProbability E x T)
+      (E.sum fun e ↦ finiteBernoulliEventProbability E p
+        {s : Finset ι | IsPivotalTrace T e s}) p := by
+  induction E using Finset.induction generalizing T with
+  | empty =>
+      simpa [finiteBernoulliEventProbability, finiteBernoulliExpectation]
+        using hasDerivAt_const p (T.indicator (fun _ ↦ (1 : ℝ)) (∅ : Finset ι))
+  | insert a E ha ih =>
+      let Topen : Set (Finset ι) := {s | insert a s ∈ T}
+      have hclosed : IsIncreasingTrace E T := hT.closedSection
+      have hopen : IsIncreasingTrace E Topen := hT.openSection
+      have hclosed_deriv := ih hclosed
+      have hopen_deriv := ih hopen
+      have hsplit_fun :
+          (fun x : ℝ ↦ finiteBernoulliEventProbability (insert a E) x T) =
+            (fun x : ℝ ↦ (1 - x) * finiteBernoulliEventProbability E x T +
+              x * finiteBernoulliEventProbability E x Topen) := by
+        funext x
+        simpa [Topen] using finiteBernoulliEventProbability_insert_split ha x T
+      rw [hsplit_fun]
+      have hone_sub : HasDerivAt (fun x : ℝ ↦ 1 - x) (-1) p := by
+        simpa using (hasDerivAt_const p (1 : ℝ)).sub (hasDerivAt_id p)
+      have hleft := hone_sub.mul hclosed_deriv
+      have hright := (hasDerivAt_id p).mul hopen_deriv
+      have hderiv := hleft.add hright
+      apply hderiv.congr_deriv
+      rw [Finset.sum_insert ha]
+      have hfresh := finiteBernoulliEventProbability_pivotal_fresh_eq_open_sub_closed ha p hT
+      have hold : ∀ e ∈ E,
+          finiteBernoulliEventProbability (insert a E) p
+              {s : Finset ι | IsPivotalTrace T e s} =
+            (1 - p) * finiteBernoulliEventProbability E p
+                {s : Finset ι | IsPivotalTrace T e s} +
+              p * finiteBernoulliEventProbability E p
+                {s : Finset ι | IsPivotalTrace Topen e s} := by
+        intro e he
+        simpa [Topen] using finiteBernoulliEventProbability_pivotal_old_insert_split ha he p T
+      rw [hfresh]
+      rw [show E.sum (fun e ↦ finiteBernoulliEventProbability (insert a E) p
+              {s : Finset ι | IsPivotalTrace T e s}) =
+            E.sum (fun e ↦
+              (1 - p) * finiteBernoulliEventProbability E p
+                  {s : Finset ι | IsPivotalTrace T e s} +
+                p * finiteBernoulliEventProbability E p
+                  {s : Finset ι | IsPivotalTrace Topen e s}) by
+        apply Finset.sum_congr rfl
+        intro e he
+        exact hold e he]
+      rw [Finset.sum_add_distrib, Finset.mul_sum, Finset.mul_sum]
+      simp [Topen]
+      ring
+
 end Percolation

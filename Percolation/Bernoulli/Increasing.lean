@@ -888,6 +888,48 @@ theorem finiteBernoulliEventProbability_univ {ι : Type*} [DecidableEq ι]
     finiteBernoulliEventProbability E p (Set.univ : Set (Finset ι)) = 1 := by
   simp [finiteBernoulliEventProbability, finiteBernoulliExpectation_const]
 
+/-- Finite Bernoulli event probability only depends on the trace inside the supporting cube. -/
+theorem finiteBernoulliEventProbability_congr {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} {T U : Set (Finset ι)}
+    (hTU : ∀ ⦃s : Finset ι⦄, s ⊆ E → (s ∈ T ↔ s ∈ U)) :
+    finiteBernoulliEventProbability E p T = finiteBernoulliEventProbability E p U := by
+  unfold finiteBernoulliEventProbability
+  apply finiteBernoulliExpectation_congr
+  intro s hsE
+  by_cases hT : s ∈ T
+  · have hU : s ∈ U := (hTU hsE).1 hT
+    simp [hT, hU]
+  · have hU : s ∉ U := by
+      intro h
+      exact hT ((hTU hsE).2 h)
+    simp [hT, hU]
+
+/-- Split a finite Bernoulli event probability according to whether a fresh coordinate is closed
+or open. This is the finite conditioning identity used in the Russo induction. -/
+theorem finiteBernoulliEventProbability_insert_split {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliEventProbability (insert a E) p T =
+      (1 - p) * finiteBernoulliEventProbability E p T +
+        p * finiteBernoulliEventProbability E p {s : Finset ι | insert a s ∈ T} := by
+  unfold finiteBernoulliEventProbability
+  rw [finiteBernoulliExpectation_insert ha]
+  unfold twoPointBernoulliExpectation
+  rw [show finiteBernoulliExpectation E p
+        (fun s ↦ (1 - p) * T.indicator (fun _ ↦ (1 : ℝ)) s +
+          p * T.indicator (fun _ ↦ (1 : ℝ)) (insert a s)) =
+      finiteBernoulliExpectation E p
+        (fun s ↦ (1 - p) * T.indicator (fun _ ↦ (1 : ℝ)) s) +
+        finiteBernoulliExpectation E p
+          (fun s ↦ p *
+            ({s : Finset ι | insert a s ∈ T}).indicator (fun _ ↦ (1 : ℝ)) s) by
+    unfold finiteBernoulliExpectation
+    rw [← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro s _hs
+    by_cases hs : insert a s ∈ T <;> simp [hs]
+    ring]
+  rw [finiteBernoulliExpectation_const_mul, finiteBernoulliExpectation_const_mul]
+
 /-- Heterogeneous finite Bernoulli expectation on the finite cube of subsets of `E`, with
 coordinate-dependent open probabilities `q`. This is the product measure used in Grimmett's
 Russo proof before specializing all coordinates to the same parameter. -/

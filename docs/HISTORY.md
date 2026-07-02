@@ -751,7 +751,11 @@ Dated milestones and anti-library notes.
     probability. Proved the corresponding one-coordinate `HasDerivAt` statement, including at
     homogeneous product measures, and added the bridge showing the heterogeneous finite product
     probability specializes to the existing homogeneous finite Bernoulli probability when all
-    coordinates have the same parameter.
+    coordinates have the same parameter. Proved the finite homogeneous Russo formula for
+    increasing finite traces: `d/dp P_p(T)` is the sum, over the finite support, of the pivotal
+    probabilities. The proof follows Grimmett's conditioning induction by splitting on a fresh
+    coordinate, identifying the fresh pivotal term with the open-minus-closed section difference,
+    and decomposing old-coordinate pivotality across the closed and open sections.
 
 ## Axiom Ledger
 

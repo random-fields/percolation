@@ -10,6 +10,7 @@ deep BK/Reimer probability inequalities are intentionally not asserted here.
 
 namespace Percolation
 
+open MeasureTheory
 open scoped Finset
 
 /-- A finite coordinate set `K` forces event `A` at configuration `ω` if every configuration
@@ -372,5 +373,39 @@ theorem measurableSet_finiteDisjointOccurrence_of_dependsOn {ι κ : Type*}
     (hA : ∀ i ∈ J, DependsOn (E i) (A i)) :
     MeasurableSet (FiniteDisjointOccurrence J A) :=
   (dependsOn_finiteDisjointOccurrence hA).measurableSet
+
+/-- Repeated BK follows formally from the binary disjoint-occurrence bound. This theorem does
+not assert the binary BK/Reimer inequality; it records the finite induction that will be used once
+the binary probability estimate is available. -/
+theorem measureReal_finiteDisjointOccurrence_le_prod_of_disjointOccurrence_bound
+    {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
+    {μ : Measure (Set ι)} [IsProbabilityMeasure μ]
+    (hBK : ∀ {A B : Set (Set ι)}, IsIncreasingEvent A → IsIncreasingEvent B →
+      μ.real (DisjointOccurrence A B) ≤ μ.real A * μ.real B)
+    {J : Finset κ} {A : κ → Set (Set ι)}
+    (hA : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    μ.real (FiniteDisjointOccurrence J A) ≤ J.prod (fun i ↦ μ.real (A i)) := by
+  induction J using Finset.induction with
+  | empty =>
+      rw [finiteDisjointOccurrence_empty]
+      simp [Measure.real, IsProbabilityMeasure.measure_univ, ENNReal.toReal_one]
+  | insert a J ha ih =>
+      have hAJ : ∀ i ∈ J, IsIncreasingEvent (A i) := by
+        intro i hi
+        exact hA i (Finset.mem_insert.mpr (Or.inr hi))
+      have hincRest : IsIncreasingEvent (FiniteDisjointOccurrence J A) :=
+        isIncreasingEvent_finiteDisjointOccurrence hAJ
+      have hsubset := finiteDisjointOccurrence_insert_subset_disjointOccurrence
+        (ι := ι) (κ := κ) (J := J) (a := a) (A := A) ha
+      calc
+        μ.real (FiniteDisjointOccurrence (insert a J) A) ≤
+            μ.real (DisjointOccurrence (A a) (FiniteDisjointOccurrence J A)) :=
+          measureReal_mono hsubset
+        _ ≤ μ.real (A a) * μ.real (FiniteDisjointOccurrence J A) :=
+          hBK (hA a (Finset.mem_insert_self a J)) hincRest
+        _ ≤ μ.real (A a) * J.prod (fun i ↦ μ.real (A i)) :=
+          mul_le_mul_of_nonneg_left (ih hAJ) measureReal_nonneg
+        _ = (insert a J).prod (fun i ↦ μ.real (A i)) := by
+          rw [Finset.prod_insert ha]
 
 end Percolation

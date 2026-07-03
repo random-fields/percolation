@@ -812,7 +812,9 @@ Dated milestones and anti-library notes.
     increasing events, and is measurable when the component events have finite supports. Proved
     the deterministic insert step used in repeated BK: a disjoint occurrence of
     `insert a J` is a binary disjoint occurrence of `A a` with the finite-family disjoint
-    occurrence over `J`. No BK/Reimer probability inequality is asserted yet.
+    occurrence over `J`. Added the abstract induction lemma showing that any future binary BK
+    probability bound for increasing events implies the finite-family product bound. No BK/Reimer
+    probability inequality is asserted yet.
 
 ## Axiom Ledger
 

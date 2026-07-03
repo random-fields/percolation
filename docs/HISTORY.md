@@ -816,6 +816,13 @@ Dated milestones and anti-library notes.
     probability bound for increasing events implies the finite-family product bound. No BK/Reimer
     probability inequality is asserted yet.
 
+73. **Finite conditional pivotal-count Russo identity (2026-07-03).** Extended
+    `Percolation.Bernoulli.Russo` toward Grimmett's equation (2.30). Defined the finite
+    pivotal-count observable `pivotalTraceCount`, proved that its expectation is the sum of
+    individual pivotal probabilities, summed equation (2.29) over the finite support to prove
+    `E_p[1_A N(A)] = p E_p[N(A)]`, and rewrote finite Russo as
+    `P'_p(A)=P_p(A)E_p[N(A)|A]/p` whenever `p` and `P_p(A)` are nonzero.
+
 ## Axiom Ledger
 
 Empty.

@@ -701,6 +701,141 @@ theorem finiteBernoulliEventProbability_hasDerivAt {ι : Type*} [DecidableEq ι]
       simp [Topen]
       ring
 
+/-- The finite set of pivotal coordinates for a finite trace. -/
+noncomputable def pivotalTraceSet {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) : Finset ι := by
+  classical
+  exact E.filter fun e ↦ IsPivotalTrace T e s
+
+/-- The number of pivotal coordinates for a finite trace, as a real-valued observable. -/
+noncomputable def pivotalTraceCount {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) : ℝ :=
+  (pivotalTraceSet E T s).card
+
+@[simp]
+theorem mem_pivotalTraceSet_iff {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) (e : ι) :
+    e ∈ pivotalTraceSet E T s ↔ e ∈ E ∧ IsPivotalTrace T e s := by
+  classical
+  simp [pivotalTraceSet]
+
+theorem pivotalTraceCount_eq_sum_indicator {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) :
+    pivotalTraceCount E T s =
+      E.sum fun e ↦
+        ({u : Finset ι | IsPivotalTrace T e u}.indicator (fun _ ↦ (1 : ℝ)) s) := by
+  classical
+  unfold pivotalTraceCount pivotalTraceSet
+  simp [Set.indicator_apply]
+
+theorem indicator_pivotalTraceCount_eq_sum_inter_indicator {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) :
+    T.indicator (fun u ↦ pivotalTraceCount E T u) s =
+      E.sum fun e ↦ (T ∩ {u : Finset ι | IsPivotalTrace T e u}).indicator
+        (fun _ ↦ (1 : ℝ)) s := by
+  classical
+  by_cases hsT : s ∈ T
+  · rw [Set.indicator_of_mem hsT]
+    unfold pivotalTraceCount pivotalTraceSet
+    rw [Finset.card_filter]
+    simp [Set.indicator_apply, hsT]
+  · rw [Set.indicator_of_notMem hsT]
+    refine (Finset.sum_eq_zero ?_).symm
+    intro e _he
+    rw [Set.indicator_of_notMem]
+    exact fun hs ↦ hsT hs.1
+
+/-- Expected number of pivotal coordinates equals the sum of the individual pivotal
+probabilities. -/
+theorem finiteBernoulliExpectation_pivotalTraceCount_eq_sum {ι : Type*}
+    [DecidableEq ι] (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliExpectation E p (pivotalTraceCount E T) =
+      E.sum fun e ↦ finiteBernoulliEventProbability E p
+        {s : Finset ι | IsPivotalTrace T e s} := by
+  unfold finiteBernoulliEventProbability
+  unfold finiteBernoulliExpectation
+  simp_rw [pivotalTraceCount_eq_sum_indicator]
+  simp_rw [Finset.mul_sum]
+  rw [Finset.sum_comm]
+
+/-- Event-restricted pivotal count equals the sum of event-and-pivotal indicators. -/
+theorem finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_sum_inter
+    {ι : Type*} [DecidableEq ι] (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliExpectation E p
+        (fun s ↦ T.indicator (fun u ↦ pivotalTraceCount E T u) s) =
+      E.sum fun e ↦ finiteBernoulliEventProbability E p
+        (T ∩ {s : Finset ι | IsPivotalTrace T e s}) := by
+  unfold finiteBernoulliEventProbability
+  unfold finiteBernoulliExpectation
+  simp_rw [indicator_pivotalTraceCount_eq_sum_inter_indicator]
+  simp_rw [Finset.mul_sum]
+  rw [Finset.sum_comm]
+
+/-- Equation (2.29) on an arbitrary finite support containing `e`, obtained from the fresh
+coordinate version by rewriting `E` as `insert e (E.erase e)`. -/
+theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul_of_mem
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∈ E)
+    (p : ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliEventProbability E p (T ∩ {s : Finset ι | IsPivotalTrace T e s}) =
+      p * finiteBernoulliEventProbability E p {s : Finset ι | IsPivotalTrace T e s} := by
+  have h := finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul
+    (E := E.erase e) (e := e) (p := p) (T := T) (Finset.notMem_erase e E)
+  simpa [Finset.insert_erase he] using h
+
+/-- Finite version of Grimmett's identity behind (2.30):
+`E_p[1_A N(A)] = p E_p[N(A)]`, where `N(A)` counts pivotal coordinates. -/
+theorem finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_mul {ι : Type*}
+    [DecidableEq ι] (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliExpectation E p
+        (fun s ↦ T.indicator (fun u ↦ pivotalTraceCount E T u) s) =
+      p * finiteBernoulliExpectation E p (pivotalTraceCount E T) := by
+  rw [finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_sum_inter]
+  rw [show (∑ e ∈ E, finiteBernoulliEventProbability E p
+          (T ∩ {s : Finset ι | IsPivotalTrace T e s})) =
+        E.sum fun e ↦ p * finiteBernoulliEventProbability E p
+          {s : Finset ι | IsPivotalTrace T e s} by
+    apply Finset.sum_congr rfl
+    intro e he
+    exact finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul_of_mem he p T]
+  rw [← Finset.mul_sum]
+  rw [← finiteBernoulliExpectation_pivotalTraceCount_eq_sum]
+
+/-- Conditional expected number of pivotal coordinates, encoded as
+`E_p[1_A N(A)] / P_p(A)`. When `P_p(A)=0` this definition evaluates to `0` by real division,
+and the theorem below assumes the nonzero case. -/
+noncomputable def finiteConditionalPivotalTraceCount {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) : ℝ :=
+  finiteBernoulliExpectation E p
+      (fun s ↦ T.indicator (fun u ↦ pivotalTraceCount E T u) s) /
+    finiteBernoulliEventProbability E p T
+
+/-- Russo's finite derivative written as the expected number of pivotal coordinates. -/
+theorem finiteBernoulliEventProbability_hasDerivAt_pivotalTraceCount {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    (hT : IsIncreasingTrace E T) :
+    HasDerivAt (fun x : ℝ ↦ finiteBernoulliEventProbability E x T)
+      (finiteBernoulliExpectation E p (pivotalTraceCount E T)) p := by
+  have hderiv := finiteBernoulliEventProbability_hasDerivAt (E := E) (p := p) (T := T) hT
+  apply hderiv.congr_deriv
+  exact (finiteBernoulliExpectation_pivotalTraceCount_eq_sum E p T).symm
+
+/-- Finite conditional-pivotal form of Russo's formula, the finite-cube version of Grimmett's
+equation (2.30): `P'_p(A)=P_p(A) E_p[N(A)|A]/p`. -/
+theorem finiteBernoulliEventProbability_hasDerivAt_conditionalPivotalTraceCount
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    (hp : p ≠ 0) (hP : finiteBernoulliEventProbability E p T ≠ 0)
+    (hT : IsIncreasingTrace E T) :
+    HasDerivAt (fun x : ℝ ↦ finiteBernoulliEventProbability E x T)
+      (finiteBernoulliEventProbability E p T * finiteConditionalPivotalTraceCount E p T / p)
+      p := by
+  have hderiv := finiteBernoulliEventProbability_hasDerivAt_pivotalTraceCount
+    (E := E) (p := p) (T := T) hT
+  apply hderiv.congr_deriv
+  rw [finiteConditionalPivotalTraceCount]
+  have hweighted := finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_mul E p T
+  rw [hweighted]
+  field_simp [hp, hP]
+
 /-- Finite-support product-measure Russo formula. The derivative is the finite trace polynomial,
 and the derivative value is written as the sum of actual product-measure pivotal probabilities. -/
 theorem DependsOn.finiteSupport_setBernoulli_real_russo_hasDerivAt {ι : Type*}

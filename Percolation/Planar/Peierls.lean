@@ -4,6 +4,8 @@ import Mathlib.Algebra.BigOperators.Ring.Nat
 import Percolation.Critical.Basic
 import Percolation.Planar.Basic
 
+open scoped Classical
+
 /-!
 # Planar Peierls tail bridge
 
@@ -92,7 +94,7 @@ lemma degree_deleteEdges_singleton_of_not_endpoint [G.LocallyFinite] {u v x : V}
 
 /-- The degree after deleting a finite edge set is the number of old neighbors whose edge was not
 deleted. -/
-lemma degree_deleteEdges_finset_eq_card_filter_not [G.LocallyFinite] [DecidableEq V]
+lemma degree_deleteEdges_finset_eq_card_filter_not [G.LocallyFinite]
     (t : Finset (Sym2 V)) (x : V) :
     (G.deleteEdges (t : Set (Sym2 V))).degree x =
       ((G.neighborFinset x).filter fun y => s(x, y) ∉ (t : Set (Sym2 V))).card := by
@@ -104,7 +106,7 @@ lemma degree_deleteEdges_finset_eq_card_filter_not [G.LocallyFinite] [DecidableE
   simp [deleteEdges_adj]
 
 /-- Deleting a finite edge set splits the old degree into remaining and deleted incident edges. -/
-lemma degree_deleteEdges_finset_add_card_filter [G.LocallyFinite] [DecidableEq V]
+lemma degree_deleteEdges_finset_add_card_filter [G.LocallyFinite]
     (t : Finset (Sym2 V)) (x : V) :
     (G.deleteEdges (t : Set (Sym2 V))).degree x +
       ((G.neighborFinset x).filter fun y => s(x, y) ∈ (t : Set (Sym2 V))).card =
@@ -119,7 +121,7 @@ lemma degree_deleteEdges_finset_add_card_filter [G.LocallyFinite] [DecidableEq V
 /-- For a trail, incident deleted-neighbor count agrees with the list count of trail edges
 incident to the vertex. -/
 lemma card_neighborFinset_filter_walk_edges_toFinset_eq_countP
-    [G.LocallyFinite] [DecidableEq V]
+    [G.LocallyFinite]
     {u v : V} {p : G.Walk u v} (hp : p.IsTrail) (x : V) :
     ((G.neighborFinset x).filter fun y =>
       s(x, y) ∈ (p.edges.toFinset : Set (Sym2 V))).card =
@@ -162,7 +164,7 @@ lemma card_neighborFinset_filter_walk_edges_toFinset_eq_countP
 
 /-- Deleting the edge set of a closed trail preserves even degree at every vertex. -/
 lemma even_degree_deleteEdges_walk_edges_toFinset_of_isTrail_closed
-    [G.LocallyFinite] [DecidableEq V] (hdeg : ∀ x, Even (G.degree x))
+    [G.LocallyFinite] (hdeg : ∀ x, Even (G.degree x))
     {u : V} {p : G.Walk u u} (hp : p.IsTrail) :
     ∀ x, Even ((G.deleteEdges (p.edges.toFinset : Set (Sym2 V))).degree x) := by
   intro x
@@ -273,7 +275,7 @@ lemma isEdgeReachable_two_of_forall_even_degree_of_finite_support [G.LocallyFini
 The marked set `X` is a finite set of graph edges with odd cardinality. The proof picks one
 marked edge, finds a simple cycle through it using the no-bridge lemma above, and either that
 cycle already meets `X` oddly or deletes the whole cycle and recurses on `X \ cycle`. -/
-lemma exists_isCycle_odd_card_filter_of_odd_edge_finset_aux [DecidableEq V] :
+lemma exists_isCycle_odd_card_filter_of_odd_edge_finset_aux :
     ∀ (n : ℕ),
       (∀ (m : ℕ), m < n →
         ∀ (G : SimpleGraph V) [G.LocallyFinite], G.support.Finite →
@@ -373,7 +375,7 @@ lemma exists_isCycle_odd_card_filter_of_odd_edge_finset_aux [DecidableEq V] :
 /-- In a finite-support locally finite graph where every vertex has even degree, every finite odd
 set of graph edges contains an odd number of edges from some simple cycle. This is the finite
 cycle-selection core of the parity Peierls argument. -/
-lemma exists_isCycle_odd_card_filter_of_odd_edge_finset [DecidableEq V]
+lemma exists_isCycle_odd_card_filter_of_odd_edge_finset
     (G : SimpleGraph V) [G.LocallyFinite] (hfinite : G.support.Finite)
     (hdeg : ∀ x, Even (G.degree x)) (X : Finset (Sym2 V))
     (hXedge : ∀ e ∈ X, e ∈ G.edgeSet) (hXodd : Odd X.card) :
@@ -398,7 +400,7 @@ end SimpleGraph
 namespace Percolation
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Finset unitInterval BigOperators
+open scoped ENNReal Finset unitInterval BigOperators Classical
 
 /-- A finite length window of encoded shifted-dual circuits. This is the event that some circuit
 from the families indexed by lengths `N, ..., N + M - 1` is open in the induced dual
@@ -1502,7 +1504,7 @@ noncomputable def squareCellPositiveEdges (z : DualSquareVertex) :
 This is the local parity replacement for the planar "inside/outside" language: as one walks
 around a unit square, membership in a set toggles zero, two, or four times. -/
 theorem even_countP_squareCellPositiveEdgeList_boundary
-    (P : SquareVertex → Prop) [DecidablePred P] (z : DualSquareVertex) :
+    (P : SquareVertex → Prop) (z : DualSquareVertex) :
     Even ((squareCellPositiveEdgeList z).countP
       (fun e : SquarePositiveEdge ↦
         ¬ (P e.base ↔ P (cubicStepFrom e.base (e.axis, true))))) := by
@@ -1530,7 +1532,7 @@ theorem even_countP_squareCellPositiveEdgeList_boundary
 
 /-- Finset version of the four-side parity lemma. -/
 theorem even_card_squareCellPositiveEdges_boundary
-    (P : SquareVertex → Prop) [DecidablePred P] (z : DualSquareVertex) :
+    (P : SquareVertex → Prop) (z : DualSquareVertex) :
     Even ((squareCellPositiveEdges z).filter
       (fun e : SquarePositiveEdge ↦
         ¬ (P e.base ↔ P (cubicStepFrom e.base (e.axis, true))))).card := by
@@ -1539,6 +1541,7 @@ theorem even_card_squareCellPositiveEdges_boundary
     decide (¬ (P e.base ↔ P (cubicStepFrom e.base (e.axis, true))))
   have hcount := even_countP_squareCellPositiveEdgeList_boundary P z
   rw [List.countP_eq_length_filter] at hcount
+  change Even (List.filter q (squareCellPositiveEdgeList z)).length at hcount
   have hnodup : ((squareCellPositiveEdgeList z).filter q).Nodup :=
     (squareCellPositiveEdgeList_nodup z).filter q
   rw [← List.toFinset_card_of_nodup hnodup] at hcount
@@ -1650,35 +1653,21 @@ noncomputable def boxOpenReachableFrontierPositiveEdgesAroundDualVertex
     (m M : ℕ) (ω : EdgeConfiguration 2) (z : DualSquareVertex) :
     Finset SquarePositiveEdge := by
   classical
-  exact (boxOpenReachableFrontierPositiveEdges m M ω).filter
-    fun e : SquarePositiveEdge ↦ e ∈ squareCellPositiveEdges z
+  exact (squareCellPositiveEdges z).filter
+    fun e : SquarePositiveEdge ↦
+      ¬ (e.base ∈ boxOpenReachableVertices m M ω ↔
+        cubicStepFrom e.base (e.axis, true) ∈ boxOpenReachableVertices m M ω)
 
 /-- The finite frontier has even primal boundary incidence around every shifted-dual vertex. -/
 theorem even_card_boxOpenReachableFrontierPositiveEdgesAroundDualVertex
     (m M : ℕ) (ω : EdgeConfiguration 2) (z : DualSquareVertex) :
     Even (boxOpenReachableFrontierPositiveEdgesAroundDualVertex m M ω z).card := by
   classical
-  have hlocal := even_card_squareCellPositiveEdges_boundary
-    (fun x : SquareVertex ↦ x ∈ boxOpenReachableVertices m M ω) z
-  have hfinset :
-      boxOpenReachableFrontierPositiveEdgesAroundDualVertex m M ω z =
-        (squareCellPositiveEdges z).filter
-          (fun e : SquarePositiveEdge ↦
-            ¬ (e.base ∈ boxOpenReachableVertices m M ω ↔
-              cubicStepFrom e.base (e.axis, true) ∈
-                boxOpenReachableVertices m M ω)) := by
-    ext e
-    change (e ∈ (boxOpenReachableFrontierPositiveEdges m M ω).filter
-        (fun e : SquarePositiveEdge ↦ e ∈ squareCellPositiveEdges z)) ↔
-      e ∈ (squareCellPositiveEdges z).filter
-        (fun e : SquarePositiveEdge ↦
-          ¬ (e.base ∈ boxOpenReachableVertices m M ω ↔
-            cubicStepFrom e.base (e.axis, true) ∈ boxOpenReachableVertices m M ω))
-    rw [Finset.mem_filter, Finset.mem_filter,
-      mem_boxOpenReachableFrontierPositiveEdges_iff_boundary]
-    tauto
-  rw [hfinset]
-  exact hlocal
+  let P : SquareVertex → Prop := fun x ↦ x ∈ boxOpenReachableVertices m M ω
+  let boundary : SquarePositiveEdge → Prop := fun e ↦
+    ¬ (P e.base ↔ P (cubicStepFrom e.base (e.axis, true)))
+  simpa [boxOpenReachableFrontierPositiveEdgesAroundDualVertex, boundary, P] using
+    even_card_squareCellPositiveEdges_boundary P z
 
 /-- A walk from a vertex satisfying `P` to a vertex not satisfying `P` contains an edge crossing
 from `P` to its complement. This is the finite graph cut lemma used to locate a Peierls frontier
@@ -1713,7 +1702,7 @@ theorem exists_nat_true_false_boundary {P : ℕ → Prop} :
 /-- Finite one-dimensional parity lemma: along a finite line, the number of adjacent membership
 changes is odd exactly when the endpoint truth values differ. This is the discrete parity core of
 the Peierls contour argument, avoiding any reference to topological interiors. -/
-theorem odd_card_filter_nat_changes_iff {P : ℕ → Prop} [DecidablePred P] :
+theorem odd_card_filter_nat_changes_iff {P : ℕ → Prop} :
     ∀ R : ℕ,
       Odd ((Finset.range R).filter (fun k ↦ ¬ (P k ↔ P (k + 1)))).card ↔
         ((P 0 ∧ ¬ P R) ∨ (¬ P 0 ∧ P R)) := by
@@ -1734,7 +1723,7 @@ theorem odd_card_filter_nat_changes_iff {P : ℕ → Prop} [DecidablePred P] :
 
 /-- If a predicate starts true and ends false along a finite line, it changes an odd number of
 times. This is the parity version of `exists_nat_true_false_boundary`. -/
-theorem odd_card_filter_nat_changes_of_true_false {P : ℕ → Prop} [DecidablePred P]
+theorem odd_card_filter_nat_changes_of_true_false {P : ℕ → Prop}
     {R : ℕ} (h0 : P 0) (hR : ¬ P R) :
     Odd ((Finset.range R).filter (fun k ↦ ¬ (P k ↔ P (k + 1)))).card :=
   (odd_card_filter_nat_changes_iff R).mpr (Or.inl ⟨h0, hR⟩)
@@ -1743,7 +1732,7 @@ theorem odd_card_filter_nat_changes_of_true_false {P : ℕ → Prop} [DecidableP
 odd cardinality. This is the finite parity selection step used after decomposing the Peierls
 frontier into edge-disjoint dual circuits. -/
 theorem exists_odd_card_of_odd_card_biUnion
-    {ι α : Type*} [DecidableEq α] (s : Finset ι) (f : ι → Finset α)
+    {ι α : Type*} (s : Finset ι) (f : ι → Finset α)
     (hdisj : (s : Set ι).PairwiseDisjoint f)
     (hodd : Odd (s.biUnion f).card) :
     ∃ i ∈ s, Odd (f i).card := by
@@ -1921,17 +1910,25 @@ theorem boxOpenReachableFrontierDualEdgesIncident_eq_map
     rw [Finset.mem_map]
     refine ⟨b, ?_, hbd⟩
     rw [boxOpenReachableFrontierPositiveEdgesAroundDualVertex, Finset.mem_filter]
-    exact ⟨hb, (mem_squareCellPositiveEdges_iff_mem_crossing).mpr
-      (by simpa [hbd] using hz)⟩
+    refine ⟨(mem_squareCellPositiveEdges_iff_mem_crossing).mpr ?_, ?_⟩
+    · simpa [hbd] using hz
+    · have hxor : b.base ∈ boxOpenReachableVertices m M ω ∧
+          cubicStepFrom b.base (b.axis, true) ∉ boxOpenReachableVertices m M ω ∨
+        cubicStepFrom b.base (b.axis, true) ∈ boxOpenReachableVertices m M ω ∧
+          b.base ∉ boxOpenReachableVertices m M ω := by
+        rwa [mem_boxOpenReachableFrontierPositiveEdges_iff_boundary] at hb
+      tauto
   · intro hd
     rw [Finset.mem_map] at hd
     rcases hd with ⟨b, hbfilter, hbd⟩
     rw [boxOpenReachableFrontierPositiveEdgesAroundDualVertex, Finset.mem_filter] at hbfilter
-    rcases hbfilter with ⟨hb, hcell⟩
+    rcases hbfilter with ⟨hcell, hboundary⟩
     rw [boxOpenReachableFrontierDualEdgesIncident, Finset.mem_filter]
     refine ⟨?_, ?_⟩
     · rw [mem_boxOpenReachableFrontierDualEdges]
-      exact ⟨b, hb, hbd⟩
+      refine ⟨b, ?_, hbd⟩
+      rw [mem_boxOpenReachableFrontierPositiveEdges_iff_boundary]
+      tauto
     · simpa [← hbd] using (mem_squareCellPositiveEdges_iff_mem_crossing).mp hcell
 
 /-- The finite shifted-dual frontier has even degree at every shifted-dual vertex. This is the
@@ -2626,10 +2623,21 @@ theorem exists_odd_card_of_frontierPositiveXAxisCrossingEdges_decomposition
     (hdisj : (s : Set ι).PairwiseDisjoint f)
     (hcover :
       s.biUnion f = boxOpenReachableFrontierPositiveXAxisCrossingEdges m (m + n) ω) :
-    ∃ i ∈ s, Odd (f i).card := by
-  apply exists_odd_card_of_odd_card_biUnion s f hdisj
-  rw [hcover]
-  exact boxOpenReachableFrontierPositiveXAxisCrossingEdges_odd m n ω
+  ∃ i ∈ s, Odd (f i).card := by
+  have hodd : Odd (s.biUnion f).card := by
+    rw [hcover]
+    exact boxOpenReachableFrontierPositiveXAxisCrossingEdges_odd m n ω
+  rw [Finset.card_biUnion hdisj] at hodd
+  classical
+  have hodd_filter :
+      Odd ((s.filter fun i ↦ Odd (f i).card).card) := by
+    exact (Finset.odd_sum_iff_odd_card_odd fun i ↦ (f i).card).mp hodd
+  have hnonempty : (s.filter fun i ↦ Odd (f i).card).Nonempty := by
+    rcases hodd_filter with ⟨k, hk⟩
+    exact Finset.card_pos.mp (by rw [hk]; omega)
+  rcases hnonempty with ⟨i, hi⟩
+  rw [Finset.mem_filter] at hi
+  exact ⟨i, hi.1, hi.2⟩
 
 /-- Graph-adjacency form of `exists_dualPositiveXAxisCrossingEdge_mem_boxOpenReachableFrontierDualEdges`.
 The positive-axis frontier bond is an edge of the finite shifted-dual frontier graph. -/
@@ -4038,7 +4046,7 @@ theorem edgeCrossesSet_mk (P : V → Prop) (x y : V) :
   simp [edgeCrossesSet, Sym2.lift_mk]
 
 /-- Boolean form of `edgeCrossesSet`, used for `List.countP`. -/
-def edgeCrossesSetBool (P : V → Prop) [DecidablePred P] : Sym2 V → Bool :=
+noncomputable def edgeCrossesSetBool (P : V → Prop) : Sym2 V → Bool :=
   Sym2.lift ⟨fun x y : V ↦ decide ((P x ∧ ¬ P y) ∨ (P y ∧ ¬ P x)), by
     intro x y
     rw [Bool.eq_iff_iff]
@@ -4046,20 +4054,20 @@ def edgeCrossesSetBool (P : V → Prop) [DecidablePred P] : Sym2 V → Bool :=
     tauto⟩
 
 @[simp]
-theorem edgeCrossesSetBool_mk (P : V → Prop) [DecidablePred P] (x y : V) :
+theorem edgeCrossesSetBool_mk (P : V → Prop) (x y : V) :
     edgeCrossesSetBool P s(x, y) =
       decide ((P x ∧ ¬ P y) ∨ (P y ∧ ¬ P x)) := by
   simp [edgeCrossesSetBool, Sym2.lift_mk]
 
 @[simp]
-theorem edgeCrossesSetBool_eq_true (P : V → Prop) [DecidablePred P] (e : Sym2 V) :
+theorem edgeCrossesSetBool_eq_true (P : V → Prop) (e : Sym2 V) :
     edgeCrossesSetBool P e = true ↔ edgeCrossesSet P e := by
   induction e using Sym2.ind
   simp [edgeCrossesSetBool, edgeCrossesSet, Sym2.lift_mk]
 
 /-- Along any walk, the parity of crossings of a cut is the parity of whether the endpoints lie
 on opposite sides of the cut. -/
-theorem odd_countP_edges_edgeCrossesSet_iff (P : V → Prop) [DecidablePred P]
+theorem odd_countP_edges_edgeCrossesSet_iff (P : V → Prop)
     {u v : V} (w : G.Walk u v) :
     Odd (w.edges.countP (edgeCrossesSetBool P)) ↔
       ((P u ∧ ¬ P v) ∨ (P v ∧ ¬ P u)) := by
@@ -4073,7 +4081,7 @@ theorem odd_countP_edges_edgeCrossesSet_iff (P : V → Prop) [DecidablePred P]
         simpa [Nat.odd_add_one] using ih
 
 /-- A closed walk crosses any cut an even number of times, counted with edge multiplicity. -/
-theorem even_countP_edges_edgeCrossesSet_of_closed (P : V → Prop) [DecidablePred P]
+theorem even_countP_edges_edgeCrossesSet_of_closed (P : V → Prop)
     {u : V} (w : G.Walk u u) :
     Even (w.edges.countP (edgeCrossesSetBool P)) := by
   rw [← Nat.not_odd_iff_even]

@@ -15,7 +15,7 @@ events, FKG, BK/Reimer, and Russo's formula.
 namespace Percolation
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Finset unitInterval BigOperators
+open scoped ENNReal Finset unitInterval BigOperators Classical
 
 /-- Independent product measures project along coordinate embeddings. This is the product-measure
 coupling behind dimension monotonicity: sampling all target coordinates and then forgetting the
@@ -164,7 +164,7 @@ theorem bernoulliBondMeasure_map_cubicConfigurationPullback {m d : ℕ} (hmd : m
     setBernoulli_map_preimage_univ (cubicEdgeEmbed hmd) p
 
 /-- The event that all coordinates in a fixed finite set are present is measurable. -/
-theorem measurableSet_superset_finset {ι : Type*} [DecidableEq ι] (s : Finset ι) :
+theorem measurableSet_superset_finset {ι : Type*} (s : Finset ι) :
     MeasurableSet {t : Set ι | (s : Set ι) ⊆ t} := by
   classical
   apply (MeasurableEquiv.setOf.measurableSet_preimage).mp
@@ -178,7 +178,7 @@ theorem measurableSet_superset_finset {ι : Type*} [DecidableEq ι] (s : Finset 
     (fun _ _ ↦ measurableSet_singleton True)
 
 /-- The event that all coordinates in a fixed finite set are absent is measurable. -/
-theorem measurableSet_disjoint_finset {ι : Type*} [DecidableEq ι] (s : Finset ι) :
+theorem measurableSet_disjoint_finset {ι : Type*} (s : Finset ι) :
     MeasurableSet {t : Set ι | Disjoint (s : Set ι) t} := by
   classical
   apply (MeasurableEquiv.setOf.measurableSet_preimage).mp
@@ -207,8 +207,8 @@ theorem measurableSet_closedEdgeSetEvent (d : ℕ) (s : Finset (CubicEdge d)) :
 an arbitrary Boolean value on each coordinate in `s` has the expected product probability. This
 is the common finite product-measure calculation behind fixed open paths and fixed closed
 dual circuits in Grimmett's proof. -/
-theorem setBernoulli_real_eqOn_finset_univ {ι : Type*} [DecidableEq ι]
-    (s : Finset ι) (v : ι → Prop) [DecidablePred v] (p : I) :
+theorem setBernoulli_real_eqOn_finset_univ {ι : Type*}
+    (s : Finset ι) (v : ι → Prop) (p : I) :
     setBer((Set.univ : Set ι), p).real
         {t : Set ι | ∀ i, i ∈ s → ((i ∈ t) = v i)} =
       ∏ i : s, if v i then (p : ℝ) else (1 - (p : ℝ)) := by
@@ -246,8 +246,8 @@ theorem setBernoulli_real_eqOn_finset_univ {ι : Type*} [DecidableEq ι]
 
 /-- The same finite assignment-cylinder probability, indexed as a product over the underlying
 finset rather than over its attached subtype. -/
-theorem setBernoulli_real_eqOn_finset_univ' {ι : Type*} [DecidableEq ι]
-    (s : Finset ι) (v : ι → Prop) [DecidablePred v] (p : I) :
+theorem setBernoulli_real_eqOn_finset_univ' {ι : Type*}
+    (s : Finset ι) (v : ι → Prop) (p : I) :
     setBer((Set.univ : Set ι), p).real
         {t : Set ι | ∀ i, i ∈ s → ((i ∈ t) = v i)} =
       ∏ i ∈ s, if v i then (p : ℝ) else (1 - (p : ℝ)) := by
@@ -257,7 +257,7 @@ theorem setBernoulli_real_eqOn_finset_univ' {ι : Type*} [DecidableEq ι]
 /-- In the Bernoulli product measure on all coordinates, the event that a fixed finite set of
 coordinates is present has probability `p ^ |s|`. This is the cylinder-probability calculation
 used for a fixed open path in Grimmett's proof. -/
-theorem setBernoulli_real_superset_finset_univ {ι : Type*} [DecidableEq ι]
+theorem setBernoulli_real_superset_finset_univ {ι : Type*}
     (s : Finset ι) (p : I) :
     setBer((Set.univ : Set ι), p).real {t : Set ι | (s : Set ι) ⊆ t} =
       (p : ℝ) ^ s.card := by
@@ -289,7 +289,7 @@ theorem setBernoulli_real_superset_finset_univ {ι : Type*} [DecidableEq ι]
 /-- Under the Bernoulli product measure on all coordinates, the coordinate-open events are
 independent. This is the sigma-algebra-level product-measure input used to turn finite-support
 disjointness into independence of more complicated finite events. -/
-theorem setBernoulli_iIndepSet_mem_univ {ι : Type*} [DecidableEq ι] (p : I) :
+theorem setBernoulli_iIndepSet_mem_univ {ι : Type*} (p : I) :
     iIndepSet (fun i : ι ↦ {ω : Set ι | i ∈ ω}) setBer((Set.univ : Set ι), p) := by
   classical
   rw [iIndepSet_iff_meas_biInter]
@@ -440,7 +440,7 @@ theorem bernoulliBondMeasure_indepSet_of_measurableSet_edgeCoordinateMeasurableS
 /-- In the Bernoulli product measure on all coordinates, the event that a fixed finite set of
 coordinates is absent has probability `(1 - p) ^ |s|`. This is the finite closed-circuit
 probability calculation needed for the planar Peierls half of Grimmett's proof. -/
-theorem setBernoulli_real_disjoint_finset_univ {ι : Type*} [DecidableEq ι]
+theorem setBernoulli_real_disjoint_finset_univ {ι : Type*}
     (s : Finset ι) (p : I) :
     setBer((Set.univ : Set ι), p).real {t : Set ι | Disjoint (s : Set ι) t} =
       (1 - (p : ℝ)) ^ s.card := by
@@ -472,7 +472,7 @@ theorem setBernoulli_real_disjoint_finset_univ {ι : Type*} [DecidableEq ι]
 /-- Mixed finite-cylinder probability: all coordinates in `s` are present and all disjoint
 coordinates in `t` are absent. This is the finite product calculation used when the open event
 `G_m` is separated from closed dual-circuit coordinates in Grimmett's Peierls argument. -/
-theorem setBernoulli_real_open_closed_on_finset_univ {ι : Type*} [DecidableEq ι]
+theorem setBernoulli_real_open_closed_on_finset_univ {ι : Type*}
     (s t : Finset ι) (p : I) (hdisj : Disjoint (s : Set ι) (t : Set ι)) :
     setBer((Set.univ : Set ι), p).real
       {ω : Set ι | (s : Set ι) ⊆ ω ∧ Disjoint (t : Set ι) ω} =
@@ -509,22 +509,16 @@ theorem setBernoulli_real_open_closed_on_finset_univ {ι : Type*} [DecidableEq �
     exact (Set.disjoint_left.mp hdisj) his hit
   rw [hevent, setBernoulli_real_eqOn_finset_univ']
   rw [Finset.prod_union hfin_disj]
-  have hsprod : (∏ x ∈ s, if x ∈ s then (p : ℝ) else 1 - (p : ℝ)) =
-      (p : ℝ) ^ s.card := by
-    exact Finset.prod_eq_pow_card (s := s)
-      (f := fun x ↦ if x ∈ s then (p : ℝ) else 1 - (p : ℝ)) (b := (p : ℝ))
-      (by intro x hx; simp [hx])
-  have htprod : (∏ x ∈ t, if x ∈ s then (p : ℝ) else 1 - (p : ℝ)) =
-      (1 - (p : ℝ)) ^ t.card := by
-    exact Finset.prod_eq_pow_card (s := t)
-      (f := fun x ↦ if x ∈ s then (p : ℝ) else 1 - (p : ℝ))
-      (b := (1 - (p : ℝ))) (by
+  congr 1
+  · exact Finset.prod_eq_pow_card (s := s) (b := (p : ℝ)) (by
+      intro x hx
+      simp [hx])
+  · exact Finset.prod_eq_pow_card (s := t) (b := (1 - (p : ℝ))) (by
         intro x hx
         have hxs : x ∉ s := by
           intro hxs
           exact (Set.disjoint_left.mp hdisj) hxs hx
         simp [hxs])
-  rw [hsprod, htprod]
 
 /-- The probability that all edges in a fixed finite set are open. -/
 theorem bernoulliBondMeasure_real_openOn_finset (d : ℕ) (p : I)

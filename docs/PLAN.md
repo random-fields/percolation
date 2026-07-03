@@ -11,8 +11,9 @@ this into page-anchored JSON in `kg/derived/`.
 | P2 | Ch. 1.4 | Critical probability and percolation probability | Critical | absent |
 | P3 | Ch. 1.6 | Site percolation and bond-to-site transformation | Core/Bernoulli | absent |
 | P4 | Ch. 2.1 | Increasing events and stochastic order | Bernoulli | partial: order APIs exist |
-| P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | proved: finite weighted product FKG, finite-support observable FKG, measurable/countable event lift, decreasing variants, finite-family iterated FKG, covariance FKG for finite nonnegative sums of increasing event indicators, and threshold-step dominated-convergence bridge; general square-integrable observable form remains target |
-| P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | deterministic forcing and binary/finite-family disjoint-occurrence scaffold plus conditional repeated-BK induction proved; BK/Reimer probability inequalities target |
+| P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | proved: finite weighted product FKG, finite-support observable FKG, measurable/countable event lift, decreasing variants, finite-family iterated FKG, covariance FKG for finite nonnegative sums of increasing event indicators, threshold-step dominated-convergence bridge, bounded-observable FKG, and the general square-integrable observable form, including the cubic bond wrapper |
+| P6 | Ch. 2.3, Thm. 2.12/Eq. 2.14/Thm. 2.15/Eq. 2.17 | BK disjoint-occurrence inequality | Bernoulli | proved directly from Grimmett's pp. 39-40 two-copy swap-injection/telescoping proof: binary and repeated heterogeneous finite-trace BK, homogeneous finite-support product-measure BK, finite-family trace-to-cylinder bridges for open-witness and ordinary disjoint occurrence, source-facing `grimmettTheorem212_homogeneous`, `grimmettEquation214_homogeneous`, `grimmettTheorem215`, and finite path-family `grimmettEquation217_finite`; this proof path does not use Reimer's inequality |
+| P6R | Ch. 2.3, Thm. 2.19 | Reimer inequality and conditional Reimer-to-BK interfaces | Bernoulli | separate/deferred: existing deterministic forcing, Reimer-box occurrence, finite-cube slice, and conditional Reimer-to-BK wrappers are kept as auxiliary infrastructure, but they are not the proof route for BK on this branch; the general interior-parameter Reimer probability inequality and arbitrary finite-support cardinality Reimer remain target and are not axiomatized |
 | P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | finite event, finite conditional-pivotal, finite-support product/bond, random-variable, and second-difference Russo formulas proved; infinite/measurable event lift and pivotal-pair refinements target |
 | P7a | Ch. 2.5 | Reliability covariance and derivative inequalities | Bernoulli | finite covariance form of Theorem 2.34 plus finite Cauchy-Schwarz upper bound (2.36a), monotone lower bound (2.36b)/(2.37), scalar inequality (2.44), finite power inequality (2.42), finite log-ratio monotonicity (2.38), and finite-support product/bond wrappers proved; infinite/general threshold consequences remain target |
 | P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |
@@ -50,7 +51,7 @@ this into page-anchored JSON in `kg/derived/`.
 3. Define increasing events and prove closure under intersection/union.
 4. Define Bernoulli product measure on finite edge configurations.
 5. State and prove finite product FKG, lift it to measurable/countable Bernoulli product events,
-   and close the remaining square-integrable observable form of Theorem 2.4.
+   and close the square-integrable observable form of Theorem 2.4.
 6. Define open connection and cluster in terms of graph walks.
 7. Define finite-volume random-cluster weights and prove the partition function is positive
    under nonempty finite edge sets and `q > 0`.

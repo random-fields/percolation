@@ -1022,11 +1022,6 @@ def cubicVectorVertices {d n : ℕ} (steps : List.Vector (CubicDirection d) n) :
 def cubicVectorSelfAvoiding {d n : ℕ} (steps : List.Vector (CubicDirection d) n) : Prop :=
   (cubicVectorVertices steps).Nodup
 
-instance instDecidableCubicVectorSelfAvoiding {d n : ℕ} :
-    DecidablePred (cubicVectorSelfAvoiding (d := d) (n := n)) := fun steps => by
-  unfold cubicVectorSelfAvoiding cubicVectorVertices
-  infer_instance
-
 /-- The first `m` steps of a length `m + n` direction word. -/
 def cubicVectorPrefix {d m n : ℕ} (steps : List.Vector (CubicDirection d) (m + n)) :
     List.Vector (CubicDirection d) m :=
@@ -1263,7 +1258,9 @@ theorem selfAvoidingWalkWalk_isPath {d n : ℕ} (steps : SelfAvoidingWalk d n) :
 
 /-- The number `σ(n)` of self-avoiding walks of length `n` from the origin. -/
 noncomputable def selfAvoidingWalkCount (d n : ℕ) : ℕ :=
-  Fintype.card (SelfAvoidingWalk d n)
+  by
+    classical
+    exact Fintype.card (SelfAvoidingWalk d n)
 
 /-- A concrete straight self-avoiding walk of length `n` in any nonzero dimension. -/
 def straightSelfAvoidingWalk {d : ℕ} (hd : 0 < d) (n : ℕ) : SelfAvoidingWalk d n :=
@@ -1276,6 +1273,7 @@ def straightSelfAvoidingWalk {d : ℕ} (hd : 0 < d) (n : ℕ) : SelfAvoidingWalk
 /-- There is at least one self-avoiding walk of every length in any nonzero dimension. -/
 theorem one_le_selfAvoidingWalkCount {d : ℕ} (hd : 0 < d) (n : ℕ) :
     1 ≤ selfAvoidingWalkCount d n := by
+  classical
   simpa [selfAvoidingWalkCount] using
     Fintype.card_pos_iff.mpr ⟨straightSelfAvoidingWalk hd n⟩
 

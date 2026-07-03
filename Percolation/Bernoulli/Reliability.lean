@@ -15,7 +15,7 @@ probability can be rewritten as a covariance with the number of open coordinates
 namespace Percolation
 
 open MeasureTheory ProbabilityTheory
-open scoped BigOperators
+open scoped BigOperators Classical
 open Set
 
 /-- The number of open coordinates in a finite-cube configuration, as a real-valued observable. -/
@@ -27,19 +27,19 @@ theorem finiteOpenCount_empty {ι : Type*} :
     finiteOpenCount (∅ : Finset ι) = 0 := by
   simp [finiteOpenCount]
 
-theorem finiteOpenCount_insert_of_notMem {ι : Type*} [DecidableEq ι]
+theorem finiteOpenCount_insert_of_notMem {ι : Type*}
     {a : ι} {s : Finset ι} (ha : a ∉ s) :
     finiteOpenCount (insert a s) = finiteOpenCount s + 1 := by
   simp [finiteOpenCount, Finset.card_insert_of_notMem ha]
 
 /-- Covariance of two finite-cube observables under the homogeneous Bernoulli measure. -/
-noncomputable def finiteBernoulliCovariance {ι : Type*} [DecidableEq ι]
+noncomputable def finiteBernoulliCovariance {ι : Type*}
     (E : Finset ι) (p : ℝ) (X Y : Finset ι → ℝ) : ℝ :=
   finiteBernoulliExpectation E p (fun s ↦ X s * Y s) -
     finiteBernoulliExpectation E p X * finiteBernoulliExpectation E p Y
 
 /-- The finite Bernoulli expectation of the number of open coordinates is `p |E|`. -/
-theorem finiteBernoulliExpectation_finiteOpenCount {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliExpectation_finiteOpenCount {ι : Type*}
     (E : Finset ι) (p : ℝ) :
     finiteBernoulliExpectation E p finiteOpenCount = p * E.card := by
   induction E using Finset.induction with
@@ -59,7 +59,7 @@ theorem finiteBernoulliExpectation_finiteOpenCount {ι : Type*} [DecidableEq ι]
 
 /-- For the open-count observable, forcing any coordinate open rather than closed changes the
 count by exactly one. -/
-theorem finiteDifference_finiteOpenCount {ι : Type*} [DecidableEq ι]
+theorem finiteDifference_finiteOpenCount {ι : Type*}
     (e : ι) (s : Finset ι) :
     finiteDifference e finiteOpenCount s = 1 := by
   unfold finiteDifference finiteForceOpen finiteForceClosed finiteOpenCount
@@ -75,7 +75,7 @@ theorem finiteDifference_finiteOpenCount {ι : Type*} [DecidableEq ι]
 
 /-- Expected finite difference of the open-count observable. -/
 theorem finiteBernoulliExpectation_finiteDifference_finiteOpenCount {ι : Type*}
-    [DecidableEq ι] (E : Finset ι) (p : ℝ) (e : ι) :
+    (E : Finset ι) (p : ℝ) (e : ι) :
     finiteBernoulliExpectation E p (finiteDifference e finiteOpenCount) = 1 := by
   rw [show finiteBernoulliExpectation E p (finiteDifference e finiteOpenCount) =
       finiteBernoulliExpectation E p (fun _ ↦ (1 : ℝ)) by
@@ -93,7 +93,7 @@ theorem indicator_mul_self {ι : Type*} (T : Set (Finset ι)) (s : Finset ι) :
   · simp [Set.indicator_of_notMem hs]
 
 /-- Variance of a finite event indicator is `P(A)(1-P(A))`. -/
-theorem finiteBernoulliCovariance_indicator_self {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_indicator_self {ι : Type*}
     (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
     finiteBernoulliCovariance E p
         (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)
@@ -111,7 +111,7 @@ theorem finiteBernoulliCovariance_indicator_self {ι : Type*} [DecidableEq ι]
   ring
 
 /-- Covariance is nonnegative for increasing finite-cube observables, by finite FKG. -/
-theorem finiteBernoulliCovariance_nonneg_of_increasing {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_nonneg_of_increasing {ι : Type*}
     {E : Finset ι} {p : ℝ} {X Y : Finset ι → ℝ}
     (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
     (hX : IsIncreasingFinsetFunction E X) (hY : IsIncreasingFinsetFunction E Y) :
@@ -121,7 +121,7 @@ theorem finiteBernoulliCovariance_nonneg_of_increasing {ι : Type*} [DecidableEq
   linarith
 
 /-- Covariance is linear in the left observable under subtraction. -/
-theorem finiteBernoulliCovariance_sub_left {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_sub_left {ι : Type*}
     (E : Finset ι) (p : ℝ) (X Y Z : Finset ι → ℝ) :
     finiteBernoulliCovariance E p (fun s ↦ X s - Y s) Z =
       finiteBernoulliCovariance E p X Z - finiteBernoulliCovariance E p Y Z := by
@@ -136,7 +136,7 @@ theorem finiteBernoulliCovariance_sub_left {ι : Type*} [DecidableEq ι]
   ring
 
 /-- Covariance as the expectation of centered observables. -/
-theorem finiteBernoulliCovariance_eq_centered {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_eq_centered {ι : Type*}
     (E : Finset ι) (p : ℝ) (X Y : Finset ι → ℝ) :
     finiteBernoulliCovariance E p X Y =
       finiteBernoulliExpectation E p
@@ -163,7 +163,7 @@ theorem finiteBernoulliCovariance_eq_centered {ι : Type*} [DecidableEq ι]
   ring
 
 /-- Finite Bernoulli Cauchy-Schwarz for expectations on a finite cube. -/
-theorem finiteBernoulliExpectation_mul_sq_le_sq_mul_sq {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliExpectation_mul_sq_le_sq_mul_sq {ι : Type*}
     {E : Finset ι} {p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
     (X Y : Finset ι → ℝ) :
     (finiteBernoulliExpectation E p (fun s ↦ X s * Y s)) ^ 2 ≤
@@ -187,7 +187,7 @@ theorem finiteBernoulliExpectation_mul_sq_le_sq_mul_sq {ι : Type*} [DecidableEq
     exact le_of_eq (by ring)
 
 /-- Variance as the expectation of the square of the centered observable. -/
-theorem finiteBernoulliCovariance_self_eq_centered_sq {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_self_eq_centered_sq {ι : Type*}
     (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) :
     finiteBernoulliCovariance E p X X =
       finiteBernoulliExpectation E p
@@ -198,14 +198,14 @@ theorem finiteBernoulliCovariance_self_eq_centered_sq {ι : Type*} [DecidableEq 
   ring
 
 /-- Variance is nonnegative on the finite Bernoulli cube. -/
-theorem finiteBernoulliCovariance_self_nonneg {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_self_nonneg {ι : Type*}
     {E : Finset ι} {p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (X : Finset ι → ℝ) :
     0 ≤ finiteBernoulliCovariance E p X X := by
   rw [finiteBernoulliCovariance_self_eq_centered_sq]
   exact finiteBernoulliExpectation_nonneg hp0 hp1 (fun _s _hsE ↦ sq_nonneg _)
 
 /-- Cauchy-Schwarz for finite Bernoulli covariance. -/
-theorem finiteBernoulliCovariance_sq_le_mul_self {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_sq_le_mul_self {ι : Type*}
     {E : Finset ι} {p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
     (X Y : Finset ι → ℝ) :
     (finiteBernoulliCovariance E p X Y) ^ 2 ≤
@@ -231,7 +231,7 @@ theorem finiteBernoulliCovariance_sq_le_mul_self {ι : Type*} [DecidableEq ι]
 /-- For an increasing finite trace, `N - 1_A` is increasing. This is the monotonicity input
 behind Grimmett's S-shape/reliability lower bound. -/
 theorem IsIncreasingTrace.finiteOpenCount_sub_indicator_isIncreasingFinsetFunction
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {T : Set (Finset ι)}
+    {ι : Type*} {E : Finset ι} {T : Set (Finset ι)}
     (hT : IsIncreasingTrace E T) :
     IsIncreasingFinsetFunction E
       (fun s ↦ finiteOpenCount s - T.indicator (fun _ ↦ (1 : ℝ)) s) := by
@@ -261,7 +261,7 @@ theorem IsIncreasingTrace.finiteOpenCount_sub_indicator_isIncreasingFinsetFuncti
 `cov(N,1_A) ≥ var(1_A) = P(A)(1-P(A))`. This is the numerator form of Grimmett's
 inequality (2.37). -/
 theorem finiteBernoulliEventProbability_mul_compl_le_covariance_finiteOpenCount
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    {ι : Type*} {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
     (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hT : IsIncreasingTrace E T) :
     finiteBernoulliEventProbability E p T * (1 - finiteBernoulliEventProbability E p T) ≤
       finiteBernoulliCovariance E p finiteOpenCount
@@ -290,7 +290,7 @@ theorem finiteBernoulliEventProbability_mul_compl_le_covariance_finiteOpenCount
 `finiteBernoulliEventProbability_hasDerivAt_covariance_finiteOpenCount`, this is the finite-cube
 version of Grimmett's inequality (2.37). -/
 theorem finiteBernoulliEventProbability_mul_compl_div_le_covariance_div_finiteOpenCount
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    {ι : Type*} {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
     (hp0 : 0 < p) (hp1 : p < 1) (hT : IsIncreasingTrace E T) :
     finiteBernoulliEventProbability E p T * (1 - finiteBernoulliEventProbability E p T) /
         (p * (1 - p)) ≤
@@ -306,7 +306,7 @@ theorem finiteBernoulliEventProbability_mul_compl_div_le_covariance_div_finiteOp
 
 /-- Split the expectation of `finiteOpenCount * X` after inserting a fresh coordinate. -/
 theorem finiteBernoulliExpectation_finiteOpenCount_mul_insert_split {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ)
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ)
     (X : Finset ι → ℝ) :
     finiteBernoulliExpectation (insert a E) p (fun s ↦ finiteOpenCount s * X s) =
       (1 - p) * finiteBernoulliExpectation E p (fun s ↦ finiteOpenCount s * X s) +
@@ -324,7 +324,7 @@ theorem finiteBernoulliExpectation_finiteOpenCount_mul_insert_split {ι : Type*}
   rw [hopen]
 
 /-- Conditioning decomposition for the covariance with the number of open coordinates. -/
-theorem finiteBernoulliCovariance_finiteOpenCount_insert {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_finiteOpenCount_insert {ι : Type*}
     {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ) (X : Finset ι → ℝ) :
     finiteBernoulliCovariance (insert a E) p finiteOpenCount X =
       (1 - p) * finiteBernoulliCovariance E p finiteOpenCount X +
@@ -365,7 +365,7 @@ theorem finiteBernoulliCovariance_finiteOpenCount_insert {ι : Type*} [Decidable
 covariance with the number of open coordinates is `p(1-p)` times the sum of finite
 coordinate increments. -/
 theorem finiteBernoulliCovariance_finiteOpenCount_eq_mul_derivativeSum {ι : Type*}
-    [DecidableEq ι] (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) :
+    (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) :
     finiteBernoulliCovariance E p finiteOpenCount X =
       p * (1 - p) *
         (E.sum fun e ↦ finiteBernoulliExpectation E p (finiteDifference e X)) := by
@@ -399,7 +399,7 @@ theorem finiteBernoulliCovariance_finiteOpenCount_eq_mul_derivativeSum {ι : Typ
       ring
 
 /-- Variance of the number of open coordinates in a finite Bernoulli cube. -/
-theorem finiteBernoulliCovariance_finiteOpenCount_self {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliCovariance_finiteOpenCount_self {ι : Type*}
     (E : Finset ι) (p : ℝ) :
     finiteBernoulliCovariance E p finiteOpenCount finiteOpenCount =
       p * (1 - p) * E.card := by
@@ -415,7 +415,7 @@ theorem finiteBernoulliCovariance_finiteOpenCount_self {ι : Type*} [DecidableEq
 /-- Finite Cauchy-Schwarz upper reliability bound, the numerator form of Grimmett's
 inequality (2.36)(a). -/
 theorem finiteBernoulliCovariance_finiteOpenCount_indicator_sq_le
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    {ι : Type*} {E : Finset ι} {p : ℝ}
     (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (T : Set (Finset ι)) :
     (finiteBernoulliCovariance E p finiteOpenCount
         (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)) ^ 2 ≤
@@ -434,7 +434,7 @@ theorem finiteBernoulliCovariance_finiteOpenCount_indicator_sq_le
 Theorem (2.34). This is the square of Grimmett's inequality (2.36)(a), with the
 finite derivative written as the covariance quotient. -/
 theorem finiteBernoulliEventProbability_covariance_div_sq_le
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    {ι : Type*} {E : Finset ι} {p : ℝ}
     (hp0 : 0 < p) (hp1 : p < 1) (T : Set (Finset ι)) :
     (finiteBernoulliCovariance E p finiteOpenCount
         (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) / (p * (1 - p))) ^ 2 ≤
@@ -468,7 +468,7 @@ theorem finiteBernoulliEventProbability_covariance_div_sq_le
 /-- Finite Cauchy-Schwarz upper reliability bound in the square-root form of
 Grimmett's inequality (2.36)(a), with the finite derivative written as the covariance quotient. -/
 theorem finiteBernoulliEventProbability_abs_covariance_div_le_sqrt
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    {ι : Type*} {E : Finset ι} {p : ℝ}
     (hp0 : 0 < p) (hp1 : p < 1) (T : Set (Finset ι)) :
     |finiteBernoulliCovariance E p finiteOpenCount
         (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) / (p * (1 - p))| ≤
@@ -481,7 +481,7 @@ theorem finiteBernoulliEventProbability_abs_covariance_div_le_sqrt
 /-- The derivative of a finite-cube expectation written in Grimmett's reliability covariance
 form. This is the random-variable version of Theorem (2.34). -/
 theorem finiteBernoulliExpectation_hasDerivAt_covariance_finiteOpenCount {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {p : ℝ} (hp0 : p ≠ 0) (hp1 : p ≠ 1)
+    {E : Finset ι} {p : ℝ} (hp0 : p ≠ 0) (hp1 : p ≠ 1)
     (X : Finset ι → ℝ) :
     HasDerivAt (fun x : ℝ ↦ finiteBernoulliExpectation E x X)
       (finiteBernoulliCovariance E p finiteOpenCount X / (p * (1 - p))) p := by
@@ -499,7 +499,7 @@ theorem finiteBernoulliExpectation_hasDerivAt_covariance_finiteOpenCount {ι : T
 /-- Grimmett's Theorem (2.34), finite-event form.  The derivative of a finite event probability
 is covariance with the finite open-coordinate count divided by `p(1-p)`. -/
 theorem finiteBernoulliEventProbability_hasDerivAt_covariance_finiteOpenCount {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {p : ℝ} (hp0 : p ≠ 0) (hp1 : p ≠ 1)
+    {E : Finset ι} {p : ℝ} (hp0 : p ≠ 0) (hp1 : p ≠ 1)
     (T : Set (Finset ι)) :
     HasDerivAt (fun x : ℝ ↦ finiteBernoulliEventProbability E x T)
       (finiteBernoulliCovariance E p finiteOpenCount
@@ -511,7 +511,7 @@ theorem finiteBernoulliEventProbability_hasDerivAt_covariance_finiteOpenCount {�
 /-- Grimmett's finite reliability upper bound (2.36)(a), stated directly for the derivative
 of a finite event probability. -/
 theorem finiteBernoulliEventProbability_abs_deriv_le_sqrt {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    {E : Finset ι} {p : ℝ}
     (hp0 : 0 < p) (hp1 : p < 1) (T : Set (Finset ι)) :
     |deriv (fun x : ℝ ↦ finiteBernoulliEventProbability E x T) p| ≤
       √((E.card : ℝ) *
@@ -527,7 +527,7 @@ theorem finiteBernoulliEventProbability_abs_deriv_le_sqrt {ι : Type*}
 /-- Grimmett's finite monotone reliability lower bound (2.37), stated directly for the
 derivative of a finite increasing event probability. -/
 theorem finiteBernoulliEventProbability_mul_compl_div_le_deriv {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
     (hp0 : 0 < p) (hp1 : p < 1) (hT : IsIncreasingTrace E T) :
     finiteBernoulliEventProbability E p T * (1 - finiteBernoulliEventProbability E p T) /
         (p * (1 - p)) ≤
@@ -620,7 +620,7 @@ theorem grimmett_238_scalar_inequality {p γ x y : ℝ}
 /-- Finite trace form of Grimmett's inequality (2.42), the induction statement used to prove
 the log-ratio monotonicity theorem (2.38): for an increasing event depending on finitely many
 coordinates, `P_{p^γ}(A) ≤ P_p(A)^γ` when `0 < p < 1` and `γ ≥ 1`. -/
-theorem finiteBernoulliEventProbability_logRatio_power_le {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliEventProbability_logRatio_power_le {ι : Type*}
     {E : Finset ι} {p γ : ℝ} {T : Set (Finset ι)}
     (hp0 : 0 < p) (hp1 : p < 1) (hγ : 1 ≤ γ) (hT : IsIncreasingTrace E T) :
     finiteBernoulliEventProbability E (p ^ γ) T ≤
@@ -700,7 +700,7 @@ theorem finiteBernoulliEventProbability_logRatio_power_le {ι : Type*} [Decidabl
 increasing finite event with positive probabilities, `log P_p(A) / log p` is non-increasing
 in `p` on `(0,1)`.  The proof sets `γ = log p / log q`, rewrites `p = q^γ`, applies the
 finite power inequality, and then takes logarithms. -/
-theorem finiteBernoulliEventProbability_logRatio_antitone {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliEventProbability_logRatio_antitone {ι : Type*}
     {E : Finset ι} {p q : ℝ} {T : Set (Finset ι)}
     (hp0 : 0 < p) (hpq : p ≤ q) (hq1 : q < 1)
     (hPp : 0 < finiteBernoulliEventProbability E p T)
@@ -750,7 +750,7 @@ theorem finiteBernoulliEventProbability_logRatio_antitone {ι : Type*} [Decidabl
   simpa [hmul_simpl] using hlog_bound
 
 /-- Finite-support product-measure form of Grimmett's log-ratio monotonicity theorem (2.38). -/
-theorem DependsOn.setBernoulli_real_logRatio_antitone {ι : Type*} [DecidableEq ι]
+theorem DependsOn.setBernoulli_real_logRatio_antitone {ι : Type*}
     {E : Finset ι} {A : Set (Set ι)} (hAdep : DependsOn E A)
     (hAinc : IsIncreasingEvent A) {p q : ↑unitInterval}
     (hp0 : 0 < (p : ℝ)) (hpq : (p : ℝ) ≤ (q : ℝ)) (hq1 : (q : ℝ) < 1)

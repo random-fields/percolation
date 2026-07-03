@@ -13,7 +13,7 @@ This file adds the deterministic event-level definitions used in Grimmett's Russ
 namespace Percolation
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Finset unitInterval BigOperators symmDiff
+open scoped ENNReal Finset unitInterval BigOperators symmDiff Classical
 
 /-- Force coordinate `e` to be open. -/
 def forceOpen {ι : Type*} (e : ι) (ω : Set ι) : Set ι :=
@@ -68,18 +68,18 @@ theorem isPivotal_iff {ι : Type*} (A : Set (Set ι)) (e : ι) (ω : Set ι) :
   Iff.rfl
 
 /-- The pivotal coordinates in a finite support. -/
-noncomputable def pivotalSet {ι : Type*} [DecidableEq ι]
+noncomputable def pivotalSet {ι : Type*}
     (E : Finset ι) (A : Set (Set ι)) (ω : Set ι) : Finset ι := by
   classical
   exact E.filter fun e ↦ IsPivotal A e ω
 
 /-- The number of pivotal coordinates in a finite support. -/
-noncomputable def pivotalCount {ι : Type*} [DecidableEq ι]
+noncomputable def pivotalCount {ι : Type*}
     (E : Finset ι) (A : Set (Set ι)) (ω : Set ι) : ℕ :=
   (pivotalSet E A ω).card
 
 @[simp]
-theorem mem_pivotalSet_iff {ι : Type*} [DecidableEq ι]
+theorem mem_pivotalSet_iff {ι : Type*}
     (E : Finset ι) (A : Set (Set ι)) (ω : Set ι) (e : ι) :
     e ∈ pivotalSet E A ω ↔ e ∈ E ∧ IsPivotal A e ω := by
   classical
@@ -138,7 +138,7 @@ theorem isPivotal_congr_agreeExcept {ι : Type*} {A : Set (Set ι)}
   rw [IsPivotal, IsPivotal, forceOpen_eq_of_agreeExcept h,
     forceClosed_eq_of_agreeExcept h]
 
-theorem dependsOn_pivotalEvent {ι : Type*} [DecidableEq ι]
+theorem dependsOn_pivotalEvent {ι : Type*}
     {E : Finset ι} {A : Set (Set ι)} {e : ι}
     (hA : DependsOn E A) :
     DependsOn (E.erase e) {ω : Set ι | IsPivotal A e ω} := by
@@ -166,32 +166,32 @@ theorem dependsOn_pivotalEvent {ι : Type*} [DecidableEq ι]
   exact and_congr hopen (not_congr hclosed)
 
 /-- Force a finite-cube coordinate open. This is the finite trace analogue of `forceOpen`. -/
-def finiteForceOpen {ι : Type*} [DecidableEq ι] (e : ι) (s : Finset ι) : Finset ι :=
+noncomputable def finiteForceOpen {ι : Type*} (e : ι) (s : Finset ι) : Finset ι :=
   insert e s
 
 /-- Force a finite-cube coordinate closed. This is the finite trace analogue of `forceClosed`. -/
-def finiteForceClosed {ι : Type*} [DecidableEq ι] (e : ι) (s : Finset ι) : Finset ι :=
+noncomputable def finiteForceClosed {ι : Type*} (e : ι) (s : Finset ι) : Finset ι :=
   s.erase e
 
 @[simp]
-theorem finiteForceOpen_eq_self {ι : Type*} [DecidableEq ι]
+theorem finiteForceOpen_eq_self {ι : Type*}
     {e : ι} {s : Finset ι} (he : e ∈ s) :
     finiteForceOpen e s = s := by
   exact Finset.insert_eq_of_mem he
 
 @[simp]
-theorem finiteForceClosed_eq_self {ι : Type*} [DecidableEq ι]
+theorem finiteForceClosed_eq_self {ι : Type*}
     {e : ι} {s : Finset ι} (he : e ∉ s) :
     finiteForceClosed e s = s := by
   simp [finiteForceClosed, he]
 
 /-- Coordinate `e` is pivotal for a finite trace if opening `e` puts the trace in the event and
 closing `e` removes it. -/
-def IsPivotalTrace {ι : Type*} [DecidableEq ι]
+def IsPivotalTrace {ι : Type*}
     (T : Set (Finset ι)) (e : ι) (s : Finset ι) : Prop :=
   finiteForceOpen e s ∈ T ∧ finiteForceClosed e s ∉ T
 
-theorem finset_insert_erase_eq_insert {ι : Type*} [DecidableEq ι] (e : ι) (s : Finset ι) :
+theorem finset_insert_erase_eq_insert {ι : Type*} (e : ι) (s : Finset ι) :
     insert e (s.erase e) = insert e s := by
   ext f
   by_cases hfe : f = e
@@ -200,20 +200,20 @@ theorem finset_insert_erase_eq_insert {ι : Type*} [DecidableEq ι] (e : ι) (s 
   · simp [hfe]
 
 /-- Finite pivotality is unchanged by forcing the pivotal coordinate open. -/
-theorem isPivotalTrace_insert {ι : Type*} [DecidableEq ι]
+theorem isPivotalTrace_insert {ι : Type*}
     (T : Set (Finset ι)) (e : ι) (s : Finset ι) :
     IsPivotalTrace T e (insert e s) ↔ IsPivotalTrace T e s := by
   simp [IsPivotalTrace, finiteForceOpen, finiteForceClosed]
 
 /-- Finite pivotality is unchanged by forcing the pivotal coordinate closed. -/
-theorem isPivotalTrace_erase {ι : Type*} [DecidableEq ι]
+theorem isPivotalTrace_erase {ι : Type*}
     (T : Set (Finset ι)) (e : ι) (s : Finset ι) :
     IsPivotalTrace T e (s.erase e) ↔ IsPivotalTrace T e s := by
   simp [IsPivotalTrace, finiteForceOpen, finiteForceClosed, finset_insert_erase_eq_insert]
 
 /-- Finite trace version of the set identity behind Grimmett's equation (2.29):
 open-and-pivotal equals event-and-pivotal. -/
-theorem open_inter_pivotalTrace_eq_event_inter_pivotalTrace {ι : Type*} [DecidableEq ι]
+theorem open_inter_pivotalTrace_eq_event_inter_pivotalTrace {ι : Type*}
     (T : Set (Finset ι)) (e : ι) :
     ({s : Finset ι | e ∈ s} ∩ {s : Finset ι | IsPivotalTrace T e s}) =
       (T ∩ {s : Finset ι | IsPivotalTrace T e s}) := by
@@ -229,7 +229,7 @@ theorem open_inter_pivotalTrace_eq_event_inter_pivotalTrace {ι : Type*} [Decida
 
 /-- The finite trace of the event-level pivotal event is exactly the finite-cube pivotal trace,
 provided the pivotal coordinate belongs to the ambient finite support. -/
-theorem eventTrace_pivotalEvent_eq {ι : Type*} [DecidableEq ι]
+theorem eventTrace_pivotalEvent_eq {ι : Type*}
     {E : Finset ι} {A : Set (Set ι)} {e : ι} (he : e ∈ E) :
     (eventTrace E {ω : Set ι | IsPivotal A e ω} : Set (Finset ι)) =
       {s : Finset ι | IsPivotalTrace (eventTrace E A : Set (Finset ι)) e s} := by
@@ -277,7 +277,7 @@ theorem eventTrace_pivotalEvent_eq {ι : Type*} [DecidableEq ι]
 /-- Product-measure probability of an event-level pivotal event agrees with the finite pivotal
 trace probability for any event depending on the finite support. -/
 theorem DependsOn.setBernoulli_real_pivotal_eq_finiteBernoulliEventProbability {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
+    {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
     {e : ι} (he : e ∈ E) (p : I) :
     setBer((Set.univ : Set ι), p).real {ω : Set ι | IsPivotal A e ω} =
       finiteBernoulliEventProbability E (p : ℝ)
@@ -290,7 +290,7 @@ theorem DependsOn.setBernoulli_real_pivotal_eq_finiteBernoulliEventProbability {
 
 /-- If a finite event is invariant under opening a fresh coordinate, then its probability on
 the enlarged support agrees with its probability on the old support. -/
-theorem finiteBernoulliEventProbability_insert_invariant {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliEventProbability_insert_invariant {ι : Type*}
     {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ) (P : Set (Finset ι))
     (hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert e s ∈ P ↔ s ∈ P)) :
     finiteBernoulliEventProbability (insert e E) p P =
@@ -312,7 +312,7 @@ theorem finiteBernoulliEventProbability_insert_invariant {ι : Type*} [Decidable
 /-- If a finite event is invariant under opening a fresh coordinate, then intersecting it with
 the event that the fresh coordinate is open multiplies its probability by `p`. -/
 theorem finiteBernoulliEventProbability_insert_open_invariant {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
     (P : Set (Finset ι))
     (hP : ∀ ⦃s : Finset ι⦄, s ⊆ E → (insert e s ∈ P ↔ s ∈ P)) :
     finiteBernoulliEventProbability (insert e E) p ({s | e ∈ s} ∩ P) =
@@ -335,7 +335,7 @@ theorem finiteBernoulliEventProbability_insert_open_invariant {ι : Type*}
 /-- Finite-cube independence form of Grimmett's observation before equation (2.29): the pivotal
 event ignores the state of `e`, so open-and-pivotal has probability `p` times pivotal. -/
 theorem finiteBernoulliEventProbability_open_pivotalTrace_eq_mul {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
     (T : Set (Finset ι)) :
     finiteBernoulliEventProbability (insert e E) p
         ({s : Finset ι | e ∈ s} ∩ {s : Finset ι | IsPivotalTrace T e s}) =
@@ -350,7 +350,7 @@ theorem finiteBernoulliEventProbability_open_pivotalTrace_eq_mul {ι : Type*}
 
 /-- Finite-cube equation (2.29) input: event-and-pivotal has probability `p` times pivotal. -/
 theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
     (T : Set (Finset ι)) :
     finiteBernoulliEventProbability (insert e E) p
         (T ∩ {s : Finset ι | IsPivotalTrace T e s}) =
@@ -362,7 +362,7 @@ theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul {ι : Ty
 /-- Event-level finite-support version of Grimmett's equation (2.29):
 `P(A ∩ {e pivotal}) = p * P(e pivotal)`. -/
 theorem DependsOn.setBernoulli_real_event_inter_pivotal_eq_mul {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
+    {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
     {e : ι} (he : e ∈ E) (p : I) :
     setBer((Set.univ : Set ι), p).real (A ∩ {ω : Set ι | IsPivotal A e ω}) =
       (p : ℝ) * setBer((Set.univ : Set ι), p).real
@@ -421,7 +421,7 @@ theorem DependsOn.bernoulliBondMeasure_real_event_inter_pivotal_eq_mul (d : ℕ)
 /-- For an increasing finite trace, the difference between the indicators with `e` forced open
 and closed is exactly the pivotal indicator. This is the pointwise identity behind Grimmett's
 finite-coordinate Russo difference computation. -/
-theorem indicator_insert_sub_eq_pivotalTrace {ι : Type*} [DecidableEq ι]
+theorem indicator_insert_sub_eq_pivotalTrace {ι : Type*}
     {E : Finset ι} {e : ι} (he : e ∉ E) {T : Set (Finset ι)}
     (hT : IsIncreasingTrace (insert e E) T) {s : Finset ι} (hsE : s ⊆ E) :
     T.indicator (fun _ ↦ (1 : ℝ)) (insert e s) - T.indicator (fun _ ↦ (1 : ℝ)) s =
@@ -451,7 +451,7 @@ in the fresh coordinate `e`, then changing the probability of `e` changes the pr
 increasing trace by `(r e - q e)` times the pivotal probability. This is the finite algebraic
 step in Grimmett's proof of Theorem (2.25). -/
 theorem finiteBernoulliHeteroEventProbability_single_coordinate_difference {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) {q r : ι → ℝ}
+    {E : Finset ι} {e : ι} (he : e ∉ E) {q r : ι → ℝ}
     {T : Set (Finset ι)} (hqr : ∀ f ∈ E, r f = q f)
     (hT : IsIncreasingTrace (insert e E) T) :
     finiteBernoulliHeteroEventProbability (insert e E) r T -
@@ -499,7 +499,7 @@ theorem finiteBernoulliHeteroEventProbability_single_coordinate_difference {ι :
 coordinate derivative used before summing directions to obtain the usual finite uniform-parameter
 Russo formula. -/
 theorem finiteBernoulliHeteroEventProbability_hasDerivAt_update {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) {q : ι → ℝ}
+    {E : Finset ι} {e : ι} (he : e ∉ E) {q : ι → ℝ}
     {T : Set (Finset ι)} (hT : IsIncreasingTrace (insert e E) T) :
     HasDerivAt
       (fun x : ℝ ↦ finiteBernoulliHeteroEventProbability (insert e E)
@@ -542,7 +542,7 @@ theorem finiteBernoulliHeteroEventProbability_hasDerivAt_update {ι : Type*}
 coordinates currently have probability `p`, then varying only coordinate `e` has derivative equal
 to the ordinary homogeneous pivotal probability. -/
 theorem finiteBernoulliHeteroEventProbability_hasDerivAt_update_const {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
+    {E : Finset ι} {e : ι} (he : e ∉ E) (p : ℝ)
     {T : Set (Finset ι)} (hT : IsIncreasingTrace (insert e E) T) :
     HasDerivAt
       (fun x : ℝ ↦ finiteBernoulliHeteroEventProbability (insert e E)
@@ -555,7 +555,7 @@ theorem finiteBernoulliHeteroEventProbability_hasDerivAt_update_const {ι : Type
   simpa [finiteBernoulliHeteroEventProbability_const] using h
 
 /-- The closed section of an increasing trace is increasing. -/
-theorem IsIncreasingTrace.closedSection {ι : Type*} [DecidableEq ι]
+theorem IsIncreasingTrace.closedSection {ι : Type*}
     {E : Finset ι} {a : ι} {T : Set (Finset ι)}
     (hT : IsIncreasingTrace (insert a E) T) :
     IsIncreasingTrace E T := by
@@ -563,7 +563,7 @@ theorem IsIncreasingTrace.closedSection {ι : Type*} [DecidableEq ι]
   exact hT hst (by intro x hx; exact Finset.mem_insert.mpr (Or.inr (htE hx))) hs
 
 /-- The open section of an increasing trace is increasing. -/
-theorem IsIncreasingTrace.openSection {ι : Type*} [DecidableEq ι]
+theorem IsIncreasingTrace.openSection {ι : Type*}
     {E : Finset ι} {a : ι} {T : Set (Finset ι)}
     (hT : IsIncreasingTrace (insert a E) T) :
     IsIncreasingTrace E {s : Finset ι | insert a s ∈ T} := by
@@ -572,7 +572,7 @@ theorem IsIncreasingTrace.openSection {ι : Type*} [DecidableEq ι]
 
 /-- If a fresh coordinate `a` is already open, pivotality of another coordinate `e` is pivotality
 inside the open section. -/
-theorem isPivotalTrace_insert_fresh_iff_openSection {ι : Type*} [DecidableEq ι]
+theorem isPivotalTrace_insert_fresh_iff_openSection {ι : Type*}
     (T : Set (Finset ι)) {a e : ι} (hae : a ≠ e) (s : Finset ι) :
     IsPivotalTrace T e (insert a s) ↔
       IsPivotalTrace {u : Finset ι | insert a u ∈ T} e s := by
@@ -593,7 +593,7 @@ theorem isPivotalTrace_insert_fresh_iff_openSection {ι : Type*} [DecidableEq ι
 section probabilities. This is the finite-coordinate version of the first term in Russo's
 formula. -/
 theorem finiteBernoulliEventProbability_pivotal_fresh_eq_open_sub_closed {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ)
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ)
     {T : Set (Finset ι)} (hT : IsIncreasingTrace (insert a E) T) :
     finiteBernoulliEventProbability (insert a E) p
         {s : Finset ι | IsPivotalTrace T a s} =
@@ -627,7 +627,7 @@ theorem finiteBernoulliEventProbability_pivotal_fresh_eq_open_sub_closed {ι : T
 /-- Conditioning decomposition for pivotality of an old coordinate after inserting a fresh
 coordinate. -/
 theorem finiteBernoulliEventProbability_pivotal_old_insert_split {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {a e : ι} (ha : a ∉ E) (he : e ∈ E) (p : ℝ)
+    {E : Finset ι} {a e : ι} (ha : a ∉ E) (he : e ∈ E) (p : ℝ)
     (T : Set (Finset ι)) :
     finiteBernoulliEventProbability (insert a E) p
         {s : Finset ι | IsPivotalTrace T e s} =
@@ -647,7 +647,7 @@ theorem finiteBernoulliEventProbability_pivotal_old_insert_split {ι : Type*}
 /-- Finite homogeneous Russo formula for increasing finite traces. For a finite increasing event,
 the derivative of its Bernoulli probability is the sum of the probabilities that each coordinate
 is pivotal. -/
-theorem finiteBernoulliEventProbability_hasDerivAt {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliEventProbability_hasDerivAt {ι : Type*}
     {E : Finset ι} {p : ℝ} {T : Set (Finset ι)} (hT : IsIncreasingTrace E T) :
     HasDerivAt (fun x : ℝ ↦ finiteBernoulliEventProbability E x T)
       (E.sum fun e ↦ finiteBernoulliEventProbability E p
@@ -702,24 +702,24 @@ theorem finiteBernoulliEventProbability_hasDerivAt {ι : Type*} [DecidableEq ι]
       ring
 
 /-- The finite set of pivotal coordinates for a finite trace. -/
-noncomputable def pivotalTraceSet {ι : Type*} [DecidableEq ι]
+noncomputable def pivotalTraceSet {ι : Type*}
     (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) : Finset ι := by
   classical
   exact E.filter fun e ↦ IsPivotalTrace T e s
 
 /-- The number of pivotal coordinates for a finite trace, as a real-valued observable. -/
-noncomputable def pivotalTraceCount {ι : Type*} [DecidableEq ι]
+noncomputable def pivotalTraceCount {ι : Type*}
     (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) : ℝ :=
   (pivotalTraceSet E T s).card
 
 @[simp]
-theorem mem_pivotalTraceSet_iff {ι : Type*} [DecidableEq ι]
+theorem mem_pivotalTraceSet_iff {ι : Type*}
     (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) (e : ι) :
     e ∈ pivotalTraceSet E T s ↔ e ∈ E ∧ IsPivotalTrace T e s := by
   classical
   simp [pivotalTraceSet]
 
-theorem pivotalTraceCount_eq_sum_indicator {ι : Type*} [DecidableEq ι]
+theorem pivotalTraceCount_eq_sum_indicator {ι : Type*}
     (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) :
     pivotalTraceCount E T s =
       E.sum fun e ↦
@@ -728,7 +728,7 @@ theorem pivotalTraceCount_eq_sum_indicator {ι : Type*} [DecidableEq ι]
   unfold pivotalTraceCount pivotalTraceSet
   simp [Set.indicator_apply]
 
-theorem indicator_pivotalTraceCount_eq_sum_inter_indicator {ι : Type*} [DecidableEq ι]
+theorem indicator_pivotalTraceCount_eq_sum_inter_indicator {ι : Type*}
     (E : Finset ι) (T : Set (Finset ι)) (s : Finset ι) :
     T.indicator (fun u ↦ pivotalTraceCount E T u) s =
       E.sum fun e ↦ (T ∩ {u : Finset ι | IsPivotalTrace T e u}).indicator
@@ -748,7 +748,7 @@ theorem indicator_pivotalTraceCount_eq_sum_inter_indicator {ι : Type*} [Decidab
 /-- Expected number of pivotal coordinates equals the sum of the individual pivotal
 probabilities. -/
 theorem finiteBernoulliExpectation_pivotalTraceCount_eq_sum {ι : Type*}
-    [DecidableEq ι] (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
     finiteBernoulliExpectation E p (pivotalTraceCount E T) =
       E.sum fun e ↦ finiteBernoulliEventProbability E p
         {s : Finset ι | IsPivotalTrace T e s} := by
@@ -760,7 +760,7 @@ theorem finiteBernoulliExpectation_pivotalTraceCount_eq_sum {ι : Type*}
 
 /-- Event-restricted pivotal count equals the sum of event-and-pivotal indicators. -/
 theorem finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_sum_inter
-    {ι : Type*} [DecidableEq ι] (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    {ι : Type*} (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
     finiteBernoulliExpectation E p
         (fun s ↦ T.indicator (fun u ↦ pivotalTraceCount E T u) s) =
       E.sum fun e ↦ finiteBernoulliEventProbability E p
@@ -774,7 +774,7 @@ theorem finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_sum_inter
 /-- Equation (2.29) on an arbitrary finite support containing `e`, obtained from the fresh
 coordinate version by rewriting `E` as `insert e (E.erase e)`. -/
 theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul_of_mem
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {e : ι} (he : e ∈ E)
+    {ι : Type*} {E : Finset ι} {e : ι} (he : e ∈ E)
     (p : ℝ) (T : Set (Finset ι)) :
     finiteBernoulliEventProbability E p (T ∩ {s : Finset ι | IsPivotalTrace T e s}) =
       p * finiteBernoulliEventProbability E p {s : Finset ι | IsPivotalTrace T e s} := by
@@ -785,7 +785,7 @@ theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul_of_mem
 /-- Finite version of Grimmett's identity behind (2.30):
 `E_p[1_A N(A)] = p E_p[N(A)]`, where `N(A)` counts pivotal coordinates. -/
 theorem finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_mul {ι : Type*}
-    [DecidableEq ι] (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
+    (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
     finiteBernoulliExpectation E p
         (fun s ↦ T.indicator (fun u ↦ pivotalTraceCount E T u) s) =
       p * finiteBernoulliExpectation E p (pivotalTraceCount E T) := by
@@ -803,7 +803,7 @@ theorem finiteBernoulliExpectation_indicator_pivotalTraceCount_eq_mul {ι : Type
 /-- Conditional expected number of pivotal coordinates, encoded as
 `E_p[1_A N(A)] / P_p(A)`. When `P_p(A)=0` this definition evaluates to `0` by real division,
 and the theorem below assumes the nonzero case. -/
-noncomputable def finiteConditionalPivotalTraceCount {ι : Type*} [DecidableEq ι]
+noncomputable def finiteConditionalPivotalTraceCount {ι : Type*}
     (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) : ℝ :=
   finiteBernoulliExpectation E p
       (fun s ↦ T.indicator (fun u ↦ pivotalTraceCount E T u) s) /
@@ -811,7 +811,7 @@ noncomputable def finiteConditionalPivotalTraceCount {ι : Type*} [DecidableEq �
 
 /-- Russo's finite derivative written as the expected number of pivotal coordinates. -/
 theorem finiteBernoulliEventProbability_hasDerivAt_pivotalTraceCount {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
     (hT : IsIncreasingTrace E T) :
     HasDerivAt (fun x : ℝ ↦ finiteBernoulliEventProbability E x T)
       (finiteBernoulliExpectation E p (pivotalTraceCount E T)) p := by
@@ -822,7 +822,7 @@ theorem finiteBernoulliEventProbability_hasDerivAt_pivotalTraceCount {ι : Type*
 /-- Finite conditional-pivotal form of Russo's formula, the finite-cube version of Grimmett's
 equation (2.30): `P'_p(A)=P_p(A) E_p[N(A)|A]/p`. -/
 theorem finiteBernoulliEventProbability_hasDerivAt_conditionalPivotalTraceCount
-    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    {ι : Type*} {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
     (hp : p ≠ 0) (hP : finiteBernoulliEventProbability E p T ≠ 0)
     (hT : IsIncreasingTrace E T) :
     HasDerivAt (fun x : ℝ ↦ finiteBernoulliEventProbability E x T)
@@ -839,7 +839,7 @@ theorem finiteBernoulliEventProbability_hasDerivAt_conditionalPivotalTraceCount
 /-- Finite-support product-measure Russo formula. The derivative is the finite trace polynomial,
 and the derivative value is written as the sum of actual product-measure pivotal probabilities. -/
 theorem DependsOn.finiteSupport_setBernoulli_real_russo_hasDerivAt {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
+    {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
     (hAinc : IsIncreasingEvent A) (p : I) :
     HasDerivAt
       (fun x : ℝ ↦ finiteBernoulliEventProbability E x (eventTrace E A))
@@ -867,13 +867,13 @@ theorem DependsOn.bernoulliBondMeasure_real_russo_hasDerivAt (d : ℕ)
 
 /-- Finite difference of an observable when coordinate `e` is forced open instead of closed. This
 is Grimmett's `δ_e X` on a finite cube. -/
-def finiteDifference {ι : Type*} [DecidableEq ι]
+noncomputable def finiteDifference {ι : Type*}
     (e : ι) (X : Finset ι → ℝ) (s : Finset ι) : ℝ :=
   X (finiteForceOpen e s) - X (finiteForceClosed e s)
 
 /-- If a fresh coordinate `a` is already open, the finite difference in another coordinate passes
 to the open section. -/
-theorem finiteDifference_insert_fresh {ι : Type*} [DecidableEq ι]
+theorem finiteDifference_insert_fresh {ι : Type*}
     {a e : ι} (hae : a ≠ e) (X : Finset ι → ℝ) (s : Finset ι) :
     finiteDifference e X (insert a s) =
       finiteDifference e (fun u ↦ X (insert a u)) s := by
@@ -891,7 +891,7 @@ theorem finiteDifference_insert_fresh {ι : Type*} [DecidableEq ι]
 
 /-- The expected finite difference in a fresh coordinate is the open-section expectation minus the
 closed-section expectation. -/
-theorem finiteBernoulliExpectation_finiteDifference_fresh {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliExpectation_finiteDifference_fresh {ι : Type*}
     {E : Finset ι} {a : ι} (ha : a ∉ E) (p : ℝ) (X : Finset ι → ℝ) :
     finiteBernoulliExpectation (insert a E) p (finiteDifference a X) =
       finiteBernoulliExpectation E p (fun s ↦ X (insert a s)) -
@@ -917,7 +917,7 @@ theorem finiteBernoulliExpectation_finiteDifference_fresh {ι : Type*} [Decidabl
 /-- Conditioning decomposition for finite differences in an old coordinate after inserting a fresh
 coordinate. -/
 theorem finiteBernoulliExpectation_finiteDifference_old_insert_split {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {a e : ι} (ha : a ∉ E) (he : e ∈ E) (p : ℝ)
+    {E : Finset ι} {a e : ι} (ha : a ∉ E) (he : e ∈ E) (p : ℝ)
     (X : Finset ι → ℝ) :
     finiteBernoulliExpectation (insert a E) p (finiteDifference e X) =
       (1 - p) * finiteBernoulliExpectation E p (finiteDifference e X) +
@@ -935,7 +935,7 @@ theorem finiteBernoulliExpectation_finiteDifference_old_insert_split {ι : Type*
 /-- Finite Russo formula for real-valued observables on a finite Bernoulli cube. The derivative of
 `E_p[X]` is the sum of the expectations of the finite differences `δ_e X`. This is the finite
 random-variable form behind Grimmett's later Russo formulas. -/
-theorem finiteBernoulliExpectation_hasDerivAt {ι : Type*} [DecidableEq ι]
+theorem finiteBernoulliExpectation_hasDerivAt {ι : Type*}
     {E : Finset ι} {p : ℝ} (X : Finset ι → ℝ) :
     HasDerivAt (fun x : ℝ ↦ finiteBernoulliExpectation E x X)
       (E.sum fun e ↦ finiteBernoulliExpectation E p (finiteDifference e X)) p := by
@@ -982,7 +982,7 @@ theorem finiteBernoulliExpectation_hasDerivAt {ι : Type*} [DecidableEq ι]
       ring
 
 /-- Iterated finite difference `δ_f δ_e X`. -/
-def finiteSecondDifference {ι : Type*} [DecidableEq ι]
+noncomputable def finiteSecondDifference {ι : Type*}
     (e f : ι) (X : Finset ι → ℝ) : Finset ι → ℝ :=
   finiteDifference f (finiteDifference e X)
 
@@ -990,7 +990,7 @@ def finiteSecondDifference {ι : Type*} [DecidableEq ι]
 of the first-difference sum. This is the finite double-sum precursor to Grimmett's second
 derivative identities. -/
 theorem finiteBernoulliExpectation_derivativeSum_hasDerivAt {ι : Type*}
-    [DecidableEq ι] {E : Finset ι} {p : ℝ} (X : Finset ι → ℝ) :
+    {E : Finset ι} {p : ℝ} (X : Finset ι → ℝ) :
     HasDerivAt
       (fun x : ℝ ↦ E.sum fun e ↦ finiteBernoulliExpectation E x (finiteDifference e X))
       (E.sum fun e ↦ E.sum fun f ↦

@@ -1087,6 +1087,7 @@ theorem bernoulliBondMeasure_real_existsOpenDualCircuit_of_encoding_le
     (bernoulliBondMeasure 2 p).real {ω : EdgeConfiguration 2 |
         ∃ b : β, (circuits b).IsOpen ω} ≤
       ((n * selfAvoidingWalkCount 2 (n - 1) : ℕ) : ℝ) * (1 - (p : ℝ)) ^ n := by
+  classical
   refine bernoulliBondMeasure_real_existsOpenDualCircuit_of_length_le_of_card_le
     p circuits hlen ?_
   calc

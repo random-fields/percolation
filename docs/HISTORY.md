@@ -837,9 +837,9 @@ Dated milestones and anti-library notes.
     slice integrability. Applied finite FKG to these conditional-expectation approximants and
     added the convergence bridge: if the two marginal integrals and the product integral converge
     to the corresponding integrals of `X`, `Y`, and `X * Y`, then the expectation FKG inequality
-    follows. This is a verified bridge, not yet the arbitrary square-integrable random-variable
-    endpoint; the remaining work is to identify these approximants with Mathlib conditional
-    expectations for integrable observables and discharge the L2/product convergence step.
+    follows. This was a verified bridge rather than the arbitrary square-integrable
+    random-variable endpoint; the endpoint is closed later by entry 77 through the separate
+    threshold-step/truncation route.
 
 76. **Threshold-step observable FKG bridge (2026-07-03).** Added the event-to-random-variable
     route for Grimmett's Theorem (2.4). Rephrased the countable measurable-event FKG theorem as
@@ -847,13 +847,414 @@ Dated milestones and anti-library notes.
     increasing event indicators by covariance bilinearity, defined the lower threshold-step
     approximants `δ ∑ 1_{(k+1)δ≤X}`, proved FKG for each finite threshold-step approximant, and
     proved the dominated-convergence bridge from pointwise bounded threshold-step convergence to
-    the bounded observable inequality. This still is not the arbitrary square-integrable endpoint:
-    the remaining work is to prove the concrete threshold-step convergence/bounds and then pass
-    from bounded truncations to general L2 observables.
+    the bounded observable inequality. At this point this was still not the arbitrary
+    square-integrable endpoint; entry 77 closes it by proving the concrete threshold-step
+    convergence/bounds and passing from bounded clamps to general L2 observables.
+
+77. **Square-integrable observable FKG endpoint (2026-07-03).** Closed the real-valued
+    expectation form of Grimmett's Theorem (2.4) for countable Bernoulli product spaces. Proved the
+    concrete threshold-count, deterministic bound, and pointwise convergence lemmas for
+    `nonnegativeLowerStep`, giving FKG for bounded nonnegative increasing observables. Shifted
+    bounded real observables to the nonnegative case, introduced `realClamp`, and proved clamp
+    measurability, monotonicity, norm domination, and pointwise convergence. The final theorem
+    `setBernoulli_integral_fkg_squareIntegrable_countable` clamps arbitrary measurable increasing
+    `MemLp · 2` observables, applies bounded FKG to each clamp, and passes the two marginal
+    integrals and product integral by dominated convergence. No project axioms are introduced.
+
+78. **Conditional Reimer-to-BK finite-support layer (2026-07-03).** Extended
+    `Percolation.Bernoulli.BK` with Grimmett's support-parametrized Reimer box occurrence
+    `ReimerOccurrenceOn E A B`, proved its deterministic relationship with binary disjoint
+    occurrence for finite-support events, and introduced `ReimerBoundOn` as an explicit
+    hypothesis/interface rather than a project axiom. From that hypothesis, proved finite-support
+    BK, the Bernoulli product wrapper, the cubic bond wrapper matching Theorem (2.15), the
+    repeated finite-family product bound, and a finite walk-family open-event wrapper. The actual
+    Reimer probability inequality remains a target; no external inequality is asserted.
+
+79. **Finite-trace Reimer reduction and first base cases (2026-07-03).** Added the finite-cube
+    trace form of Reimer's box occurrence: `TraceForces`, `ReimerTraceOccurrence`, and
+    `FiniteTraceReimerBound`. Proved that the finite trace of `ReimerOccurrenceOn E A B` agrees
+    with `ReimerTraceOccurrence E (eventTrace E A) (eventTrace E B)` for events depending on `E`,
+    and proved that a weighted finite-trace Reimer theorem on `E` discharges
+    `ReimerBoundOn (setBer((Set.univ : Set ι), p)) E`. Proved the empty-support Reimer bound and
+    the one-coordinate Reimer bound by an explicit two-point Bernoulli truth table, yielding an
+    unconditional singleton-support BK corollary. The general finite-support Reimer theorem remains
+    open and unaxiomatized.
+
+80. **Two-coordinate finite-cube Reimer preparation (2026-07-03).** Added the finite arithmetic
+    and forcing facts needed for the next Reimer endpoint. Proved that a subset of `{a,b}` is one
+    of the four traces `∅`, `{a}`, `{b}`, `{a,b}`, computed the powerset and weighted Bernoulli
+    probability formula on the two-coordinate cube, and characterized `TraceForces` on this cube
+    for empty, full, left-coordinate, and right-coordinate witness sets. A direct brute-force
+    two-coordinate Reimer truth table was tested but was too expensive; the committed lemmas are
+    the smaller deterministic ingredients for a structured proof.
+
+81. **Classical finite-cube APIs and pair Reimer truth tables (2026-07-03).** Removed visible
+    `DecidableEq` typeclass assumptions from the Lean files by using classical equality
+    inference at module/proof scope instead. The full project still builds, and the Lean scan has
+    no remaining `DecidableEq` occurrences. Extended the two-coordinate Reimer preparation with
+    `reimerTraceOccurrence_pair_iff` and the four explicit per-trace occurrence truth tables for
+    `∅`, `{a}`, `{b}`, and `{a,b}`. A scratch attempt at the full two-coordinate Reimer inequality
+    reduced to many polynomial nonnegativity obligations, so the next proof step should introduce
+    a factorized scalar/nonnegativity layer rather than commit a brittle giant case split.
+
+82. **Two-coordinate finite-trace Reimer endpoint (2026-07-03).** Proved
+    `finiteTraceReimerBound_pair`, the full weighted Reimer inequality on a two-coordinate cube.
+    The proof reuses the pair Reimer occurrence truth tables and closes the residual probability
+    inequalities with the nonnegative Bernstein basis
+    `(1-p)^4`, `p(1-p)^3`, `p^2(1-p)^2`, `p^3(1-p)`, and `p^4` for `0 ≤ p ≤ 1`. Added
+    `reimerBoundOn_setBernoulli_pair` and the unconditional two-coordinate Bernoulli BK corollary
+    `setBernoulli_real_disjointOccurrence_le_mul_of_dependsOn_pair`. General finite-support
+    Reimer is still open and unaxiomatized.
+
+83. **Cardinality-two Reimer/BK wrapper (2026-07-03).** Packaged the empty, singleton, and pair
+    Reimer endpoints as `finiteTraceReimerBound_of_card_le_two`, added the product-measure
+    `ReimerBoundOn` wrapper `reimerBoundOn_setBernoulli_of_card_le_two`, and proved
+    unconditional BK corollaries for common or combined supports of cardinality at most two:
+    `setBernoulli_real_disjointOccurrence_le_mul_of_dependsOn_card_le_two_of_subset`,
+    `setBernoulli_real_disjointOccurrence_le_mul_of_dependsOn_union_card_le_two`, and
+    `bernoulliBondMeasure_real_disjointOccurrence_le_mul_of_card_le_two_of_subset`.
+
+84. **Direct finite-trace Reimer-to-BK bridge (2026-07-03).** Added
+    `setBernoulli_real_disjointOccurrence_le_mul_of_finiteTraceReimerBound` and
+    `bernoulliBondMeasure_real_disjointOccurrence_le_mul_of_finiteTraceReimerBound`, making the
+    finite-support BK and cubic-bond Theorem 2.15 wrappers direct corollaries of a finite-trace
+    Reimer theorem on every finite support, without asserting that general Reimer theorem.
+
+85. **Direct finite-trace Reimer-to-repeated-BK bridge (2026-07-03).** Added finite-trace
+    Reimer corollaries for the repeated finite-family BK product bound and the binary finite
+    open-walk-family wrapper:
+    `setBernoulli_real_finiteDisjointOccurrence_le_prod_of_finiteTraceReimerBound`,
+    `bernoulliBondMeasure_real_finiteDisjointOccurrence_le_prod_of_finiteTraceReimerBound`, and
+    `bernoulliBondMeasure_real_disjointOccurrence_existsOpenWalkIn_le_mul_of_finiteTraceReimerBound`.
+
+86. **Arbitrary-support endpoint Reimer (2026-07-03).** Proved the finite Bernoulli endpoint
+    identities `finiteBernoulliEventProbability_zero` and `finiteBernoulliEventProbability_one`,
+    then used them to prove `finiteTraceReimerBound_zero` and `finiteTraceReimerBound_one` on
+    every finite support. Added the corresponding `ReimerBoundOn` wrappers and arbitrary-support
+    endpoint BK/Theorem 2.15 corollaries for `setBer` and `bernoulliBondMeasure` at `p=0` and
+    `p=1`.
+
+87. **Uniform complement-form Reimer bridge (2026-07-03).** Added the `unitIntervalHalf`
+    parameter, trace-complement operation `TraceComplement`, and uniform complement-form Reimer
+    target `FiniteTraceUniformReimerBound`. Proved that trace complement sends increasing trace
+    events to decreasing trace events, that `P_{1/2}` is invariant under trace complement, and
+    that uniform Reimer plus finite FKG implies finite-trace BK for increasing traces. Lifted this
+    to finite-support product-measure BK and the cubic bond Theorem 2.15 wrapper at `p=1/2`,
+    conditional only on the uniform Reimer complement bound on the common support.
+
+88. **Cardinality Reimer normalization bridge (2026-07-03).** Added the finite trace event-family
+    counter `finiteTraceEventFamily` and cardinality target `FiniteTraceCardinalityReimerBound`.
+    Proved `finiteBernoulliEventProbability_half_eq_card`, identifying `P_{1/2}` with normalized
+    counting measure on the finite trace cube, and used it to prove
+    `finiteTraceUniformReimerBound_of_cardinalityReimerBound`. Added finite-trace, product-measure,
+    and cubic bond `p=1/2` BK/Theorem 2.15 wrappers that take Reimer's cardinality theorem as
+    their only deep input.
+
+89. **Cardinality Reimer base cases (2026-07-03).** Proved the empty, singleton, and
+    two-coordinate support cases of the cardinality-form finite-cube Reimer theorem:
+    `finiteTraceCardinalityReimerBound_empty` and
+    `finiteTraceCardinalityReimerBound_singleton`, and
+    `finiteTraceCardinalityReimerBound_pair`. Added the explicit finite event-family cardinality
+    computations for the empty, one-coordinate, and two-coordinate cubes, then packaged these as
+    `finiteTraceCardinalityReimerBound_of_card_le_two`. These are combinatorial Reimer base cases
+    feeding the existing normalized-counting and `p=1/2` BK bridge; the arbitrary finite-support
+    cardinality Reimer theorem remains target.
+
+90. **All-support cardinal-Reimer-to-BK wrappers (2026-07-03).** Added direct `p=1/2`
+    finite-support BK theorem faces from the all-support cardinality Reimer hypothesis
+    `∀ G, FiniteTraceCardinalityReimerBound G`. The new product-measure wrapper is
+    `setBernoulli_real_disjointOccurrence_le_mul_half_of_forall_cardinalityReimerBound`; the
+    cubic-bond Theorem 2.15 wrapper is
+    `bernoulliBondMeasure_real_disjointOccurrence_le_mul_half_of_forall_cardinalityReimerBound`;
+    and the finite open-walk-family specialization is
+    `bernoulliBondMeasure_real_disjointOccurrence_existsOpenWalkIn_le_mul_half_of_forall_cardinalityReimerBound`.
+    These theorem faces make explicit that BK at `p=1/2` is now a formal corollary of Reimer's
+    cardinality theorem on every finite cube, while that arbitrary finite-support Reimer theorem
+    itself remains unasserted.
+
+91. **Repeated BK from all-support cardinal Reimer (2026-07-03).** Extended the
+    cardinal-Reimer-to-BK bridge from binary disjoint occurrence to finite-family disjoint
+    occurrence at `p=1/2`. The new product-measure theorem
+    `setBernoulli_real_finiteDisjointOccurrence_le_prod_half_of_forall_cardinalityReimerBound`
+    proves the finite-family BK product bound by induction, using the binary all-support
+    cardinal-Reimer wrapper at the insert step and the finite support of the remaining
+    disjoint-occurrence event. The cubic-bond wrapper
+    `bernoulliBondMeasure_real_finiteDisjointOccurrence_le_prod_half_of_forall_cardinalityReimerBound`
+    gives the corresponding finite-family Theorem 2.14/2.15-style corollary for edge events.
+
+92. **Canonical-support cardinal Reimer reduction (2026-07-03).** Added
+    `traceEventOnSupport` and transport lemmas for moving finite-trace events, forcing witnesses,
+    trace complements, and Reimer trace occurrence between an arbitrary finite support `E` and the
+    full cube on the subtype `E`. The theorem
+    `finiteTraceCardinalityReimerBound_of_univ_subtype` proves that cardinality Reimer on the
+    canonical full cube over `E` implies cardinality Reimer on the original support, with no
+    exposed `DecidableEq` assumptions. Added product-measure and cubic-bond BK wrappers from a
+    Reimer theorem stated on all full finite cubes:
+    `setBernoulli_real_disjointOccurrence_le_mul_half_of_forall_univ_cardinalityReimerBound`,
+    `bernoulliBondMeasure_real_disjointOccurrence_le_mul_half_of_forall_univ_cardinalityReimerBound`,
+    `setBernoulli_real_finiteDisjointOccurrence_le_prod_half_of_forall_univ_cardinalityReimerBound`,
+    and
+    `bernoulliBondMeasure_real_finiteDisjointOccurrence_le_prod_half_of_forall_univ_cardinalityReimerBound`.
+
+93. **Path-family BK wrappers from full-cube Reimer (2026-07-03).** Added binary and finite-family
+    open-walk event wrappers from Reimer's cardinality theorem stated on full finite cubes:
+    `bernoulliBondMeasure_real_disjointOccurrence_existsOpenWalkIn_le_mul_half_of_forall_univ_cardinalityReimerBound`
+    and
+    `bernoulliBondMeasure_real_finiteDisjointOccurrence_existsOpenWalkIn_le_prod_half_of_forall_univ_cardinalityReimerBound`.
+    These are theorem-2.15-facing finite path-family corollaries of the current Reimer-to-BK
+    bridge.
+
+94. **Weighted full-cube Reimer support reduction (2026-07-03).** Proved that finite Bernoulli
+    expectations and event probabilities are invariant under passing from an arbitrary finite
+    support `E` to the full cube on the subtype `E`, via
+    `finiteBernoulliExpectation_support_eq` and `finiteBernoulliEventProbability_support_eq`.
+    Used this to prove `finiteTraceReimerBound_of_univ_subtype` and
+    `finiteTraceReimerBound_of_forall_univ_fintype`, reducing arbitrary-support weighted Reimer to
+    weighted Reimer on full finite cubes. Added arbitrary-`p` product, cubic-bond, binary
+    path-family, repeated-family, and finite-family path-event BK wrappers from that full-cube
+    weighted Reimer hypothesis.
+
+95. **Source-shaped finite disjoint open-walk BK (2026-07-03).** Added
+    `ExistsPairwiseDisjointOpenWalksIn`, the explicit finite-family event that chooses one open
+    walk from each indexed family with pairwise disjoint traversed edge sets. Proved
+    `finiteDisjointOccurrence_existsOpenWalkIn_eq_existsPairwiseDisjointOpenWalksIn`, identifying
+    this source-shaped event with the finite disjoint occurrence of the component open-walk
+    events. Added direct probability corollaries from finite-trace Reimer, full-cube weighted
+    Reimer, and full-cube cardinality Reimer at `p=1/2`, giving a finite-support formal version
+    of Grimmett's path-family application (2.17).
+
+96. **Textbook open-occurrence BK as a Reimer corollary (2026-07-03).** Added
+    `OpenDisjointOccurrence`, the source-shaped BK event whose forcing witnesses are open in the
+    ambient configuration. Proved `Forces.restrict_to_open_of_increasing`, showing that for an
+    increasing event any Reimer-style forcing witness may be restricted to its open coordinates,
+    and hence proved `openDisjointOccurrence_eq_disjointOccurrence_of_increasing`. Added direct
+    `measureReal`, Bernoulli-product, and cubic-bond theorem faces showing that Reimer's finite
+    box inequality implies textbook open-occurrence BK, including
+    `bernoulliBondMeasure_real_openDisjointOccurrence_le_mul_of_forall_univ_finiteTraceReimerBound`
+    as a Theorem 2.15-facing wrapper.
+
+97. **Source-shaped repeated open-occurrence BK (2026-07-03).** Added
+    `FiniteOpenDisjointOccurrence`, the repeated-BK event whose finite forcing witnesses are
+    pairwise disjoint and open in the ambient configuration. Proved
+    `finiteOpenDisjointOccurrence_eq_finiteDisjointOccurrence_of_increasing`, reducing this
+    source-shaped event to the existing finite-family forcing occurrence for increasing event
+    families. Added `measureReal`, Bernoulli-product, and cubic-bond repeated-BK theorem faces
+    from Reimer, including
+    `bernoulliBondMeasure_real_finiteOpenDisjointOccurrence_le_prod_of_forall_univ_finiteTraceReimerBound`.
+
+98. **Full-cube uniform Reimer and open-walk BK bridges (2026-07-03).** Added
+    `finiteTraceUniformReimerBound_of_univ_subtype` and
+    `finiteTraceUniformReimerBound_of_forall_univ_fintype`, transporting the uniform
+    complement-form Reimer target from full finite cubes to arbitrary finite supports. Exposed the
+    resulting `p=1/2` product, cubic-bond, textbook open-occurrence, and binary open-walk
+    Reimer-to-BK wrappers, including
+    `bernoulliBondMeasure_real_openDisjointOccurrence_le_mul_half_of_forall_univ_uniformReimerBound`
+    and
+    `bernoulliBondMeasure_real_openDisjointOccurrence_existsOpenWalkIn_le_mul_half_of_forall_univ_uniformReimerBound`.
+    Also specialized the repeated open-occurrence event to finite path families via
+    `finiteOpenDisjointOccurrence_existsOpenWalkIn_eq_existsPairwiseDisjointOpenWalksIn` and the
+    corresponding finite-trace/full-cube weighted Reimer product wrappers. General finite-support
+    Reimer remains unproved and unaxiomatized.
+
+99. **Three-coordinate cardinal Reimer slice (2026-07-03).** Added reflected finite-cube
+    checkers `traceForcesFinBool`, `reimerTraceOccurrenceFinBool`, and
+    `traceInterComplementFinBool`, proved their bridge lemmas back to `TraceForces`,
+    `ReimerTraceOccurrence`, and `TraceComplement`, and discharged
+    `finiteTraceCardinalityReimerBound_univ_fin_three` for the full cube
+    `Finset.univ : Finset (Fin 3)` by exhaustive `native_decide` reflection. This is a concrete
+    three-coordinate cardinality Reimer proof, not the arbitrary finite-support theorem; its axiom
+    footprint includes Lean's generated native-decision axiom until replaced by a kernel
+    certificate or handwritten finite proof.
+
+100. **Cardinal Reimer transport and `card ≤ 3` BK slices (2026-07-03).** Added
+    `traceEventMapEquiv` and relabelling lemmas showing that full finite-cube cardinal Reimer is
+    invariant under coordinate equivalence. Used this to transport the `Fin 3` reflected slice to
+    any three-coordinate finite support via `finiteTraceCardinalityReimerBound_of_card_eq_three`
+    and assembled `finiteTraceCardinalityReimerBound_of_card_le_three`. Fed that through the
+    existing BK-from-cardinality-Reimer pipeline to prove `p=1/2` Bernoulli-product and cubic-bond
+    low-support wrappers, including
+    `bernoulliBondMeasure_real_disjointOccurrence_le_mul_half_of_union_card_le_three` and
+    `bernoulliBondMeasure_real_openDisjointOccurrence_le_mul_half_of_union_card_le_three`.
+    These are genuine BK corollaries of the transported cardinal Reimer slice; the three-edge case
+    inherits the same native-decision axiom footprint as the `Fin 3` slice.
+
+101. **Repeated `card ≤ 3` BK and path-family slices (2026-07-03).** Fed
+    `finiteTraceCardinalityReimerBound_of_card_le_three` through the repeated-BK induction to add
+    `setBernoulli_real_finiteDisjointOccurrence_le_prod_half_of_biUnion_card_le_three` and
+    `setBernoulli_real_finiteOpenDisjointOccurrence_le_prod_half_of_biUnion_card_le_three`.
+    Specialized these to cubic bond percolation and finite open-walk families, including
+    `bernoulliBondMeasure_real_finiteOpenDisjointOccurrence_existsOpenWalkIn_le_prod_half_of_biUnion_card_le_three`
+    and
+    `bernoulliBondMeasure_real_existsPairwiseDisjointOpenWalksIn_le_prod_half_of_biUnion_card_le_three`.
+    These are source-shaped repeated/path-family BK corollaries at `p=1/2` for total finite edge
+    support of size at most three, again inheriting the native-decision footprint of the
+    three-coordinate cardinal Reimer slice.
+
+102. **Binary explicit disjoint-open-walk BK event (2026-07-03).** Added
+    `ExistsDisjointOpenWalksIn`, the source-shaped binary event that two finite path families
+    contain edge-disjoint open walks. Proved
+    `disjointOccurrence_existsOpenWalkIn_binary_eq_existsDisjointOpenWalksIn` and
+    `openDisjointOccurrence_existsOpenWalkIn_binary_eq_existsDisjointOpenWalksIn`, identifying
+    this event with both BK forcing and textbook open-witness occurrence for open-walk events.
+    Added probability wrappers from `ReimerBoundOn`, finite-trace Reimer, full finite-cube
+    weighted/uniform/cardinality Reimer, and the current `p=1/2` total-support `card ≤ 3` slice,
+    including `bernoulliBondMeasure_real_existsDisjointOpenWalksIn_le_mul_half_of_union_card_le_three`.
+
+103. **Source-facing BK theorem wrappers (2026-07-03).** Added theorem-numbered public wrappers
+    `grimmettTheorem215_of_reimerBoundOn`, `grimmettTheorem215_of_finiteTraceReimerBound`,
+    and `grimmettTheorem215_of_forall_univ_finiteTraceReimerBound`, making the finite-edge
+    bond-percolation BK statement explicit as a corollary of Reimer's finite box inequality.
+    Added finite-family path wrappers `grimmettEquation217_finite_of_finiteTraceReimerBound`,
+    `grimmettEquation217_finite_of_forall_univ_finiteTraceReimerBound`,
+    `grimmettEquation217_finite_half_of_forall_univ_cardinalityReimerBound`, and
+    `grimmettEquation217_finite_half_of_biUnion_card_le_three`. These are source-facing names
+    for already proved Reimer-to-BK bridges; they do not assert general Reimer.
+
+104. **Source-facing homogeneous BK and repeated BK wrappers (2026-07-03).** Added
+    `grimmettTheorem212_homogeneous_of_reimerBoundOn`,
+    `grimmettTheorem212_homogeneous_of_finiteTraceReimerBound`, and
+    `grimmettTheorem212_homogeneous_of_forall_univ_finiteTraceReimerBound`, exposing the
+    homogeneous finite-product form of Grimmett Theorem 2.12 as a direct corollary of Reimer.
+    Added repeated finite-family wrappers `grimmettEquation214_homogeneous_of_reimerBoundOn`,
+    `grimmettEquation214_homogeneous_of_finiteTraceReimerBound`, and
+    `grimmettEquation214_homogeneous_of_forall_univ_finiteTraceReimerBound`, making the
+    source chain Reimer → BK → repeated BK explicit.
+
+105. **Source-facing Reimer 2.19 slice wrappers (2026-07-03).** Added
+    theorem-numbered public names `grimmettTheorem219_cardinality_empty`,
+    `grimmettTheorem219_cardinality_singleton`, `grimmettTheorem219_cardinality_pair`,
+    `grimmettTheorem219_cardinality_of_card_le_two`,
+    `grimmettTheorem219_cardinality_univ_fin_three`,
+    `grimmettTheorem219_cardinality_of_card_eq_three`,
+    `grimmettTheorem219_cardinality_of_card_le_three`,
+    `grimmettTheorem219_uniform_of_cardinality`,
+    `grimmettTheorem219_uniform_of_card_le_three`,
+    `grimmettTheorem219_weighted_zero`, `grimmettTheorem219_weighted_one`, and
+    `grimmettTheorem219_weighted_of_card_le_two`. These expose already proved Reimer 2.19
+    finite-cube slices and endpoint/low-support weighted forms; they do not assert the general
+    arbitrary finite-support Reimer theorem. The three-coordinate/card-≤3 wrappers inherit the
+    native-decision footprint of the `Fin 3` reflected slice.
+
+106. **Source-facing low-support Theorem 2.15 slices (2026-07-03).** Added
+    `grimmettTheorem215_zero`, `grimmettTheorem215_one`,
+    `grimmettTheorem215_of_union_card_le_two`, and
+    `grimmettTheorem215_half_of_union_card_le_three`. These expose the already proved endpoint,
+    arbitrary-parameter combined-support `card ≤ 2`, and `p=1/2` combined-support `card ≤ 3`
+    textbook open-occurrence slices of Grimmett Theorem 2.15. The `card ≤ 3` slice is the current
+    strongest nontrivial unconditional 2.15 fragment and inherits the native-decision footprint of
+    the transported `Fin 3` cardinal-Reimer theorem.
+
+107. **Direct Reimer 2.19 to BK/Theorem 2.15 wrappers (2026-07-03).** Added
+    homogeneous finite-product BK wrappers
+    `grimmettTheorem212_homogeneous_half_of_uniformReimerBound`,
+    `grimmettTheorem212_homogeneous_half_of_forall_univ_uniformReimerBound`,
+    `grimmettTheorem212_homogeneous_half_of_cardinalityReimerBound`, and
+    `grimmettTheorem212_homogeneous_half_of_forall_univ_cardinalityReimerBound`. Added cubic
+    bond Theorem 2.15 wrappers `grimmettTheorem215_half_of_forall_univ_uniformReimerBound`,
+    `grimmettTheorem215_half_of_cardinalityReimerBound`,
+    `grimmettTheorem215_half_of_forall_cardinalityReimerBound`, and
+    `grimmettTheorem215_half_of_forall_univ_cardinalityReimerBound`. These make the source chain
+    Reimer's Theorem 2.19, in uniform or cardinality finite-cube form, implies BK 2.12 and
+    finite-support bond BK 2.15 explicit. They remain conditional on the relevant Reimer theorem;
+    no arbitrary finite-support Reimer axiom was introduced.
+
+108. **Trace-level Reimer algebra (2026-07-03).** Added deterministic finite-trace lemmas
+    `TraceForces.mono_event`, `TraceForces.inter`, `reimerTraceOccurrence_mono`,
+    `reimerTraceOccurrence_subset_inter`, `reimerTraceOccurrence_subset_comm`, and
+    `reimerTraceOccurrence_comm`. These expose the basic forcing algebra needed by any
+    hand-written Reimer proof: event monotonicity, intersection forcing, ordinary-intersection
+    containment, and symmetry via complementing the witness set inside the support.
+
+109. **Cubic square-integrable observable FKG wrapper (2026-07-03).** Added
+    `bernoulliBondMeasure_integral_fkg_squareIntegrable`, the Bernoulli bond-percolation
+    specialization of the proved countable product-space theorem
+    `setBernoulli_integral_fkg_squareIntegrable_countable`. Updated the plan, verification
+    ledger, and Bernoulli audit so Grimmett Theorem (2.4)'s square-integrable expectation form is
+    recorded as proved rather than as a remaining target.
+
+110. **Trace open-witness Reimer bridge (2026-07-03).** Added trace-forcing lemmas
+    `TraceForces.mem`, `TraceForces.mono_witness`, `TraceForces.congr_trace`,
+    `traceForces_full_iff`, and `TraceForces.restrict_to_open_of_increasing`. Defined
+    `OpenTraceDisjointOccurrence` and proved
+    `openTraceDisjointOccurrence_subset_reimerTraceOccurrence` plus
+    `reimerTraceOccurrence_eq_openTraceDisjointOccurrence_of_increasing`. This gives the
+    finite-trace analogue of the event-level BK open-witness equivalence: arbitrary Reimer
+    witnesses become disjoint open witnesses for increasing trace events.
+
+111. **Open-trace BK as a Reimer corollary (2026-07-03).** Added
+    `finiteTraceOpenBK_half_of_uniformReimerBound` and
+    `finiteTraceOpenBK_half_of_cardinalityReimerBound`. These are the BK-shaped finite-trace
+    inequalities with `OpenTraceDisjointOccurrence` on the left, proved directly from the
+    uniform complement-form or cardinality finite-cube Reimer theorem via the open-witness
+    equality and finite FKG.
+
+112. **Finite-trace cylinder BK bridge (2026-07-03).** Added
+    `TraceForces.forces_eventOfTrace`, `Forces.traceForces_eventOfTrace`, and
+    `eventOfTrace_openTraceDisjointOccurrence`, proving that open trace disjoint occurrence is
+    exactly textbook open disjoint occurrence of the corresponding finite-trace cylinder events.
+    Added product-measure corollaries
+    `setBernoulli_real_openDisjointOccurrence_eventOfTrace_le_mul_half_of_uniformReimerBound`
+    and
+    `setBernoulli_real_openDisjointOccurrence_eventOfTrace_le_mul_half_of_cardinalityReimerBound`.
+    Added the full finite-cube source-facing variants
+    `setBernoulli_real_openDisjointOccurrence_eventOfTrace_le_mul_half_of_forall_univ_uniformReimerBound`
+    and
+    `setBernoulli_real_openDisjointOccurrence_eventOfTrace_le_mul_half_of_forall_univ_cardinalityReimerBound`,
+    routing through the existing subtype-support transfer.
+
+113. **Finite-trace level-count Reimer algebra (2026-07-03).** Added
+    `finiteTraceLevelFamily`, `finiteTraceLevelCount`,
+    `mem_finiteTraceLevelFamily_iff`,
+    `finiteBernoulliEventProbability_eq_sum_traceFamily`,
+    `finiteBernoulliEventProbability_eq_sum_levelCount`, and
+    `finiteTraceReimerBound_iff_levelCount`. These rewrite finite Bernoulli event probability
+    as a cardinality-level weighted sum and express the weighted finite-trace Reimer target
+    exactly in those Bernstein-basis coordinates. This is a proof-planning interface for future
+    finite coefficient certificates; it does not assert arbitrary finite-support Reimer.
+
+114. **Direct source-facing BK wrappers (2026-07-03).** Exposed the direct Grimmett pp. 39-40
+    two-copy proof under theorem-numbered names: `grimmettTheorem212_homogeneous`,
+    `grimmettTheorem215`, `grimmettEquation214_homogeneous`, and
+    `grimmettEquation217_finite`. These wrappers route through `finiteTraceOpenBK` and the
+    direct finite-support/repeated/path-family BK corollaries, not through Reimer's inequality.
+    The Bernoulli topic audit and verification map now record this direct BK row separately from
+    the older Reimer-conditional bridges.
+
+115. **Heterogeneous finite-trace BK by Grimmett's two-copy proof (2026-07-03).** Extended the
+    direct pp. 39-40 BK proof from homogeneous finite-trace weights to coordinate-dependent
+    Bernoulli weights. Added `finiteBernoulliHeteroTraceWeight`, the weighted injection
+    comparator, swap-weight preservation, heterogeneous one-coordinate split/telescope lemmas,
+    heterogeneous `B_0`/`B_m` endpoint identities, and `finiteTraceOpenBK_heterogeneous`.
+    The proof follows the same swap-injection/telescoping route as the homogeneous theorem and
+    does not use Reimer's inequality.
+
+116. **Repeated heterogeneous finite-trace BK (2026-07-03).** Added
+    `FiniteOpenTraceDisjointOccurrence`, its increasingness and insert-to-binary containment
+    lemmas, heterogeneous finite-probability monotonicity/nonnegativity helpers, and
+    `finiteBernoulliHeteroEventProbability_finiteOpenTraceDisjointOccurrence_le_prod`. This
+    iterates the direct binary finite-trace BK theorem to Grimmett's repeated open-witness
+    occurrence at the finite-cube level, still without using Reimer's inequality.
+
+117. **Repeated BK finite-trace cylinder bridge (2026-07-03).** Added
+    `eventOfTrace_finiteOpenTraceDisjointOccurrence`, showing that finite-family open trace
+    occurrence is exactly finite-family open disjoint occurrence of the corresponding cylinder
+    events. Added the homogeneous finite-trace specialization
+    `finiteBernoulliEventProbability_finiteOpenTraceDisjointOccurrence_le_prod` and the
+    cylinder-event corollary
+    `setBernoulli_real_finiteOpenDisjointOccurrence_eventOfTrace_le_prod`, all routed through the
+    direct repeated trace BK proof rather than Reimer.
+
+118. **Ordinary repeated cylinder BK wrapper (2026-07-03).** Added
+    `setBernoulli_real_finiteDisjointOccurrence_eventOfTrace_le_prod`, using increasingness of
+    cylinder events to identify `FiniteDisjointOccurrence` with the open-witness version and then
+    applying the direct repeated cylinder theorem.
 
 ## Axiom Ledger
 
-Empty.
+Empty for source-level project axioms. The native-reflected theorem
+`finiteTraceCardinalityReimerBound_univ_fin_three` currently depends on Lean's generated
+native-decision axiom, as reported by `#print axioms`; this is recorded as a proof-engine
+artifact to eliminate, not as an accepted mathematical axiom.
 
 ## Anti-Library
 

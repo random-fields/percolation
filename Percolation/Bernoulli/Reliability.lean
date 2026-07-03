@@ -1,5 +1,7 @@
 import Percolation.Bernoulli.Russo
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Data.Real.Sqrt
 
 /-!
@@ -13,6 +15,7 @@ probability can be rewritten as a covariance with the number of open coordinates
 namespace Percolation
 
 open scoped BigOperators
+open Set
 
 /-- The number of open coordinates in a finite-cube configuration, as a real-valued observable. -/
 def finiteOpenCount {ι : Type*} (s : Finset ι) : ℝ :=
@@ -534,5 +537,83 @@ theorem finiteBernoulliEventProbability_mul_compl_div_le_deriv {ι : Type*}
   rw [hderiv.deriv]
   exact finiteBernoulliEventProbability_mul_compl_div_le_covariance_div_finiteOpenCount
     (E := E) (p := p) hp0 hp1 hT
+
+/-- The scalar inequality (2.44) in Grimmett's induction proof of Theorem (2.38).
+For `0 < p < 1`, exponent `γ ≥ 1`, and `0 ≤ y ≤ x`, it says
+`p^γ x^γ + (1-p^γ)y^γ ≤ (px+(1-p)y)^γ`.  Grimmett proves this by fixing `y`
+and comparing derivatives in `x`; the formal proof follows that route. -/
+theorem grimmett_238_scalar_inequality {p γ x y : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hγ : 1 ≤ γ) (hy : 0 ≤ y) (hyx : y ≤ x) :
+    x ^ γ * p ^ γ + y ^ γ * (1 - p ^ γ) ≤ (x * p + y * (1 - p)) ^ γ := by
+  let F : ℝ → ℝ := fun t ↦
+    (t * p + y * (1 - p)) ^ γ - t ^ γ * p ^ γ - y ^ γ * (1 - p ^ γ)
+  have hmono : MonotoneOn F (Ici y) := by
+    refine monotoneOn_of_deriv_nonneg (convex_Ici y) ?hcont ?hdiff ?hderiv
+    · dsimp [F]
+      fun_prop (disch := first | positivity | linarith)
+    · dsimp [F]
+      have hlin_diff :
+          DifferentiableOn ℝ (fun t : ℝ ↦ t * p + y * (1 - p)) (interior (Ici y)) := by
+        fun_prop
+      have hinner_diff :
+          DifferentiableOn ℝ (fun t : ℝ ↦ (t * p + y * (1 - p)) ^ γ)
+            (interior (Ici y)) :=
+        hlin_diff.rpow_const (fun _ _ ↦ Or.inr hγ)
+      have ht_diff :
+          DifferentiableOn ℝ (fun t : ℝ ↦ t ^ γ * p ^ γ) (interior (Ici y)) := by
+        exact ((differentiableOn_id.rpow_const (fun _ _ ↦ Or.inr hγ)).mul
+          (differentiableOn_const (c := p ^ γ)))
+      exact (hinner_diff.sub ht_diff).sub
+        (differentiableOn_const (c := y ^ γ * (1 - p ^ γ)))
+    · intro t ht
+      have hyt : y < t := by
+        simpa [interior_Ici] using ht
+      have htpos : 0 < t := lt_of_le_of_lt hy hyt
+      have hlinear : HasDerivAt (fun u : ℝ ↦ u * p + y * (1 - p)) p t := by
+        simpa using ((hasDerivAt_id t).mul_const p).add_const (y * (1 - p))
+      have hinner : HasDerivAt (fun u : ℝ ↦ (u * p + y * (1 - p)) ^ γ)
+          (p * γ * (t * p + y * (1 - p)) ^ (γ - 1)) t := by
+        simpa [mul_assoc, mul_left_comm, mul_comm] using hlinear.rpow_const (Or.inr hγ)
+      have ht_rpow : HasDerivAt (fun u : ℝ ↦ u ^ γ * p ^ γ)
+          (γ * t ^ (γ - 1) * p ^ γ) t := by
+        simpa using
+          (Real.hasDerivAt_rpow_const (x := t) (p := γ) (Or.inr hγ)).mul_const (p ^ γ)
+      have hF : HasDerivAt F
+          (p * γ * (t * p + y * (1 - p)) ^ (γ - 1) -
+            γ * t ^ (γ - 1) * p ^ γ) t := by
+        simpa [F] using (hinner.sub ht_rpow).sub_const (y ^ γ * (1 - p ^ γ))
+      rw [hF.deriv]
+      have hbase : p * t ≤ t * p + y * (1 - p) := by
+        have hyq : 0 ≤ y * (1 - p) := mul_nonneg hy (sub_nonneg.mpr hp1.le)
+        nlinarith
+      have hp_t_nonneg : 0 ≤ p * t := mul_nonneg hp0.le htpos.le
+      have hpow : (p * t) ^ (γ - 1) ≤ (t * p + y * (1 - p)) ^ (γ - 1) := by
+        exact Real.rpow_le_rpow hp_t_nonneg hbase (sub_nonneg.mpr hγ)
+      have hmul : (p * t) ^ (γ - 1) = p ^ (γ - 1) * t ^ (γ - 1) := by
+        rw [Real.mul_rpow hp0.le htpos.le]
+      rw [hmul] at hpow
+      have hpγ : p ^ γ = p ^ (γ - 1) * p := by
+        have h := Real.rpow_add hp0 (γ - 1) 1
+        simpa [sub_add_cancel, Real.rpow_one] using h
+      have hmain :
+          t ^ (γ - 1) * p ^ γ ≤ p * (t * p + y * (1 - p)) ^ (γ - 1) := by
+        calc
+          t ^ (γ - 1) * p ^ γ = p * (p ^ (γ - 1) * t ^ (γ - 1)) := by
+            rw [hpγ]
+            ring
+          _ ≤ p * (t * p + y * (1 - p)) ^ (γ - 1) := by
+            exact mul_le_mul_of_nonneg_left hpow hp0.le
+      have hγnonneg : 0 ≤ γ := le_trans zero_le_one hγ
+      nlinarith
+  have hFyx := hmono (by simp) hyx hyx
+  have hFy : F y = 0 := by
+    dsimp [F]
+    have hlin : y * p + y * (1 - p) = y := by ring
+    rw [hlin]
+    ring
+  have hFx_nonneg : 0 ≤ F x := by
+    simpa [hFy] using hFyx
+  dsimp [F] at hFx_nonneg
+  nlinarith
 
 end Percolation

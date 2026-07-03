@@ -504,4 +504,35 @@ theorem finiteBernoulliEventProbability_hasDerivAt_covariance_finiteOpenCount {�
     finiteBernoulliExpectation_hasDerivAt_covariance_finiteOpenCount
       (E := E) (p := p) hp0 hp1 (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)
 
+/-- Grimmett's finite reliability upper bound (2.36)(a), stated directly for the derivative
+of a finite event probability. -/
+theorem finiteBernoulliEventProbability_abs_deriv_le_sqrt {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (T : Set (Finset ι)) :
+    |deriv (fun x : ℝ ↦ finiteBernoulliEventProbability E x T) p| ≤
+      √((E.card : ℝ) *
+        (finiteBernoulliEventProbability E p T *
+          (1 - finiteBernoulliEventProbability E p T)) / (p * (1 - p))) := by
+  have hderiv :=
+    finiteBernoulliEventProbability_hasDerivAt_covariance_finiteOpenCount
+      (E := E) (p := p) (ne_of_gt hp0) (ne_of_lt hp1) T
+  rw [hderiv.deriv]
+  exact finiteBernoulliEventProbability_abs_covariance_div_le_sqrt (E := E) (p := p)
+    hp0 hp1 T
+
+/-- Grimmett's finite monotone reliability lower bound (2.37), stated directly for the
+derivative of a finite increasing event probability. -/
+theorem finiteBernoulliEventProbability_mul_compl_div_le_deriv {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {p : ℝ} {T : Set (Finset ι)}
+    (hp0 : 0 < p) (hp1 : p < 1) (hT : IsIncreasingTrace E T) :
+    finiteBernoulliEventProbability E p T * (1 - finiteBernoulliEventProbability E p T) /
+        (p * (1 - p)) ≤
+      deriv (fun x : ℝ ↦ finiteBernoulliEventProbability E x T) p := by
+  have hderiv :=
+    finiteBernoulliEventProbability_hasDerivAt_covariance_finiteOpenCount
+      (E := E) (p := p) (ne_of_gt hp0) (ne_of_lt hp1) T
+  rw [hderiv.deriv]
+  exact finiteBernoulliEventProbability_mul_compl_div_le_covariance_div_finiteOpenCount
+    (E := E) (p := p) hp0 hp1 hT
+
 end Percolation

@@ -2192,6 +2192,35 @@ theorem setBernoulli_real_fkg_of_finiteSupport_tendsto {ι : Type*} [DecidableEq
   exact mul_le_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
     setBernoulli_real_fkg_of_dependsOn p (hAinc n) (hBinc n) (hAdep n) (hBdep n)
 
+/-- FKG passes from finite-support increasing observable approximations to their integral
+limits. This is the observable-facing limit bridge for Grimmett's martingale step: the remaining
+source-specific work is to construct finite-coordinate approximants and prove the three
+convergence hypotheses. -/
+theorem setBernoulli_integral_fkg_of_finiteSupport_tendsto {ι : Type*} [DecidableEq ι]
+    (p : I) {X Y : Set ι → ℝ}
+    {Xapprox Yapprox : ℕ → Set ι → ℝ}
+    {EX EY : ℕ → Finset ι}
+    (hXinc : ∀ n, IsIncreasingRandomVariable (Xapprox n))
+    (hYinc : ∀ n, IsIncreasingRandomVariable (Yapprox n))
+    (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
+    (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
+    (hXtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, X ω ∂setBer((Set.univ : Set ι), p))))
+    (hYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Yapprox n ω ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p))))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω * Yapprox n ω ∂setBer((Set.univ : Set ι), p))
+        Filter.atTop
+      (nhds (∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p)))) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) := by
+  exact mul_le_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦
+    setBernoulli_integral_fkg_of_dependsOnFunction p
+      (hXinc n) (hYinc n) (hXdep n) (hYdep n)
+
 /-- Continuity from below for real-valued finite measures. This is the `Measure.real` version of
 `tendsto_measure_iUnion_atTop`, used to pass finite FKG inequalities to increasing limits. -/
 theorem tendsto_measureReal_iUnion_atTop {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
@@ -2669,6 +2698,33 @@ theorem bernoulliBondMeasure_real_fkg_of_finiteSupport_tendsto (d : ℕ) (p : I)
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_fkg_of_finiteSupport_tendsto (ι := CubicEdge d) p
       hAinc hBinc hAdep hBdep hAtend hBtend hABtend
+
+/-- FKG passes from finite-support increasing observable approximations to their integral limits
+for Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_integral_fkg_of_finiteSupport_tendsto (d : ℕ) (p : I)
+    {X Y : EdgeConfiguration d → ℝ}
+    {Xapprox Yapprox : ℕ → EdgeConfiguration d → ℝ}
+    {EX EY : ℕ → Finset (CubicEdge d)}
+    (hXinc : ∀ n, IsIncreasingRandomVariable (Xapprox n))
+    (hYinc : ∀ n, IsIncreasingRandomVariable (Yapprox n))
+    (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
+    (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
+    (hXtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω ∂bernoulliBondMeasure d p) Filter.atTop
+      (nhds (∫ ω, X ω ∂bernoulliBondMeasure d p)))
+    (hYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Yapprox n ω ∂bernoulliBondMeasure d p) Filter.atTop
+      (nhds (∫ ω, Y ω ∂bernoulliBondMeasure d p)))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω * Yapprox n ω ∂bernoulliBondMeasure d p)
+        Filter.atTop
+      (nhds (∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p))) :
+    (∫ ω, X ω ∂bernoulliBondMeasure d p) *
+        (∫ ω, Y ω ∂bernoulliBondMeasure d p) ≤
+      ∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_integral_fkg_of_finiteSupport_tendsto (ι := CubicEdge d) p
+      hXinc hYinc hXdep hYdep hXtend hYtend hXYtend
 
 /-- FKG for increasing limits of finite-support increasing cubic bond events. -/
 theorem bernoulliBondMeasure_real_fkg_iUnion_finiteSupport (d : ℕ) (p : I)

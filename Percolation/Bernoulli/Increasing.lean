@@ -2566,6 +2566,37 @@ theorem setBernoulli_real_fkg_of_observableOfFiniteTrace_tendsto
       (dependsOnFunction_observableOfFiniteTrace (EX n) (X n))
       (dependsOnFunction_observableOfFiniteTrace (EY n) (Y n))
 
+/-- Under a Dirac probability measure, event FKG is automatic for measurable events. This is the
+endpoint input for the Bernoulli parameters `p = 0` and `p = 1`. -/
+theorem dirac_real_fkg {Ω : Type*} [MeasurableSpace Ω] (ω : Ω)
+    {A B : Set Ω} (hA : MeasurableSet A) (hB : MeasurableSet B) :
+    (Measure.dirac ω).real A * (Measure.dirac ω).real B ≤
+      (Measure.dirac ω).real (A ∩ B) := by
+  rw [Measure.real, Measure.real, Measure.real]
+  rw [Measure.dirac_apply' ω hA, Measure.dirac_apply' ω hB,
+    Measure.dirac_apply' ω (hA.inter hB)]
+  by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB]
+
+/-- FKG at Bernoulli parameter `p = 0`, where the product measure is a Dirac mass at the empty
+configuration. -/
+theorem setBernoulli_real_fkg_zero {ι : Type*} {A B : Set (Set ι)}
+    (hA : MeasurableSet A) (hB : MeasurableSet B) :
+    setBer((Set.univ : Set ι), (0 : I)).real A *
+        setBer((Set.univ : Set ι), (0 : I)).real B ≤
+      setBer((Set.univ : Set ι), (0 : I)).real (A ∩ B) := by
+  rw [setBernoulli_zero]
+  exact dirac_real_fkg ∅ hA hB
+
+/-- FKG at Bernoulli parameter `p = 1`, where the product measure is a Dirac mass at the full
+configuration. -/
+theorem setBernoulli_real_fkg_one {ι : Type*} {A B : Set (Set ι)}
+    (hA : MeasurableSet A) (hB : MeasurableSet B) :
+    setBer((Set.univ : Set ι), (1 : I)).real A *
+        setBer((Set.univ : Set ι), (1 : I)).real B ≤
+      setBer((Set.univ : Set ι), (1 : I)).real (A ∩ B) := by
+  rw [setBernoulli_one]
+  exact dirac_real_fkg Set.univ hA hB
+
 /-- If finite-measure events converge in symmetric-difference measure, their real probabilities
 converge. This is the measure-continuity input used to turn finite-support approximations into
 the probability convergence hypotheses of the FKG limit bridge. -/

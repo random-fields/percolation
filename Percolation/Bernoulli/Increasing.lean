@@ -5,6 +5,7 @@ import Mathlib.Data.Set.FiniteExhaustion
 import Mathlib.MeasureTheory.Measure.SeparableMeasure
 import Mathlib.MeasureTheory.Constructions.UnitInterval
 import Mathlib.Probability.Martingale.Convergence
+import Mathlib.Probability.Moments.Covariance
 
 /-!
 # Increasing events for Bernoulli percolation
@@ -4085,6 +4086,257 @@ theorem setBernoulli_real_fkg_countable
     (p := p) (A := A) (B := B) (E := countableExhaustionFinset (ι := ι))
     monotone_countableExhaustionFinset eventually_mem_countableExhaustionFinset
     hAmeas hBmeas hAinc hBinc
+
+/-- Indicators of measurable events are square-integrable under Bernoulli product measure. -/
+theorem setBernoulli_indicator_memLp_two {ι : Type*} (p : I) {A : Set (Set ι)}
+    (hAmeas : MeasurableSet A) :
+    MemLp (fun ω : Set ι ↦ A.indicator (fun _ ↦ (1 : ℝ)) ω) 2
+      setBer((Set.univ : Set ι), p) := by
+  let μ := setBer((Set.univ : Set ι), p)
+  simpa [μ] using
+    (memLp_const (α := Set ι) (μ := μ) (c := (1 : ℝ)) (p := (2 : ℝ≥0∞))).indicator
+      hAmeas
+
+/-- Event FKG, rephrased as nonnegative covariance of the two event indicators. This is the
+first bridge from the event form of Grimmett's Theorem (2.4) to the random-variable form. -/
+theorem setBernoulli_covariance_nonneg_indicator_countable
+    {ι : Type*} [DecidableEq ι] [Countable ι] (p : I) {A B : Set (Set ι)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B) :
+    0 ≤ cov[fun ω : Set ι ↦ A.indicator (fun _ ↦ (1 : ℝ)) ω,
+      fun ω : Set ι ↦ B.indicator (fun _ ↦ (1 : ℝ)) ω;
+      setBer((Set.univ : Set ι), p)] := by
+  let μ := setBer((Set.univ : Set ι), p)
+  have hAmem : MemLp (fun ω : Set ι ↦ A.indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    simpa [μ] using setBernoulli_indicator_memLp_two (ι := ι) p hAmeas
+  have hBmem : MemLp (fun ω : Set ι ↦ B.indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    simpa [μ] using setBernoulli_indicator_memLp_two (ι := ι) p hBmeas
+  rw [covariance_eq_sub hAmem hBmem]
+  simp only [Pi.mul_apply]
+  have hprod :
+      (∫ ω, A.indicator (fun _ ↦ (1 : ℝ)) ω *
+          B.indicator (fun _ ↦ (1 : ℝ)) ω ∂μ) =
+        μ.real (A ∩ B) := by
+    have hfun :
+        (fun ω : Set ι ↦ A.indicator (fun _ ↦ (1 : ℝ)) ω *
+            B.indicator (fun _ ↦ (1 : ℝ)) ω) =
+          fun ω ↦ (A ∩ B).indicator (fun _ ↦ (1 : ℝ)) ω := by
+      funext ω
+      by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB]
+    rw [hfun]
+    exact integral_indicator_one (μ := μ) (hAmeas.inter hBmeas)
+  have hAint : (∫ ω, A.indicator (fun _ ↦ (1 : ℝ)) ω ∂μ) = μ.real A := by
+    exact integral_indicator_one (μ := μ) hAmeas
+  have hBint : (∫ ω, B.indicator (fun _ ↦ (1 : ℝ)) ω ∂μ) = μ.real B := by
+    exact integral_indicator_one (μ := μ) hBmeas
+  rw [hprod, hAint, hBint]
+  exact sub_nonneg.mpr
+    (setBernoulli_real_fkg_countable p hAmeas hBmeas hAinc hBinc)
+
+/-- Finite nonnegative linear combinations of increasing event indicators have nonnegative
+covariance. These are the step-observable approximants used in the random-variable form of FKG. -/
+theorem setBernoulli_covariance_nonneg_finset_indicator_sum_countable
+    {ι κ τ : Type*} [DecidableEq ι] [Countable ι]
+    [DecidableEq κ] [DecidableEq τ] (p : I) {J : Finset κ} {K : Finset τ}
+    {A : κ → Set (Set ι)} {B : τ → Set (Set ι)} {a : κ → ℝ} {b : τ → ℝ}
+    (ha : ∀ i ∈ J, 0 ≤ a i) (hb : ∀ j ∈ K, 0 ≤ b j)
+    (hAmeas : ∀ i ∈ J, MeasurableSet (A i))
+    (hBmeas : ∀ j ∈ K, MeasurableSet (B j))
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i))
+    (hBinc : ∀ j ∈ K, IsIncreasingEvent (B j)) :
+    0 ≤ cov[
+      fun ω : Set ι ↦ ∑ i ∈ J, a i * (A i).indicator (fun _ ↦ (1 : ℝ)) ω,
+      fun ω : Set ι ↦ ∑ j ∈ K, b j * (B j).indicator (fun _ ↦ (1 : ℝ)) ω;
+      setBer((Set.univ : Set ι), p)] := by
+  let μ := setBer((Set.univ : Set ι), p)
+  have h_indicator_mem : ∀ {C : Set (Set ι)}, MeasurableSet C →
+      MemLp (fun ω : Set ι ↦ C.indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    intro C hC
+    simpa [μ] using setBernoulli_indicator_memLp_two (ι := ι) p hC
+  have hXmem : ∀ i ∈ J,
+      MemLp (fun ω : Set ι ↦ a i * (A i).indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    intro i hi
+    exact (h_indicator_mem (hAmeas i hi)).const_mul (a i)
+  have hYmem : ∀ j ∈ K,
+      MemLp (fun ω : Set ι ↦ b j * (B j).indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    intro j hj
+    exact (h_indicator_mem (hBmeas j hj)).const_mul (b j)
+  rw [covariance_fun_sum_fun_sum' (s := J) (t := K) hXmem hYmem]
+  refine Finset.sum_nonneg ?_
+  intro i hi
+  refine Finset.sum_nonneg ?_
+  intro j hj
+  rw [covariance_const_mul_left, covariance_const_mul_right]
+  have hcov : 0 ≤ cov[fun ω : Set ι ↦ (A i).indicator (fun _ ↦ (1 : ℝ)) ω,
+      fun ω : Set ι ↦ (B j).indicator (fun _ ↦ (1 : ℝ)) ω; μ] := by
+    simpa [μ] using
+      setBernoulli_covariance_nonneg_indicator_countable (ι := ι) p
+        (hAmeas i hi) (hBmeas j hj) (hAinc i hi) (hBinc j hj)
+  exact mul_nonneg (ha i hi) (mul_nonneg (hb j hj) hcov)
+
+/-- Integral FKG for finite nonnegative linear combinations of increasing event indicators.
+This is a random-variable statement, but still only for step observables. -/
+theorem setBernoulli_integral_fkg_finset_indicator_sum_countable
+    {ι κ τ : Type*} [DecidableEq ι] [Countable ι]
+    [DecidableEq κ] [DecidableEq τ] (p : I) {J : Finset κ} {K : Finset τ}
+    {A : κ → Set (Set ι)} {B : τ → Set (Set ι)} {a : κ → ℝ} {b : τ → ℝ}
+    (ha : ∀ i ∈ J, 0 ≤ a i) (hb : ∀ j ∈ K, 0 ≤ b j)
+    (hAmeas : ∀ i ∈ J, MeasurableSet (A i))
+    (hBmeas : ∀ j ∈ K, MeasurableSet (B j))
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i))
+    (hBinc : ∀ j ∈ K, IsIncreasingEvent (B j)) :
+    (∫ ω, (∑ i ∈ J, a i * (A i).indicator (fun _ ↦ (1 : ℝ)) ω)
+        ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, (∑ j ∈ K, b j * (B j).indicator (fun _ ↦ (1 : ℝ)) ω)
+          ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, (∑ i ∈ J, a i * (A i).indicator (fun _ ↦ (1 : ℝ)) ω) *
+        (∑ j ∈ K, b j * (B j).indicator (fun _ ↦ (1 : ℝ)) ω)
+        ∂setBer((Set.univ : Set ι), p) := by
+  let μ := setBer((Set.univ : Set ι), p)
+  have h_indicator_mem : ∀ {C : Set (Set ι)}, MeasurableSet C →
+      MemLp (fun ω : Set ι ↦ C.indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    intro C hC
+    simpa [μ] using setBernoulli_indicator_memLp_two (ι := ι) p hC
+  have hXmem : ∀ i ∈ J,
+      MemLp (fun ω : Set ι ↦ a i * (A i).indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    intro i hi
+    exact (h_indicator_mem (hAmeas i hi)).const_mul (a i)
+  have hYmem : ∀ j ∈ K,
+      MemLp (fun ω : Set ι ↦ b j * (B j).indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    intro j hj
+    exact (h_indicator_mem (hBmeas j hj)).const_mul (b j)
+  have hXsum : MemLp
+      (fun ω : Set ι ↦ ∑ i ∈ J, a i * (A i).indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    convert memLp_finsetSum' J hXmem using 1
+    ext ω
+    simp
+  have hYsum : MemLp
+      (fun ω : Set ι ↦ ∑ j ∈ K, b j * (B j).indicator (fun _ ↦ (1 : ℝ)) ω) 2 μ := by
+    convert memLp_finsetSum' K hYmem using 1
+    ext ω
+    simp
+  have hcov :=
+    setBernoulli_covariance_nonneg_finset_indicator_sum_countable
+      (ι := ι) (κ := κ) (τ := τ) p (J := J) (K := K)
+      (A := A) (B := B) (a := a) (b := b) ha hb hAmeas hBmeas hAinc hBinc
+  rw [covariance_eq_sub hXsum hYsum] at hcov
+  simp only [Pi.mul_apply] at hcov
+  nlinarith
+
+/-- Lower threshold-step approximation for a nonnegative observable bounded by `M`.
+It is the finite sum `δ ∑_{k < n} 1_{(k+1)δ ≤ X}`, where `δ = M / (n+1)`. -/
+noncomputable def nonnegativeLowerStep {ι : Type*} (M : ℝ) (n : ℕ)
+    (X : Set ι → ℝ) : Set ι → ℝ :=
+  fun ω ↦ ∑ k ∈ Finset.range n,
+    (M / (n.succ : ℝ)) *
+      ({η : Set ι | ((k.succ : ℝ) * (M / (n.succ : ℝ))) ≤ X η}).indicator
+        (fun _ ↦ (1 : ℝ)) ω
+
+/-- The threshold-step approximation of a measurable observable is measurable. -/
+theorem measurable_nonnegativeLowerStep {ι : Type*} {M : ℝ} {n : ℕ}
+    {X : Set ι → ℝ} (hXmeas : Measurable X) :
+    Measurable (nonnegativeLowerStep M n X) := by
+  unfold nonnegativeLowerStep
+  refine (Finset.range n).measurable_fun_sum ?_
+  intro _k _hk
+  refine Measurable.const_mul ?_ _
+  exact Measurable.indicator measurable_const (hXmeas measurableSet_Ici)
+
+/-- Threshold-step approximants of two nonnegative increasing observables satisfy FKG. This is
+the finite-simple-function layer used to pass from event FKG to the random-variable form. -/
+theorem setBernoulli_integral_fkg_nonnegativeLowerStep_countable
+    {ι : Type*} [DecidableEq ι] [Countable ι] (p : I)
+    {X Y : Set ι → ℝ} {M N : ℝ} {m n : ℕ}
+    (hM : 0 ≤ M) (hN : 0 ≤ N)
+    (hXmeas : Measurable X) (hYmeas : Measurable Y)
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y) :
+    (∫ ω, nonnegativeLowerStep M m X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, nonnegativeLowerStep N n Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, nonnegativeLowerStep M m X ω * nonnegativeLowerStep N n Y ω
+        ∂setBer((Set.univ : Set ι), p) := by
+  unfold nonnegativeLowerStep
+  refine setBernoulli_integral_fkg_finset_indicator_sum_countable
+    (ι := ι) (κ := ℕ) (τ := ℕ) p (J := Finset.range m) (K := Finset.range n)
+    (A := fun k ↦ {η : Set ι | ((k.succ : ℝ) * (M / (m.succ : ℝ))) ≤ X η})
+    (B := fun k ↦ {η : Set ι | ((k.succ : ℝ) * (N / (n.succ : ℝ))) ≤ Y η})
+    (a := fun _ ↦ M / (m.succ : ℝ)) (b := fun _ ↦ N / (n.succ : ℝ)) ?_ ?_ ?_ ?_ ?_ ?_
+  · intro _k _hk
+    exact div_nonneg hM (Nat.cast_nonneg _)
+  · intro _k _hk
+    exact div_nonneg hN (Nat.cast_nonneg _)
+  · intro _k _hk
+    exact hXmeas measurableSet_Ici
+  · intro _k _hk
+    exact hYmeas measurableSet_Ici
+  · intro _k _hk ω η hωη hω
+    exact hω.trans (hXinc hωη)
+  · intro _k _hk ω η hωη hω
+    exact hω.trans (hYinc hωη)
+
+/-- If the explicit threshold-step approximants converge pointwise and are uniformly bounded,
+then their finite-step FKG inequalities pass to the limiting bounded observables. The remaining
+work for the bounded random-variable FKG theorem is to discharge the two elementary approximation
+hypotheses for `nonnegativeLowerStep`. -/
+theorem setBernoulli_integral_fkg_of_nonnegativeLowerStep_tendsto_countable
+    {ι : Type*} [DecidableEq ι] [Countable ι] (p : I)
+    {X Y : Set ι → ℝ} {M N : ℝ}
+    (hM : 0 ≤ M) (hN : 0 ≤ N)
+    (hXmeas : Measurable X) (hYmeas : Measurable Y)
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    (hXbound : ∀ n, ∀ᵐ ω ∂setBer((Set.univ : Set ι), p),
+      ‖nonnegativeLowerStep M n X ω‖ ≤ M)
+    (hYbound : ∀ n, ∀ᵐ ω ∂setBer((Set.univ : Set ι), p),
+      ‖nonnegativeLowerStep N n Y ω‖ ≤ N)
+    (hXlim : ∀ᵐ ω ∂setBer((Set.univ : Set ι), p),
+      Filter.Tendsto (fun n ↦ nonnegativeLowerStep M n X ω) Filter.atTop (nhds (X ω)))
+    (hYlim : ∀ᵐ ω ∂setBer((Set.univ : Set ι), p),
+      Filter.Tendsto (fun n ↦ nonnegativeLowerStep N n Y ω) Filter.atTop (nhds (Y ω))) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) := by
+  let μ := setBer((Set.univ : Set ι), p)
+  have hXtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, nonnegativeLowerStep M n X ω ∂μ) Filter.atTop
+      (nhds (∫ ω, X ω ∂μ)) := by
+    exact tendsto_integral_of_dominated_convergence (μ := μ) (bound := fun _ : Set ι ↦ M)
+      (F := fun n ↦ nonnegativeLowerStep M n X) (f := X)
+      (fun n ↦ (measurable_nonnegativeLowerStep (M := M) (n := n) hXmeas).aestronglyMeasurable)
+      (integrable_const M) hXbound (by simpa [μ] using hXlim)
+  have hYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, nonnegativeLowerStep N n Y ω ∂μ) Filter.atTop
+      (nhds (∫ ω, Y ω ∂μ)) := by
+    exact tendsto_integral_of_dominated_convergence (μ := μ) (bound := fun _ : Set ι ↦ N)
+      (F := fun n ↦ nonnegativeLowerStep N n Y) (f := Y)
+      (fun n ↦ (measurable_nonnegativeLowerStep (M := N) (n := n) hYmeas).aestronglyMeasurable)
+      (integrable_const N) hYbound (by simpa [μ] using hYlim)
+  have hXYbound : ∀ n, ∀ᵐ ω ∂μ,
+      ‖nonnegativeLowerStep M n X ω * nonnegativeLowerStep N n Y ω‖ ≤ M * N := by
+    intro n
+    filter_upwards [by simpa [μ] using hXbound n, by simpa [μ] using hYbound n] with ω hx hy
+    rw [norm_mul]
+    exact mul_le_mul hx hy (norm_nonneg _) hM
+  have hXYlim : ∀ᵐ ω ∂μ,
+      Filter.Tendsto
+        (fun n ↦ nonnegativeLowerStep M n X ω * nonnegativeLowerStep N n Y ω)
+        Filter.atTop (nhds (X ω * Y ω)) := by
+    filter_upwards [by simpa [μ] using hXlim, by simpa [μ] using hYlim] with ω hx hy
+    exact hx.mul hy
+  have hXYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, nonnegativeLowerStep M n X ω * nonnegativeLowerStep N n Y ω ∂μ)
+      Filter.atTop (nhds (∫ ω, X ω * Y ω ∂μ)) := by
+    exact tendsto_integral_of_dominated_convergence (μ := μ)
+      (bound := fun _ : Set ι ↦ M * N)
+      (F := fun n ω ↦ nonnegativeLowerStep M n X ω * nonnegativeLowerStep N n Y ω)
+      (f := fun ω ↦ X ω * Y ω)
+      (fun n ↦
+        ((measurable_nonnegativeLowerStep (M := M) (n := n) hXmeas).mul
+          (measurable_nonnegativeLowerStep (M := N) (n := n) hYmeas)).aestronglyMeasurable)
+      (integrable_const (M * N)) hXYbound hXYlim
+  exact mul_le_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦ by
+    simpa [μ] using
+      setBernoulli_integral_fkg_nonnegativeLowerStep_countable
+        (ι := ι) p (X := X) (Y := Y) (M := M) (N := N) (m := n) (n := n)
+        hM hN hXmeas hYmeas hXinc hYinc
 
 /-- Full measurable-event FKG/Harris inequality for two decreasing events along an exhausting
 finite-coordinate filtration. This is the decreasing/decreasing companion to

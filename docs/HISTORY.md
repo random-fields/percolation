@@ -841,6 +841,16 @@ Dated milestones and anti-library notes.
     endpoint; the remaining work is to identify these approximants with Mathlib conditional
     expectations for integrable observables and discharge the L2/product convergence step.
 
+76. **Threshold-step observable FKG bridge (2026-07-03).** Added the event-to-random-variable
+    route for Grimmett's Theorem (2.4). Rephrased the countable measurable-event FKG theorem as
+    nonnegative covariance of event indicators, extended it to finite nonnegative sums of
+    increasing event indicators by covariance bilinearity, defined the lower threshold-step
+    approximants `δ ∑ 1_{(k+1)δ≤X}`, proved FKG for each finite threshold-step approximant, and
+    proved the dominated-convergence bridge from pointwise bounded threshold-step convergence to
+    the bounded observable inequality. This still is not the arbitrary square-integrable endpoint:
+    the remaining work is to prove the concrete threshold-step convergence/bounds and then pass
+    from bounded truncations to general L2 observables.
+
 ## Axiom Ledger
 
 Empty.

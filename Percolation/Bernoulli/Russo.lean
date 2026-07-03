@@ -359,6 +359,65 @@ theorem finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul {ι : Ty
   rw [← open_inter_pivotalTrace_eq_event_inter_pivotalTrace T e]
   exact finiteBernoulliEventProbability_open_pivotalTrace_eq_mul he p T
 
+/-- Event-level finite-support version of Grimmett's equation (2.29):
+`P(A ∩ {e pivotal}) = p * P(e pivotal)`. -/
+theorem DependsOn.setBernoulli_real_event_inter_pivotal_eq_mul {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
+    {e : ι} (he : e ∈ E) (p : I) :
+    setBer((Set.univ : Set ι), p).real (A ∩ {ω : Set ι | IsPivotal A e ω}) =
+      (p : ℝ) * setBer((Set.univ : Set ι), p).real
+        {ω : Set ι | IsPivotal A e ω} := by
+  let P : Set (Set ι) := {ω | IsPivotal A e ω}
+  let T : Set (Finset ι) := eventTrace E A
+  have hPDep : DependsOn E P :=
+    (dependsOn_pivotalEvent (E := E) (A := A) (e := e) hA).mono
+      (Finset.erase_subset e E)
+  have hInterDep : DependsOn E (A ∩ P) := hA.inter hPDep
+  have hpivTrace : (eventTrace E P : Set (Finset ι)) =
+      {s : Finset ι | IsPivotalTrace T e s} := by
+    simpa [P, T] using eventTrace_pivotalEvent_eq (E := E) (A := A) he
+  have htrace : (eventTrace E (A ∩ P) : Set (Finset ι)) =
+      T ∩ {s : Finset ι | IsPivotalTrace T e s} := by
+    rw [eventTrace_inter]
+    ext s
+    simp only [Finset.mem_coe, Finset.mem_inter, Set.mem_inter_iff]
+    constructor
+    · intro hs
+      have hsP : s ∈ (eventTrace E P : Set (Finset ι)) := hs.2
+      rw [hpivTrace] at hsP
+      exact ⟨hs.1, hsP⟩
+    · intro hs
+      have hsP : s ∈ (eventTrace E P : Set (Finset ι)) := by
+        rw [hpivTrace]
+        exact hs.2
+      exact ⟨hs.1, hsP⟩
+  have hfinite := finiteBernoulliEventProbability_event_inter_pivotalTrace_eq_mul
+    (E := E.erase e) (e := e) (he := Finset.notMem_erase e E) (p := (p : ℝ)) (T := T)
+  calc
+    setBer((Set.univ : Set ι), p).real (A ∩ {ω : Set ι | IsPivotal A e ω}) =
+        finiteBernoulliEventProbability E (p : ℝ) (eventTrace E (A ∩ P)) := by
+      simpa [P] using hInterDep.setBernoulli_real_eq_finiteBernoulliEventProbability p
+    _ = finiteBernoulliEventProbability E (p : ℝ)
+        (T ∩ {s : Finset ι | IsPivotalTrace T e s}) := by
+      rw [htrace]
+    _ = (p : ℝ) * finiteBernoulliEventProbability E (p : ℝ)
+        {s : Finset ι | IsPivotalTrace T e s} := by
+      simpa [Finset.insert_erase he] using hfinite
+    _ = (p : ℝ) * setBer((Set.univ : Set ι), p).real
+        {ω : Set ι | IsPivotal A e ω} := by
+      rw [← hA.setBernoulli_real_pivotal_eq_finiteBernoulliEventProbability he p]
+
+/-- Bernoulli bond percolation version of the finite-support equation
+`P(A ∩ {e pivotal}) = p * P(e pivotal)`. -/
+theorem DependsOn.bernoulliBondMeasure_real_event_inter_pivotal_eq_mul (d : ℕ)
+    {E : Finset (CubicEdge d)} {A : Set (EdgeConfiguration d)}
+    (hA : DependsOn E A) {e : CubicEdge d} (he : e ∈ E) (p : I) :
+    (bernoulliBondMeasure d p).real (A ∩ {ω : EdgeConfiguration d | IsPivotal A e ω}) =
+      (p : ℝ) * (bernoulliBondMeasure d p).real
+        {ω : EdgeConfiguration d | IsPivotal A e ω} := by
+  simpa [bernoulliBondMeasure] using
+    hA.setBernoulli_real_event_inter_pivotal_eq_mul he p
+
 /-- For an increasing finite trace, the difference between the indicators with `e` forced open
 and closed is exactly the pivotal indicator. This is the pointwise identity behind Grimmett's
 finite-coordinate Russo difference computation. -/

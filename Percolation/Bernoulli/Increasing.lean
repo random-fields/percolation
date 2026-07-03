@@ -2166,6 +2166,16 @@ theorem mul_le_of_tendsto_atTop_of_forall_le {x y z : ℕ → ℝ} {a b c : ℝ}
     a * b ≤ c :=
   le_of_tendsto_of_tendsto' (hx.mul hy) hz hxyz
 
+/-- Pass a reverse product inequality through limits of real sequences. This is the analytic
+version used for increasing/decreasing negative association. -/
+theorem le_mul_of_tendsto_atTop_of_forall_le {x y z : ℕ → ℝ} {a b c : ℝ}
+    (hx : Filter.Tendsto x Filter.atTop (nhds a))
+    (hy : Filter.Tendsto y Filter.atTop (nhds b))
+    (hz : Filter.Tendsto z Filter.atTop (nhds c))
+    (hxyz : ∀ n, z n ≤ x n * y n) :
+    c ≤ a * b :=
+  le_of_tendsto_of_tendsto' hz (hx.mul hy) hxyz
+
 /-- FKG passes from finite-support increasing approximations to their probability limits. This is
 the theorem-facing limit bridge for Grimmett's full FKG theorem: the remaining source-specific
 work is to construct approximants and prove the three convergence hypotheses. -/
@@ -2191,6 +2201,58 @@ theorem setBernoulli_real_fkg_of_finiteSupport_tendsto {ι : Type*} [DecidableEq
       setBer((Set.univ : Set ι), p).real (A ∩ B) := by
   exact mul_le_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
     setBernoulli_real_fkg_of_dependsOn p (hAinc n) (hBinc n) (hAdep n) (hBdep n)
+
+/-- Decreasing-event FKG passes from finite-support decreasing approximations to their probability
+limits. -/
+theorem setBernoulli_real_fkg_of_decreasing_finiteSupport_tendsto {ι : Type*}
+    [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {Aapprox Bapprox : ℕ → Set (Set ι)}
+    {EA EB : ℕ → Finset ι}
+    (hAdec : ∀ n, IsDecreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Bapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n ∩ Bapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B)))) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  exact mul_le_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
+    setBernoulli_real_fkg_of_decreasing_dependsOn p
+      (hAdec n) (hBdec n) (hAdep n) (hBdep n)
+
+/-- Negative association for an increasing event and a decreasing event passes from finite-support
+approximations to their probability limits. -/
+theorem setBernoulli_real_le_mul_of_increasing_decreasing_finiteSupport_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {Aapprox Bapprox : ℕ → Set (Set ι)}
+    {EA EB : ℕ → Finset ι}
+    (hAinc : ∀ n, IsIncreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Bapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n ∩ Bapprox n)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B)))) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B := by
+  exact le_mul_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
+    setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn p
+      (hAinc n) (hBdec n) (hAdep n) (hBdep n)
 
 /-- FKG passes from finite-support increasing observable approximations to their integral
 limits. This is the observable-facing limit bridge for Grimmett's martingale step: the remaining
@@ -2220,6 +2282,60 @@ theorem setBernoulli_integral_fkg_of_finiteSupport_tendsto {ι : Type*} [Decidab
   exact mul_le_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦
     setBernoulli_integral_fkg_of_dependsOnFunction p
       (hXinc n) (hYinc n) (hXdep n) (hYdep n)
+
+/-- Decreasing-observable FKG passes from finite-support decreasing approximations to their
+integral limits. -/
+theorem setBernoulli_integral_fkg_of_decreasing_finiteSupport_tendsto {ι : Type*}
+    [DecidableEq ι] (p : I) {X Y : Set ι → ℝ}
+    {Xapprox Yapprox : ℕ → Set ι → ℝ}
+    {EX EY : ℕ → Finset ι}
+    (hXdec : ∀ n, ∀ ⦃ω η : Set ι⦄, ω ⊆ η → Xapprox n η ≤ Xapprox n ω)
+    (hYdec : ∀ n, ∀ ⦃ω η : Set ι⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
+    (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
+    (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
+    (hXtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, X ω ∂setBer((Set.univ : Set ι), p))))
+    (hYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Yapprox n ω ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p))))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω * Yapprox n ω ∂setBer((Set.univ : Set ι), p))
+        Filter.atTop
+      (nhds (∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p)))) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) := by
+  exact mul_le_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦
+    setBernoulli_integral_fkg_of_decreasing_dependsOnFunction p
+      (hXdec n) (hYdec n) (hXdep n) (hYdep n)
+
+/-- Negative association for an increasing observable and a decreasing observable passes from
+finite-support approximations to their integral limits. -/
+theorem setBernoulli_integral_le_mul_of_increasing_decreasing_finiteSupport_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {X Y : Set ι → ℝ}
+    {Xapprox Yapprox : ℕ → Set ι → ℝ}
+    {EX EY : ℕ → Finset ι}
+    (hXinc : ∀ n, IsIncreasingRandomVariable (Xapprox n))
+    (hYdec : ∀ n, ∀ ⦃ω η : Set ι⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
+    (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
+    (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
+    (hXtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, X ω ∂setBer((Set.univ : Set ι), p))))
+    (hYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Yapprox n ω ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p))))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω * Yapprox n ω ∂setBer((Set.univ : Set ι), p))
+        Filter.atTop
+      (nhds (∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p)))) :
+    (∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) := by
+  exact le_mul_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦
+    setBernoulli_integral_le_mul_of_increasing_decreasing_dependsOnFunction p
+      (hXinc n) (hYdec n) (hXdep n) (hYdep n)
 
 /-- If finite-measure events converge in symmetric-difference measure, their real probabilities
 converge. This is the measure-continuity input used to turn finite-support approximations into
@@ -2265,6 +2381,86 @@ theorem setBernoulli_real_fkg_of_finiteSupport_symmDiff_tendsto {ι : Type*} [De
   let μ : Measure (Set ι) := setBer((Set.univ : Set ι), p)
   refine setBernoulli_real_fkg_of_finiteSupport_tendsto (p := p)
     (hAinc := hAinc) (hBinc := hBinc) (hAdep := hAdep) (hBdep := hBdep) ?_ ?_ ?_
+  · exact tendsto_measureReal_of_tendsto_measureReal_symmDiff
+      (μ := μ) hAmeas.nullMeasurableSet
+      (fun n ↦ (hAdep n).measurableSet.nullMeasurableSet) hAΔ
+  · exact tendsto_measureReal_of_tendsto_measureReal_symmDiff
+      (μ := μ) hBmeas.nullMeasurableSet
+      (fun n ↦ (hBdep n).measurableSet.nullMeasurableSet) hBΔ
+  · exact tendsto_measureReal_of_tendsto_measureReal_symmDiff
+      (μ := μ) (hAmeas.inter hBmeas).nullMeasurableSet
+      (fun n ↦
+        (((hAdep n).mono (Finset.subset_union_left (s₁ := EA n) (s₂ := EB n))).inter
+          ((hBdep n).mono (Finset.subset_union_right (s₁ := EA n) (s₂ := EB n))))
+          |>.measurableSet.nullMeasurableSet)
+      hABΔ
+
+/-- Decreasing-event FKG obtained from finite-support decreasing approximations converging in
+symmetric-difference measure. -/
+theorem setBernoulli_real_fkg_of_decreasing_finiteSupport_symmDiff_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {Aapprox Bapprox : ℕ → Set (Set ι)}
+    {EA EB : ℕ → Finset ι}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAdec : ∀ n, IsDecreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAΔ : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n ∆ A)) Filter.atTop
+      (nhds 0))
+    (hBΔ : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Bapprox n ∆ B)) Filter.atTop
+      (nhds 0))
+    (hABΔ : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real ((Aapprox n ∩ Bapprox n) ∆ (A ∩ B)))
+        Filter.atTop (nhds 0)) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  let μ : Measure (Set ι) := setBer((Set.univ : Set ι), p)
+  refine setBernoulli_real_fkg_of_decreasing_finiteSupport_tendsto (p := p)
+    (hAdec := hAdec) (hBdec := hBdec) (hAdep := hAdep) (hBdep := hBdep) ?_ ?_ ?_
+  · exact tendsto_measureReal_of_tendsto_measureReal_symmDiff
+      (μ := μ) hAmeas.nullMeasurableSet
+      (fun n ↦ (hAdep n).measurableSet.nullMeasurableSet) hAΔ
+  · exact tendsto_measureReal_of_tendsto_measureReal_symmDiff
+      (μ := μ) hBmeas.nullMeasurableSet
+      (fun n ↦ (hBdep n).measurableSet.nullMeasurableSet) hBΔ
+  · exact tendsto_measureReal_of_tendsto_measureReal_symmDiff
+      (μ := μ) (hAmeas.inter hBmeas).nullMeasurableSet
+      (fun n ↦
+        (((hAdep n).mono (Finset.subset_union_left (s₁ := EA n) (s₂ := EB n))).inter
+          ((hBdep n).mono (Finset.subset_union_right (s₁ := EA n) (s₂ := EB n))))
+          |>.measurableSet.nullMeasurableSet)
+      hABΔ
+
+/-- Negative association for increasing/decreasing events obtained from finite-support
+approximations converging in symmetric-difference measure. -/
+theorem setBernoulli_real_le_mul_of_increasing_decreasing_finiteSupport_symmDiff_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {Aapprox Bapprox : ℕ → Set (Set ι)}
+    {EA EB : ℕ → Finset ι}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : ∀ n, IsIncreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAΔ : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Aapprox n ∆ A)) Filter.atTop
+      (nhds 0))
+    (hBΔ : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real (Bapprox n ∆ B)) Filter.atTop
+      (nhds 0))
+    (hABΔ : Filter.Tendsto
+      (fun n ↦ setBer((Set.univ : Set ι), p).real ((Aapprox n ∩ Bapprox n) ∆ (A ∩ B)))
+        Filter.atTop (nhds 0)) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B := by
+  let μ : Measure (Set ι) := setBer((Set.univ : Set ι), p)
+  refine setBernoulli_real_le_mul_of_increasing_decreasing_finiteSupport_tendsto (p := p)
+    (hAinc := hAinc) (hBdec := hBdec) (hAdep := hAdep) (hBdep := hBdep) ?_ ?_ ?_
   · exact tendsto_measureReal_of_tendsto_measureReal_symmDiff
       (μ := μ) hAmeas.nullMeasurableSet
       (fun n ↦ (hAdep n).measurableSet.nullMeasurableSet) hAΔ
@@ -2757,6 +2953,56 @@ theorem bernoulliBondMeasure_real_fkg_of_finiteSupport_tendsto (d : ℕ) (p : I)
     setBernoulli_real_fkg_of_finiteSupport_tendsto (ι := CubicEdge d) p
       hAinc hBinc hAdep hBdep hAtend hBtend hABtend
 
+/-- Decreasing-event FKG passes from finite-support decreasing approximations to their probability
+limits for Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_real_fkg_of_decreasing_finiteSupport_tendsto (d : ℕ) (p : I)
+    {A B : Set (EdgeConfiguration d)}
+    {Aapprox Bapprox : ℕ → Set (EdgeConfiguration d)}
+    {EA EB : ℕ → Finset (CubicEdge d)}
+    (hAdec : ∀ n, IsDecreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Bapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n ∩ Bapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real (A ∩ B)))) :
+    (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B ≤
+      (bernoulliBondMeasure d p).real (A ∩ B) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_of_decreasing_finiteSupport_tendsto (ι := CubicEdge d) p
+      hAdec hBdec hAdep hBdep hAtend hBtend hABtend
+
+/-- Negative association for increasing/decreasing event approximations passes to probability
+limits for Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_finiteSupport_tendsto
+    (d : ℕ) (p : I) {A B : Set (EdgeConfiguration d)}
+    {Aapprox Bapprox : ℕ → Set (EdgeConfiguration d)}
+    {EA EB : ℕ → Finset (CubicEdge d)}
+    (hAinc : ∀ n, IsIncreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Bapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n ∩ Bapprox n)) Filter.atTop
+      (nhds ((bernoulliBondMeasure d p).real (A ∩ B)))) :
+    (bernoulliBondMeasure d p).real (A ∩ B) ≤
+      (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_le_mul_of_increasing_decreasing_finiteSupport_tendsto
+      (ι := CubicEdge d) p hAinc hBdec hAdep hBdep hAtend hBtend hABtend
+
 /-- FKG passes from finite-support increasing approximations converging in symmetric-difference
 measure to their target events for Bernoulli bond percolation. -/
 theorem bernoulliBondMeasure_real_fkg_of_finiteSupport_symmDiff_tendsto (d : ℕ) (p : I)
@@ -2782,6 +3028,58 @@ theorem bernoulliBondMeasure_real_fkg_of_finiteSupport_symmDiff_tendsto (d : ℕ
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_fkg_of_finiteSupport_symmDiff_tendsto (ι := CubicEdge d) p
       hAmeas hBmeas hAinc hBinc hAdep hBdep hAΔ hBΔ hABΔ
+
+/-- Decreasing-event FKG passes from finite-support decreasing approximations converging in
+symmetric-difference measure for Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_real_fkg_of_decreasing_finiteSupport_symmDiff_tendsto
+    (d : ℕ) (p : I) {A B : Set (EdgeConfiguration d)}
+    {Aapprox Bapprox : ℕ → Set (EdgeConfiguration d)}
+    {EA EB : ℕ → Finset (CubicEdge d)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAdec : ∀ n, IsDecreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAΔ : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n ∆ A)) Filter.atTop
+      (nhds 0))
+    (hBΔ : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Bapprox n ∆ B)) Filter.atTop
+      (nhds 0))
+    (hABΔ : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real ((Aapprox n ∩ Bapprox n) ∆ (A ∩ B)))
+        Filter.atTop (nhds 0)) :
+    (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B ≤
+      (bernoulliBondMeasure d p).real (A ∩ B) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_of_decreasing_finiteSupport_symmDiff_tendsto
+      (ι := CubicEdge d) p hAmeas hBmeas hAdec hBdec hAdep hBdep hAΔ hBΔ hABΔ
+
+/-- Negative association for increasing/decreasing approximations converging in
+symmetric-difference measure for Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_finiteSupport_symmDiff_tendsto
+    (d : ℕ) (p : I) {A B : Set (EdgeConfiguration d)}
+    {Aapprox Bapprox : ℕ → Set (EdgeConfiguration d)}
+    {EA EB : ℕ → Finset (CubicEdge d)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : ∀ n, IsIncreasingEvent (Aapprox n))
+    (hBdec : ∀ n, IsDecreasingEvent (Bapprox n))
+    (hAdep : ∀ n, DependsOn (EA n) (Aapprox n))
+    (hBdep : ∀ n, DependsOn (EB n) (Bapprox n))
+    (hAΔ : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Aapprox n ∆ A)) Filter.atTop
+      (nhds 0))
+    (hBΔ : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real (Bapprox n ∆ B)) Filter.atTop
+      (nhds 0))
+    (hABΔ : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real ((Aapprox n ∩ Bapprox n) ∆ (A ∩ B)))
+        Filter.atTop (nhds 0)) :
+    (bernoulliBondMeasure d p).real (A ∩ B) ≤
+      (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_le_mul_of_increasing_decreasing_finiteSupport_symmDiff_tendsto
+      (ι := CubicEdge d) p hAmeas hBmeas hAinc hBdec hAdep hBdep hAΔ hBΔ hABΔ
 
 /-- FKG passes from finite-support increasing observable approximations to their integral limits
 for Bernoulli bond percolation. -/
@@ -2809,6 +3107,60 @@ theorem bernoulliBondMeasure_integral_fkg_of_finiteSupport_tendsto (d : ℕ) (p 
   simpa [bernoulliBondMeasure] using
     setBernoulli_integral_fkg_of_finiteSupport_tendsto (ι := CubicEdge d) p
       hXinc hYinc hXdep hYdep hXtend hYtend hXYtend
+
+/-- Decreasing-observable FKG passes from finite-support decreasing approximations to their
+integral limits for Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_integral_fkg_of_decreasing_finiteSupport_tendsto
+    (d : ℕ) (p : I) {X Y : EdgeConfiguration d → ℝ}
+    {Xapprox Yapprox : ℕ → EdgeConfiguration d → ℝ}
+    {EX EY : ℕ → Finset (CubicEdge d)}
+    (hXdec : ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Xapprox n η ≤ Xapprox n ω)
+    (hYdec : ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
+    (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
+    (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
+    (hXtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω ∂bernoulliBondMeasure d p) Filter.atTop
+      (nhds (∫ ω, X ω ∂bernoulliBondMeasure d p)))
+    (hYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Yapprox n ω ∂bernoulliBondMeasure d p) Filter.atTop
+      (nhds (∫ ω, Y ω ∂bernoulliBondMeasure d p)))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω * Yapprox n ω ∂bernoulliBondMeasure d p)
+        Filter.atTop
+      (nhds (∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p))) :
+    (∫ ω, X ω ∂bernoulliBondMeasure d p) *
+        (∫ ω, Y ω ∂bernoulliBondMeasure d p) ≤
+      ∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_integral_fkg_of_decreasing_finiteSupport_tendsto
+      (ι := CubicEdge d) p hXdec hYdec hXdep hYdep hXtend hYtend hXYtend
+
+/-- Negative association for increasing/decreasing observable approximations passes to integral
+limits for Bernoulli bond percolation. -/
+theorem bernoulliBondMeasure_integral_le_mul_of_increasing_decreasing_finiteSupport_tendsto
+    (d : ℕ) (p : I) {X Y : EdgeConfiguration d → ℝ}
+    {Xapprox Yapprox : ℕ → EdgeConfiguration d → ℝ}
+    {EX EY : ℕ → Finset (CubicEdge d)}
+    (hXinc : ∀ n, IsIncreasingRandomVariable (Xapprox n))
+    (hYdec : ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
+    (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
+    (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
+    (hXtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω ∂bernoulliBondMeasure d p) Filter.atTop
+      (nhds (∫ ω, X ω ∂bernoulliBondMeasure d p)))
+    (hYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Yapprox n ω ∂bernoulliBondMeasure d p) Filter.atTop
+      (nhds (∫ ω, Y ω ∂bernoulliBondMeasure d p)))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦ ∫ ω, Xapprox n ω * Yapprox n ω ∂bernoulliBondMeasure d p)
+        Filter.atTop
+      (nhds (∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p))) :
+    (∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p) ≤
+      (∫ ω, X ω ∂bernoulliBondMeasure d p) *
+        (∫ ω, Y ω ∂bernoulliBondMeasure d p) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_integral_le_mul_of_increasing_decreasing_finiteSupport_tendsto
+      (ι := CubicEdge d) p hXinc hYdec hXdep hYdep hXtend hYtend hXYtend
 
 /-- FKG for increasing limits of finite-support increasing cubic bond events. -/
 theorem bernoulliBondMeasure_real_fkg_iUnion_finiteSupport (d : ℕ) (p : I)

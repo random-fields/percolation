@@ -1,6 +1,7 @@
 import Percolation.Bernoulli.Basic
 import Mathlib.Combinatorics.SetFamily.HarrisKleitman
 import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+import Mathlib.Data.Set.FiniteExhaustion
 import Mathlib.MeasureTheory.Measure.SeparableMeasure
 import Mathlib.MeasureTheory.Constructions.UnitInterval
 import Mathlib.Probability.Martingale.Convergence
@@ -1970,6 +1971,32 @@ theorem tendsto_eLpNorm_condExp_indicator_finiteTraceFiltration_of_eventually_me
   tendsto_eLpNorm_condExp_indicator_finiteTraceFiltration_of_iSup_eq
     (p := p) hE (iSup_finiteTraceFiltration_eq_of_eventually_mem hE hcover) hA
 
+/-- A canonical monotone finite exhaustion of a countable coordinate type, used to close
+Grimmett's martingale limiting proof of FKG without asking callers to provide an exhaustion. -/
+noncomputable def countableExhaustionFinset {ι : Type*} [DecidableEq ι] [Countable ι] :
+    ℕ → Finset ι :=
+  fun n ↦ ((Set.countable_univ (α := ι)).finiteExhaustion.finite n).toFinset
+
+theorem monotone_countableExhaustionFinset {ι : Type*} [DecidableEq ι] [Countable ι] :
+    Monotone (countableExhaustionFinset (ι := ι)) := by
+  intro m n hmn e he
+  rw [countableExhaustionFinset] at he ⊢
+  rw [Set.Finite.mem_toFinset] at he ⊢
+  exact Set.FiniteExhaustion.mono (Set.countable_univ (α := ι)).finiteExhaustion hmn he
+
+theorem eventually_mem_countableExhaustionFinset {ι : Type*} [DecidableEq ι] [Countable ι] :
+    ∀ e : ι, ∀ᶠ n in Filter.atTop, e ∈ countableExhaustionFinset (ι := ι) n := by
+  intro e
+  let K := (Set.countable_univ (α := ι)).finiteExhaustion
+  have heK : e ∈ ⋃ n, K n := by
+    rw [Set.FiniteExhaustion.iUnion_eq]
+    exact Set.mem_univ e
+  rcases Set.mem_iUnion.mp heK with ⟨n, hen⟩
+  refine Filter.eventually_atTop.2 ⟨n, ?_⟩
+  intro m hnm
+  rw [countableExhaustionFinset, Set.Finite.mem_toFinset]
+  exact Set.FiniteExhaustion.mono K hnm hen
+
 /-- Finite-support events are measure-dense in Bernoulli product measure. This is the
 measure-approximation half of Grimmett's limiting passage after finite FKG. -/
 theorem setBernoulli_measureDense_finiteSupportEvents {ι : Type*} [DecidableEq ι] (p : I) :
@@ -3841,6 +3868,20 @@ theorem setBernoulli_real_fkg_of_finiteTraceFiltration
     simpa [finiteTraceFiltration] using
       finiteTraceConditionalProbability_ae_eq_condExp (E n) p hBmeas
 
+/-- Full measurable-event FKG/Harris inequality on a countable Bernoulli product space. This is
+Grimmett's Theorem (2.4) with the countable-coordinate exhaustion supplied automatically. -/
+theorem setBernoulli_real_fkg_countable
+    {ι : Type*} [DecidableEq ι] [Countable ι] (p : I) {A B : Set (Set ι)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) :=
+  setBernoulli_real_fkg_of_finiteTraceFiltration
+    (p := p) (A := A) (B := B) (E := countableExhaustionFinset (ι := ι))
+    monotone_countableExhaustionFinset eventually_mem_countableExhaustionFinset
+    hAmeas hBmeas hAinc hBinc
+
 /-- Full measurable-event FKG/Harris inequality for two decreasing events along an exhausting
 finite-coordinate filtration. This is the decreasing/decreasing companion to
 `setBernoulli_real_fkg_of_finiteTraceFiltration`. -/
@@ -3875,6 +3916,20 @@ theorem setBernoulli_real_fkg_of_decreasing_finiteTraceFiltration
     simpa [μ, hAcomp, hBcomp, hABcomp] using hcomp
   nlinarith
 
+/-- Full measurable-event FKG/Harris inequality for two decreasing events on a countable
+Bernoulli product space. -/
+theorem setBernoulli_real_fkg_of_decreasing_countable
+    {ι : Type*} [DecidableEq ι] [Countable ι] (p : I) {A B : Set (Set ι)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) :=
+  setBernoulli_real_fkg_of_decreasing_finiteTraceFiltration
+    (p := p) (A := A) (B := B) (E := countableExhaustionFinset (ι := ι))
+    monotone_countableExhaustionFinset eventually_mem_countableExhaustionFinset
+    hAmeas hBmeas hAdec hBdec
+
 /-- Full measurable-event negative association for an increasing event and a decreasing event
 along an exhausting finite-coordinate filtration. -/
 theorem setBernoulli_real_le_mul_of_increasing_decreasing_finiteTraceFiltration
@@ -3907,6 +3962,20 @@ theorem setBernoulli_real_le_mul_of_increasing_decreasing_finiteTraceFiltration
   have hcomp' : μ.real A * (1 - μ.real B) ≤ μ.real (A ∩ Bᶜ) := by
     simpa [μ, hBcomp] using hcomp
   nlinarith
+
+/-- Full measurable-event negative association for an increasing event and a decreasing event on a
+countable Bernoulli product space. -/
+theorem setBernoulli_real_le_mul_of_increasing_decreasing_countable
+    {ι : Type*} [DecidableEq ι] [Countable ι] (p : I) {A B : Set (Set ι)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B :=
+  setBernoulli_real_le_mul_of_increasing_decreasing_finiteTraceFiltration
+    (p := p) (A := A) (B := B) (E := countableExhaustionFinset (ι := ι))
+    monotone_countableExhaustionFinset eventually_mem_countableExhaustionFinset
+    hAmeas hBmeas hAinc hBdec
 
 /-- Grimmett's iterated FKG inequality (2.7) for a finite family of arbitrary measurable
 increasing events along an exhausting finite-coordinate filtration. -/
@@ -3961,6 +4030,20 @@ theorem setBernoulli_real_iterated_fkg_of_finiteTraceFiltration
       _ ≤ μ.real (A a ∩ finiteEventInter J A) := hstep
       _ = μ.real (finiteEventInter (insert a J) A) := by
         rw [finiteEventInter_insert]
+
+/-- Grimmett's iterated FKG inequality (2.7) for a finite family of measurable increasing events
+on a countable Bernoulli product space. -/
+theorem setBernoulli_real_iterated_fkg_countable
+    {ι κ : Type*} [DecidableEq ι] [Countable ι] [DecidableEq κ]
+    (p : I) {J : Finset κ} {A : κ → Set (Set ι)}
+    (hAmeas : ∀ i ∈ J, MeasurableSet (A i))
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    J.prod (fun i ↦ setBer((Set.univ : Set ι), p).real (A i)) ≤
+      setBer((Set.univ : Set ι), p).real (finiteEventInter J A) :=
+  setBernoulli_real_iterated_fkg_of_finiteTraceFiltration
+    (p := p) (J := J) (A := A) (E := countableExhaustionFinset (ι := ι))
+    monotone_countableExhaustionFinset eventually_mem_countableExhaustionFinset
+    hAmeas hAinc
 
 /-- Decreasing-event conditional-probability form of the measurable-event FKG bridge. -/
 theorem setBernoulli_real_fkg_of_decreasing_finiteTraceConditionalProbability_tendsto
@@ -5148,6 +5231,52 @@ theorem bernoulliBondMeasure_real_fkg_iInter_finiteSupport (d : ℕ) (p : I)
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_fkg_iInter_finiteSupport (ι := CubicEdge d) p
       hAanti hBanti hAmeas hBmeas hAinc hBinc hAdep hBdep
+
+/-- Full measurable-event FKG for increasing cubic bond events. This is the production
+Bernoulli bond-percolation face of Grimmett's Theorem (2.4). -/
+theorem bernoulliBondMeasure_real_fkg (d : ℕ) (p : I)
+    {A B : Set (EdgeConfiguration d)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B) :
+    (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B ≤
+      (bernoulliBondMeasure d p).real (A ∩ B) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_countable (ι := CubicEdge d) p hAmeas hBmeas hAinc hBinc
+
+/-- Full measurable-event FKG for decreasing cubic bond events. -/
+theorem bernoulliBondMeasure_real_fkg_of_decreasing (d : ℕ) (p : I)
+    {A B : Set (EdgeConfiguration d)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B ≤
+      (bernoulliBondMeasure d p).real (A ∩ B) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_fkg_of_decreasing_countable (ι := CubicEdge d) p
+      hAmeas hBmeas hAdec hBdec
+
+/-- Full measurable-event negative association for an increasing cubic bond event and a
+decreasing cubic bond event. -/
+theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing (d : ℕ) (p : I)
+    {A B : Set (EdgeConfiguration d)}
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    (bernoulliBondMeasure d p).real (A ∩ B) ≤
+      (bernoulliBondMeasure d p).real A * (bernoulliBondMeasure d p).real B := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_le_mul_of_increasing_decreasing_countable (ι := CubicEdge d) p
+      hAmeas hBmeas hAinc hBdec
+
+/-- Grimmett's iterated FKG inequality (2.7) for finite families of measurable increasing cubic
+bond events. -/
+theorem bernoulliBondMeasure_real_iterated_fkg (d : ℕ)
+    {κ : Type*} [DecidableEq κ] {J : Finset κ}
+    {A : κ → Set (EdgeConfiguration d)} (p : I)
+    (hAmeas : ∀ i ∈ J, MeasurableSet (A i))
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    J.prod (fun i ↦ (bernoulliBondMeasure d p).real (A i)) ≤
+      (bernoulliBondMeasure d p).real (finiteEventInter J A) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_real_iterated_fkg_countable (ι := CubicEdge d) p hAmeas hAinc
 
 /-- FKG between a finite-support increasing bond event and the rooted infinite-cluster event.
 This is the concrete measurable-event instance needed in Grimmett's root-independence proof:

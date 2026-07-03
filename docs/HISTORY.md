@@ -829,6 +829,18 @@ Dated milestones and anti-library notes.
     monotonicity of `log P_p(A) / log p` to `setBer` and `bernoulliBondMeasure` under explicit
     positive-probability hypotheses.
 
+75. **Finite-trace observable FKG bridge (2026-07-03).** Added the real-valued
+    finite-trace conditional-expectation approximants for Grimmett's Theorem (2.4). Proved that
+    forcing a finite trace and resampling the outside coordinates preserves finite-support
+    observables, that the resulting trace functions are increasing/decreasing when the original
+    observable is monotone, and that bounded measurable observables supply the required forced
+    slice integrability. Applied finite FKG to these conditional-expectation approximants and
+    added the convergence bridge: if the two marginal integrals and the product integral converge
+    to the corresponding integrals of `X`, `Y`, and `X * Y`, then the expectation FKG inequality
+    follows. This is a verified bridge, not yet the arbitrary square-integrable random-variable
+    endpoint; the remaining work is to identify these approximants with Mathlib conditional
+    expectations for integrable observables and discharge the L2/product convergence step.
+
 ## Axiom Ledger
 
 Empty.

@@ -305,8 +305,8 @@ space, have the requested marginal laws, and are ordered pointwise. This is the 
 abstraction produced by Grimmett's iid-uniform threshold construction. -/
 def IsMonotoneCoupling {ι Ω : Type*} [MeasurableSpace Ω]
     (ν : Measure Ω) (μ₁ μ₂ : Measure (Set ι)) (η₁ η₂ : Ω → Set ι) : Prop :=
-  Measurable η₁ ∧ Measurable η₂ ∧ Measure.map η₁ ν = μ₁ ∧ Measure.map η₂ ν = μ₂ ∧
-    ∀ ω, η₁ ω ⊆ η₂ ω
+  Measurable η₁ ∧ Measurable η₂ ∧ Measure.map η₁ ν = μ₁ ∧
+    Measure.map η₂ ν = μ₂ ∧ ∀ ω, η₁ ω ⊆ η₂ ω
 
 theorem IsMonotoneCoupling.measurable_left {ι Ω : Type*} [MeasurableSpace Ω]
     {ν : Measure Ω} {μ₁ μ₂ : Measure (Set ι)} {η₁ η₂ : Ω → Set ι}
@@ -877,6 +877,65 @@ theorem finiteTraceConditionalProbability_isDecreasingFinsetFunction {ι : Type*
   intro s t hst _htE
   unfold finiteTraceConditionalProbability
   exact measureReal_mono fun ω hω ↦ hA.antitone (forceFiniteTrace_subset_of_subset hst) hω
+
+/-- Conditional expectation of a real-valued observable after forcing a finite trace and leaving
+the outside coordinates random. This is the observable analogue of
+`finiteTraceConditionalProbability`. -/
+noncomputable def finiteTraceConditionalExpectation {ι : Type*}
+    (E : Finset ι) (p : I) (X : Set ι → ℝ) (s : Finset ι) : ℝ :=
+  ∫ ω, X (forceFiniteTrace E s ω) ∂setBer((Set.univ : Set ι), p)
+
+/-- If an observable already depends on the finite conditioning support, its finite-trace
+conditional expectation is just its value on that trace. -/
+theorem finiteTraceConditionalExpectation_eq_of_dependsOnFunction {ι : Type*}
+    {E s : Finset ι} {X : Set ι → ℝ} (hX : DependsOnFunction E X) (p : I) :
+    finiteTraceConditionalExpectation E p X s = X ((s : Finset ι) : Set ι) := by
+  unfold finiteTraceConditionalExpectation
+  have hconst :
+      (fun ω : Set ι ↦ X (forceFiniteTrace E s ω)) =
+        fun _ : Set ι ↦ X ((s : Finset ι) : Set ι) := by
+    funext ω
+    exact hX (forceFiniteTrace_agree_on E s ω)
+  rw [hconst]
+  simp
+
+/-- A finite-support observable is a fixed point of its own finite-trace conditional expectation
+lift. -/
+theorem observableOfFiniteTrace_finiteTraceConditionalExpectation_eq_of_dependsOnFunction
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {X : Set ι → ℝ}
+    (hX : DependsOnFunction E X) (p : I) :
+    observableOfFiniteTrace E (finiteTraceConditionalExpectation E p X) = X := by
+  funext ω
+  rw [observableOfFiniteTrace, finiteTraceConditionalExpectation_eq_of_dependsOnFunction hX p,
+    hX.eq_restrictTo]
+
+/-- Finite-trace conditional expectations of an increasing observable are increasing finite-cube
+observables, provided the forced slice expectations are integrable. -/
+theorem finiteTraceConditionalExpectation_isIncreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} (p : I) {X : Set ι → ℝ}
+    (hX : IsIncreasingRandomVariable X)
+    (hXint : ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ X (forceFiniteTrace E s ω))
+        (setBer((Set.univ : Set ι), p))) :
+    IsIncreasingFinsetFunction E (finiteTraceConditionalExpectation E p X) := by
+  intro s t hst _htE
+  unfold finiteTraceConditionalExpectation
+  exact integral_mono (hXint s) (hXint t) fun ω ↦
+    hX (forceFiniteTrace_subset_of_subset (E := E) (ω := ω) hst)
+
+/-- Finite-trace conditional expectations of a decreasing observable are decreasing finite-cube
+observables, provided the forced slice expectations are integrable. -/
+theorem finiteTraceConditionalExpectation_isDecreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} (p : I) {X : Set ι → ℝ}
+    (hX : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → X η ≤ X ω)
+    (hXint : ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ X (forceFiniteTrace E s ω))
+        (setBer((Set.univ : Set ι), p))) :
+    IsDecreasingFinsetFunction E (finiteTraceConditionalExpectation E p X) := by
+  intro s t hst _htE
+  unfold finiteTraceConditionalExpectation
+  exact integral_mono (hXint t) (hXint s) fun ω ↦
+    hX (forceFiniteTrace_subset_of_subset (E := E) (ω := ω) hst)
 
 /-- Threshold events of the conditional trace probability. These are increasing finite-cube
 events whenever the original event is increasing. -/
@@ -1872,6 +1931,23 @@ theorem measurable_forceFiniteTrace_coordinateMeasurableSpace
     intro e he
     exact (Finset.mem_filter.mp he).2)
 
+/-- Bounded measurable observables remain integrable after forcing any finite trace and
+resampling the outside coordinates. This is the bounded-observable slice integrability needed for
+the full expectation form of FKG. -/
+theorem integrable_forceFiniteTrace_of_bound {ι : Type*} [DecidableEq ι]
+    (E s : Finset ι) (p : I) {X : Set ι → ℝ} (hXmeas : Measurable X)
+    {C : ℝ} (hXbound : ∀ ω : Set ι, ‖X ω‖ ≤ C) :
+    Integrable (fun ω : Set ι ↦ X (forceFiniteTrace E s ω))
+      (setBer((Set.univ : Set ι), p)) := by
+  have hsmall :
+      @Measurable (Set ι) ℝ (coordinateMeasurableSpace ((E : Set ι)ᶜ)) (borel ℝ)
+        (fun ω : Set ι ↦ X (forceFiniteTrace E s ω)) :=
+    hXmeas.comp (measurable_forceFiniteTrace_coordinateMeasurableSpace E s)
+  have hmeas : Measurable (fun ω : Set ι ↦ X (forceFiniteTrace E s ω)) :=
+    hsmall.mono (coordinateMeasurableSpace_le ((E : Set ι)ᶜ)) le_rfl
+  exact Integrable.of_bound hmeas.aestronglyMeasurable C
+    (ae_of_all _ fun ω ↦ hXbound (forceFiniteTrace E s ω))
+
 /-- Product disintegration over a finite trace atom. Intersecting an arbitrary measurable event
 with the exact trace atom is the atom probability times the probability of the event after forcing
 that trace and resampling the outside coordinates. -/
@@ -2246,7 +2322,10 @@ theorem integral_observableOfFiniteTrace_setBernoulli_eq_finiteBernoulliExpectat
     {ι : Type*} [DecidableEq ι] (E : Finset ι) (X : Finset ι → ℝ) (p : I) :
     (∫ ω, observableOfFiniteTrace E X ω ∂setBer((Set.univ : Set ι), p)) =
       finiteBernoulliExpectation E (p : ℝ) X := by
-  rw [(dependsOnFunction_observableOfFiniteTrace E X).integral_setBernoulli_eq_finiteBernoulliExpectation p]
+  have h :=
+    DependsOnFunction.integral_setBernoulli_eq_finiteBernoulliExpectation
+      (dependsOnFunction_observableOfFiniteTrace E X) p
+  rw [h]
   unfold finiteBernoulliExpectation finiteObservableTrace observableOfFiniteTrace
   apply Finset.sum_congr rfl
   intro s hs
@@ -3023,6 +3102,93 @@ theorem setBernoulli_integral_le_mul_of_increasing_decreasing_observableOfFinite
     (dependsOnFunction_observableOfFiniteTrace E X)
     (dependsOnFunction_observableOfFiniteTrace E Y)
 
+/-- The finite conditional-expectation step in Grimmett's martingale proof for real-valued
+observables. After conditioning on the finite trace `E`, the conditional expectations of two
+increasing observables are increasing finite-cube observables, so finite FKG applies. -/
+theorem finiteTraceConditionalExpectation_fkg {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} (p : I) {X Y : Set ι → ℝ}
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    (hXint : ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ X (forceFiniteTrace E s ω))
+        (setBer((Set.univ : Set ι), p)))
+    (hYint : ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ Y (forceFiniteTrace E s ω))
+        (setBer((Set.univ : Set ι), p))) :
+    finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalExpectation E p X) *
+        finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalExpectation E p Y) ≤
+      finiteBernoulliExpectation E (p : ℝ)
+        (fun s ↦
+          finiteTraceConditionalExpectation E p X s *
+            finiteTraceConditionalExpectation E p Y s) := by
+  exact finiteBernoulliExpectation_fkg (E := E) (p := (p : ℝ)) p.2.1 p.2.2
+    (finiteTraceConditionalExpectation_isIncreasingFinsetFunction (E := E) p hXinc hXint)
+    (finiteTraceConditionalExpectation_isIncreasingFinsetFunction (E := E) p hYinc hYint)
+
+/-- The lifted finite conditional-expectation FKG step under Bernoulli product measure. -/
+theorem setBernoulli_integral_fkg_finiteTraceConditionalExpectation
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} (p : I) {X Y : Set ι → ℝ}
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    (hXint : ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ X (forceFiniteTrace E s ω))
+        (setBer((Set.univ : Set ι), p)))
+    (hYint : ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ Y (forceFiniteTrace E s ω))
+        (setBer((Set.univ : Set ι), p))) :
+    (∫ ω,
+        observableOfFiniteTrace E (finiteTraceConditionalExpectation E p X) ω
+        ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω,
+          observableOfFiniteTrace E (finiteTraceConditionalExpectation E p Y) ω
+          ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω,
+        observableOfFiniteTrace E (finiteTraceConditionalExpectation E p X) ω *
+          observableOfFiniteTrace E (finiteTraceConditionalExpectation E p Y) ω
+        ∂setBer((Set.univ : Set ι), p) := by
+  exact setBernoulli_integral_fkg_observableOfFiniteTrace (E := E) (p := p)
+    (finiteTraceConditionalExpectation_isIncreasingFinsetFunction (E := E) p hXinc hXint)
+    (finiteTraceConditionalExpectation_isIncreasingFinsetFunction (E := E) p hYinc hYint)
+
+/-- Bounded-observable version of the finite conditional-expectation FKG step. Boundedness
+supplies the slice-integrability hypotheses for the forced finite traces. -/
+theorem finiteTraceConditionalExpectation_fkg_of_bound {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} (p : I) {X Y : Set ι → ℝ}
+    (hXmeas : Measurable X) (hYmeas : Measurable Y)
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    {CX CY : ℝ} (hXbound : ∀ ω : Set ι, ‖X ω‖ ≤ CX)
+    (hYbound : ∀ ω : Set ι, ‖Y ω‖ ≤ CY) :
+    finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalExpectation E p X) *
+        finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalExpectation E p Y) ≤
+      finiteBernoulliExpectation E (p : ℝ)
+        (fun s ↦
+          finiteTraceConditionalExpectation E p X s *
+            finiteTraceConditionalExpectation E p Y s) := by
+  exact finiteTraceConditionalExpectation_fkg (E := E) (p := p) hXinc hYinc
+    (fun s ↦ integrable_forceFiniteTrace_of_bound E s p hXmeas hXbound)
+    (fun s ↦ integrable_forceFiniteTrace_of_bound E s p hYmeas hYbound)
+
+/-- Lifted bounded-observable version of the finite conditional-expectation FKG step under
+Bernoulli product measure. -/
+theorem setBernoulli_integral_fkg_finiteTraceConditionalExpectation_of_bound
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} (p : I) {X Y : Set ι → ℝ}
+    (hXmeas : Measurable X) (hYmeas : Measurable Y)
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    {CX CY : ℝ} (hXbound : ∀ ω : Set ι, ‖X ω‖ ≤ CX)
+    (hYbound : ∀ ω : Set ι, ‖Y ω‖ ≤ CY) :
+    (∫ ω,
+        observableOfFiniteTrace E (finiteTraceConditionalExpectation E p X) ω
+        ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω,
+          observableOfFiniteTrace E (finiteTraceConditionalExpectation E p Y) ω
+          ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω,
+        observableOfFiniteTrace E (finiteTraceConditionalExpectation E p X) ω *
+          observableOfFiniteTrace E (finiteTraceConditionalExpectation E p Y) ω
+        ∂setBer((Set.univ : Set ι), p) := by
+  exact setBernoulli_integral_fkg_finiteTraceConditionalExpectation
+    (E := E) (p := p) hXinc hYinc
+    (fun s ↦ integrable_forceFiniteTrace_of_bound E s p hXmeas hXbound)
+    (fun s ↦ integrable_forceFiniteTrace_of_bound E s p hYmeas hYbound)
+
 /-- The finite conditional-probability step in Grimmett's martingale proof of FKG. After
 conditioning on the finite trace `E`, the conditional probabilities of two increasing events are
 increasing finite-cube observables, so finite FKG applies. -/
@@ -3250,6 +3416,43 @@ theorem le_mul_of_tendsto_atTop_of_forall_le {x y z : ℕ → ℝ} {a b c : ℝ}
     (hxyz : ∀ n, z n ≤ x n * y n) :
     c ≤ a * b :=
   le_of_tendsto_of_tendsto' hz (hx.mul hy) hxyz
+
+/-- Martingale-facing bridge for the real-valued expectation form of FKG. If finite-trace
+conditional expectations of two increasing observables converge in the two marginal integrals and
+in the product integral, then the full expectation inequality follows. -/
+theorem setBernoulli_integral_fkg_of_finiteTraceConditionalExpectation_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {X Y : Set ι → ℝ}
+    {E : ℕ → Finset ι}
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    (hXint : ∀ n, ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ X (forceFiniteTrace (E n) s ω))
+        (setBer((Set.univ : Set ι), p)))
+    (hYint : ∀ n, ∀ s : Finset ι,
+      Integrable (fun ω : Set ι ↦ Y (forceFiniteTrace (E n) s ω))
+        (setBer((Set.univ : Set ι), p)))
+    (hXtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω, observableOfFiniteTrace (E n) (finiteTraceConditionalExpectation (E n) p X) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, X ω ∂setBer((Set.univ : Set ι), p))))
+    (hYtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω, observableOfFiniteTrace (E n) (finiteTraceConditionalExpectation (E n) p Y) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p))))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalExpectation (E n) p X) ω *
+            observableOfFiniteTrace (E n) (finiteTraceConditionalExpectation (E n) p Y) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p)))) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) := by
+  exact mul_le_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦
+    setBernoulli_integral_fkg_finiteTraceConditionalExpectation
+      (E := E n) (p := p) hXinc hYinc (hXint n) (hYint n)
 
 /-- FKG passes from finite-support increasing approximations to their probability limits. This is
 the theorem-facing limit bridge for Grimmett's full FKG theorem: the remaining source-specific
@@ -3507,8 +3710,9 @@ theorem tendsto_integral_indicator_of_eLpNorm_tendsto {Ω : Type*} [MeasurableSp
   simpa [hlim] using h
 
 /-- Bounded L¹ convergence is stable under multiplying two event-indicator approximants. If
-`Fₙ → 1_A` and `Gₙ → 1_B` in L¹ and `0 ≤ Fₙ ≤ 1`, then `FₙGₙ → 1_{A∩B}` in L¹. This is the
-analytic product estimate needed in Grimmett's martingale proof of FKG. -/
+`Fₙ → 1_A` and `Gₙ → 1_B` in L¹ and `0 ≤ Fₙ ≤ 1`, then
+`FₙGₙ → 1_{A∩B}` in L¹. This is the analytic product estimate needed in Grimmett's
+martingale proof of FKG. -/
 theorem tendsto_eLpNorm_mul_indicator_inter_of_bounded
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
     {A B : Set Ω} (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
@@ -5098,7 +5302,8 @@ theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_finiteSupport_
 /-- Negative association for increasing/decreasing approximations converging in
 symmetric-difference measure for Bernoulli bond percolation; the intersection convergence is
 derived automatically. -/
-theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_finiteSupport_symmDiff_tendsto_pair
+theorem
+    bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_finiteSupport_symmDiff_tendsto_pair
     (d : ℕ) (p : I) {A B : Set (EdgeConfiguration d)}
     {Aapprox Bapprox : ℕ → Set (EdgeConfiguration d)}
     {EA EB : ℕ → Finset (CubicEdge d)}
@@ -5152,8 +5357,10 @@ theorem bernoulliBondMeasure_integral_fkg_of_decreasing_finiteSupport_tendsto
     (d : ℕ) (p : I) {X Y : EdgeConfiguration d → ℝ}
     {Xapprox Yapprox : ℕ → EdgeConfiguration d → ℝ}
     {EX EY : ℕ → Finset (CubicEdge d)}
-    (hXdec : ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Xapprox n η ≤ Xapprox n ω)
-    (hYdec : ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
+    (hXdec :
+      ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Xapprox n η ≤ Xapprox n ω)
+    (hYdec :
+      ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
     (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
     (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
     (hXtend : Filter.Tendsto
@@ -5180,7 +5387,8 @@ theorem bernoulliBondMeasure_integral_le_mul_of_increasing_decreasing_finiteSupp
     {Xapprox Yapprox : ℕ → EdgeConfiguration d → ℝ}
     {EX EY : ℕ → Finset (CubicEdge d)}
     (hXinc : ∀ n, IsIncreasingRandomVariable (Xapprox n))
-    (hYdec : ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
+    (hYdec :
+      ∀ n, ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Yapprox n η ≤ Yapprox n ω)
     (hXdep : ∀ n, DependsOnFunction (EX n) (Xapprox n))
     (hYdep : ∀ n, DependsOnFunction (EY n) (Yapprox n))
     (hXtend : Filter.Tendsto

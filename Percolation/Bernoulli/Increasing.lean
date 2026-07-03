@@ -447,6 +447,37 @@ theorem restrictTo_coe_finset_of_subset {ι : Type*} [DecidableEq ι]
   · intro hes
     exact (mem_restrictTo_iff E ((s : Finset ι) : Set ι) e).mpr ⟨hsE hes, hes⟩
 
+/-- Force the finite trace `s` on the support `E`, leaving all coordinates outside `E` as in
+the ambient configuration `ω`. This is the source-shaped finite conditioning operation in
+Grimmett's martingale proof of FKG. -/
+def forceFiniteTrace {ι : Type*} (E s : Finset ι) (ω : Set ι) : Set ι :=
+  (s : Set ι) ∪ (ω \ (E : Set ι))
+
+@[simp]
+theorem mem_forceFiniteTrace_iff {ι : Type*}
+    (E s : Finset ι) (ω : Set ι) (e : ι) :
+    e ∈ forceFiniteTrace E s ω ↔ e ∈ s ∨ e ∈ ω ∧ e ∉ E := by
+  simp [forceFiniteTrace]
+
+theorem forceFiniteTrace_subset_of_subset {ι : Type*}
+    {E s t : Finset ι} {ω : Set ι} (hst : s ⊆ t) :
+    forceFiniteTrace E s ω ⊆ forceFiniteTrace E t ω := by
+  intro e he
+  rw [mem_forceFiniteTrace_iff] at he ⊢
+  exact he.imp (fun hes ↦ hst hes) id
+
+theorem restrictTo_forceFiniteTrace_of_subset {ι : Type*} [DecidableEq ι]
+    {E s : Finset ι} (hsE : s ⊆ E) (ω : Set ι) :
+    restrictTo E (forceFiniteTrace E s ω) = s := by
+  ext e
+  rw [mem_restrictTo_iff, mem_forceFiniteTrace_iff]
+  constructor
+  · rintro ⟨heE, hes | hωE⟩
+    · exact hes
+    · exact (hωE.2 heE).elim
+  · intro hes
+    exact ⟨hsE hes, Or.inl hes⟩
+
 /-- A finite-support event only depends on the coordinates in `E`. -/
 def DependsOn {ι : Type*} (E : Finset ι) (A : Set (Set ι)) : Prop :=
   ∀ ⦃ω η : Set ι⦄, (∀ e ∈ E, (e ∈ ω ↔ e ∈ η)) → (ω ∈ A ↔ η ∈ A)
@@ -711,6 +742,69 @@ theorem IsDecreasingFinsetFunction.neg_isIncreasingFinsetFunction {ι : Type*}
     IsIncreasingFinsetFunction E (fun s ↦ -X s) := by
   intro s t hst htE
   exact neg_le_neg (hX.antitone hst htE)
+
+/-- Conditional probability of an event after forcing a finite trace and leaving the outside
+coordinates random. In the infinite FKG proof this is the finite σ-algebra martingale
+approximant, viewed as a real-valued observable on traces. -/
+noncomputable def finiteTraceConditionalProbability {ι : Type*}
+    (E : Finset ι) (p : I) (A : Set (Set ι)) (s : Finset ι) : ℝ :=
+  setBer((Set.univ : Set ι), p).real {ω | forceFiniteTrace E s ω ∈ A}
+
+theorem finiteTraceConditionalProbability_isIncreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} (p : I) {A : Set (Set ι)} (hA : IsIncreasingEvent A) :
+    IsIncreasingFinsetFunction E (finiteTraceConditionalProbability E p A) := by
+  intro s t hst _htE
+  unfold finiteTraceConditionalProbability
+  exact measureReal_mono fun ω hω ↦ hA (forceFiniteTrace_subset_of_subset hst) hω
+
+theorem finiteTraceConditionalProbability_isDecreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} (p : I) {A : Set (Set ι)} (hA : IsDecreasingEvent A) :
+    IsDecreasingFinsetFunction E (finiteTraceConditionalProbability E p A) := by
+  intro s t hst _htE
+  unfold finiteTraceConditionalProbability
+  exact measureReal_mono fun ω hω ↦ hA.antitone (forceFiniteTrace_subset_of_subset hst) hω
+
+/-- Threshold events of the conditional trace probability. These are increasing finite-cube
+events whenever the original event is increasing. -/
+noncomputable def finiteTraceConditionalEvent {ι : Type*}
+    (E : Finset ι) (p : I) (A : Set (Set ι)) (r : ℝ) : Set (Finset ι) :=
+  {s | r ≤ finiteTraceConditionalProbability E p A s}
+
+theorem finiteTraceConditionalEvent_isIncreasingTrace {ι : Type*}
+    {E : Finset ι} (p : I) {A : Set (Set ι)} (r : ℝ) (hA : IsIncreasingEvent A) :
+    IsIncreasingTrace E (finiteTraceConditionalEvent E p A r) := by
+  intro s t hst htE hs
+  exact hs.trans
+    ((finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E) p hA) hst htE)
+
+theorem finiteTraceConditionalEvent_isDecreasingTrace {ι : Type*}
+    {E : Finset ι} (p : I) {A : Set (Set ι)} (r : ℝ) (hA : IsDecreasingEvent A) :
+    IsDecreasingTrace E (finiteTraceConditionalEvent E p A r) := by
+  intro s t hst htE ht
+  exact ht.trans
+    ((finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E) p hA) hst htE)
+
+theorem finiteTraceConditionalEvent_eventOfTrace_isIncreasingEvent {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} (p : I) {A : Set (Set ι)} (r : ℝ)
+    (hA : IsIncreasingEvent A) :
+    IsIncreasingEvent (eventOfTrace E (finiteTraceConditionalEvent E p A r)) :=
+  (finiteTraceConditionalEvent_isIncreasingTrace (E := E) p r hA).eventOfTrace
+
+theorem finiteTraceConditionalEvent_eventOfTrace_isDecreasingEvent {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} (p : I) {A : Set (Set ι)} (r : ℝ)
+    (hA : IsDecreasingEvent A) :
+    IsDecreasingEvent (eventOfTrace E (finiteTraceConditionalEvent E p A r)) := by
+  rw [isDecreasingEvent_iff]
+  intro ω η hωη hη
+  exact finiteTraceConditionalEvent_isDecreasingTrace (E := E) p r hA (by
+    intro e he
+    rw [mem_restrictTo_iff] at he ⊢
+    exact ⟨he.1, hωη he.2⟩) (restrictTo_subset E η) hη
+
+theorem dependsOn_eventOfTrace_finiteTraceConditionalEvent {ι : Type*}
+    [DecidableEq ι] (E : Finset ι) (p : I) (A : Set (Set ι)) (r : ℝ) :
+    DependsOn E (eventOfTrace E (finiteTraceConditionalEvent E p A r)) :=
+  dependsOn_eventOfTrace E (finiteTraceConditionalEvent E p A r)
 
 theorem IsIncreasingFinsetFunction.empty_le_singleton {ι : Type*} {a : ι}
     {X : Finset ι → ℝ} (hX : IsIncreasingFinsetFunction ({a} : Finset ι) X) :
@@ -2205,6 +2299,69 @@ theorem setBernoulli_integral_le_mul_of_increasing_decreasing_observableOfFinite
     (dependsOnFunction_observableOfFiniteTrace E X)
     (dependsOnFunction_observableOfFiniteTrace E Y)
 
+/-- The finite conditional-probability step in Grimmett's martingale proof of FKG. After
+conditioning on the finite trace `E`, the conditional probabilities of two increasing events are
+increasing finite-cube observables, so finite FKG applies. -/
+theorem finiteTraceConditionalProbability_fkg {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} (p : I) {A B : Set (Set ι)}
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B) :
+    finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalProbability E p A) *
+        finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalProbability E p B) ≤
+      finiteBernoulliExpectation E (p : ℝ)
+        (fun s ↦
+          finiteTraceConditionalProbability E p A s *
+            finiteTraceConditionalProbability E p B s) := by
+  exact finiteBernoulliExpectation_fkg (E := E) (p := (p : ℝ)) p.2.1 p.2.2
+    (finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E) p hAinc)
+    (finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E) p hBinc)
+
+/-- The lifted finite conditional-probability FKG step under the Bernoulli product measure. -/
+theorem setBernoulli_integral_fkg_finiteTraceConditionalProbability
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} (p : I) {A B : Set (Set ι)}
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B) :
+    (∫ ω,
+        observableOfFiniteTrace E (finiteTraceConditionalProbability E p A) ω
+        ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω,
+          observableOfFiniteTrace E (finiteTraceConditionalProbability E p B) ω
+          ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω,
+        observableOfFiniteTrace E (finiteTraceConditionalProbability E p A) ω *
+          observableOfFiniteTrace E (finiteTraceConditionalProbability E p B) ω
+        ∂setBer((Set.univ : Set ι), p) := by
+  exact setBernoulli_integral_fkg_observableOfFiniteTrace (E := E) (p := p)
+    (finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E) p hAinc)
+    (finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E) p hBinc)
+
+/-- Decreasing-event version of the finite conditional-probability FKG step. -/
+theorem finiteTraceConditionalProbability_fkg_of_decreasing
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} (p : I) {A B : Set (Set ι)}
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalProbability E p A) *
+        finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalProbability E p B) ≤
+      finiteBernoulliExpectation E (p : ℝ)
+        (fun s ↦
+          finiteTraceConditionalProbability E p A s *
+            finiteTraceConditionalProbability E p B s) := by
+  exact finiteBernoulliExpectation_fkg_of_decreasing (E := E) (p := (p : ℝ)) p.2.1 p.2.2
+    (finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E) p hAdec)
+    (finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E) p hBdec)
+
+/-- Negative-association version of the finite conditional-probability step. -/
+theorem finiteTraceConditionalProbability_le_mul_of_increasing_decreasing
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} (p : I) {A B : Set (Set ι)}
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    finiteBernoulliExpectation E (p : ℝ)
+        (fun s ↦
+          finiteTraceConditionalProbability E p A s *
+            finiteTraceConditionalProbability E p B s) ≤
+      finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalProbability E p A) *
+        finiteBernoulliExpectation E (p : ℝ) (finiteTraceConditionalProbability E p B) := by
+  exact finiteBernoulliExpectation_le_mul_of_increasing_decreasing (E := E) (p := (p : ℝ))
+    p.2.1 p.2.2
+    (finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E) p hAinc)
+    (finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E) p hBdec)
+
 /-- FKG/Harris inequality for finite-trace cylinder events, derived through the lifted-observable
 form. This is the exact finite-coordinate face used by conditional-probability approximants in the
 full measurable-event proof. -/
@@ -2565,6 +2722,108 @@ theorem setBernoulli_real_fkg_of_observableOfFiniteTrace_tendsto
       (hXinc n).observableOfFiniteTrace (hYinc n).observableOfFiniteTrace
       (dependsOnFunction_observableOfFiniteTrace (EX n) (X n))
       (dependsOnFunction_observableOfFiniteTrace (EY n) (Y n))
+
+/-- Conditional-probability martingale form of the measurable-event FKG bridge. Once the
+conditional probabilities along an exhausting finite trace have the standard three convergence
+properties, the full FKG inequality follows from the finite conditional-probability step. -/
+theorem setBernoulli_real_fkg_of_finiteTraceConditionalProbability_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {E : ℕ → Finset ι}
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B)
+    (hAtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p A) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p B) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p A) ω *
+            observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p B) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B)))) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  exact setBernoulli_real_fkg_of_observableOfFiniteTrace_tendsto
+    (p := p) (A := A) (B := B) (EX := E) (EY := E)
+    (X := fun n ↦ finiteTraceConditionalProbability (E n) p A)
+    (Y := fun n ↦ finiteTraceConditionalProbability (E n) p B)
+    (fun n ↦ finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E n) p hAinc)
+    (fun n ↦ finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E n) p hBinc)
+    hAtend hBtend hABtend
+
+/-- Decreasing-event conditional-probability form of the measurable-event FKG bridge. -/
+theorem setBernoulli_real_fkg_of_decreasing_finiteTraceConditionalProbability_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {E : ℕ → Finset ι}
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p A) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p B) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p A) ω *
+            observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p B) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B)))) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  exact mul_le_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
+    setBernoulli_integral_fkg_of_decreasing_observableOfFiniteTrace (E := E n) (p := p)
+      (finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E n) p hAdec)
+      (finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E n) p hBdec)
+
+/-- Increasing/decreasing conditional-probability form of the negative-association bridge. -/
+theorem setBernoulli_real_le_mul_of_finiteTraceConditionalProbability_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {E : ℕ → Finset ι}
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p A) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)))
+    (hBtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p B) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real B)))
+    (hABtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p A) ω *
+            observableOfFiniteTrace (E n) (finiteTraceConditionalProbability (E n) p B) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B)))) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B := by
+  exact le_mul_of_tendsto_atTop_of_forall_le hAtend hBtend hABtend fun n ↦
+    setBernoulli_integral_le_mul_of_increasing_decreasing_observableOfFiniteTrace
+      (E := E n) (p := p)
+      (finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E n) p hAinc)
+      (finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E n) p hBdec)
 
 /-- Under a Dirac probability measure, event FKG is automatic for measurable events. This is the
 endpoint input for the Bernoulli parameters `p = 0` and `p = 1`. -/

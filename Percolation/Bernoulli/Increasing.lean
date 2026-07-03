@@ -437,6 +437,16 @@ theorem restrictTo_subset_configuration {ι : Type*} [DecidableEq ι]
   intro e he
   exact (mem_restrictTo_iff E ω e).mp he |>.2
 
+theorem restrictTo_coe_finset_of_subset {ι : Type*} [DecidableEq ι]
+    {E s : Finset ι} (hsE : s ⊆ E) :
+    restrictTo E ((s : Finset ι) : Set ι) = s := by
+  ext e
+  constructor
+  · intro he
+    exact (mem_restrictTo_iff E ((s : Finset ι) : Set ι) e).mp he |>.2
+  · intro hes
+    exact (mem_restrictTo_iff E ((s : Finset ι) : Set ι) e).mpr ⟨hsE hes, hes⟩
+
 /-- A finite-support event only depends on the coordinates in `E`. -/
 def DependsOn {ι : Type*} (E : Finset ι) (A : Set (Set ι)) : Prop :=
   ∀ ⦃ω η : Set ι⦄, (∀ e ∈ E, (e ∈ ω ↔ e ∈ η)) → (ω ∈ A ↔ η ∈ A)
@@ -534,6 +544,12 @@ noncomputable def eventOfTrace {ι : Type*} [DecidableEq ι]
 noncomputable def finiteObservableTrace {ι : Type*} (_E : Finset ι) (X : Set ι → ℝ) :
     Finset ι → ℝ :=
   fun s ↦ X ((s : Finset ι) : Set ι)
+
+/-- Lift a finite-cube observable to the full configuration space by reading only the trace on
+`E`. Conditional-probability martingale approximants in the infinite FKG proof have this shape. -/
+noncomputable def observableOfFiniteTrace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (X : Finset ι → ℝ) : Set ι → ℝ :=
+  fun ω ↦ X (restrictTo E ω)
 
 theorem dependsOn_eventOfTrace {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (T : Set (Finset ι)) :
@@ -653,6 +669,36 @@ theorem finiteObservableTrace_isDecreasingFinsetFunction {ι : Type*}
     IsDecreasingFinsetFunction E (finiteObservableTrace E X) := by
   intro s t hst htE
   exact hX (by intro e he; exact hst he)
+
+theorem dependsOnFunction_observableOfFiniteTrace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (X : Finset ι → ℝ) :
+    DependsOnFunction E (observableOfFiniteTrace E X) := by
+  intro ω η hcoord
+  have hrestrict : restrictTo E ω = restrictTo E η := by
+    ext e
+    by_cases he : e ∈ E
+    · simp [restrictTo, he, hcoord e he]
+    · simp [restrictTo, he]
+  simp [observableOfFiniteTrace, hrestrict]
+
+theorem IsIncreasingFinsetFunction.observableOfFiniteTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {X : Finset ι → ℝ} (hX : IsIncreasingFinsetFunction E X) :
+    IsIncreasingRandomVariable (observableOfFiniteTrace E X) := by
+  intro ω η hωη
+  exact hX.mono (by
+    intro e he
+    rw [mem_restrictTo_iff] at he ⊢
+    exact ⟨he.1, hωη he.2⟩) (restrictTo_subset E η)
+
+theorem IsDecreasingFinsetFunction.observableOfFiniteTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {X : Finset ι → ℝ} (hX : IsDecreasingFinsetFunction E X) :
+    ∀ ⦃ω η : Set ι⦄, ω ⊆ η →
+      observableOfFiniteTrace E X η ≤ observableOfFiniteTrace E X ω := by
+  intro ω η hωη
+  exact hX.antitone (by
+    intro e he
+    rw [mem_restrictTo_iff] at he ⊢
+    exact ⟨he.1, hωη he.2⟩) (restrictTo_subset E η)
 
 theorem IsIncreasingFinsetFunction.neg_isDecreasingFinsetFunction {ι : Type*}
     {E : Finset ι} {X : Finset ι → ℝ} (hX : IsIncreasingFinsetFunction E X) :
@@ -1520,6 +1566,18 @@ theorem DependsOnFunction.integral_setBernoulli_eq_finiteBernoulliExpectation
         dsimp [μ]
         exact setBernoulli_real_finiteTraceCylinder E s p hsE]
 
+/-- The product-measure expectation of a lifted finite-cube observable is exactly its finite
+Bernoulli expectation. -/
+theorem integral_observableOfFiniteTrace_setBernoulli_eq_finiteBernoulliExpectation
+    {ι : Type*} [DecidableEq ι] (E : Finset ι) (X : Finset ι → ℝ) (p : I) :
+    (∫ ω, observableOfFiniteTrace E X ω ∂setBer((Set.univ : Set ι), p)) =
+      finiteBernoulliExpectation E (p : ℝ) X := by
+  rw [(dependsOnFunction_observableOfFiniteTrace E X).integral_setBernoulli_eq_finiteBernoulliExpectation p]
+  unfold finiteBernoulliExpectation finiteObservableTrace observableOfFiniteTrace
+  apply Finset.sum_congr rfl
+  intro s hs
+  rw [restrictTo_coe_finset_of_subset (Finset.mem_powerset.mp hs)]
+
 /-- Split a finite Bernoulli event probability according to whether a fresh coordinate is closed
 or open. This is the finite conditioning identity used in the Russo induction. -/
 theorem finiteBernoulliEventProbability_insert_split {ι : Type*} [DecidableEq ι]
@@ -2054,6 +2112,47 @@ theorem setBernoulli_integral_le_mul_of_increasing_decreasing_dependsOnFunction
     finiteBernoulliExpectation_le_mul_of_increasing_decreasing (E := G) (p := (p : ℝ))
       p.2.1 p.2.2 hXinc.finiteObservableTrace
       (finiteObservableTrace_isDecreasingFinsetFunction hYdec)
+
+/-- FKG for lifted finite-cube increasing observables under the Bernoulli product measure. This is
+the finite-coordinate observable form that conditional-probability approximants will use. -/
+theorem setBernoulli_integral_fkg_observableOfFiniteTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {X Y : Finset ι → ℝ} (p : I)
+    (hXinc : IsIncreasingFinsetFunction E X) (hYinc : IsIncreasingFinsetFunction E Y) :
+    (∫ ω, observableOfFiniteTrace E X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, observableOfFiniteTrace E Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, observableOfFiniteTrace E X ω * observableOfFiniteTrace E Y ω
+        ∂setBer((Set.univ : Set ι), p) := by
+  exact setBernoulli_integral_fkg_of_dependsOnFunction p
+    hXinc.observableOfFiniteTrace hYinc.observableOfFiniteTrace
+    (dependsOnFunction_observableOfFiniteTrace E X)
+    (dependsOnFunction_observableOfFiniteTrace E Y)
+
+/-- FKG for lifted finite-cube decreasing observables under the Bernoulli product measure. -/
+theorem setBernoulli_integral_fkg_of_decreasing_observableOfFiniteTrace
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {X Y : Finset ι → ℝ} (p : I)
+    (hXdec : IsDecreasingFinsetFunction E X) (hYdec : IsDecreasingFinsetFunction E Y) :
+    (∫ ω, observableOfFiniteTrace E X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, observableOfFiniteTrace E Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, observableOfFiniteTrace E X ω * observableOfFiniteTrace E Y ω
+        ∂setBer((Set.univ : Set ι), p) := by
+  exact setBernoulli_integral_fkg_of_decreasing_dependsOnFunction p
+    hXdec.observableOfFiniteTrace hYdec.observableOfFiniteTrace
+    (dependsOnFunction_observableOfFiniteTrace E X)
+    (dependsOnFunction_observableOfFiniteTrace E Y)
+
+/-- Negative association for a lifted increasing finite-cube observable and a lifted decreasing
+finite-cube observable. -/
+theorem setBernoulli_integral_le_mul_of_increasing_decreasing_observableOfFiniteTrace
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {X Y : Finset ι → ℝ} (p : I)
+    (hXinc : IsIncreasingFinsetFunction E X) (hYdec : IsDecreasingFinsetFunction E Y) :
+    (∫ ω, observableOfFiniteTrace E X ω * observableOfFiniteTrace E Y ω
+        ∂setBer((Set.univ : Set ι), p)) ≤
+      (∫ ω, observableOfFiniteTrace E X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, observableOfFiniteTrace E Y ω ∂setBer((Set.univ : Set ι), p)) := by
+  exact setBernoulli_integral_le_mul_of_increasing_decreasing_dependsOnFunction p
+    hXinc.observableOfFiniteTrace hYdec.observableOfFiniteTrace
+    (dependsOnFunction_observableOfFiniteTrace E X)
+    (dependsOnFunction_observableOfFiniteTrace E Y)
 
 /-- FKG/Harris inequality on a finite Bernoulli product space, stated without explicit
 finite-support hypotheses because every event depends on the full finite coordinate set. -/

@@ -1,5 +1,6 @@
 import Percolation.Bernoulli.Basic
 import Mathlib.Combinatorics.SetFamily.HarrisKleitman
+import Mathlib.MeasureTheory.Measure.SeparableMeasure
 import Mathlib.MeasureTheory.Constructions.UnitInterval
 
 /-!
@@ -14,7 +15,7 @@ events already developed in `Percolation.Bernoulli.Basic`.
 namespace Percolation
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Finset unitInterval BigOperators
+open scoped ENNReal Finset unitInterval BigOperators symmDiff
 
 /-- An event on configurations `Set ι` is increasing if opening additional coordinates preserves
 membership. This is the production version of Grimmett's Chapter 2 increasing events. -/
@@ -1221,6 +1222,101 @@ theorem DependsOn.measurableSet {ι : Type*} [DecidableEq ι]
     exact (restrictTo_mem_eventTrace_iff_of_dependsOn hA ω).symm
   rw [hAeq]
   exact measurableSet_eventOfTrace E (eventTrace E A)
+
+/-- The algebra of events depending on finitely many coordinates. This is the cylinder algebra
+used by the finite FKG theorem before the martingale/measure-limit passage. -/
+def finiteSupportEvents (ι : Type*) : Set (Set (Set ι)) :=
+  {A | ∃ E : Finset ι, DependsOn E A}
+
+theorem mem_finiteSupportEvents_iff {ι : Type*} (A : Set (Set ι)) :
+    A ∈ finiteSupportEvents ι ↔ ∃ E : Finset ι, DependsOn E A :=
+  Iff.rfl
+
+/-- Finite-support events form an algebra of sets. -/
+theorem isSetAlgebra_finiteSupportEvents {ι : Type*} [DecidableEq ι] :
+    MeasureTheory.IsSetAlgebra (finiteSupportEvents ι) where
+  empty_mem := by
+    refine ⟨∅, ?_⟩
+    intro ω η hcoord
+    simp
+  compl_mem := by
+    rintro A ⟨E, hA⟩
+    exact ⟨E, hA.compl⟩
+  union_mem := by
+    rintro A B ⟨E, hA⟩ ⟨F, hB⟩
+    refine ⟨E ∪ F, ?_⟩
+    exact (hA.mono (by intro e he; exact Finset.mem_union_left F he)).union
+      (hB.mono (by intro e he; exact Finset.mem_union_right E he))
+
+/-- Every finite-support event is measurable in the configuration σ-algebra. -/
+theorem measurableSet_of_mem_finiteSupportEvents {ι : Type*} [DecidableEq ι]
+    {A : Set (Set ι)} (hA : A ∈ finiteSupportEvents ι) :
+    MeasurableSet A := by
+  rcases hA with ⟨E, hE⟩
+  exact hE.measurableSet
+
+theorem coordinateOpen_mem_finiteSupportEvents {ι : Type*} [DecidableEq ι] (i : ι) :
+    {ω : Set ι | i ∈ ω} ∈ finiteSupportEvents ι := by
+  refine ⟨{i}, ?_⟩
+  intro ω η hcoord
+  exact hcoord i (by simp)
+
+/-- The finite-support event algebra generates the full configuration σ-algebra. -/
+theorem generateFrom_finiteSupportEvents_eq {ι : Type*} [DecidableEq ι] :
+    MeasurableSpace.generateFrom (finiteSupportEvents ι) =
+      (inferInstance : MeasurableSpace (Set ι)) := by
+  have hset :
+      MeasurableSpace.comap (⇑MeasurableEquiv.setOf.symm)
+          (inferInstance : MeasurableSpace (ι → Prop)) =
+        (inferInstance : MeasurableSpace (Set ι)) :=
+    MeasurableEquiv.setOf.symm.measurableEmbedding.comap_eq
+  have hset' :
+      MeasurableSpace.comap (fun ω : Set ι ↦ fun i ↦ i ∈ ω)
+          (inferInstance : MeasurableSpace (ι → Prop)) =
+        (inferInstance : MeasurableSpace (Set ι)) := by
+    simpa using hset
+  let mFS : MeasurableSpace (Set ι) := MeasurableSpace.generateFrom (finiteSupportEvents ι)
+  apply le_antisymm
+  · exact MeasurableSpace.generateFrom_le
+      (fun A hA ↦ measurableSet_of_mem_finiteSupportEvents hA)
+  · have hmem :
+        @Measurable (Set ι) (ι → Prop) mFS inferInstance (fun ω i ↦ i ∈ ω) := by
+      rw [measurable_pi_iff]
+      intro i
+      refine measurable_to_countable' ?_
+      intro b
+      have hcoord : MeasurableSet[mFS] {ω : Set ι | i ∈ ω} :=
+        MeasurableSpace.measurableSet_generateFrom (coordinateOpen_mem_finiteSupportEvents i)
+      by_cases hb : b
+      · simpa [mFS, hb] using hcoord
+      · have hfiber :
+            ((fun ω : Set ι ↦ i ∈ ω) ⁻¹' ({b} : Set Prop)) =
+              ({ω : Set ι | i ∈ ω} : Set (Set ι))ᶜ := by
+          ext ω
+          simp [hb]
+        rw [hfiber]
+        exact hcoord.compl
+    have hcomap :
+        MeasurableSpace.comap (fun ω : Set ι ↦ fun i ↦ i ∈ ω)
+            (inferInstance : MeasurableSpace (ι → Prop)) ≤ mFS :=
+      hmem.comap_le
+    simpa [mFS, hset'] using hcomap
+
+/-- Finite-support events are measure-dense in Bernoulli product measure. This is the
+measure-approximation half of Grimmett's limiting passage after finite FKG. -/
+theorem setBernoulli_measureDense_finiteSupportEvents {ι : Type*} [DecidableEq ι] (p : I) :
+    (setBer((Set.univ : Set ι), p)).MeasureDense (finiteSupportEvents ι) := by
+  refine MeasureTheory.Measure.MeasureDense.of_generateFrom_isSetAlgebra_finite
+    (μ := setBer((Set.univ : Set ι), p)) isSetAlgebra_finiteSupportEvents ?_
+  exact (generateFrom_finiteSupportEvents_eq (ι := ι)).symm
+
+/-- Any measurable Bernoulli event can be approximated in measure by a finite-support event. -/
+theorem exists_finiteSupportEvent_measure_symmDiff_lt {ι : Type*} [DecidableEq ι]
+    (p : I) {A : Set (Set ι)} (hA : MeasurableSet A) {ε : ℝ} (hε : 0 < ε) :
+    ∃ B, B ∈ finiteSupportEvents ι ∧
+      setBer((Set.univ : Set ι), p) (A ∆ B) < ENNReal.ofReal ε := by
+  exact (setBernoulli_measureDense_finiteSupportEvents (ι := ι) p).approx A hA
+    (by finiteness) ε hε
 
 /-- The finite trace probability agrees with the actual Bernoulli product-measure probability
 of the event reconstructed from that trace. -/

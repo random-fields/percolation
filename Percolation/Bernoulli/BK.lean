@@ -228,4 +228,149 @@ theorem IsIncreasingEvent.disjointOccurrence {ι : Type*} {A B : Set (Set ι)}
   exact ⟨K, L, hdis, hK.mono_config_of_increasing hA hωη,
     hL.mono_config_of_increasing hB hωη⟩
 
+/-- Pairwise disjoint finite forcing witnesses indexed by a finite family. -/
+def PairwiseDisjointWitnesses {ι κ : Type*} (J : Finset κ) (K : κ → Finset ι) :
+    Prop :=
+  ∀ ⦃i j : κ⦄, i ∈ J → j ∈ J → i ≠ j → Disjoint (K i) (K j)
+
+theorem pairwiseDisjointWitnesses_empty {ι κ : Type*} (K : κ → Finset ι) :
+    PairwiseDisjointWitnesses (∅ : Finset κ) K := by
+  intro i _j hi _hj _hij
+  simp at hi
+
+theorem PairwiseDisjointWitnesses.mono {ι κ : Type*} {J J' : Finset κ}
+    {K : κ → Finset ι} (hK : PairwiseDisjointWitnesses J' K) (hJJ' : J ⊆ J') :
+    PairwiseDisjointWitnesses J K := by
+  intro i j hi hj hij
+  exact hK (hJJ' hi) (hJJ' hj) hij
+
+/-- Finite-family disjoint occurrence: every event has a finite forcing witness, and the
+witnesses are pairwise disjoint. This is the deterministic event underlying Grimmett's repeated
+BK inequality (2.14). -/
+def FiniteDisjointOccurrence {ι κ : Type*}
+    (J : Finset κ) (A : κ → Set (Set ι)) : Set (Set ι) :=
+  {ω | ∃ K : κ → Finset ι,
+    (∀ i, i ∈ J → Forces (K i) ω (A i)) ∧ PairwiseDisjointWitnesses J K}
+
+theorem mem_finiteDisjointOccurrence_iff {ι κ : Type*} {J : Finset κ}
+    {A : κ → Set (Set ι)} {ω : Set ι} :
+    ω ∈ FiniteDisjointOccurrence J A ↔
+      ∃ K : κ → Finset ι,
+        (∀ i, i ∈ J → Forces (K i) ω (A i)) ∧ PairwiseDisjointWitnesses J K :=
+  Iff.rfl
+
+@[simp]
+theorem finiteDisjointOccurrence_empty {ι κ : Type*} (A : κ → Set (Set ι)) :
+    FiniteDisjointOccurrence (∅ : Finset κ) A = Set.univ := by
+  ext ω
+  constructor
+  · intro _hω
+    exact Set.mem_univ ω
+  · intro _hω
+    refine ⟨fun _ ↦ ∅, ?_, pairwiseDisjointWitnesses_empty _⟩
+    intro i hi
+    simp at hi
+
+theorem finiteDisjointOccurrence_subset_finiteEventInter {ι κ : Type*}
+    {J : Finset κ} {A : κ → Set (Set ι)} :
+    FiniteDisjointOccurrence J A ⊆ finiteEventInter J A := by
+  intro ω hω i hi
+  rcases hω with ⟨K, hK, _hpair⟩
+  exact (hK i hi).mem
+
+theorem finiteDisjointOccurrence_mono {ι κ : Type*} {J : Finset κ}
+    {A B : κ → Set (Set ι)} (hAB : ∀ i ∈ J, A i ⊆ B i) :
+    FiniteDisjointOccurrence J A ⊆ FiniteDisjointOccurrence J B := by
+  intro ω hω
+  rcases hω with ⟨K, hK, hpair⟩
+  exact ⟨K, (fun i hi ↦ (hK i hi).mono_event (hAB i hi)), hpair⟩
+
+theorem isIncreasingEvent_finiteDisjointOccurrence {ι κ : Type*} {J : Finset κ}
+    {A : κ → Set (Set ι)} (hA : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    IsIncreasingEvent (FiniteDisjointOccurrence J A) := by
+  intro ω η hωη hω
+  rcases hω with ⟨K, hK, hpair⟩
+  refine ⟨K, ?_, hpair⟩
+  intro i hi
+  exact (hK i hi).mono_config_of_increasing (hA i hi) hωη
+
+/-- Removing one event from a finite-family disjoint occurrence yields a binary disjoint
+occurrence between that event and the disjoint occurrence of the remaining family. This is the
+deterministic induction step needed for repeated BK. -/
+theorem finiteDisjointOccurrence_insert_subset_disjointOccurrence {ι κ : Type*}
+    [DecidableEq ι] [DecidableEq κ] {J : Finset κ} {a : κ} (ha : a ∉ J)
+    {A : κ → Set (Set ι)} :
+    FiniteDisjointOccurrence (insert a J) A ⊆
+      DisjointOccurrence (A a) (FiniteDisjointOccurrence J A) := by
+  intro ω hω
+  rcases hω with ⟨K, hK, hpair⟩
+  let L : Finset ι := J.biUnion K
+  have hpairJ : PairwiseDisjointWitnesses J K := hpair.mono (by
+    intro i hi
+    exact Finset.mem_insert.mpr (Or.inr hi))
+  have hdis : Disjoint (K a) L := by
+    change Disjoint (K a) (J.biUnion K)
+    rw [Finset.disjoint_biUnion_right]
+    intro i hi
+    exact hpair (Finset.mem_insert_self a J) (Finset.mem_insert.mpr (Or.inr hi)) (by
+      intro hai
+      exact ha (by simpa [hai] using hi))
+  have hLforces : Forces L ω (FiniteDisjointOccurrence J A) := by
+    intro η hagree
+    refine ⟨K, ?_, hpairJ⟩
+    intro i hi
+    exact (hK i (Finset.mem_insert.mpr (Or.inr hi))).congr_config (by
+      intro e he
+      exact hagree e (by
+        change e ∈ J.biUnion K
+        exact Finset.mem_biUnion.mpr ⟨i, hi, he⟩))
+  exact ⟨K a, L, hdis, hK a (Finset.mem_insert_self a J), hLforces⟩
+
+theorem dependsOn_finiteDisjointOccurrence {ι κ : Type*} [DecidableEq ι]
+    {J : Finset κ} {E : κ → Finset ι} {A : κ → Set (Set ι)}
+    (hA : ∀ i ∈ J, DependsOn (E i) (A i)) :
+    DependsOn (J.biUnion E) (FiniteDisjointOccurrence J A) := by
+  intro ω η hcoord
+  constructor
+  · rintro ⟨K, hK, hpair⟩
+    let K' : κ → Finset ι := fun i ↦ K i ∩ E i
+    have hforcesω : ∀ i, i ∈ J → Forces (K' i) ω (A i) := by
+      intro i hi
+      simpa [K'] using (hK i hi).restrict_of_dependsOn (hA i hi)
+    have hforcesη : ∀ i, i ∈ J → Forces (K' i) η (A i) := by
+      intro i hi
+      exact (hforcesω i hi).congr_config (by
+        intro e he
+        have heE : e ∈ E i := (Finset.mem_inter.mp he).2
+        exact (hcoord e (Finset.mem_biUnion.mpr ⟨i, hi, heE⟩)).symm)
+    have hpair' : PairwiseDisjointWitnesses J K' := by
+      intro i j hi hj hij
+      exact (hpair hi hj hij).mono
+        (by intro e he; exact (Finset.mem_inter.mp he).1)
+        (by intro e he; exact (Finset.mem_inter.mp he).1)
+    exact ⟨K', hforcesη, hpair'⟩
+  · rintro ⟨K, hK, hpair⟩
+    let K' : κ → Finset ι := fun i ↦ K i ∩ E i
+    have hforcesη : ∀ i, i ∈ J → Forces (K' i) η (A i) := by
+      intro i hi
+      simpa [K'] using (hK i hi).restrict_of_dependsOn (hA i hi)
+    have hforcesω : ∀ i, i ∈ J → Forces (K' i) ω (A i) := by
+      intro i hi
+      exact (hforcesη i hi).congr_config (by
+        intro e he
+        have heE : e ∈ E i := (Finset.mem_inter.mp he).2
+        exact hcoord e (Finset.mem_biUnion.mpr ⟨i, hi, heE⟩))
+    have hpair' : PairwiseDisjointWitnesses J K' := by
+      intro i j hi hj hij
+      exact (hpair hi hj hij).mono
+        (by intro e he; exact (Finset.mem_inter.mp he).1)
+        (by intro e he; exact (Finset.mem_inter.mp he).1)
+    exact ⟨K', hforcesω, hpair'⟩
+
+theorem measurableSet_finiteDisjointOccurrence_of_dependsOn {ι κ : Type*}
+    [DecidableEq ι] {J : Finset κ} {E : κ → Finset ι} {A : κ → Set (Set ι)}
+    (hA : ∀ i ∈ J, DependsOn (E i) (A i)) :
+    MeasurableSet (FiniteDisjointOccurrence J A) :=
+  (dependsOn_finiteDisjointOccurrence hA).measurableSet
+
 end Percolation

@@ -804,6 +804,16 @@ Dated milestones and anti-library notes.
     and specialized this to cubic Bernoulli bond percolation via `bernoulliBondMeasure`. The
     general infinite/measurable Russo approximation theorem remains a separate Chapter 2 target.
 
+72. **Finite-family BK disjoint-occurrence scaffold (2026-07-03).** Extended
+    `Percolation.Bernoulli.BK` toward Grimmett's Theorem (2.14). Defined
+    `PairwiseDisjointWitnesses` and `FiniteDisjointOccurrence` for finite families of events,
+    proved that finite-family disjoint occurrence is contained in the ordinary finite
+    intersection, is monotone in the component events, is increasing for finite families of
+    increasing events, and is measurable when the component events have finite supports. Proved
+    the deterministic insert step used in repeated BK: a disjoint occurrence of
+    `insert a J` is a binary disjoint occurrence of `A a` with the finite-family disjoint
+    occurrence over `J`. No BK/Reimer probability inequality is asserted yet.
+
 ## Axiom Ledger
 
 Empty.

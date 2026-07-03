@@ -1158,6 +1158,25 @@ theorem pairwiseDisjoint_finiteTraceCylinder {ι : Type*} [DecidableEq ι]
   intro ω hωs hωt
   exact hst (hωs.symm.trans hωt)
 
+/-- Events reconstructed from a finite trace are measurable cylinder events. -/
+theorem measurableSet_eventOfTrace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) :
+    MeasurableSet (eventOfTrace E T) := by
+  classical
+  rw [eventOfTrace_eq_iUnion_finiteTraceCylinder]
+  exact Finset.measurableSet_biUnion (E.powerset.filter fun s ↦ s ∈ T) fun s _hs ↦
+    measurableSet_finiteTraceCylinder E s
+
+/-- Finite-support events are measurable cylinder events. -/
+theorem DependsOn.measurableSet {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A) :
+    MeasurableSet A := by
+  have hAeq : A = eventOfTrace E (eventTrace E A) := by
+    ext ω
+    exact (restrictTo_mem_eventTrace_iff_of_dependsOn hA ω).symm
+  rw [hAeq]
+  exact measurableSet_eventOfTrace E (eventTrace E A)
+
 /-- The finite trace probability agrees with the actual Bernoulli product-measure probability
 of the event reconstructed from that trace. -/
 theorem setBernoulli_real_eventOfTrace {ι : Type*} [DecidableEq ι]
@@ -1843,6 +1862,175 @@ theorem dependsOn_walkIsOpen {d : ℕ} {u v : Cubic d}
   simpa [openEdgeSetEvent, walkIsOpen_event_eq_openOn_walkEdgeFinset w] using
     dependsOn_openEdgeSetEvent d (walkEdgeFinset w)
 
+/-- The walk represented by a counted self-avoiding direction word, started at an arbitrary
+vertex. This is the rooted finite-path family used to localize infinite-cluster events. -/
+def selfAvoidingWalkWalkFrom {d n : ℕ} (x : Cubic d) (steps : SelfAvoidingWalk d n) :
+    (cubicGraph d).Walk x (cubicEndpointFrom x steps.1.toList) :=
+  cubicWalkFrom x steps.1.toList
+
+@[simp]
+theorem selfAvoidingWalkWalkFrom_length {d n : ℕ} (x : Cubic d)
+    (steps : SelfAvoidingWalk d n) :
+    (selfAvoidingWalkWalkFrom x steps).length = n := by
+  simp [selfAvoidingWalkWalkFrom]
+
+/-- The rooted graph walk represented by a counted self-avoiding direction word is a path. -/
+theorem selfAvoidingWalkWalkFrom_isPath {d n : ℕ} (x : Cubic d)
+    (steps : SelfAvoidingWalk d n) :
+    (selfAvoidingWalkWalkFrom x steps).IsPath := by
+  refine cubicWalkFrom_isPath ?_
+  have htranslate :
+      cubicVerticesFrom x steps.1.toList =
+        (cubicVerticesFrom (cubicOrigin : Cubic d) steps.1.toList).map
+          (cubicTranslate (cubicOrigin : Cubic d) x) :=
+    cubicVerticesFrom_eq_map_translate (cubicOrigin : Cubic d) x steps.1.toList
+  rw [htranslate]
+  exact steps.2.map (cubicTranslate_injective (cubicOrigin : Cubic d) x)
+
+/-- A counted self-avoiding direction word from a root is open in a bond configuration. -/
+def selfAvoidingWalkIsOpenFrom {d n : ℕ} (x : Cubic d) (ω : EdgeConfiguration d)
+    (steps : SelfAvoidingWalk d n) : Prop :=
+  walkIsOpen ω (selfAvoidingWalkWalkFrom x steps)
+
+/-- There is at least one open counted self-avoiding direction word of length `n` from `x`. -/
+def existsOpenSelfAvoidingWalkFrom (d n : ℕ) (x : Cubic d)
+    (ω : EdgeConfiguration d) : Prop :=
+  ∃ steps : SelfAvoidingWalk d n, selfAvoidingWalkIsOpenFrom x ω steps
+
+/-- The finite coordinate support used by all counted self-avoiding paths of length `n`
+started at `x`. -/
+noncomputable def selfAvoidingWalkFromSupport (d n : ℕ) (x : Cubic d) :
+    Finset (CubicEdge d) :=
+  Finset.univ.biUnion fun steps : SelfAvoidingWalk d n ↦
+    walkEdgeFinset (selfAvoidingWalkWalkFrom x steps)
+
+theorem walkEdgeFinset_selfAvoidingWalkWalkFrom_subset_support {d n : ℕ}
+    (x : Cubic d) (steps : SelfAvoidingWalk d n) :
+    walkEdgeFinset (selfAvoidingWalkWalkFrom x steps) ⊆
+      selfAvoidingWalkFromSupport d n x := by
+  intro e he
+  classical
+  exact Finset.mem_biUnion.mpr ⟨steps, Finset.mem_univ steps, he⟩
+
+theorem isIncreasingEvent_selfAvoidingWalkIsOpenFrom {d n : ℕ}
+    (x : Cubic d) (steps : SelfAvoidingWalk d n) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | selfAvoidingWalkIsOpenFrom x ω steps} := by
+  simpa [selfAvoidingWalkIsOpenFrom] using
+    isIncreasingEvent_walkIsOpen (selfAvoidingWalkWalkFrom x steps)
+
+theorem dependsOn_selfAvoidingWalkIsOpenFrom {d n : ℕ}
+    (x : Cubic d) (steps : SelfAvoidingWalk d n) :
+    DependsOn (walkEdgeFinset (selfAvoidingWalkWalkFrom x steps))
+      {ω : EdgeConfiguration d | selfAvoidingWalkIsOpenFrom x ω steps} := by
+  simpa [selfAvoidingWalkIsOpenFrom] using
+    dependsOn_walkIsOpen (selfAvoidingWalkWalkFrom x steps)
+
+theorem isIncreasingEvent_existsOpenSelfAvoidingWalkFrom (d n : ℕ) (x : Cubic d) :
+    IsIncreasingEvent {ω : EdgeConfiguration d | existsOpenSelfAvoidingWalkFrom d n x ω} := by
+  intro ω η hωη hω
+  rcases hω with ⟨steps, hsteps⟩
+  exact ⟨steps, isIncreasingEvent_selfAvoidingWalkIsOpenFrom x steps hωη hsteps⟩
+
+theorem dependsOn_existsOpenSelfAvoidingWalkFrom (d n : ℕ) (x : Cubic d) :
+    DependsOn (selfAvoidingWalkFromSupport d n x)
+      {ω : EdgeConfiguration d | existsOpenSelfAvoidingWalkFrom d n x ω} := by
+  intro ω η hcoord
+  constructor
+  · rintro ⟨steps, hsteps⟩
+    refine ⟨steps, ?_⟩
+    have hdep := (dependsOn_selfAvoidingWalkIsOpenFrom x steps).mono
+      (walkEdgeFinset_selfAvoidingWalkWalkFrom_subset_support x steps)
+    exact (hdep hcoord).mp hsteps
+  · rintro ⟨steps, hsteps⟩
+    refine ⟨steps, ?_⟩
+    have hdep := (dependsOn_selfAvoidingWalkIsOpenFrom x steps).mono
+      (walkEdgeFinset_selfAvoidingWalkWalkFrom_subset_support x steps)
+    exact (hdep hcoord).mpr hsteps
+
+theorem hasOpenPathOfLengthExactlyFrom_imp_existsOpenSelfAvoidingWalkFrom {d n : ℕ}
+    {ω : EdgeConfiguration d} {x : Cubic d} :
+    hasOpenPathOfLengthExactlyFrom d ω x n → existsOpenSelfAvoidingWalkFrom d n x ω := by
+  rintro ⟨v, w, hwpath, hwlen, hopen⟩
+  rcases exists_cubicWalkFrom_copy_eq w with ⟨steps, hend, heq, hlen⟩
+  let vec : List.Vector (CubicDirection d) n := ⟨steps, by rw [hlen, hwlen]⟩
+  have hnodup : cubicVectorSelfAvoiding vec := by
+    unfold cubicVectorSelfAvoiding cubicVectorVertices
+    have hcopy_nodup : ((cubicWalkFrom x steps).copy rfl hend).support.Nodup := by
+      rw [heq]
+      exact hwpath.support_nodup
+    have hxnodup : (cubicVerticesFrom x steps).Nodup := by
+      simpa [SimpleGraph.Walk.support_copy, cubicWalkFrom_support] using hcopy_nodup
+    have htranslate :
+        cubicVerticesFrom x steps =
+          (cubicVerticesFrom (cubicOrigin : Cubic d) steps).map
+            (cubicTranslate (cubicOrigin : Cubic d) x) :=
+      cubicVerticesFrom_eq_map_translate (cubicOrigin : Cubic d) x steps
+    rw [htranslate] at hxnodup
+    simpa [vec] using List.Nodup.of_map (cubicTranslate (cubicOrigin : Cubic d) x) hxnodup
+  refine ⟨⟨vec, hnodup⟩, ?_⟩
+  unfold selfAvoidingWalkIsOpenFrom selfAvoidingWalkWalkFrom
+  intro e he
+  have hcopyopen : walkIsOpen ω ((cubicWalkFrom x steps).copy rfl hend) := by
+    rw [heq]
+    exact hopen
+  have hecopy : e ∈ ((cubicWalkFrom x steps).copy rfl hend).edges := by
+    simpa [SimpleGraph.Walk.edges_copy] using he
+  exact hcopyopen e hecopy
+
+theorem existsOpenSelfAvoidingWalkFrom_imp_hasOpenPathOfLengthExactlyFrom {d n : ℕ}
+    {ω : EdgeConfiguration d} {x : Cubic d} :
+    existsOpenSelfAvoidingWalkFrom d n x ω → hasOpenPathOfLengthExactlyFrom d ω x n := by
+  rintro ⟨steps, hopen⟩
+  exact ⟨cubicEndpointFrom x steps.1.toList, selfAvoidingWalkWalkFrom x steps,
+    selfAvoidingWalkWalkFrom_isPath x steps, selfAvoidingWalkWalkFrom_length x steps, hopen⟩
+
+theorem hasOpenPathOfLengthExactlyFrom_iff_existsOpenSelfAvoidingWalkFrom {d n : ℕ}
+    {ω : EdgeConfiguration d} {x : Cubic d} :
+    hasOpenPathOfLengthExactlyFrom d ω x n ↔ existsOpenSelfAvoidingWalkFrom d n x ω :=
+  ⟨hasOpenPathOfLengthExactlyFrom_imp_existsOpenSelfAvoidingWalkFrom,
+    existsOpenSelfAvoidingWalkFrom_imp_hasOpenPathOfLengthExactlyFrom⟩
+
+theorem dependsOn_hasOpenPathOfLengthExactlyFrom (d : ℕ) (x : Cubic d) (n : ℕ) :
+    DependsOn (selfAvoidingWalkFromSupport d n x)
+      {ω : EdgeConfiguration d | hasOpenPathOfLengthExactlyFrom d ω x n} := by
+  simpa [hasOpenPathOfLengthExactlyFrom_iff_existsOpenSelfAvoidingWalkFrom] using
+    dependsOn_existsOpenSelfAvoidingWalkFrom d n x
+
+theorem dependsOn_hasOpenPathOfLengthAtLeastFrom (d : ℕ) (x : Cubic d) (n : ℕ) :
+    DependsOn (selfAvoidingWalkFromSupport d n x)
+      {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω x n} := by
+  simpa [hasOpenPathOfLengthAtLeastFrom_iff_hasOpenPathOfLengthExactlyFrom] using
+    dependsOn_hasOpenPathOfLengthExactlyFrom d x n
+
+theorem measurableSet_hasOpenPathOfLengthExactlyFrom (d : ℕ) (x : Cubic d) (n : ℕ) :
+    MeasurableSet {ω : EdgeConfiguration d | hasOpenPathOfLengthExactlyFrom d ω x n} :=
+  (dependsOn_hasOpenPathOfLengthExactlyFrom d x n).measurableSet
+
+theorem measurableSet_hasOpenPathOfLengthAtLeastFrom (d : ℕ) (x : Cubic d) (n : ℕ) :
+    MeasurableSet {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω x n} :=
+  (dependsOn_hasOpenPathOfLengthAtLeastFrom d x n).measurableSet
+
+theorem hasOpenPathOfLengthAtLeastFrom_mono_of_le {d n m : ℕ}
+    {ω : EdgeConfiguration d} {x : Cubic d} (hnm : n ≤ m) :
+    hasOpenPathOfLengthAtLeastFrom d ω x m →
+      hasOpenPathOfLengthAtLeastFrom d ω x n := by
+  rintro ⟨v, w, hwpath, hlen, hopen⟩
+  refine ⟨w.getVert n, w.take n, hwpath.take n, ?_, walkIsOpen_take w hopen n⟩
+  simp [Nat.min_eq_left (hnm.trans hlen)]
+
+theorem antitone_hasOpenPathOfLengthAtLeastFrom (d : ℕ) (x : Cubic d) :
+    Antitone fun n : ℕ ↦
+      {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω x n} := by
+  intro n m hnm ω hω
+  exact hasOpenPathOfLengthAtLeastFrom_mono_of_le hnm hω
+
+theorem hasInfiniteOpenClusterFrom_event_eq_iInter (d : ℕ) (x : Cubic d) :
+    {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x} =
+      ⋂ n : ℕ, {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω x n} := by
+  ext ω
+  simp [hasInfiniteOpenClusterFrom_iff_hasArbitrarilyLongOpenPathsFrom,
+    hasArbitrarilyLongOpenPathsFrom]
+
 theorem isIncreasingEvent_selfAvoidingWalkIsOpen {d n : ℕ}
     (steps : SelfAvoidingWalk d n) :
     IsIncreasingEvent {ω : EdgeConfiguration d | selfAvoidingWalkIsOpen ω steps} := by
@@ -2025,6 +2213,60 @@ theorem bernoulliBondMeasure_real_fkg_iInter_finiteSupport (d : ℕ) (p : I)
     setBernoulli_real_fkg_iInter_finiteSupport (ι := CubicEdge d) p
       hAanti hBanti hAmeas hBmeas hAinc hBinc hAdep hBdep
 
+/-- FKG between a finite-support increasing bond event and the rooted infinite-cluster event.
+This is the concrete measurable-event instance needed in Grimmett's root-independence proof:
+the infinite event is a decreasing intersection of finite-support increasing path events. -/
+theorem bernoulliBondMeasure_real_fkg_of_dependsOn_hasInfiniteOpenClusterFrom
+    (d : ℕ) {E : Finset (CubicEdge d)} {A : Set (EdgeConfiguration d)} (p : I)
+    (x : Cubic d) (hAinc : IsIncreasingEvent A) (hAdep : DependsOn E A) :
+    (bernoulliBondMeasure d p).real A * thetaFrom d x p ≤
+      (bernoulliBondMeasure d p).real
+        (A ∩ {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x}) := by
+  let B : ℕ → Set (EdgeConfiguration d) :=
+    fun n ↦ {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω x n}
+  have h := bernoulliBondMeasure_real_fkg_iInter_finiteSupport (d := d) (p := p)
+    (A := fun _ : ℕ ↦ A) (B := B) (EA := fun _ : ℕ ↦ E)
+    (EB := fun n ↦ selfAvoidingWalkFromSupport d n x)
+    (fun _ _ _ _ hω ↦ hω)
+    (by simpa [B] using antitone_hasOpenPathOfLengthAtLeastFrom d x)
+    (fun _ ↦ hAdep.measurableSet)
+    (fun n ↦ by simpa [B] using measurableSet_hasOpenPathOfLengthAtLeastFrom d x n)
+    (fun _ ↦ hAinc)
+    (fun n ↦ by simpa [B] using isIncreasingEvent_hasOpenPathOfLengthAtLeastFrom d x n)
+    (fun _ ↦ hAdep)
+    (fun n ↦ by simpa [B] using dependsOn_hasOpenPathOfLengthAtLeastFrom d x n)
+  have hconst : (⋂ _ : ℕ, A) = A := by
+    ext ω
+    simp
+  simpa [thetaFrom, B, hasInfiniteOpenClusterFrom_event_eq_iInter d x, hconst] using h
+
+/-- FKG between two rooted infinite-cluster events. Both events are represented as decreasing
+intersections of finite-support increasing path events. -/
+theorem bernoulliBondMeasure_real_fkg_hasInfiniteOpenClusterFrom
+    (d : ℕ) (p : I) (x y : Cubic d) :
+    thetaFrom d x p * thetaFrom d y p ≤
+      (bernoulliBondMeasure d p).real
+        ({ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω x} ∩
+          {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω y}) := by
+  let A : ℕ → Set (EdgeConfiguration d) :=
+    fun n ↦ {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω x n}
+  let B : ℕ → Set (EdgeConfiguration d) :=
+    fun n ↦ {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeastFrom d ω y n}
+  have h := bernoulliBondMeasure_real_fkg_iInter_finiteSupport (d := d) (p := p)
+    (A := A) (B := B)
+    (EA := fun n ↦ selfAvoidingWalkFromSupport d n x)
+    (EB := fun n ↦ selfAvoidingWalkFromSupport d n y)
+    (by simpa [A] using antitone_hasOpenPathOfLengthAtLeastFrom d x)
+    (by simpa [B] using antitone_hasOpenPathOfLengthAtLeastFrom d y)
+    (fun n ↦ by simpa [A] using measurableSet_hasOpenPathOfLengthAtLeastFrom d x n)
+    (fun n ↦ by simpa [B] using measurableSet_hasOpenPathOfLengthAtLeastFrom d y n)
+    (fun n ↦ by simpa [A] using isIncreasingEvent_hasOpenPathOfLengthAtLeastFrom d x n)
+    (fun n ↦ by simpa [B] using isIncreasingEvent_hasOpenPathOfLengthAtLeastFrom d y n)
+    (fun n ↦ by simpa [A] using dependsOn_hasOpenPathOfLengthAtLeastFrom d x n)
+    (fun n ↦ by simpa [B] using dependsOn_hasOpenPathOfLengthAtLeastFrom d y n)
+  simpa [thetaFrom, A, B, hasInfiniteOpenClusterFrom_event_eq_iInter d x,
+    hasInfiniteOpenClusterFrom_event_eq_iInter d y] using h
+
 /-- Deterministic event inclusion behind Grimmett's origin-independence theorem: if a fixed walk
 from `x` to `y` is open and `y` has an infinite open cluster, then `x` has one too. -/
 theorem walkIsOpen_inter_hasInfiniteOpenClusterFrom_subset {d : ℕ} {x y : Cubic d}
@@ -2062,6 +2304,23 @@ theorem bernoulliBondMeasure_real_walkIsOpen_mul_thetaFrom_le_thetaFrom_of_fkg
       rw [MeasureTheory.IsProbabilityMeasure.measure_univ]
       exact ENNReal.one_lt_top)
   exact hFKG.trans (by simpa [thetaFrom] using hmono)
+
+/-- Source-shaped FKG step for Grimmett's Theorem (2.8), now discharged for the actual rooted
+infinite-cluster event by the decreasing finite-path approximation above. -/
+theorem bernoulliBondMeasure_real_walkIsOpen_mul_thetaFrom_le_thetaFrom
+    {d : ℕ} {x y : Cubic d} (p : I) (w : (cubicGraph d).Walk x y) :
+    (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+        thetaFrom d y p ≤
+      thetaFrom d x p := by
+  have hFKG :
+      (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+          thetaFrom d y p ≤
+        (bernoulliBondMeasure d p).real
+          ({ω : EdgeConfiguration d | walkIsOpen ω w} ∩
+            {ω : EdgeConfiguration d | hasInfiniteOpenClusterFrom d ω y}) :=
+    bernoulliBondMeasure_real_fkg_of_dependsOn_hasInfiniteOpenClusterFrom
+      d p y (isIncreasingEvent_walkIsOpen w) (dependsOn_walkIsOpen w)
+  exact bernoulliBondMeasure_real_walkIsOpen_mul_thetaFrom_le_thetaFrom_of_fkg p w hFKG
 
 /-- If a fixed open trail from `x` to `y` has positive probability and the FKG lower bound for
 the connector event is available, then vanishing of the rooted percolation probability at `x`
@@ -2109,6 +2368,34 @@ theorem thetaFrom_eq_zero_iff_of_open_trail_fkg {d : ℕ} {x y : Cubic d} {p : I
   constructor
   · exact thetaFrom_eq_zero_of_open_trail_fkg w htrail hp hFKGxy
   · exact thetaFrom_eq_zero_of_open_trail_fkg w.reverse (htrail.reverse w) hp hFKGyx
+
+/-- Vanishing of the rooted percolation probability transfers along any fixed open trail with
+positive edge parameter. This is the FKG-powered zero-transfer half of Grimmett's Theorem (2.8)
+without an external FKG hypothesis. -/
+theorem thetaFrom_eq_zero_of_open_trail {d : ℕ} {x y : Cubic d} {p : I}
+    (w : (cubicGraph d).Walk x y) (htrail : w.IsTrail) (hp : 0 < (p : ℝ))
+    (hx : thetaFrom d x p = 0) :
+    thetaFrom d y p = 0 := by
+  have hle := bernoulliBondMeasure_real_walkIsOpen_mul_thetaFrom_le_thetaFrom p w
+  have hwalk_pos :
+      0 < (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} :=
+    bernoulliBondMeasure_real_walkIsOpen_pos p w htrail hp
+  have hy_nonneg : 0 ≤ thetaFrom d y p := measureReal_nonneg
+  apply le_antisymm ?_ hy_nonneg
+  have hprod :
+      (bernoulliBondMeasure d p).real {ω : EdgeConfiguration d | walkIsOpen ω w} *
+          thetaFrom d y p ≤ 0 := by
+    simpa [hx] using hle
+  nlinarith
+
+/-- Two-sided zero-set transfer along a fixed trail, with the rooted infinite-cluster FKG
+instance supplied internally. -/
+theorem thetaFrom_eq_zero_iff_of_open_trail {d : ℕ} {x y : Cubic d} {p : I}
+    (w : (cubicGraph d).Walk x y) (htrail : w.IsTrail) (hp : 0 < (p : ℝ)) :
+    thetaFrom d x p = 0 ↔ thetaFrom d y p = 0 := by
+  constructor
+  · exact thetaFrom_eq_zero_of_open_trail w htrail hp
+  · exact thetaFrom_eq_zero_of_open_trail w.reverse (htrail.reverse w) hp
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

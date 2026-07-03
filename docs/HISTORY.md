@@ -823,6 +823,12 @@ Dated milestones and anti-library notes.
     `E_p[1_A N(A)] = p E_p[N(A)]`, and rewrote finite Russo as
     `P'_p(A)=P_p(A)E_p[N(A)|A]/p` whenever `p` and `P_p(A)` are nonzero.
 
+74. **Finite-support log-ratio wrappers (2026-07-03).** Lifted the finite-trace form of
+    Grimmett's Theorem (2.38) to finite-support product-measure events and cubic bond events.
+    The new wrappers rewrite a `DependsOn E A` event to its finite trace and specialize the
+    monotonicity of `log P_p(A) / log p` to `setBer` and `bernoulliBondMeasure` under explicit
+    positive-probability hypotheses.
+
 ## Axiom Ledger
 
 Empty.

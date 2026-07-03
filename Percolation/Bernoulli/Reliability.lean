@@ -14,6 +14,7 @@ probability can be rewritten as a covariance with the number of open coordinates
 
 namespace Percolation
 
+open MeasureTheory ProbabilityTheory
 open scoped BigOperators
 open Set
 
@@ -747,5 +748,35 @@ theorem finiteBernoulliEventProbability_logRatio_antitone {ι : Type*} [Decidabl
         γ * Real.log (finiteBernoulliEventProbability E q T) := by
     field_simp [hlogq_ne]
   simpa [hmul_simpl] using hlog_bound
+
+/-- Finite-support product-measure form of Grimmett's log-ratio monotonicity theorem (2.38). -/
+theorem DependsOn.setBernoulli_real_logRatio_antitone {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {A : Set (Set ι)} (hAdep : DependsOn E A)
+    (hAinc : IsIncreasingEvent A) {p q : ↑unitInterval}
+    (hp0 : 0 < (p : ℝ)) (hpq : (p : ℝ) ≤ (q : ℝ)) (hq1 : (q : ℝ) < 1)
+    (hPp : 0 < setBer((Set.univ : Set ι), p).real A)
+    (hPq : 0 < setBer((Set.univ : Set ι), q).real A) :
+    Real.log (setBer((Set.univ : Set ι), q).real A) / Real.log (q : ℝ) ≤
+      Real.log (setBer((Set.univ : Set ι), p).real A) / Real.log (p : ℝ) := by
+  have hfinite := finiteBernoulliEventProbability_logRatio_antitone
+    (E := E) (p := (p : ℝ)) (q := (q : ℝ)) (T := eventTrace E A)
+    hp0 hpq hq1 ?_ ?_ hAinc.eventTrace
+  · simpa [hAdep.setBernoulli_real_eq_finiteBernoulliEventProbability p,
+      hAdep.setBernoulli_real_eq_finiteBernoulliEventProbability q] using hfinite
+  · simpa [← hAdep.setBernoulli_real_eq_finiteBernoulliEventProbability p] using hPp
+  · simpa [← hAdep.setBernoulli_real_eq_finiteBernoulliEventProbability q] using hPq
+
+/-- Cubic bond-percolation finite-support form of Grimmett's log-ratio monotonicity theorem
+(2.38). -/
+theorem DependsOn.bernoulliBondMeasure_real_logRatio_antitone (d : ℕ)
+    {E : Finset (CubicEdge d)} {A : Set (EdgeConfiguration d)}
+    (hAdep : DependsOn E A) (hAinc : IsIncreasingEvent A) {p q : ↑unitInterval}
+    (hp0 : 0 < (p : ℝ)) (hpq : (p : ℝ) ≤ (q : ℝ)) (hq1 : (q : ℝ) < 1)
+    (hPp : 0 < (bernoulliBondMeasure d p).real A)
+    (hPq : 0 < (bernoulliBondMeasure d q).real A) :
+    Real.log ((bernoulliBondMeasure d q).real A) / Real.log (q : ℝ) ≤
+      Real.log ((bernoulliBondMeasure d p).real A) / Real.log (p : ℝ) := by
+  simpa [bernoulliBondMeasure] using
+    hAdep.setBernoulli_real_logRatio_antitone hAinc hp0 hpq hq1 hPp hPq
 
 end Percolation

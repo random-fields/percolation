@@ -13,7 +13,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P4 | Ch. 2.1 | Increasing events and stochastic order | Bernoulli | partial: order APIs exist |
 | P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | finite weighted product FKG proved; infinite martingale lift target |
 | P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | absent/deep |
-| P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | finite event, random-variable, and second-difference Russo formulas proved; infinite/measurable event lift and pivotal-pair refinements target |
+| P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | finite event, finite-support product/bond, random-variable, and second-difference Russo formulas proved; infinite/measurable event lift and pivotal-pair refinements target |
 | P7a | Ch. 2.5 | Reliability covariance and derivative inequalities | Bernoulli | finite covariance form of Theorem 2.34 plus finite Cauchy-Schwarz upper bound (2.36a), monotone lower bound (2.36b)/(2.37), scalar inequality (2.44), and finite power inequality (2.42) for the log-ratio proof proved; logarithmic monotonicity wrapper target |
 | P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |
 | P9 | Ch. 4 | Number of open clusters per vertex | Critical | absent |

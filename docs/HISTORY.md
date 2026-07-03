@@ -794,6 +794,15 @@ Dated milestones and anti-library notes.
     FKG-powered walk transfer to prove `thetaFrom d x p = 0 ↔ thetaFrom d y p = 0` for `p>0`,
     and the origin-rooted production form `theta d p = 0 ↔ thetaFrom d x p = 0`.
 
+71. **Finite-support product-measure Russo bridge (2026-07-03).** Closed the finite-support
+    production wrapper for Grimmett's Theorem (2.25). Proved that the finite trace of the
+    event-level pivotal event is the finite-cube pivotal trace, and used finite-support
+    dependence to identify the actual `setBer` probability of `{e pivotal}` with the finite
+    pivotal-trace probability. Rewrote the finite homogeneous Russo derivative as a sum of actual
+    product-measure pivotal probabilities, and specialized this to cubic Bernoulli bond
+    percolation via `bernoulliBondMeasure`. The general infinite/measurable Russo approximation
+    theorem remains a separate Chapter 2 target.
+
 ## Axiom Ledger
 
 Empty.

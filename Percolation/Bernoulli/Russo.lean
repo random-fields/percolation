@@ -12,6 +12,9 @@ This file adds the deterministic event-level definitions used in Grimmett's Russ
 
 namespace Percolation
 
+open MeasureTheory ProbabilityTheory
+open scoped ENNReal Finset unitInterval BigOperators symmDiff
+
 /-- Force coordinate `e` to be open. -/
 def forceOpen {ι : Type*} (e : ι) (ω : Set ι) : Set ι :=
   insert e ω
@@ -223,6 +226,67 @@ theorem open_inter_pivotalTrace_eq_event_inter_pivotalTrace {ι : Type*} [Decida
     · exact ⟨he, hpiv⟩
     · have hclosed : finiteForceClosed e s = s := finiteForceClosed_eq_self he
       exact (hpiv.2 (by simpa [hclosed] using hT)).elim
+
+/-- The finite trace of the event-level pivotal event is exactly the finite-cube pivotal trace,
+provided the pivotal coordinate belongs to the ambient finite support. -/
+theorem eventTrace_pivotalEvent_eq {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {A : Set (Set ι)} {e : ι} (he : e ∈ E) :
+    (eventTrace E {ω : Set ι | IsPivotal A e ω} : Set (Finset ι)) =
+      {s : Finset ι | IsPivotalTrace (eventTrace E A : Set (Finset ι)) e s} := by
+  ext s
+  change s ∈ eventTrace E {ω : Set ι | IsPivotal A e ω} ↔
+    IsPivotalTrace (eventTrace E A : Set (Finset ι)) e s
+  rw [mem_eventTrace_iff]
+  constructor
+  · rintro ⟨hsE, hpiv⟩
+    change IsPivotal A e ((s : Finset ι) : Set ι) at hpiv
+    constructor
+    · change finiteForceOpen e s ∈ eventTrace E A
+      rw [mem_eventTrace_iff]
+      refine ⟨?_, ?_⟩
+      · intro f hf
+        have hf' : f = e ∨ f ∈ s := by simpa [finiteForceOpen] using hf
+        exact hf'.elim (fun hfe ↦ by simpa [hfe] using he) (fun hfs ↦ hsE hfs)
+      · simpa [finiteForceOpen, forceOpen] using hpiv.1
+    · intro hclosed
+      change finiteForceClosed e s ∈ eventTrace E A at hclosed
+      have hclosedA : ((finiteForceClosed e s : Finset ι) : Set ι) ∈ A :=
+        ((mem_eventTrace_iff E A (finiteForceClosed e s)).mp hclosed).2
+      exact hpiv.2 (by simpa [finiteForceClosed, forceClosed] using hclosedA)
+  · intro hpiv
+    have hopen := (mem_eventTrace_iff E A (finiteForceOpen e s)).mp hpiv.1
+    have hsE : s ⊆ E := by
+      intro f hfs
+      have hfopen : f ∈ finiteForceOpen e s := by
+        simp [finiteForceOpen, hfs]
+      exact hopen.1 hfopen
+    refine ⟨hsE, ?_⟩
+    change IsPivotal A e ((s : Finset ι) : Set ι)
+    constructor
+    · simpa [finiteForceOpen, forceOpen] using hopen.2
+    · intro hclosedA
+      apply hpiv.2
+      change finiteForceClosed e s ∈ eventTrace E A
+      rw [mem_eventTrace_iff]
+      refine ⟨?_, ?_⟩
+      · intro f hf
+        have hf' : f ≠ e ∧ f ∈ s := by simpa [finiteForceClosed] using hf
+        exact hsE hf'.2
+      · simpa [finiteForceClosed, forceClosed] using hclosedA
+
+/-- Product-measure probability of an event-level pivotal event agrees with the finite pivotal
+trace probability for any event depending on the finite support. -/
+theorem DependsOn.setBernoulli_real_pivotal_eq_finiteBernoulliEventProbability {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
+    {e : ι} (he : e ∈ E) (p : I) :
+    setBer((Set.univ : Set ι), p).real {ω : Set ι | IsPivotal A e ω} =
+      finiteBernoulliEventProbability E (p : ℝ)
+        {s : Finset ι | IsPivotalTrace (eventTrace E A : Set (Finset ι)) e s} := by
+  have hpivDep : DependsOn E {ω : Set ι | IsPivotal A e ω} :=
+    (dependsOn_pivotalEvent (E := E) (A := A) (e := e) hA).mono
+      (Finset.erase_subset e E)
+  rw [hpivDep.setBernoulli_real_eq_finiteBernoulliEventProbability p]
+  rw [eventTrace_pivotalEvent_eq (E := E) (A := A) he]
 
 /-- If a finite event is invariant under opening a fresh coordinate, then its probability on
 the enlarged support agrees with its probability on the old support. -/
@@ -577,6 +641,35 @@ theorem finiteBernoulliEventProbability_hasDerivAt {ι : Type*} [DecidableEq ι]
       rw [Finset.sum_add_distrib, Finset.mul_sum, Finset.mul_sum]
       simp [Topen]
       ring
+
+/-- Finite-support product-measure Russo formula. The derivative is the finite trace polynomial,
+and the derivative value is written as the sum of actual product-measure pivotal probabilities. -/
+theorem DependsOn.finiteSupport_setBernoulli_real_russo_hasDerivAt {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A)
+    (hAinc : IsIncreasingEvent A) (p : I) :
+    HasDerivAt
+      (fun x : ℝ ↦ finiteBernoulliEventProbability E x (eventTrace E A))
+      (E.sum fun e ↦ setBer((Set.univ : Set ι), p).real {ω : Set ι | IsPivotal A e ω})
+      (p : ℝ) := by
+  have hfinite := finiteBernoulliEventProbability_hasDerivAt
+    (E := E) (p := (p : ℝ)) (T := eventTrace E A) hAinc.eventTrace
+  apply hfinite.congr_deriv
+  apply Finset.sum_congr rfl
+  intro e he
+  exact (hA.setBernoulli_real_pivotal_eq_finiteBernoulliEventProbability he p).symm
+
+/-- Finite-support Russo formula for Bernoulli bond percolation events, with the derivative
+written as a sum of actual `bernoulliBondMeasure` pivotal probabilities. -/
+theorem DependsOn.bernoulliBondMeasure_real_russo_hasDerivAt (d : ℕ)
+    {E : Finset (CubicEdge d)} {A : Set (EdgeConfiguration d)}
+    (hA : DependsOn E A) (hAinc : IsIncreasingEvent A) (p : I) :
+    HasDerivAt
+      (fun x : ℝ ↦ finiteBernoulliEventProbability E x (eventTrace E A))
+      (E.sum fun e ↦ (bernoulliBondMeasure d p).real
+        {ω : EdgeConfiguration d | IsPivotal A e ω})
+      (p : ℝ) := by
+  simpa [bernoulliBondMeasure] using
+    hA.finiteSupport_setBernoulli_real_russo_hasDerivAt hAinc p
 
 /-- Finite difference of an observable when coordinate `e` is forced open instead of closed. This
 is Grimmett's `δ_e X` on a finite cube. -/

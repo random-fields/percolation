@@ -459,6 +459,19 @@ theorem mem_forceFiniteTrace_iff {ι : Type*}
     e ∈ forceFiniteTrace E s ω ↔ e ∈ s ∨ e ∈ ω ∧ e ∉ E := by
   simp [forceFiniteTrace]
 
+/-- The forced configuration agrees with its finite trace on every coordinate in the conditioning
+support. -/
+theorem forceFiniteTrace_agree_on {ι : Type*} (E s : Finset ι) (ω : Set ι) :
+    ∀ e ∈ E, (e ∈ forceFiniteTrace E s ω ↔ e ∈ ((s : Finset ι) : Set ι)) := by
+  intro e heE
+  rw [mem_forceFiniteTrace_iff]
+  constructor
+  · rintro (hes | hωE)
+    · exact hes
+    · exact (hωE.2 heE).elim
+  · intro hes
+    exact Or.inl hes
+
 theorem forceFiniteTrace_subset_of_subset {ι : Type*}
     {E s t : Finset ι} {ω : Set ι} (hst : s ⊆ t) :
     forceFiniteTrace E s ω ⊆ forceFiniteTrace E t ω := by
@@ -481,6 +494,11 @@ theorem restrictTo_forceFiniteTrace_of_subset {ι : Type*} [DecidableEq ι]
 /-- A finite-support event only depends on the coordinates in `E`. -/
 def DependsOn {ι : Type*} (E : Finset ι) (A : Set (Set ι)) : Prop :=
   ∀ ⦃ω η : Set ι⦄, (∀ e ∈ E, (e ∈ ω ↔ e ∈ η)) → (ω ∈ A ↔ η ∈ A)
+
+theorem DependsOn.forceFiniteTrace_mem_iff {ι : Type*}
+    {E s : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A) (ω : Set ι) :
+    forceFiniteTrace E s ω ∈ A ↔ ((s : Finset ι) : Set ι) ∈ A :=
+  hA (forceFiniteTrace_agree_on E s ω)
 
 theorem DependsOn.mono {ι : Type*} {E F : Finset ι} {A : Set (Set ι)}
     (hA : DependsOn E A) (hEF : E ⊆ F) :
@@ -749,6 +767,61 @@ approximant, viewed as a real-valued observable on traces. -/
 noncomputable def finiteTraceConditionalProbability {ι : Type*}
     (E : Finset ι) (p : I) (A : Set (Set ι)) (s : Finset ι) : ℝ :=
   setBer((Set.univ : Set ι), p).real {ω | forceFiniteTrace E s ω ∈ A}
+
+/-- If `A` already depends on the finite conditioning support, then the conditional probability
+after forcing trace `s` is exactly the indicator of `A` at that trace. This is the finite
+tower-property fixed point for the conditional-probability approximants. -/
+theorem finiteTraceConditionalProbability_eq_indicator_of_dependsOn {ι : Type*}
+    {E s : Finset ι} {A : Set (Set ι)} (hA : DependsOn E A) (p : I) :
+    finiteTraceConditionalProbability E p A s =
+      A.indicator (fun _ ↦ (1 : ℝ)) ((s : Finset ι) : Set ι) := by
+  unfold finiteTraceConditionalProbability
+  by_cases hsA : ((s : Finset ι) : Set ι) ∈ A
+  · have hset : {ω : Set ι | forceFiniteTrace E s ω ∈ A} = Set.univ := by
+      ext ω
+      simp [hA.forceFiniteTrace_mem_iff ω, hsA]
+    rw [hset]
+    simp [Set.indicator_of_mem hsA]
+  · have hset : {ω : Set ι | forceFiniteTrace E s ω ∈ A} = ∅ := by
+      ext ω
+      simp [hA.forceFiniteTrace_mem_iff ω, hsA]
+    rw [hset]
+    simp [Set.indicator_of_notMem hsA]
+
+/-- On traces contained in the conditioning support, the conditional probability of a
+finite-support event is the indicator of its finite event trace. -/
+theorem finiteTraceConditionalProbability_eq_eventTrace_indicator_of_dependsOn
+    {ι : Type*} [DecidableEq ι] {E s : Finset ι} {A : Set (Set ι)}
+    (hA : DependsOn E A) (p : I) (hsE : s ⊆ E) :
+    finiteTraceConditionalProbability E p A s =
+      (eventTrace E A : Set (Finset ι)).indicator (fun _ ↦ (1 : ℝ)) s := by
+  rw [finiteTraceConditionalProbability_eq_indicator_of_dependsOn hA p]
+  by_cases hsA : ((s : Finset ι) : Set ι) ∈ A
+  · have hsT : s ∈ eventTrace E A := (mem_eventTrace_iff E A s).mpr ⟨hsE, hsA⟩
+    simp [Set.indicator_of_mem hsA, Set.indicator_of_mem hsT]
+  · have hsT : s ∉ eventTrace E A := by
+      intro hs
+      exact hsA ((mem_eventTrace_iff E A s).mp hs).2
+    simp [Set.indicator_of_notMem hsA, Set.indicator_of_notMem hsT]
+
+/-- A finite-support event is a fixed point of its own conditional-probability lift. -/
+theorem observableOfFiniteTrace_finiteTraceConditionalProbability_eq_indicator_of_dependsOn
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)}
+    (hA : DependsOn E A) (p : I) :
+    observableOfFiniteTrace E (finiteTraceConditionalProbability E p A) =
+      fun ω ↦ A.indicator (fun _ ↦ (1 : ℝ)) ω := by
+  funext ω
+  rw [observableOfFiniteTrace]
+  rw [finiteTraceConditionalProbability_eq_indicator_of_dependsOn hA p]
+  have hiff : (((restrictTo E ω : Finset ι) : Set ι) ∈ A ↔ ω ∈ A) := by
+    exact hA fun e he ↦ by simp [restrictTo, he]
+  by_cases hω : ω ∈ A
+  · have hres : ((restrictTo E ω : Finset ι) : Set ι) ∈ A := hiff.mpr hω
+    simp [Set.indicator_of_mem hres, Set.indicator_of_mem hω]
+  · have hres : ((restrictTo E ω : Finset ι) : Set ι) ∉ A := by
+      intro h
+      exact hω (hiff.mp h)
+    simp [Set.indicator_of_notMem hres, Set.indicator_of_notMem hω]
 
 theorem finiteTraceConditionalProbability_isIncreasingFinsetFunction {ι : Type*}
     {E : Finset ι} (p : I) {A : Set (Set ι)} (hA : IsIncreasingEvent A) :
@@ -1543,6 +1616,80 @@ theorem DependsOn.setBernoulli_real_eq_finiteBernoulliEventProbability {ι : Typ
       exact congrArg (fun B : Set (Set ι) ↦ setBer((Set.univ : Set ι), p).real B) hAeq
     _ = finiteBernoulliEventProbability E (p : ℝ) (eventTrace E A) :=
       setBernoulli_real_eventOfTrace E (eventTrace E A) p
+
+/-- The conditional-probability lift of a finite-support event integrates back to the event
+probability. This is the finite-support tower property for the Chapter 2 FKG martingale
+approximants. -/
+theorem integral_observableOfFiniteTrace_finiteTraceConditionalProbability_setBernoulli
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {A : Set (Set ι)}
+    (hA : DependsOn E A) (p : I) :
+    (∫ ω, observableOfFiniteTrace E (finiteTraceConditionalProbability E p A) ω
+        ∂setBer((Set.univ : Set ι), p)) =
+      setBer((Set.univ : Set ι), p).real A := by
+  rw [observableOfFiniteTrace_finiteTraceConditionalProbability_eq_indicator_of_dependsOn hA p]
+  exact integral_indicator_one (μ := setBer((Set.univ : Set ι), p)) hA.measurableSet
+
+/-- Products of conditional-probability lifts of finite-support events integrate back to the
+probability of the intersection. -/
+theorem integral_observableOfFiniteTrace_finiteTraceConditionalProbability_mul_setBernoulli
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {A B : Set (Set ι)}
+    (hA : DependsOn E A) (hB : DependsOn E B) (p : I) :
+    (∫ ω,
+        observableOfFiniteTrace E (finiteTraceConditionalProbability E p A) ω *
+          observableOfFiniteTrace E (finiteTraceConditionalProbability E p B) ω
+        ∂setBer((Set.univ : Set ι), p)) =
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  rw [observableOfFiniteTrace_finiteTraceConditionalProbability_eq_indicator_of_dependsOn hA p,
+    observableOfFiniteTrace_finiteTraceConditionalProbability_eq_indicator_of_dependsOn hB p]
+  have hfun :
+      (fun ω : Set ι ↦
+          A.indicator (fun _ ↦ (1 : ℝ)) ω *
+            B.indicator (fun _ ↦ (1 : ℝ)) ω) =
+        fun ω ↦ (A ∩ B).indicator (fun _ ↦ (1 : ℝ)) ω := by
+    funext ω
+    by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB]
+  rw [hfun]
+  exact integral_indicator_one (μ := setBer((Set.univ : Set ι), p))
+    (hA.measurableSet.inter hB.measurableSet)
+
+/-- If a growing sequence of conditioning supports eventually contains the support of a
+finite-support event, then the conditional-probability integrals are eventually constant and hence
+converge to the event probability. -/
+theorem tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn
+    {ι : Type*} [DecidableEq ι] {Eseq : ℕ → Finset ι} {F : Finset ι}
+    {A : Set (Set ι)} (hA : DependsOn F A)
+    (hFE : ∀ᶠ n in Filter.atTop, F ⊆ Eseq n) (p : I) :
+    Filter.Tendsto
+      (fun n ↦
+        ∫ ω, observableOfFiniteTrace (Eseq n)
+            (finiteTraceConditionalProbability (Eseq n) p A) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)) := by
+  refine tendsto_nhds_of_eventually_eq ?_
+  exact hFE.mono fun _n hsub ↦
+    integral_observableOfFiniteTrace_finiteTraceConditionalProbability_setBernoulli
+      (hA.mono hsub) p
+
+/-- Product version of
+`tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn`. -/
+theorem tendsto_integral_finiteTraceConditionalProbability_mul_of_eventually_dependsOn
+    {ι : Type*} [DecidableEq ι] {Eseq : ℕ → Finset ι} {FA FB : Finset ι}
+    {A B : Set (Set ι)} (hA : DependsOn FA A) (hB : DependsOn FB B)
+    (hFAE : ∀ᶠ n in Filter.atTop, FA ⊆ Eseq n)
+    (hFBE : ∀ᶠ n in Filter.atTop, FB ⊆ Eseq n) (p : I) :
+    Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (Eseq n)
+              (finiteTraceConditionalProbability (Eseq n) p A) ω *
+            observableOfFiniteTrace (Eseq n)
+              (finiteTraceConditionalProbability (Eseq n) p B) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B))) := by
+  refine tendsto_nhds_of_eventually_eq ?_
+  exact (hFAE.and hFBE).mono fun _n hsub ↦
+    integral_observableOfFiniteTrace_finiteTraceConditionalProbability_mul_setBernoulli
+      (hA.mono hsub.1) (hB.mono hsub.2) p
 
 /-- A finite-support observable is the finite sum of its values on exact trace cylinders. -/
 theorem finiteObservableTrace_expansion_apply {ι : Type*} [DecidableEq ι]
@@ -2824,6 +2971,64 @@ theorem setBernoulli_real_le_mul_of_finiteTraceConditionalProbability_tendsto
       (E := E n) (p := p)
       (finiteTraceConditionalProbability_isIncreasingFinsetFunction (E := E n) p hAinc)
       (finiteTraceConditionalProbability_isDecreasingFinsetFunction (E := E n) p hBdec)
+
+/-- Finite-support FKG recovered through the conditional-probability martingale bridge whenever
+the conditioning supports eventually contain the two finite event supports. This theorem is
+redundant with `setBernoulli_real_fkg_of_dependsOn`, but records the source-facing route used in
+the full measurable-event proof. -/
+theorem setBernoulli_real_fkg_of_finiteTraceConditionalProbability_eventually_dependsOn
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {Eseq : ℕ → Finset ι} {FA FB : Finset ι}
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B)
+    (hAdep : DependsOn FA A) (hBdep : DependsOn FB B)
+    (hFAE : ∀ᶠ n in Filter.atTop, FA ⊆ Eseq n)
+    (hFBE : ∀ᶠ n in Filter.atTop, FB ⊆ Eseq n) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  exact setBernoulli_real_fkg_of_finiteTraceConditionalProbability_tendsto
+    (p := p) (A := A) (B := B) (E := Eseq) hAinc hBinc
+    (tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn hAdep hFAE p)
+    (tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn hBdep hFBE p)
+    (tendsto_integral_finiteTraceConditionalProbability_mul_of_eventually_dependsOn
+      hAdep hBdep hFAE hFBE p)
+
+/-- Decreasing-event finite-support FKG through the conditional-probability bridge. -/
+theorem setBernoulli_real_fkg_of_decreasing_finiteTraceConditionalProbability_eventually_dependsOn
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {Eseq : ℕ → Finset ι} {FA FB : Finset ι}
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAdep : DependsOn FA A) (hBdep : DependsOn FB B)
+    (hFAE : ∀ᶠ n in Filter.atTop, FA ⊆ Eseq n)
+    (hFBE : ∀ᶠ n in Filter.atTop, FB ⊆ Eseq n) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  exact setBernoulli_real_fkg_of_decreasing_finiteTraceConditionalProbability_tendsto
+    (p := p) (A := A) (B := B) (E := Eseq) hAdec hBdec
+    (tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn hAdep hFAE p)
+    (tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn hBdep hFBE p)
+    (tendsto_integral_finiteTraceConditionalProbability_mul_of_eventually_dependsOn
+      hAdep hBdep hFAE hFBE p)
+
+/-- Increasing/decreasing finite-support negative association through the
+conditional-probability bridge. -/
+theorem setBernoulli_real_le_mul_of_finiteTraceConditionalProbability_eventually_dependsOn
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {Eseq : ℕ → Finset ι} {FA FB : Finset ι}
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B)
+    (hAdep : DependsOn FA A) (hBdep : DependsOn FB B)
+    (hFAE : ∀ᶠ n in Filter.atTop, FA ⊆ Eseq n)
+    (hFBE : ∀ᶠ n in Filter.atTop, FB ⊆ Eseq n) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B := by
+  exact setBernoulli_real_le_mul_of_finiteTraceConditionalProbability_tendsto
+    (p := p) (A := A) (B := B) (E := Eseq) hAinc hBdec
+    (tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn hAdep hFAE p)
+    (tendsto_integral_finiteTraceConditionalProbability_of_eventually_dependsOn hBdep hFBE p)
+    (tendsto_integral_finiteTraceConditionalProbability_mul_of_eventually_dependsOn
+      hAdep hBdep hFAE hFBE p)
 
 /-- Under a Dirac probability measure, event FKG is automatic for measurable events. This is the
 endpoint input for the Bernoulli parameters `p = 0` and `p = 1`. -/

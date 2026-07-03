@@ -90,6 +90,7 @@ This is the human-readable comparator surface. Each row should eventually cite a
 | target | Square-lattice bond threshold `p_c = 1/2` | TBD | P Ch. 11 | planar duality plus crossing estimates |
 | target | Random-cluster FKG for `q ≥ 1` | TBD | RC Ch. 3 | finite graph first |
 | target | Edwards-Sokal marginal theorem | TBD | RC Thm. 1.10/1.13 | exact finite graph coupling |
+| proved measurable finite-family endpoint | iterated FKG for arbitrary measurable finite families | `Percolation.measurableSet_finiteEventInter`, `Percolation.setBernoulli_real_iterated_fkg_of_finiteTraceFiltration` | `grimmett-percolation-1999`, Ch. 2, Equation (2.7) | lifts the finite-family FKG iteration from finite-support events to arbitrary measurable increasing events along a monotone finite-coordinate exhaustion; the proof inducts over the finite index set and applies measurable two-event FKG to one event and the intersection of the rest |
 
 ## Axiom Certificate
 

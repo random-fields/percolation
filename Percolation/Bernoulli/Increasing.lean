@@ -2555,6 +2555,20 @@ theorem finiteEventInter_insert {ι κ : Type*} [DecidableEq κ]
   ext ω
   simp [finiteEventInter]
 
+/-- A finite intersection of measurable configuration events is measurable. -/
+theorem measurableSet_finiteEventInter {ι κ : Type*} [DecidableEq κ] [MeasurableSpace (Set ι)]
+    {J : Finset κ} {A : κ → Set (Set ι)}
+    (hA : ∀ i ∈ J, MeasurableSet (A i)) :
+    MeasurableSet (finiteEventInter J A) := by
+  induction J using Finset.induction with
+  | empty =>
+      simp
+  | insert a J ha ih =>
+      rw [finiteEventInter_insert]
+      refine (hA a (Finset.mem_insert_self a J)).inter (ih ?_)
+      intro i hi
+      exact hA i (Finset.mem_insert.mpr (Or.inr hi))
+
 /-- A finite intersection of increasing configuration events is increasing. -/
 theorem isIncreasingEvent_finiteEventInter {ι κ : Type*} {J : Finset κ}
     {A : κ → Set (Set ι)} (hA : ∀ i ∈ J, IsIncreasingEvent (A i)) :
@@ -3892,6 +3906,60 @@ theorem setBernoulli_real_le_mul_of_increasing_decreasing_finiteTraceFiltration
   have hcomp' : μ.real A * (1 - μ.real B) ≤ μ.real (A ∩ Bᶜ) := by
     simpa [μ, hBcomp] using hcomp
   nlinarith
+
+/-- Grimmett's iterated FKG inequality (2.7) for a finite family of arbitrary measurable
+increasing events along an exhausting finite-coordinate filtration. -/
+theorem setBernoulli_real_iterated_fkg_of_finiteTraceFiltration
+    {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] (p : I) {J : Finset κ}
+    {A : κ → Set (Set ι)}
+    {E : ℕ → Finset ι} (hE : Monotone E)
+    (hcover : ∀ e : ι, ∀ᶠ n in Filter.atTop, e ∈ E n)
+    (hAmeas : ∀ i ∈ J, MeasurableSet (A i))
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    J.prod (fun i ↦ setBer((Set.univ : Set ι), p).real (A i)) ≤
+      setBer((Set.univ : Set ι), p).real (finiteEventInter J A) := by
+  let μ : Measure (Set ι) := setBer((Set.univ : Set ι), p)
+  revert hAmeas hAinc
+  refine Finset.induction_on J ?_ ?_
+  · intro hAmeas hAinc
+    simp [finiteEventInter]
+  · intro a J ha ih hAmeas hAinc
+    have hAameas : MeasurableSet (A a) :=
+      hAmeas a (Finset.mem_insert_self a J)
+    have hAainc : IsIncreasingEvent (A a) :=
+      hAinc a (Finset.mem_insert_self a J)
+    have hJmeas : ∀ i ∈ J, MeasurableSet (A i) := by
+      intro i hi
+      exact hAmeas i (Finset.mem_insert.mpr (Or.inr hi))
+    have hJinc : ∀ i ∈ J, IsIncreasingEvent (A i) := by
+      intro i hi
+      exact hAinc i (Finset.mem_insert.mpr (Or.inr hi))
+    have hind :
+        J.prod (fun i ↦ μ.real (A i)) ≤ μ.real (finiteEventInter J A) := by
+      simpa [μ] using ih hJmeas hJinc
+    have hInterMeas : MeasurableSet (finiteEventInter J A) :=
+      measurableSet_finiteEventInter hJmeas
+    have hInterInc : IsIncreasingEvent (finiteEventInter J A) :=
+      isIncreasingEvent_finiteEventInter hJinc
+    have hstep :
+        μ.real (A a) * μ.real (finiteEventInter J A) ≤
+          μ.real (A a ∩ finiteEventInter J A) := by
+      simpa [μ] using
+        setBernoulli_real_fkg_of_finiteTraceFiltration
+          (p := p) (A := A a) (B := finiteEventInter J A) (E := E)
+          hE hcover hAameas hInterMeas hAainc hInterInc
+    have hprod :
+        μ.real (A a) * J.prod (fun i ↦ μ.real (A i)) ≤
+          μ.real (A a) * μ.real (finiteEventInter J A) :=
+      mul_le_mul_of_nonneg_left hind measureReal_nonneg
+    calc
+      (insert a J).prod (fun i ↦ μ.real (A i)) =
+          μ.real (A a) * J.prod (fun i ↦ μ.real (A i)) := by
+        rw [Finset.prod_insert ha]
+      _ ≤ μ.real (A a) * μ.real (finiteEventInter J A) := hprod
+      _ ≤ μ.real (A a ∩ finiteEventInter J A) := hstep
+      _ = μ.real (finiteEventInter (insert a J) A) := by
+        rw [finiteEventInter_insert]
 
 /-- Decreasing-event conditional-probability form of the measurable-event FKG bridge. -/
 theorem setBernoulli_real_fkg_of_decreasing_finiteTraceConditionalProbability_tendsto

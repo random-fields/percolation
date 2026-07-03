@@ -464,6 +464,15 @@ theorem DependsOn.compl {ι : Type*} {E : Finset ι} {A : Set (Set ι)}
   intro ω η hcoord
   exact not_congr (hA hcoord)
 
+/-- On a finite coordinate type, every event depends on the full coordinate set. -/
+theorem dependsOn_univ {ι : Type*} [Fintype ι] {A : Set (Set ι)} :
+    DependsOn (Finset.univ : Finset ι) A := by
+  intro ω η hcoord
+  have hωη : ω = η := by
+    ext e
+    exact hcoord e (by simp)
+  rw [hωη]
+
 /-- The finite trace of an event on a support `E`. Its elements are finite configurations contained
 in `E` that make the event occur. -/
 noncomputable def eventTrace {ι : Type*} [DecidableEq ι]
@@ -1015,6 +1024,42 @@ theorem finiteBernoulliExpectation_le_mul_of_increasing_decreasing {ι : Type*}
     exact finiteBernoulliExpectation_neg E p (fun s ↦ X s * Y s)
   rw [hprod] at h
   nlinarith
+
+/-- Finite-coordinate weighted FKG/Harris inequality for increasing observables, with the
+support specialized to all coordinates of a finite coordinate type. -/
+theorem finiteBernoulliExpectation_fkg_univ {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsIncreasingFinsetFunction (Finset.univ : Finset ι) X)
+    (hY : IsIncreasingFinsetFunction (Finset.univ : Finset ι) Y) :
+    finiteBernoulliExpectation (Finset.univ : Finset ι) p X *
+        finiteBernoulliExpectation (Finset.univ : Finset ι) p Y ≤
+      finiteBernoulliExpectation (Finset.univ : Finset ι) p (fun s ↦ X s * Y s) :=
+  finiteBernoulliExpectation_fkg hp0 hp1 hX hY
+
+/-- Finite-coordinate weighted FKG/Harris inequality for decreasing observables, with the
+support specialized to all coordinates of a finite coordinate type. -/
+theorem finiteBernoulliExpectation_fkg_of_decreasing_univ {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsDecreasingFinsetFunction (Finset.univ : Finset ι) X)
+    (hY : IsDecreasingFinsetFunction (Finset.univ : Finset ι) Y) :
+    finiteBernoulliExpectation (Finset.univ : Finset ι) p X *
+        finiteBernoulliExpectation (Finset.univ : Finset ι) p Y ≤
+      finiteBernoulliExpectation (Finset.univ : Finset ι) p (fun s ↦ X s * Y s) :=
+  finiteBernoulliExpectation_fkg_of_decreasing hp0 hp1 hX hY
+
+/-- Finite-coordinate negative correlation for an increasing observable and a decreasing
+observable, with the support specialized to all coordinates of a finite coordinate type. -/
+theorem finiteBernoulliExpectation_le_mul_of_increasing_decreasing_univ {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {p : ℝ} {X Y : Finset ι → ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (hX : IsIncreasingFinsetFunction (Finset.univ : Finset ι) X)
+    (hY : IsDecreasingFinsetFunction (Finset.univ : Finset ι) Y) :
+    finiteBernoulliExpectation (Finset.univ : Finset ι) p (fun s ↦ X s * Y s) ≤
+      finiteBernoulliExpectation (Finset.univ : Finset ι) p X *
+        finiteBernoulliExpectation (Finset.univ : Finset ι) p Y :=
+  finiteBernoulliExpectation_le_mul_of_increasing_decreasing hp0 hp1 hX hY
 
 /-- Weighted Bernoulli probability of a finite trace on the cube of subsets of `E`. -/
 noncomputable def finiteBernoulliEventProbability {ι : Type*} [DecidableEq ι]
@@ -1678,6 +1723,36 @@ theorem setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn {ι : Type*}
   exact finiteBernoulliEventTrace_le_mul_of_increasing_decreasing (E := G) (p := (p : ℝ))
     p.2.1 p.2.2 hAinc hBdec
 
+/-- FKG/Harris inequality on a finite Bernoulli product space, stated without explicit
+finite-support hypotheses because every event depends on the full finite coordinate set. -/
+theorem setBernoulli_real_fkg_finite {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {A B : Set (Set ι)} (p : I)
+    (hAinc : IsIncreasingEvent A) (hBinc : IsIncreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) :=
+  setBernoulli_real_fkg_of_dependsOn p hAinc hBinc dependsOn_univ dependsOn_univ
+
+/-- FKG/Harris inequality for two decreasing events on a finite Bernoulli product space. -/
+theorem setBernoulli_real_fkg_of_decreasing_finite {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {A B : Set (Set ι)} (p : I)
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) :=
+  setBernoulli_real_fkg_of_decreasing_dependsOn p hAdec hBdec dependsOn_univ dependsOn_univ
+
+/-- Negative correlation between an increasing and a decreasing event on a finite Bernoulli
+product space. -/
+theorem setBernoulli_real_le_mul_of_increasing_decreasing_finite {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {A B : Set (Set ι)} (p : I)
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B :=
+  setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn p hAinc hBdec
+    dependsOn_univ dependsOn_univ
+
 /-- Finite-support iterated FKG for increasing events stated directly in the Bernoulli product
 measure. -/
 theorem setBernoulli_real_iterated_fkg_of_dependsOn {ι κ : Type*}
@@ -1704,6 +1779,17 @@ theorem setBernoulli_real_iterated_fkg_of_dependsOn {ι κ : Type*}
         p.2.1 p.2.2 hAinc
     _ = setBer((Set.univ : Set ι), p).real (finiteEventInter J A) := by
       rw [hInterDep.setBernoulli_real_eq_finiteBernoulliEventProbability p]
+
+/-- Iterated FKG on a finite Bernoulli product space, stated without explicit finite-support
+hypotheses. -/
+theorem setBernoulli_real_iterated_fkg_finite {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] [DecidableEq κ] {J : Finset κ}
+    {A : κ → Set (Set ι)} (p : I)
+    (hAinc : ∀ i ∈ J, IsIncreasingEvent (A i)) :
+    J.prod (fun i ↦ setBer((Set.univ : Set ι), p).real (A i)) ≤
+      setBer((Set.univ : Set ι), p).real (finiteEventInter J A) :=
+  setBernoulli_real_iterated_fkg_of_dependsOn
+    (E := fun _ : κ ↦ (Finset.univ : Finset ι)) p hAinc fun _ _ ↦ dependsOn_univ
 
 /-- Pass a product inequality through limits of real sequences. This is the analytic skeleton of
 Grimmett's martingale/limit step after the finite-coordinate FKG proof. -/

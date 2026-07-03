@@ -1,5 +1,6 @@
 import Percolation.Bernoulli.Russo
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Data.Real.Sqrt
 
 /-!
 # Finite reliability identities
@@ -424,6 +425,54 @@ theorem finiteBernoulliCovariance_finiteOpenCount_indicator_sq_le
   have hN := finiteBernoulliCovariance_finiteOpenCount_self E p
   have hI := finiteBernoulliCovariance_indicator_self E p T
   simpa [I, hN, hI] using hcs
+
+/-- Finite Cauchy-Schwarz upper reliability bound in the divided form used with
+Theorem (2.34). This is the square of Grimmett's inequality (2.36)(a), with the
+finite derivative written as the covariance quotient. -/
+theorem finiteBernoulliEventProbability_covariance_div_sq_le
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (T : Set (Finset ι)) :
+    (finiteBernoulliCovariance E p finiteOpenCount
+        (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) / (p * (1 - p))) ^ 2 ≤
+      (E.card : ℝ) *
+        (finiteBernoulliEventProbability E p T *
+          (1 - finiteBernoulliEventProbability E p T)) / (p * (1 - p)) := by
+  let c : ℝ :=
+    finiteBernoulliCovariance E p finiteOpenCount
+      (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)
+  let v : ℝ :=
+    finiteBernoulliEventProbability E p T *
+      (1 - finiteBernoulliEventProbability E p T)
+  let d : ℝ := p * (1 - p)
+  have hnum :
+      c ^ 2 ≤ (d * E.card) * v := by
+    simpa [c, v, d, mul_assoc] using
+      finiteBernoulliCovariance_finiteOpenCount_indicator_sq_le
+        (E := E) (p := p) hp0.le hp1.le T
+  have hdpos : 0 < d := by
+    exact mul_pos hp0 (sub_pos.mpr hp1)
+  have hdne : d ≠ 0 := ne_of_gt hdpos
+  have hdiv : c ^ 2 / d ^ 2 ≤ ((d * E.card) * v) / d ^ 2 :=
+    div_le_div_of_nonneg_right hnum (sq_nonneg d)
+  calc
+    (c / d) ^ 2 = c ^ 2 / d ^ 2 := by
+      field_simp [hdne]
+    _ ≤ ((d * E.card) * v) / d ^ 2 := hdiv
+    _ = (E.card : ℝ) * v / d := by
+      field_simp [hdne]
+
+/-- Finite Cauchy-Schwarz upper reliability bound in the square-root form of
+Grimmett's inequality (2.36)(a), with the finite derivative written as the covariance quotient. -/
+theorem finiteBernoulliEventProbability_abs_covariance_div_le_sqrt
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (T : Set (Finset ι)) :
+    |finiteBernoulliCovariance E p finiteOpenCount
+        (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) / (p * (1 - p))| ≤
+      √((E.card : ℝ) *
+        (finiteBernoulliEventProbability E p T *
+          (1 - finiteBernoulliEventProbability E p T)) / (p * (1 - p))) := by
+  exact Real.abs_le_sqrt
+    (finiteBernoulliEventProbability_covariance_div_sq_le (E := E) (p := p) hp0 hp1 T)
 
 /-- The derivative of a finite-cube expectation written in Grimmett's reliability covariance
 form. This is the random-variable version of Theorem (2.34). -/

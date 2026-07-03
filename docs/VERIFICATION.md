@@ -91,6 +91,7 @@ This is the human-readable comparator surface. Each row should eventually cite a
 | target | Random-cluster FKG for `q ≥ 1` | TBD | RC Ch. 3 | finite graph first |
 | target | Edwards-Sokal marginal theorem | TBD | RC Thm. 1.10/1.13 | exact finite graph coupling |
 | proved measurable finite-family endpoint | iterated FKG for arbitrary measurable finite families | `Percolation.measurableSet_finiteEventInter`, `Percolation.setBernoulli_real_iterated_fkg_of_finiteTraceFiltration` | `grimmett-percolation-1999`, Ch. 2, Equation (2.7) | lifts the finite-family FKG iteration from finite-support events to arbitrary measurable increasing events along a monotone finite-coordinate exhaustion; the proof inducts over the finite index set and applies measurable two-event FKG to one event and the intersection of the rest |
+| proved reachable-root endpoint | root zero-set transfer for the percolation probability | `Percolation.thetaFrom_eq_zero_iff_of_walk`, `Percolation.thetaFrom_eq_zero_iff_of_reachable`, `Percolation.theta_eq_zero_iff_thetaFrom_of_reachable_origin` | `grimmett-percolation-1999`, Ch. 2, Theorem (2.8) | removes the trail hypothesis by reducing any finite connector walk to its path representative, then states the zero-set transfer in Mathlib's `Reachable` language and in the origin-rooted `theta` form; the remaining fully arbitrary cubic-root theorem is the deterministic fact that all cubic-lattice vertices are reachable |
 
 ## Axiom Certificate
 

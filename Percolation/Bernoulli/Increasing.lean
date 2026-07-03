@@ -1,5 +1,6 @@
 import Percolation.Bernoulli.Basic
 import Mathlib.Combinatorics.SetFamily.HarrisKleitman
+import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 import Mathlib.MeasureTheory.Measure.SeparableMeasure
 import Mathlib.MeasureTheory.Constructions.UnitInterval
 import Mathlib.Probability.Martingale.Convergence
@@ -5331,6 +5332,30 @@ theorem thetaFrom_eq_zero_iff_of_open_trail {d : ℕ} {x y : Cubic d} {p : I}
   constructor
   · exact thetaFrom_eq_zero_of_open_trail w htrail hp
   · exact thetaFrom_eq_zero_of_open_trail w.reverse (htrail.reverse w) hp
+
+/-- Two-sided zero-set transfer along any fixed finite walk. The walk is first reduced to its
+path representative, whose edge list is a trail, so the fixed connector has positive Bernoulli
+probability when `p > 0`. -/
+theorem thetaFrom_eq_zero_iff_of_walk {d : ℕ} {x y : Cubic d} {p : I}
+    (w : (cubicGraph d).Walk x y) (hp : 0 < (p : ℝ)) :
+    thetaFrom d x p = 0 ↔ thetaFrom d y p = 0 := by
+  exact thetaFrom_eq_zero_iff_of_open_trail (w.toPath : (cubicGraph d).Walk x y)
+    w.toPath.property.isTrail hp
+
+/-- Two-sided zero-set transfer for any two reachable cubic-lattice vertices. This is the graph
+connectivity-facing form of Grimmett's Theorem (2.8). -/
+theorem thetaFrom_eq_zero_iff_of_reachable {d : ℕ} {x y : Cubic d} {p : I}
+    (hxy : (cubicGraph d).Reachable x y) (hp : 0 < (p : ℝ)) :
+    thetaFrom d x p = 0 ↔ thetaFrom d y p = 0 := by
+  rcases hxy with ⟨w⟩
+  exact thetaFrom_eq_zero_iff_of_walk w hp
+
+/-- Origin-rooted version of Grimmett's zero-set transfer: for any vertex reachable from the
+origin, the event probabilities `θ(p)` and `θ_x(p)` vanish for exactly the same `p > 0`. -/
+theorem theta_eq_zero_iff_thetaFrom_of_reachable_origin {d : ℕ} {x : Cubic d} {p : I}
+    (hx : (cubicGraph d).Reachable (cubicOrigin : Cubic d) x) (hp : 0 < (p : ℝ)) :
+    theta d p = 0 ↔ thetaFrom d x p = 0 := by
+  simpa [thetaFrom_origin] using thetaFrom_eq_zero_iff_of_reachable hx hp
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

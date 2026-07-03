@@ -55,6 +55,50 @@ theorem DependsOn.forces {ι : Type*} {E : Finset ι} {A : Set (Set ι)}
   intro η hagree
   exact (hA fun e he ↦ (hagree e he).symm).mp hω
 
+theorem Forces.congr_config {ι : Type*} {K : Finset ι} {ω η : Set ι}
+    {A : Set (Set ι)} (hK : Forces K ω A)
+    (hωη : ∀ e ∈ K, (e ∈ η ↔ e ∈ ω)) :
+    Forces K η A := by
+  intro ξ hξ
+  exact hK ξ fun e he ↦ (hξ e he).trans (hωη e he)
+
+theorem Forces.restrict_of_dependsOn {ι : Type*} [DecidableEq ι]
+    {K E : Finset ι} {ω : Set ι} {A : Set (Set ι)}
+    (hK : Forces K ω A) (hA : DependsOn E A) :
+    Forces (K ∩ E) ω A := by
+  intro η hagree
+  let ξ : Set ι := (ω ∩ (K : Set ι)) ∪ (η \ (K : Set ι))
+  have hξK : ∀ e ∈ K, (e ∈ ξ ↔ e ∈ ω) := by
+    intro e heK
+    constructor
+    · intro heξ
+      rcases heξ with heωK | heηK
+      · exact heωK.1
+      · exact (heηK.2 heK).elim
+    · intro heω
+      exact Or.inl ⟨heω, heK⟩
+  have hξA : ξ ∈ A := hK ξ hξK
+  have hξη : ∀ e ∈ E, (e ∈ ξ ↔ e ∈ η) := by
+    intro e heE
+    by_cases heK : e ∈ K
+    · have heKE : e ∈ K ∩ E := Finset.mem_inter.mpr ⟨heK, heE⟩
+      have hηω : e ∈ η ↔ e ∈ ω := hagree e heKE
+      constructor
+      · intro heξ
+        rcases heξ with heωK | heηK
+        · exact hηω.mpr heωK.1
+        · exact heηK.1
+      · intro heη
+        exact Or.inl ⟨hηω.mp heη, heK⟩
+    · constructor
+      · intro heξ
+        rcases heξ with heωK | heηK
+        · exact (heK heωK.2).elim
+        · exact heηK.1
+      · intro heη
+        exact Or.inr ⟨heη, heK⟩
+  exact (hA hξη).mp hξA
+
 theorem Forces.inter {ι : Type*} [DecidableEq ι] {K L : Finset ι} {ω : Set ι}
     {A B : Set (Set ι)} (hK : Forces K ω A) (hL : Forces L ω B) :
     Forces (K ∪ L) ω (A ∩ B) := by
@@ -124,6 +168,57 @@ theorem inter_subset_disjointOccurrence_of_dependsOn_disjoint {ι : Type*}
     A ∩ B ⊆ DisjointOccurrence A B := by
   intro ω hω
   exact ⟨E, F, hdis, hA.forces hω.1, hB.forces hω.2⟩
+
+theorem DependsOn.disjointOccurrence {ι : Type*} [DecidableEq ι]
+    {E F : Finset ι} {A B : Set (Set ι)}
+    (hA : DependsOn E A) (hB : DependsOn F B) :
+    DependsOn (E ∪ F) (DisjointOccurrence A B) := by
+  intro ω η hcoord
+  constructor
+  · rintro ⟨K, L, hdis, hK, hL⟩
+    let K' : Finset ι := K ∩ E
+    let L' : Finset ι := L ∩ F
+    have hK'ω : Forces K' ω A := by
+      simpa [K'] using hK.restrict_of_dependsOn hA
+    have hL'ω : Forces L' ω B := by
+      simpa [L'] using hL.restrict_of_dependsOn hB
+    have hK'η : Forces K' η A := hK'ω.congr_config (by
+      intro e he
+      have heE : e ∈ E := (Finset.mem_inter.mp he).2
+      exact (hcoord e (Finset.mem_union_left F heE)).symm)
+    have hL'η : Forces L' η B := hL'ω.congr_config (by
+      intro e he
+      have heF : e ∈ F := (Finset.mem_inter.mp he).2
+      exact (hcoord e (Finset.mem_union_right E heF)).symm)
+    have hdis' : Disjoint K' L' := by
+      exact hdis.mono (by intro e he; exact (Finset.mem_inter.mp he).1)
+        (by intro e he; exact (Finset.mem_inter.mp he).1)
+    exact ⟨K', L', hdis', hK'η, hL'η⟩
+  · rintro ⟨K, L, hdis, hK, hL⟩
+    let K' : Finset ι := K ∩ E
+    let L' : Finset ι := L ∩ F
+    have hK'η : Forces K' η A := by
+      simpa [K'] using hK.restrict_of_dependsOn hA
+    have hL'η : Forces L' η B := by
+      simpa [L'] using hL.restrict_of_dependsOn hB
+    have hK'ω : Forces K' ω A := hK'η.congr_config (by
+      intro e he
+      have heE : e ∈ E := (Finset.mem_inter.mp he).2
+      exact hcoord e (Finset.mem_union_left F heE))
+    have hL'ω : Forces L' ω B := hL'η.congr_config (by
+      intro e he
+      have heF : e ∈ F := (Finset.mem_inter.mp he).2
+      exact hcoord e (Finset.mem_union_right E heF))
+    have hdis' : Disjoint K' L' := by
+      exact hdis.mono (by intro e he; exact (Finset.mem_inter.mp he).1)
+        (by intro e he; exact (Finset.mem_inter.mp he).1)
+    exact ⟨K', L', hdis', hK'ω, hL'ω⟩
+
+theorem measurableSet_disjointOccurrence_of_dependsOn {ι : Type*} [DecidableEq ι]
+    {E F : Finset ι} {A B : Set (Set ι)}
+    (hA : DependsOn E A) (hB : DependsOn F B) :
+    MeasurableSet (DisjointOccurrence A B) :=
+  (hA.disjointOccurrence hB).measurableSet
 
 theorem IsIncreasingEvent.disjointOccurrence {ι : Type*} {A B : Set (Set ι)}
     (hA : IsIncreasingEvent A) (hB : IsIncreasingEvent B) :

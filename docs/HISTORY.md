@@ -781,6 +781,12 @@ Dated milestones and anti-library notes.
     `p(1-p)>0` gives the lower-bound side of Grimmett's equation (2.37). The Cauchy-Schwarz upper
     bound (2.36)(a) and log-ratio theorem (2.38) remain targets.
 
+69. **Finite log-ratio monotonicity (2026-07-02).** Closed the finite-trace wrapper for
+    Grimmett's Theorem (2.38). Starting from the previously proved induction inequality
+    `P_{p^γ}(A) ≤ P_p(A)^γ`, the proof sets `γ = log p / log q` for `0 < p ≤ q < 1`, rewrites
+    `p = q^γ`, takes logarithms under explicit positive-probability hypotheses, and proves that
+    `log P_p(A) / log p` is non-increasing in the Bernoulli parameter for increasing finite traces.
+
 ## Axiom Ledger
 
 Empty.

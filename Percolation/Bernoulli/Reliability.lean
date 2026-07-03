@@ -695,4 +695,57 @@ theorem finiteBernoulliEventProbability_logRatio_power_le {ι : Type*} [Decidabl
           rw [hsplitp]
           ring_nf
 
+/-- Finite trace form of Grimmett's log-ratio monotonicity theorem (2.38).  For an
+increasing finite event with positive probabilities, `log P_p(A) / log p` is non-increasing
+in `p` on `(0,1)`.  The proof sets `γ = log p / log q`, rewrites `p = q^γ`, applies the
+finite power inequality, and then takes logarithms. -/
+theorem finiteBernoulliEventProbability_logRatio_antitone {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p q : ℝ} {T : Set (Finset ι)}
+    (hp0 : 0 < p) (hpq : p ≤ q) (hq1 : q < 1)
+    (hPp : 0 < finiteBernoulliEventProbability E p T)
+    (hPq : 0 < finiteBernoulliEventProbability E q T)
+    (hT : IsIncreasingTrace E T) :
+    Real.log (finiteBernoulliEventProbability E q T) / Real.log q ≤
+      Real.log (finiteBernoulliEventProbability E p T) / Real.log p := by
+  have hq0 : 0 < q := lt_of_lt_of_le hp0 hpq
+  have hp1 : p < 1 := lt_of_le_of_lt hpq hq1
+  have hlogq_neg : Real.log q < 0 := Real.log_neg hq0 hq1
+  have hlogq_ne : Real.log q ≠ 0 := ne_of_lt hlogq_neg
+  let γ : ℝ := Real.log p / Real.log q
+  have hlogp_le_logq : Real.log p ≤ Real.log q := Real.log_le_log hp0 hpq
+  have hγ : 1 ≤ γ := by
+    dsimp [γ]
+    rw [le_div_iff_of_neg hlogq_neg]
+    simpa using hlogp_le_logq
+  have hγpos : 0 < γ := lt_of_lt_of_le zero_lt_one hγ
+  have hqγ : q ^ γ = p := by
+    rw [Real.rpow_def_of_pos hq0]
+    have hmul : Real.log q * γ = Real.log p := by
+      dsimp [γ]
+      field_simp [hlogq_ne]
+    rw [hmul, Real.exp_log hp0]
+  have hpower := finiteBernoulliEventProbability_logRatio_power_le
+      (E := E) (p := q) (γ := γ) (T := T) hq0 hq1 hγ hT
+  rw [hqγ] at hpower
+  have hlog_power :
+      Real.log (finiteBernoulliEventProbability E p T) ≤
+        Real.log ((finiteBernoulliEventProbability E q T) ^ γ) :=
+    Real.log_le_log hPp hpower
+  have hlog_bound :
+      Real.log (finiteBernoulliEventProbability E p T) ≤
+        γ * Real.log (finiteBernoulliEventProbability E q T) := by
+    simpa [mul_comm] using hlog_power.trans_eq (Real.log_rpow hPq γ)
+  have hlogp_eq : Real.log p = γ * Real.log q := by
+    dsimp [γ]
+    field_simp [hlogq_ne]
+  rw [hlogp_eq]
+  have hden : γ * Real.log q < 0 := mul_neg_of_pos_of_neg hγpos hlogq_neg
+  rw [le_div_iff_of_neg hden]
+  have hmul_simpl :
+      Real.log (finiteBernoulliEventProbability E q T) / Real.log q *
+          (γ * Real.log q) =
+        γ * Real.log (finiteBernoulliEventProbability E q T) := by
+    field_simp [hlogq_ne]
+  simpa [hmul_simpl] using hlog_bound
+
 end Percolation

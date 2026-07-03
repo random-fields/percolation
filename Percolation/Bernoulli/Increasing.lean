@@ -3826,6 +3826,73 @@ theorem setBernoulli_real_fkg_of_finiteTraceFiltration
     simpa [finiteTraceFiltration] using
       finiteTraceConditionalProbability_ae_eq_condExp (E n) p hBmeas
 
+/-- Full measurable-event FKG/Harris inequality for two decreasing events along an exhausting
+finite-coordinate filtration. This is the decreasing/decreasing companion to
+`setBernoulli_real_fkg_of_finiteTraceFiltration`. -/
+theorem setBernoulli_real_fkg_of_decreasing_finiteTraceFiltration
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {E : ℕ → Finset ι} (hE : Monotone E)
+    (hcover : ∀ e : ι, ∀ᶠ n in Filter.atTop, e ∈ E n)
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAdec : IsDecreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  let μ := setBer((Set.univ : Set ι), p)
+  have hcomp := setBernoulli_real_fkg_of_finiteTraceFiltration
+    (p := p) (A := Aᶜ) (B := Bᶜ) (E := E) hE hcover hAmeas.compl hBmeas.compl
+    hAdec hBdec
+  have hAcomp : μ.real Aᶜ = 1 - μ.real A := by
+    rw [measureReal_compl (μ := μ) hAmeas]
+    simp [μ]
+  have hBcomp : μ.real Bᶜ = 1 - μ.real B := by
+    rw [measureReal_compl (μ := μ) hBmeas]
+    simp [μ]
+  have hABcomp : μ.real (Aᶜ ∩ Bᶜ) = 1 - μ.real (A ∪ B) := by
+    have hset : Aᶜ ∩ Bᶜ = (A ∪ B)ᶜ := by
+      ext ω
+      simp
+    rw [hset, measureReal_compl (μ := μ) (hAmeas.union hBmeas)]
+    simp [μ]
+  have hunion : μ.real (A ∪ B) + μ.real (A ∩ B) = μ.real A + μ.real B :=
+    measureReal_union_add_inter (μ := μ) (s := A) (t := B) hBmeas
+  have hcomp' : (1 - μ.real A) * (1 - μ.real B) ≤ 1 - μ.real (A ∪ B) := by
+    simpa [μ, hAcomp, hBcomp, hABcomp] using hcomp
+  nlinarith
+
+/-- Full measurable-event negative association for an increasing event and a decreasing event
+along an exhausting finite-coordinate filtration. -/
+theorem setBernoulli_real_le_mul_of_increasing_decreasing_finiteTraceFiltration
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {E : ℕ → Finset ι} (hE : Monotone E)
+    (hcover : ∀ e : ι, ∀ᶠ n in Filter.atTop, e ∈ E n)
+    (hAmeas : MeasurableSet A) (hBmeas : MeasurableSet B)
+    (hAinc : IsIncreasingEvent A) (hBdec : IsDecreasingEvent B) :
+    setBer((Set.univ : Set ι), p).real (A ∩ B) ≤
+      setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B := by
+  let μ := setBer((Set.univ : Set ι), p)
+  have hcomp := setBernoulli_real_fkg_of_finiteTraceFiltration
+    (p := p) (A := A) (B := Bᶜ) (E := E) hE hcover hAmeas hBmeas.compl hAinc hBdec
+  have hBcomp : μ.real Bᶜ = 1 - μ.real B := by
+    rw [measureReal_compl (μ := μ) hBmeas]
+    simp [μ]
+  have hdisj : Disjoint (A ∩ Bᶜ) (A ∩ B) := by
+    rw [Set.disjoint_left]
+    intro ω hωc hω
+    exact hωc.2 hω.2
+  have hunion : (A ∩ Bᶜ) ∪ (A ∩ B) = A := by
+    ext ω
+    by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB]
+  have hsum : μ.real (A ∩ Bᶜ) + μ.real (A ∩ B) = μ.real A := by
+    have h := measureReal_union (μ := μ) (s₁ := A ∩ Bᶜ) (s₂ := A ∩ B) hdisj
+      (hAmeas.inter hBmeas)
+    rw [hunion] at h
+    exact h.symm
+  have hcomp' : μ.real A * (1 - μ.real B) ≤ μ.real (A ∩ Bᶜ) := by
+    simpa [μ, hBcomp] using hcomp
+  nlinarith
+
 /-- Decreasing-event conditional-probability form of the measurable-event FKG bridge. -/
 theorem setBernoulli_real_fkg_of_decreasing_finiteTraceConditionalProbability_tendsto
     {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}

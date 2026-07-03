@@ -616,4 +616,83 @@ theorem grimmett_238_scalar_inequality {p γ x y : ℝ}
   dsimp [F] at hFx_nonneg
   nlinarith
 
+/-- Finite trace form of Grimmett's inequality (2.42), the induction statement used to prove
+the log-ratio monotonicity theorem (2.38): for an increasing event depending on finitely many
+coordinates, `P_{p^γ}(A) ≤ P_p(A)^γ` when `0 < p < 1` and `γ ≥ 1`. -/
+theorem finiteBernoulliEventProbability_logRatio_power_le {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p γ : ℝ} {T : Set (Finset ι)}
+    (hp0 : 0 < p) (hp1 : p < 1) (hγ : 1 ≤ γ) (hT : IsIncreasingTrace E T) :
+    finiteBernoulliEventProbability E (p ^ γ) T ≤
+      (finiteBernoulliEventProbability E p T) ^ γ := by
+  induction E using Finset.induction generalizing T with
+  | empty =>
+      by_cases h : (∅ : Finset ι) ∈ T
+      · simp [finiteBernoulliEventProbability, finiteBernoulliExpectation, h]
+      · simp [finiteBernoulliEventProbability, finiteBernoulliExpectation, h, Real.rpow_nonneg]
+  | insert a E ha ih =>
+      let Topen : Set (Finset ι) := {s | insert a s ∈ T}
+      have hclosed : IsIncreasingTrace E T := hT.closedSection
+      have hopen : IsIncreasingTrace E Topen := hT.openSection
+      have hpγ0 : 0 < p ^ γ := Real.rpow_pos_of_pos hp0 γ
+      have hγpos : 0 < γ := lt_of_lt_of_le zero_lt_one hγ
+      have hpγ1 : p ^ γ < 1 := Real.rpow_lt_one hp0.le hp1 hγpos
+      have hclosed_ind := ih hclosed
+      have hopen_ind := ih hopen
+      have hsplitγ :
+          finiteBernoulliEventProbability (insert a E) (p ^ γ) T =
+            (1 - p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) T +
+              (p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) Topen := by
+        simpa [Topen] using finiteBernoulliEventProbability_insert_split ha (p ^ γ) T
+      have hsplitp :
+          finiteBernoulliEventProbability (insert a E) p T =
+            (1 - p) * finiteBernoulliEventProbability E p T +
+              p * finiteBernoulliEventProbability E p Topen := by
+        simpa [Topen] using finiteBernoulliEventProbability_insert_split ha p T
+      rw [hsplitγ]
+      have hq_nonneg : 0 ≤ p ^ γ := hpγ0.le
+      have h1q_nonneg : 0 ≤ 1 - p ^ γ := sub_nonneg.mpr hpγ1.le
+      have hle_closed :
+          (1 - p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) T ≤
+            (1 - p ^ γ) * (finiteBernoulliEventProbability E p T) ^ γ :=
+        mul_le_mul_of_nonneg_left hclosed_ind h1q_nonneg
+      have hle_open :
+          (p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) Topen ≤
+            (p ^ γ) * (finiteBernoulliEventProbability E p Topen) ^ γ :=
+        mul_le_mul_of_nonneg_left hopen_ind hq_nonneg
+      have hsum :
+          (1 - p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) T +
+              (p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) Topen ≤
+            (1 - p ^ γ) * (finiteBernoulliEventProbability E p T) ^ γ +
+              (p ^ γ) * (finiteBernoulliEventProbability E p Topen) ^ γ :=
+        add_le_add hle_closed hle_open
+      have hclosed_nonneg : 0 ≤ finiteBernoulliEventProbability E p T :=
+        finiteBernoulliEventProbability_nonneg E T hp0.le hp1.le
+      have hopen_ge_closed :
+          finiteBernoulliEventProbability E p T ≤ finiteBernoulliEventProbability E p Topen := by
+        unfold finiteBernoulliEventProbability
+        refine finiteBernoulliExpectation_mono hp0.le hp1.le ?_
+        intro s hsE
+        by_cases hsT : s ∈ T
+        · have hinsert : insert a s ∈ T := by
+            exact hT (by intro e he; exact Finset.mem_insert.mpr (Or.inr he))
+              (Finset.insert_subset_insert a hsE) hsT
+          simp [Topen, hsT, hinsert]
+        · by_cases hOp : insert a s ∈ T <;> simp [Topen, hsT, hOp]
+      have hscalar := grimmett_238_scalar_inequality (p := p) (γ := γ)
+        (x := finiteBernoulliEventProbability E p Topen)
+        (y := finiteBernoulliEventProbability E p T) hp0 hp1 hγ hclosed_nonneg
+        hopen_ge_closed
+      calc
+        (1 - p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) T +
+            (p ^ γ) * finiteBernoulliEventProbability E (p ^ γ) Topen
+            ≤ (1 - p ^ γ) * (finiteBernoulliEventProbability E p T) ^ γ +
+              (p ^ γ) * (finiteBernoulliEventProbability E p Topen) ^ γ := hsum
+        _ = (finiteBernoulliEventProbability E p Topen) ^ γ * p ^ γ +
+              (finiteBernoulliEventProbability E p T) ^ γ * (1 - p ^ γ) := by ring
+        _ ≤ (finiteBernoulliEventProbability E p Topen * p +
+              finiteBernoulliEventProbability E p T * (1 - p)) ^ γ := hscalar
+        _ = (finiteBernoulliEventProbability (insert a E) p T) ^ γ := by
+          rw [hsplitp]
+          ring_nf
+
 end Percolation

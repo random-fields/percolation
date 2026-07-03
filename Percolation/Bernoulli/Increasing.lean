@@ -465,9 +465,40 @@ theorem DependsOn.compl {ι : Type*} {E : Finset ι} {A : Set (Set ι)}
   intro ω η hcoord
   exact not_congr (hA hcoord)
 
+/-- A real-valued observable only depends on the coordinates in `E`. -/
+def DependsOnFunction {ι : Type*} (E : Finset ι) (X : Set ι → ℝ) : Prop :=
+  ∀ ⦃ω η : Set ι⦄, (∀ e ∈ E, (e ∈ ω ↔ e ∈ η)) → X ω = X η
+
+theorem DependsOnFunction.mono {ι : Type*} {E F : Finset ι} {X : Set ι → ℝ}
+    (hX : DependsOnFunction E X) (hEF : E ⊆ F) :
+    DependsOnFunction F X := by
+  intro ω η hcoord
+  exact hX fun e he ↦ hcoord e (hEF he)
+
+theorem DependsOnFunction.mul {ι : Type*} {E : Finset ι} {X Y : Set ι → ℝ}
+    (hX : DependsOnFunction E X) (hY : DependsOnFunction E Y) :
+    DependsOnFunction E (fun ω ↦ X ω * Y ω) := by
+  intro ω η hcoord
+  change X ω * Y ω = X η * Y η
+  rw [hX hcoord, hY hcoord]
+
+theorem DependsOnFunction.eq_restrictTo {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {X : Set ι → ℝ} (hX : DependsOnFunction E X) (ω : Set ι) :
+    X ((restrictTo E ω : Finset ι) : Set ι) = X ω := by
+  exact hX fun e he ↦ by simp [restrictTo, he]
+
 /-- On a finite coordinate type, every event depends on the full coordinate set. -/
 theorem dependsOn_univ {ι : Type*} [Fintype ι] {A : Set (Set ι)} :
     DependsOn (Finset.univ : Finset ι) A := by
+  intro ω η hcoord
+  have hωη : ω = η := by
+    ext e
+    exact hcoord e (by simp)
+  rw [hωη]
+
+/-- On a finite coordinate type, every observable depends on the full coordinate set. -/
+theorem dependsOnFunction_univ {ι : Type*} [Fintype ι] {X : Set ι → ℝ} :
+    DependsOnFunction (Finset.univ : Finset ι) X := by
   intro ω η hcoord
   have hωη : ω = η := by
     ext e
@@ -498,6 +529,11 @@ theorem eventTrace_inter {ι : Type*} [DecidableEq ι]
 noncomputable def eventOfTrace {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (T : Set (Finset ι)) : Set (Set ι) :=
   {ω | restrictTo E ω ∈ T}
+
+/-- The finite trace of a real-valued observable on support `E`. -/
+noncomputable def finiteObservableTrace {ι : Type*} (_E : Finset ι) (X : Set ι → ℝ) :
+    Finset ι → ℝ :=
+  fun s ↦ X ((s : Finset ι) : Set ι)
 
 theorem dependsOn_eventOfTrace {ι : Type*} [DecidableEq ι]
     (E : Finset ι) (T : Set (Finset ι)) :
@@ -604,6 +640,19 @@ theorem IsDecreasingFinsetFunction.antitone {ι : Type*} {E : Finset ι}
     (hst : s ⊆ t) (htE : t ⊆ E) :
     X t ≤ X s :=
   hX hst htE
+
+theorem IsIncreasingRandomVariable.finiteObservableTrace {ι : Type*}
+    {E : Finset ι} {X : Set ι → ℝ} (hX : IsIncreasingRandomVariable X) :
+    IsIncreasingFinsetFunction E (finiteObservableTrace E X) := by
+  intro s t hst htE
+  exact hX.mono (by intro e he; exact hst he)
+
+theorem finiteObservableTrace_isDecreasingFinsetFunction {ι : Type*}
+    {E : Finset ι} {X : Set ι → ℝ}
+    (hX : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → X η ≤ X ω) :
+    IsDecreasingFinsetFunction E (finiteObservableTrace E X) := by
+  intro s t hst htE
+  exact hX (by intro e he; exact hst he)
 
 theorem IsIncreasingFinsetFunction.neg_isDecreasingFinsetFunction {ι : Type*}
     {E : Finset ι} {X : Finset ι → ℝ} (hX : IsIncreasingFinsetFunction E X) :
@@ -1355,6 +1404,122 @@ theorem DependsOn.setBernoulli_real_eq_finiteBernoulliEventProbability {ι : Typ
     _ = finiteBernoulliEventProbability E (p : ℝ) (eventTrace E A) :=
       setBernoulli_real_eventOfTrace E (eventTrace E A) p
 
+/-- A finite-support observable is the finite sum of its values on exact trace cylinders. -/
+theorem finiteObservableTrace_expansion_apply {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (X : Set ι → ℝ) (ω : Set ι) :
+    E.powerset.sum (fun s ↦
+        X ((s : Finset ι) : Set ι) *
+          (finiteTraceCylinder E s).indicator (fun _ : Set ι ↦ (1 : ℝ)) ω) =
+      X ((restrictTo E ω : Finset ι) : Set ι) := by
+  classical
+  rw [Finset.sum_eq_single (restrictTo E ω)]
+  · simp [finiteTraceCylinder]
+  · intro s hs hne
+    have hnot : ω ∉ finiteTraceCylinder E s := by
+      intro hω
+      exact hne hω.symm
+    simp [Set.indicator_of_notMem hnot]
+  · intro hnot
+    exact (hnot (Finset.mem_powerset.mpr (restrictTo_subset E ω))).elim
+
+/-- A finite-support observable is integrable under Bernoulli product measure. -/
+theorem DependsOnFunction.integrable_setBernoulli {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {X : Set ι → ℝ} (hX : DependsOnFunction E X) (p : I) :
+    Integrable X (setBer((Set.univ : Set ι), p)) := by
+  classical
+  let μ := setBer((Set.univ : Set ι), p)
+  let F : Set ι → ℝ := fun ω ↦
+    E.powerset.sum fun s ↦
+      X ((s : Finset ι) : Set ι) *
+        (finiteTraceCylinder E s).indicator (fun _ : Set ι ↦ (1 : ℝ)) ω
+  have hFint : Integrable F μ := by
+    refine integrable_finsetSum E.powerset ?_
+    intro s hs
+    have hfun :
+        (fun ω : Set ι ↦
+            X ((s : Finset ι) : Set ι) *
+              (finiteTraceCylinder E s).indicator (fun _ : Set ι ↦ (1 : ℝ)) ω) =
+          (finiteTraceCylinder E s).indicator
+            (fun _ : Set ι ↦ X ((s : Finset ι) : Set ι)) := by
+      funext ω
+      by_cases hω : ω ∈ finiteTraceCylinder E s
+      · simp [Set.indicator_of_mem hω]
+      · simp [Set.indicator_of_notMem hω]
+    rw [hfun]
+    exact (integrable_const (X ((s : Finset ι) : Set ι))).indicator
+      (measurableSet_finiteTraceCylinder E s)
+  refine hFint.congr ?_
+  filter_upwards with ω
+  dsimp [F]
+  rw [finiteObservableTrace_expansion_apply E X ω, hX.eq_restrictTo]
+
+/-- Product-measure expectation of a finite-support observable equals its finite-cube
+expectation over the trace. -/
+theorem DependsOnFunction.integral_setBernoulli_eq_finiteBernoulliExpectation
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {X : Set ι → ℝ}
+    (hX : DependsOnFunction E X) (p : I) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) =
+      finiteBernoulliExpectation E (p : ℝ) (finiteObservableTrace E X) := by
+  classical
+  let μ := setBer((Set.univ : Set ι), p)
+  let F : Set ι → ℝ := fun ω ↦
+    E.powerset.sum fun s ↦
+      X ((s : Finset ι) : Set ι) *
+        (finiteTraceCylinder E s).indicator (fun _ : Set ι ↦ (1 : ℝ)) ω
+  have hXF : X =ᵐ[μ] F := by
+    filter_upwards with ω
+    dsimp [F]
+    rw [finiteObservableTrace_expansion_apply E X ω, hX.eq_restrictTo]
+  calc
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) = ∫ ω, F ω ∂μ := by
+      simpa [μ] using integral_congr_ae hXF
+    _ = E.powerset.sum (fun s ↦
+        ∫ ω, X ((s : Finset ι) : Set ι) *
+          (finiteTraceCylinder E s).indicator (fun _ : Set ι ↦ (1 : ℝ)) ω ∂μ) := by
+      rw [integral_finsetSum]
+      intro s hs
+      have hfun :
+          (fun ω : Set ι ↦
+              X ((s : Finset ι) : Set ι) *
+                (finiteTraceCylinder E s).indicator (fun _ : Set ι ↦ (1 : ℝ)) ω) =
+            (finiteTraceCylinder E s).indicator
+              (fun _ : Set ι ↦ X ((s : Finset ι) : Set ι)) := by
+        funext ω
+        by_cases hω : ω ∈ finiteTraceCylinder E s
+        · simp [Set.indicator_of_mem hω]
+        · simp [Set.indicator_of_notMem hω]
+      rw [hfun]
+      exact (integrable_const (X ((s : Finset ι) : Set ι))).indicator
+        (measurableSet_finiteTraceCylinder E s)
+    _ = finiteBernoulliExpectation E (p : ℝ) (finiteObservableTrace E X) := by
+      unfold finiteBernoulliExpectation finiteObservableTrace
+      apply Finset.sum_congr rfl
+      intro s hs
+      have hsE : s ⊆ E := Finset.mem_powerset.mp hs
+      have hfun :
+          (fun ω : Set ι ↦
+              X ((s : Finset ι) : Set ι) *
+                (finiteTraceCylinder E s).indicator (fun _ : Set ι ↦ (1 : ℝ)) ω) =
+            (finiteTraceCylinder E s).indicator
+              (fun _ : Set ι ↦ X ((s : Finset ι) : Set ι)) := by
+        funext ω
+        by_cases hω : ω ∈ finiteTraceCylinder E s
+        · simp [Set.indicator_of_mem hω]
+        · simp [Set.indicator_of_notMem hω]
+      rw [hfun]
+      rw [integral_indicator_const
+        (μ := μ) (e := X ((s : Finset ι) : Set ι))
+        (s_meas := measurableSet_finiteTraceCylinder E s)]
+      simp only [smul_eq_mul]
+      change μ.real (finiteTraceCylinder E s) *
+          X ((s : Finset ι) : Set ι) =
+        (p : ℝ) ^ s.card * (1 - (p : ℝ)) ^ (E.card - s.card) *
+          X ((s : Finset ι) : Set ι)
+      rw [show μ.real (finiteTraceCylinder E s) =
+          (p : ℝ) ^ s.card * (1 - (p : ℝ)) ^ (E.card - s.card) by
+        dsimp [μ]
+        exact setBernoulli_real_finiteTraceCylinder E s p hsE]
+
 /-- Split a finite Bernoulli event probability according to whether a fresh coordinate is closed
 or open. This is the finite conditioning identity used in the Russo induction. -/
 theorem finiteBernoulliEventProbability_insert_split {ι : Type*} [DecidableEq ι]
@@ -1819,6 +1984,77 @@ theorem setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn {ι : Type*}
   exact finiteBernoulliEventTrace_le_mul_of_increasing_decreasing (E := G) (p := (p : ℝ))
     p.2.1 p.2.2 hAinc hBdec
 
+/-- Finite-support FKG/Harris inequality for increasing real-valued observables under the
+Bernoulli product measure. This is the product-measure random-variable face of Grimmett's
+Theorem (2.4) before the martingale limiting passage. -/
+theorem setBernoulli_integral_fkg_of_dependsOnFunction {ι : Type*} [DecidableEq ι]
+    {E F : Finset ι} {X Y : Set ι → ℝ} (p : I)
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    (hXdep : DependsOnFunction E X) (hYdep : DependsOnFunction F Y) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) := by
+  let G : Finset ι := E ∪ F
+  have hXdepG : DependsOnFunction G X :=
+    hXdep.mono (by intro e he; exact Finset.mem_union_left F he)
+  have hYdepG : DependsOnFunction G Y :=
+    hYdep.mono (by intro e he; exact Finset.mem_union_right E he)
+  have hXYdepG : DependsOnFunction G (fun ω ↦ X ω * Y ω) := hXdepG.mul hYdepG
+  rw [hXdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p,
+    hYdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p,
+    hXYdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p]
+  simpa [finiteObservableTrace] using
+    finiteBernoulliExpectation_fkg (E := G) (p := (p : ℝ)) p.2.1 p.2.2
+      hXinc.finiteObservableTrace hYinc.finiteObservableTrace
+
+/-- Finite-support FKG/Harris inequality for decreasing real-valued observables under the
+Bernoulli product measure. -/
+theorem setBernoulli_integral_fkg_of_decreasing_dependsOnFunction {ι : Type*}
+    [DecidableEq ι] {E F : Finset ι} {X Y : Set ι → ℝ} (p : I)
+    (hXdec : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → X η ≤ X ω)
+    (hYdec : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → Y η ≤ Y ω)
+    (hXdep : DependsOnFunction E X) (hYdep : DependsOnFunction F Y) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) := by
+  let G : Finset ι := E ∪ F
+  have hXdepG : DependsOnFunction G X :=
+    hXdep.mono (by intro e he; exact Finset.mem_union_left F he)
+  have hYdepG : DependsOnFunction G Y :=
+    hYdep.mono (by intro e he; exact Finset.mem_union_right E he)
+  have hXYdepG : DependsOnFunction G (fun ω ↦ X ω * Y ω) := hXdepG.mul hYdepG
+  rw [hXdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p,
+    hYdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p,
+    hXYdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p]
+  simpa [finiteObservableTrace] using
+    finiteBernoulliExpectation_fkg_of_decreasing (E := G) (p := (p : ℝ)) p.2.1 p.2.2
+      (finiteObservableTrace_isDecreasingFinsetFunction hXdec)
+      (finiteObservableTrace_isDecreasingFinsetFunction hYdec)
+
+/-- Finite-support negative correlation for an increasing and a decreasing observable under the
+Bernoulli product measure. -/
+theorem setBernoulli_integral_le_mul_of_increasing_decreasing_dependsOnFunction
+    {ι : Type*} [DecidableEq ι] {E F : Finset ι} {X Y : Set ι → ℝ} (p : I)
+    (hXinc : IsIncreasingRandomVariable X)
+    (hYdec : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → Y η ≤ Y ω)
+    (hXdep : DependsOnFunction E X) (hYdep : DependsOnFunction F Y) :
+    (∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) := by
+  let G : Finset ι := E ∪ F
+  have hXdepG : DependsOnFunction G X :=
+    hXdep.mono (by intro e he; exact Finset.mem_union_left F he)
+  have hYdepG : DependsOnFunction G Y :=
+    hYdep.mono (by intro e he; exact Finset.mem_union_right E he)
+  have hXYdepG : DependsOnFunction G (fun ω ↦ X ω * Y ω) := hXdepG.mul hYdepG
+  rw [hXdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p,
+    hYdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p,
+    hXYdepG.integral_setBernoulli_eq_finiteBernoulliExpectation p]
+  simpa [finiteObservableTrace] using
+    finiteBernoulliExpectation_le_mul_of_increasing_decreasing (E := G) (p := (p : ℝ))
+      p.2.1 p.2.2 hXinc.finiteObservableTrace
+      (finiteObservableTrace_isDecreasingFinsetFunction hYdec)
+
 /-- FKG/Harris inequality on a finite Bernoulli product space, stated without explicit
 finite-support hypotheses because every event depends on the full finite coordinate set. -/
 theorem setBernoulli_real_fkg_finite {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -1848,6 +2084,39 @@ theorem setBernoulli_real_le_mul_of_increasing_decreasing_finite {ι : Type*}
         setBer((Set.univ : Set ι), p).real B :=
   setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn p hAinc hBdec
     dependsOn_univ dependsOn_univ
+
+/-- FKG/Harris inequality for increasing observables on a finite Bernoulli product space. -/
+theorem setBernoulli_integral_fkg_finite {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {X Y : Set ι → ℝ} (p : I)
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) :=
+  setBernoulli_integral_fkg_of_dependsOnFunction p hXinc hYinc
+    dependsOnFunction_univ dependsOnFunction_univ
+
+/-- FKG/Harris inequality for decreasing observables on a finite Bernoulli product space. -/
+theorem setBernoulli_integral_fkg_of_decreasing_finite {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {X Y : Set ι → ℝ} (p : I)
+    (hXdec : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → X η ≤ X ω)
+    (hYdec : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → Y η ≤ Y ω) :
+    (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      ∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p) :=
+  setBernoulli_integral_fkg_of_decreasing_dependsOnFunction p hXdec hYdec
+    dependsOnFunction_univ dependsOnFunction_univ
+
+/-- Negative correlation for an increasing and a decreasing observable on a finite Bernoulli
+product space. -/
+theorem setBernoulli_integral_le_mul_of_increasing_decreasing_finite {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {X Y : Set ι → ℝ} (p : I)
+    (hXinc : IsIncreasingRandomVariable X)
+    (hYdec : ∀ ⦃ω η : Set ι⦄, ω ⊆ η → Y η ≤ Y ω) :
+    (∫ ω, X ω * Y ω ∂setBer((Set.univ : Set ι), p)) ≤
+      (∫ ω, X ω ∂setBer((Set.univ : Set ι), p)) *
+        (∫ ω, Y ω ∂setBer((Set.univ : Set ι), p)) :=
+  setBernoulli_integral_le_mul_of_increasing_decreasing_dependsOnFunction p hXinc hYdec
+    dependsOnFunction_univ dependsOnFunction_univ
 
 /-- Finite-support iterated FKG for increasing events stated directly in the Bernoulli product
 measure. -/
@@ -2326,6 +2595,44 @@ theorem bernoulliBondMeasure_real_le_mul_of_increasing_decreasing_dependsOn (d :
   simpa [bernoulliBondMeasure] using
     setBernoulli_real_le_mul_of_increasing_decreasing_dependsOn (ι := CubicEdge d) p
       hAinc hBdec hAdep hBdep
+
+/-- Finite-support FKG for increasing cubic bond observables. -/
+theorem bernoulliBondMeasure_integral_fkg_of_dependsOnFunction (d : ℕ)
+    {E F : Finset (CubicEdge d)} {X Y : EdgeConfiguration d → ℝ} (p : I)
+    (hXinc : IsIncreasingRandomVariable X) (hYinc : IsIncreasingRandomVariable Y)
+    (hXdep : DependsOnFunction E X) (hYdep : DependsOnFunction F Y) :
+    (∫ ω, X ω ∂bernoulliBondMeasure d p) *
+        (∫ ω, Y ω ∂bernoulliBondMeasure d p) ≤
+      ∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_integral_fkg_of_dependsOnFunction (ι := CubicEdge d) p
+      hXinc hYinc hXdep hYdep
+
+/-- Finite-support FKG for decreasing cubic bond observables. -/
+theorem bernoulliBondMeasure_integral_fkg_of_decreasing_dependsOnFunction (d : ℕ)
+    {E F : Finset (CubicEdge d)} {X Y : EdgeConfiguration d → ℝ} (p : I)
+    (hXdec : ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → X η ≤ X ω)
+    (hYdec : ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Y η ≤ Y ω)
+    (hXdep : DependsOnFunction E X) (hYdep : DependsOnFunction F Y) :
+    (∫ ω, X ω ∂bernoulliBondMeasure d p) *
+        (∫ ω, Y ω ∂bernoulliBondMeasure d p) ≤
+      ∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_integral_fkg_of_decreasing_dependsOnFunction (ι := CubicEdge d) p
+      hXdec hYdec hXdep hYdep
+
+/-- Finite-support negative correlation for increasing/decreasing cubic bond observables. -/
+theorem bernoulliBondMeasure_integral_le_mul_of_increasing_decreasing_dependsOnFunction
+    (d : ℕ) {E F : Finset (CubicEdge d)} {X Y : EdgeConfiguration d → ℝ} (p : I)
+    (hXinc : IsIncreasingRandomVariable X)
+    (hYdec : ∀ ⦃ω η : EdgeConfiguration d⦄, ω ⊆ η → Y η ≤ Y ω)
+    (hXdep : DependsOnFunction E X) (hYdep : DependsOnFunction F Y) :
+    (∫ ω, X ω * Y ω ∂bernoulliBondMeasure d p) ≤
+      (∫ ω, X ω ∂bernoulliBondMeasure d p) *
+        (∫ ω, Y ω ∂bernoulliBondMeasure d p) := by
+  simpa [bernoulliBondMeasure] using
+    setBernoulli_integral_le_mul_of_increasing_decreasing_dependsOnFunction
+      (ι := CubicEdge d) p hXinc hYdec hXdep hYdep
 
 /-- Finite-support iterated FKG for increasing cubic bond events. -/
 theorem bernoulliBondMeasure_real_iterated_fkg_of_dependsOn (d : ℕ)

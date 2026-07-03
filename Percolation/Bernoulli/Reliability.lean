@@ -1,4 +1,5 @@
 import Percolation.Bernoulli.Russo
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Finite reliability identities
@@ -128,6 +129,99 @@ theorem finiteBernoulliCovariance_sub_left {ι : Type*} [DecidableEq ι]
     ring
   rw [hprod, finiteBernoulliExpectation_sub, finiteBernoulliExpectation_sub]
   ring
+
+/-- Covariance as the expectation of centered observables. -/
+theorem finiteBernoulliCovariance_eq_centered {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X Y : Finset ι → ℝ) :
+    finiteBernoulliCovariance E p X Y =
+      finiteBernoulliExpectation E p
+        (fun s ↦ (X s - finiteBernoulliExpectation E p X) *
+          (Y s - finiteBernoulliExpectation E p Y)) := by
+  let ex := finiteBernoulliExpectation E p X
+  let ey := finiteBernoulliExpectation E p Y
+  unfold finiteBernoulliCovariance
+  have hcenter :
+      finiteBernoulliExpectation E p
+          (fun s ↦ (X s - ex) * (Y s - ey)) =
+        finiteBernoulliExpectation E p
+          (fun s ↦ (X s * Y s - ex * Y s - ey * X s) + ex * ey) := by
+    apply finiteBernoulliExpectation_congr
+    intro s _hsE
+    ring
+  rw [hcenter]
+  rw [finiteBernoulliExpectation_add]
+  rw [finiteBernoulliExpectation_sub]
+  rw [finiteBernoulliExpectation_sub]
+  rw [finiteBernoulliExpectation_const_mul, finiteBernoulliExpectation_const_mul,
+    finiteBernoulliExpectation_const]
+  simp [ex, ey]
+  ring
+
+/-- Finite Bernoulli Cauchy-Schwarz for expectations on a finite cube. -/
+theorem finiteBernoulliExpectation_mul_sq_le_sq_mul_sq {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (X Y : Finset ι → ℝ) :
+    (finiteBernoulliExpectation E p (fun s ↦ X s * Y s)) ^ 2 ≤
+      finiteBernoulliExpectation E p (fun s ↦ X s ^ 2) *
+        finiteBernoulliExpectation E p (fun s ↦ Y s ^ 2) := by
+  unfold finiteBernoulliExpectation
+  refine Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul E.powerset ?_ ?_ ?_
+  · intro s _hs
+    have hq0 : 0 ≤ 1 - p := sub_nonneg.mpr hp1
+    have hweight : 0 ≤ p ^ s.card * (1 - p) ^ (E.card - s.card) :=
+      mul_nonneg (pow_nonneg hp0 _) (pow_nonneg hq0 _)
+    exact mul_nonneg hweight (sq_nonneg (X s))
+  · intro s _hs
+    have hq0 : 0 ≤ 1 - p := sub_nonneg.mpr hp1
+    have hweight : 0 ≤ p ^ s.card * (1 - p) ^ (E.card - s.card) :=
+      mul_nonneg (pow_nonneg hp0 _) (pow_nonneg hq0 _)
+    exact mul_nonneg hweight (sq_nonneg (Y s))
+  · intro s _hs
+    let w : ℝ := p ^ s.card * (1 - p) ^ (E.card - s.card)
+    change (w * (X s * Y s)) ^ 2 ≤ (w * X s ^ 2) * (w * Y s ^ 2)
+    exact le_of_eq (by ring)
+
+/-- Variance as the expectation of the square of the centered observable. -/
+theorem finiteBernoulliCovariance_self_eq_centered_sq {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) :
+    finiteBernoulliCovariance E p X X =
+      finiteBernoulliExpectation E p
+        (fun s ↦ (X s - finiteBernoulliExpectation E p X) ^ 2) := by
+  rw [finiteBernoulliCovariance_eq_centered]
+  apply finiteBernoulliExpectation_congr
+  intro s _hsE
+  ring
+
+/-- Variance is nonnegative on the finite Bernoulli cube. -/
+theorem finiteBernoulliCovariance_self_nonneg {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (X : Finset ι → ℝ) :
+    0 ≤ finiteBernoulliCovariance E p X X := by
+  rw [finiteBernoulliCovariance_self_eq_centered_sq]
+  exact finiteBernoulliExpectation_nonneg hp0 hp1 (fun _s _hsE ↦ sq_nonneg _)
+
+/-- Cauchy-Schwarz for finite Bernoulli covariance. -/
+theorem finiteBernoulliCovariance_sq_le_mul_self {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (X Y : Finset ι → ℝ) :
+    (finiteBernoulliCovariance E p X Y) ^ 2 ≤
+      finiteBernoulliCovariance E p X X * finiteBernoulliCovariance E p Y Y := by
+  let Xc : Finset ι → ℝ := fun s ↦ X s - finiteBernoulliExpectation E p X
+  let Yc : Finset ι → ℝ := fun s ↦ Y s - finiteBernoulliExpectation E p Y
+  have hcs :=
+    finiteBernoulliExpectation_mul_sq_le_sq_mul_sq (E := E) (p := p) hp0 hp1 Xc Yc
+  have hcov :
+      finiteBernoulliCovariance E p X Y =
+        finiteBernoulliExpectation E p (fun s ↦ Xc s * Yc s) := by
+    simpa [Xc, Yc] using finiteBernoulliCovariance_eq_centered E p X Y
+  have hvarX :
+      finiteBernoulliCovariance E p X X =
+        finiteBernoulliExpectation E p (fun s ↦ Xc s ^ 2) := by
+    simpa [Xc] using finiteBernoulliCovariance_self_eq_centered_sq E p X
+  have hvarY :
+      finiteBernoulliCovariance E p Y Y =
+        finiteBernoulliExpectation E p (fun s ↦ Yc s ^ 2) := by
+    simpa [Yc] using finiteBernoulliCovariance_self_eq_centered_sq E p Y
+  simpa [hcov, hvarX, hvarY] using hcs
 
 /-- For an increasing finite trace, `N - 1_A` is increasing. This is the monotonicity input
 behind Grimmett's S-shape/reliability lower bound. -/
@@ -312,6 +406,24 @@ theorem finiteBernoulliCovariance_finiteOpenCount_self {ι : Type*} [DecidableEq
     intro e _he
     exact finiteBernoulliExpectation_finiteDifference_finiteOpenCount E p e]
   simp
+
+/-- Finite Cauchy-Schwarz upper reliability bound, the numerator form of Grimmett's
+inequality (2.36)(a). -/
+theorem finiteBernoulliCovariance_finiteOpenCount_indicator_sq_le
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {p : ℝ}
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (T : Set (Finset ι)) :
+    (finiteBernoulliCovariance E p finiteOpenCount
+        (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s)) ^ 2 ≤
+      (p * (1 - p) * E.card) *
+        (finiteBernoulliEventProbability E p T *
+          (1 - finiteBernoulliEventProbability E p T)) := by
+  let I : Finset ι → ℝ := fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s
+  have hcs :=
+    finiteBernoulliCovariance_sq_le_mul_self (E := E) (p := p)
+      (X := finiteOpenCount) (Y := I) hp0 hp1
+  have hN := finiteBernoulliCovariance_finiteOpenCount_self E p
+  have hI := finiteBernoulliCovariance_indicator_self E p T
+  simpa [I, hN, hI] using hcs
 
 /-- The derivative of a finite-cube expectation written in Grimmett's reliability covariance
 form. This is the random-variable version of Theorem (2.34). -/

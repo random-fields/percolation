@@ -787,6 +787,13 @@ Dated milestones and anti-library notes.
     `p = q^γ`, takes logarithms under explicit positive-probability hypotheses, and proves that
     `log P_p(A) / log p` is non-increasing in the Bernoulli parameter for increasing finite traces.
 
+70. **Arbitrary-root zero-set transfer (2026-07-02).** Closed the remaining deterministic
+    reachability step in Grimmett's Theorem (2.8). Proved that a single coordinate update is
+    reachable in the cubic graph by repeated signed steps, then set all coordinates one at a time
+    to show every two cubic-lattice vertices are reachable. Combined this with the existing
+    FKG-powered walk transfer to prove `thetaFrom d x p = 0 ↔ thetaFrom d y p = 0` for `p>0`,
+    and the origin-rooted production form `theta d p = 0 ↔ thetaFrom d x p = 0`.
+
 ## Axiom Ledger
 
 Empty.

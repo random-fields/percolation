@@ -5471,6 +5471,62 @@ theorem thetaFrom_eq_zero_iff_of_walk {d : ℕ} {x y : Cubic d} {p : I}
   exact thetaFrom_eq_zero_iff_of_open_trail (w.toPath : (cubicGraph d).Walk x y)
     w.toPath.property.isTrail hp
 
+/-- A single-coordinate update is reachable in the cubic lattice by repeatedly stepping in the
+appropriate signed coordinate direction. -/
+theorem cubicGraph_reachable_update {d : ℕ} (x : Cubic d) (i : Fin d) (z : ℤ) :
+    (cubicGraph d).Reachable x (Function.update x i z) := by
+  by_cases hle : x i ≤ z
+  · let n : ℕ := (z - x i).toNat
+    have hn : (n : ℤ) = z - x i := by
+      dsimp [n]
+      exact Int.toNat_of_nonneg (sub_nonneg.mpr hle)
+    have htarget : cubicEndpointFrom x (List.replicate n (i, true)) = Function.update x i z := by
+      rw [cubicEndpointFrom_replicate_pos]
+      ext j
+      by_cases hji : j = i
+      · subst j
+        simp [hn]
+      · simp [Function.update_of_ne hji]
+    exact ⟨(cubicWalkFrom x (List.replicate n (i, true))).copy rfl htarget⟩
+  · have hlt : z < x i := lt_of_not_ge hle
+    let n : ℕ := (x i - z).toNat
+    have hn : (n : ℤ) = x i - z := by
+      dsimp [n]
+      exact Int.toNat_of_nonneg (sub_nonneg.mpr hlt.le)
+    have htarget :
+        cubicEndpointFrom x (List.replicate n (i, false)) = Function.update x i z := by
+      rw [cubicEndpointFrom_replicate_neg]
+      ext j
+      by_cases hji : j = i
+      · subst j
+        simp [hn]
+      · simp [Function.update_of_ne hji]
+    exact ⟨(cubicWalkFrom x (List.replicate n (i, false))).copy rfl htarget⟩
+
+/-- The cubic lattice graph is connected: every vertex can be reached from every other vertex by
+setting the finitely many coordinates one at a time. -/
+theorem cubicGraph_reachable {d : ℕ} (x y : Cubic d) :
+    (cubicGraph d).Reachable x y := by
+  classical
+  let v : Finset (Fin d) → Cubic d := fun S i ↦ if i ∈ S then y i else x i
+  have hreach : ∀ S : Finset (Fin d), (cubicGraph d).Reachable x (v S) := by
+    intro S
+    refine Finset.induction_on S ?hempty ?hinsert
+    · simp [v]
+    · intro a S ha hS
+      have hupdate : Function.update (v S) a (y a) = v (insert a S) := by
+        ext j
+        by_cases hja : j = a
+        · subst j
+          simp [v]
+        · have hmem : (j ∈ insert a S) ↔ j ∈ S := by simp [hja]
+          simp [v, Function.update_of_ne hja, hmem]
+      exact hS.trans (by simpa [hupdate] using cubicGraph_reachable_update (v S) a (y a))
+  have huniv : v Finset.univ = y := by
+    ext i
+    simp [v]
+  simpa [huniv] using hreach Finset.univ
+
 /-- Two-sided zero-set transfer for any two reachable cubic-lattice vertices. This is the graph
 connectivity-facing form of Grimmett's Theorem (2.8). -/
 theorem thetaFrom_eq_zero_iff_of_reachable {d : ℕ} {x y : Cubic d} {p : I}
@@ -5485,6 +5541,20 @@ theorem theta_eq_zero_iff_thetaFrom_of_reachable_origin {d : ℕ} {x : Cubic d} 
     (hx : (cubicGraph d).Reachable (cubicOrigin : Cubic d) x) (hp : 0 < (p : ℝ)) :
     theta d p = 0 ↔ thetaFrom d x p = 0 := by
   simpa [thetaFrom_origin] using thetaFrom_eq_zero_iff_of_reachable hx hp
+
+/-- Grimmett's Theorem (2.8), arbitrary-root form on the cubic lattice: for positive edge
+parameter, the zero set of the rooted percolation probability is independent of the root. -/
+theorem thetaFrom_eq_zero_iff_thetaFrom {d : ℕ} (x y : Cubic d) {p : I}
+    (hp : 0 < (p : ℝ)) :
+    thetaFrom d x p = 0 ↔ thetaFrom d y p = 0 :=
+  thetaFrom_eq_zero_iff_of_reachable (cubicGraph_reachable x y) hp
+
+/-- Grimmett's Theorem (2.8), origin-rooted production form: for positive edge parameter,
+`θ(p)` vanishes exactly when the percolation probability rooted at any vertex vanishes. -/
+theorem theta_eq_zero_iff_thetaFrom {d : ℕ} (x : Cubic d) {p : I}
+    (hp : 0 < (p : ℝ)) :
+    theta d p = 0 ↔ thetaFrom d x p = 0 :=
+  theta_eq_zero_iff_thetaFrom_of_reachable_origin (cubicGraph_reachable cubicOrigin x) hp
 
 /-- Grimmett's Theorem (2.1) for any increasing cubic event once a monotone coupling with the
 two Bernoulli bond marginals has been constructed. The remaining source-facing step is to supply

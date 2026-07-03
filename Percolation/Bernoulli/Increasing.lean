@@ -1842,10 +1842,61 @@ theorem IsDecreasingTrace.indicator_isDecreasingFinsetFunction {ι : Type*}
       norm_num
     · rw [Set.indicator_of_notMem hs]
 
+/-- Lifting the indicator of a finite trace gives exactly the indicator of the corresponding
+cylinder event. This is the bookkeeping bridge between event FKG and the observable form used by
+conditional-expectation approximants. -/
+theorem observableOfFiniteTrace_indicator {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) :
+    observableOfFiniteTrace E (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) =
+      fun ω ↦ (eventOfTrace E T).indicator (fun _ ↦ (1 : ℝ)) ω := by
+  funext ω
+  by_cases hω : restrictTo E ω ∈ T
+  · have hω' : ω ∈ eventOfTrace E T := hω
+    simp [observableOfFiniteTrace, hω, Set.indicator_of_mem hω']
+  · have hω' : ω ∉ eventOfTrace E T := hω
+    simp [observableOfFiniteTrace, hω, Set.indicator_of_notMem hω']
+
+/-- Intersections of lifted finite-trace events are lifted intersections. -/
+theorem eventOfTrace_inter_trace {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T U : Set (Finset ι)) :
+    eventOfTrace E (T ∩ U) = eventOfTrace E T ∩ eventOfTrace E U := by
+  ext ω
+  simp [eventOfTrace]
+
 theorem indicator_mul_indicator_inter {ι : Type*} (T U : Set (Finset ι)) (s : Finset ι) :
     T.indicator (fun _ ↦ (1 : ℝ)) s * U.indicator (fun _ ↦ (1 : ℝ)) s =
       (T ∩ U).indicator (fun _ ↦ (1 : ℝ)) s := by
   by_cases hT : s ∈ T <;> by_cases hU : s ∈ U <;> simp [hT, hU]
+
+/-- The integral of a lifted finite-trace indicator is the probability of the corresponding
+cylinder event. -/
+theorem integral_observableOfFiniteTrace_indicator_setBernoulli {ι : Type*} [DecidableEq ι]
+    (E : Finset ι) (T : Set (Finset ι)) (p : I) :
+    (∫ ω, observableOfFiniteTrace E (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) ω
+        ∂setBer((Set.univ : Set ι), p)) =
+      setBer((Set.univ : Set ι), p).real (eventOfTrace E T) := by
+  rw [observableOfFiniteTrace_indicator]
+  exact integral_indicator_one (μ := setBer((Set.univ : Set ι), p))
+    (measurableSet_eventOfTrace E T)
+
+/-- Products of lifted finite-trace indicators integrate to the probability of the intersection
+of the corresponding cylinder events. -/
+theorem integral_observableOfFiniteTrace_indicator_mul_setBernoulli {ι : Type*}
+    [DecidableEq ι] (E : Finset ι) (T U : Set (Finset ι)) (p : I) :
+    (∫ ω,
+        observableOfFiniteTrace E (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) ω *
+          observableOfFiniteTrace E (fun s ↦ U.indicator (fun _ ↦ (1 : ℝ)) s) ω
+        ∂setBer((Set.univ : Set ι), p)) =
+      setBer((Set.univ : Set ι), p).real (eventOfTrace E T ∩ eventOfTrace E U) := by
+  have hfun :
+      (fun ω : Set ι ↦
+          observableOfFiniteTrace E (fun s ↦ T.indicator (fun _ ↦ (1 : ℝ)) s) ω *
+            observableOfFiniteTrace E (fun s ↦ U.indicator (fun _ ↦ (1 : ℝ)) s) ω) =
+        observableOfFiniteTrace E (fun s ↦ (T ∩ U).indicator (fun _ ↦ (1 : ℝ)) s) := by
+    funext ω
+    simp [observableOfFiniteTrace, indicator_mul_indicator_inter]
+  rw [hfun, integral_observableOfFiniteTrace_indicator_setBernoulli]
+  rw [eventOfTrace_inter_trace]
 
 /-- Finite-trace weighted FKG/Harris inequality for increasing events. This is the event
 specialization of Grimmett's finite-coordinate FKG induction. -/
@@ -2154,6 +2205,50 @@ theorem setBernoulli_integral_le_mul_of_increasing_decreasing_observableOfFinite
     (dependsOnFunction_observableOfFiniteTrace E X)
     (dependsOnFunction_observableOfFiniteTrace E Y)
 
+/-- FKG/Harris inequality for finite-trace cylinder events, derived through the lifted-observable
+form. This is the exact finite-coordinate face used by conditional-probability approximants in the
+full measurable-event proof. -/
+theorem setBernoulli_real_fkg_eventOfTrace {ι : Type*} [DecidableEq ι]
+    {E : Finset ι} {T U : Set (Finset ι)} (p : I)
+    (hT : IsIncreasingTrace E T) (hU : IsIncreasingTrace E U) :
+    setBer((Set.univ : Set ι), p).real (eventOfTrace E T) *
+        setBer((Set.univ : Set ι), p).real (eventOfTrace E U) ≤
+      setBer((Set.univ : Set ι), p).real (eventOfTrace E T ∩ eventOfTrace E U) := by
+  rw [← integral_observableOfFiniteTrace_indicator_setBernoulli E T p,
+    ← integral_observableOfFiniteTrace_indicator_setBernoulli E U p,
+    ← integral_observableOfFiniteTrace_indicator_mul_setBernoulli E T U p]
+  exact setBernoulli_integral_fkg_observableOfFiniteTrace (E := E) (p := p)
+    hT.indicator_isIncreasingFinsetFunction hU.indicator_isIncreasingFinsetFunction
+
+/-- FKG/Harris inequality for decreasing finite-trace cylinder events, derived through the
+lifted-observable form. -/
+theorem setBernoulli_real_fkg_eventOfTrace_of_decreasing {ι : Type*}
+    [DecidableEq ι] {E : Finset ι} {T U : Set (Finset ι)} (p : I)
+    (hT : IsDecreasingTrace E T) (hU : IsDecreasingTrace E U) :
+    setBer((Set.univ : Set ι), p).real (eventOfTrace E T) *
+        setBer((Set.univ : Set ι), p).real (eventOfTrace E U) ≤
+      setBer((Set.univ : Set ι), p).real (eventOfTrace E T ∩ eventOfTrace E U) := by
+  rw [← integral_observableOfFiniteTrace_indicator_setBernoulli E T p,
+    ← integral_observableOfFiniteTrace_indicator_setBernoulli E U p,
+    ← integral_observableOfFiniteTrace_indicator_mul_setBernoulli E T U p]
+  exact setBernoulli_integral_fkg_of_decreasing_observableOfFiniteTrace (E := E) (p := p)
+    hT.indicator_isDecreasingFinsetFunction hU.indicator_isDecreasingFinsetFunction
+
+/-- Negative correlation for an increasing and a decreasing finite-trace cylinder event, derived
+through the lifted-observable form. -/
+theorem setBernoulli_real_le_mul_eventOfTrace_of_increasing_decreasing
+    {ι : Type*} [DecidableEq ι] {E : Finset ι} {T U : Set (Finset ι)} (p : I)
+    (hT : IsIncreasingTrace E T) (hU : IsDecreasingTrace E U) :
+    setBer((Set.univ : Set ι), p).real (eventOfTrace E T ∩ eventOfTrace E U) ≤
+      setBer((Set.univ : Set ι), p).real (eventOfTrace E T) *
+        setBer((Set.univ : Set ι), p).real (eventOfTrace E U) := by
+  rw [← integral_observableOfFiniteTrace_indicator_setBernoulli E T p,
+    ← integral_observableOfFiniteTrace_indicator_setBernoulli E U p,
+    ← integral_observableOfFiniteTrace_indicator_mul_setBernoulli E T U p]
+  exact setBernoulli_integral_le_mul_of_increasing_decreasing_observableOfFiniteTrace
+    (E := E) (p := p) hT.indicator_isIncreasingFinsetFunction
+    hU.indicator_isDecreasingFinsetFunction
+
 /-- FKG/Harris inequality on a finite Bernoulli product space, stated without explicit
 finite-support hypotheses because every event depends on the full finite coordinate set. -/
 theorem setBernoulli_real_fkg_finite {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -2435,6 +2530,41 @@ theorem setBernoulli_integral_le_mul_of_increasing_decreasing_finiteSupport_tend
   exact le_mul_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦
     setBernoulli_integral_le_mul_of_increasing_decreasing_dependsOnFunction p
       (hXinc n) (hYdec n) (hXdep n) (hYdep n)
+
+/-- FKG for events from lifted finite-coordinate observable approximants. This is the
+martingale-facing bridge for the full measurable-event theorem: conditional expectations of
+event indicators should supply the monotone finite-cube functions and the three convergence
+hypotheses. -/
+theorem setBernoulli_real_fkg_of_observableOfFiniteTrace_tendsto
+    {ι : Type*} [DecidableEq ι] (p : I) {A B : Set (Set ι)}
+    {EX EY : ℕ → Finset ι} {X Y : ℕ → Finset ι → ℝ}
+    (hXinc : ∀ n, IsIncreasingFinsetFunction (EX n) (X n))
+    (hYinc : ∀ n, IsIncreasingFinsetFunction (EY n) (Y n))
+    (hXtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω, observableOfFiniteTrace (EX n) (X n) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real A)))
+    (hYtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω, observableOfFiniteTrace (EY n) (Y n) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real B)))
+    (hXYtend : Filter.Tendsto
+      (fun n ↦
+        ∫ ω,
+          observableOfFiniteTrace (EX n) (X n) ω *
+            observableOfFiniteTrace (EY n) (Y n) ω
+          ∂setBer((Set.univ : Set ι), p)) Filter.atTop
+      (nhds (setBer((Set.univ : Set ι), p).real (A ∩ B)))) :
+    setBer((Set.univ : Set ι), p).real A *
+        setBer((Set.univ : Set ι), p).real B ≤
+      setBer((Set.univ : Set ι), p).real (A ∩ B) := by
+  exact mul_le_of_tendsto_atTop_of_forall_le hXtend hYtend hXYtend fun n ↦
+    setBernoulli_integral_fkg_of_dependsOnFunction p
+      (hXinc n).observableOfFiniteTrace (hYinc n).observableOfFiniteTrace
+      (dependsOnFunction_observableOfFiniteTrace (EX n) (X n))
+      (dependsOnFunction_observableOfFiniteTrace (EY n) (Y n))
 
 /-- If finite-measure events converge in symmetric-difference measure, their real probabilities
 converge. This is the measure-continuity input used to turn finite-support approximations into

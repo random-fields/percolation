@@ -10,6 +10,7 @@ import Percolation.Bernoulli.FKG
 import Percolation.Bernoulli.FKGInfinite
 import Percolation.Bernoulli.Reliability
 import Percolation.Bernoulli.Russo
+import Percolation.Bernoulli.Sprinkling
 import Percolation.Critical.Basic
 import Percolation.Critical.VertexIndependence
 import Percolation.Planar.Basic

@@ -836,6 +836,18 @@ Dated milestones and anti-library notes.
     on the support, with the log-ratio antitonicity corollary at measure level and on the
     cubic lattice. Standard axioms only.
 
+75. **Sprinkling inequality (2026-07-04).** Added
+    `Percolation/Bernoulli/Sprinkling.lean`: Grimmett Theorem (2.45)/(2.46) for arbitrary
+    increasing measurable events over a countable index set — spheres `WithinRadius`,
+    interiors `interiorDepth` with measurability via override-map preimages, the
+    downward-witness lemma, least-code witness selection (`minimalWitness` via `Nat.sInf`),
+    the countable disjoint witness partition with block-independence factorization on the
+    coupling space (`couplingMeasure_pi_inter`), the per-witness estimate in division-free
+    ℝ≥0∞ form, and the headline
+    `IsIncreasingEvent.one_sub_setBernoulli_real_interiorDepth_le` with cubic wrapper. This
+    completes the Chapter 2 milestone plan M1–M10; stretch targets (2.28), (2.30), (2.49)
+    and the L² form of 2.4(a) remain recorded on the topic card. Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.

@@ -764,10 +764,28 @@ Dated milestones and anti-library notes.
     measurable events/integrable variables, plus the motivating application `theta_mono`.
     Standard axioms only.
 
+69. **BK inequality (2026-07-04).** Added `Percolation/Bernoulli/BK.lean`: Grimmett
+    Theorems (2.12)/(2.15) and the iterated inequality (2.14) by the faithful van den Berg
+    two-copy method — the doubled cube on `ι ⊕ ι`, the interpolated events `bkEvent S`
+    reading Grimmett's `B'_k` through the mixed projection `bkMixRead`, the coordinate swap
+    `bkSwap` with the C₁/C₂′/C₂″ collision analysis
+    (`bkEvent_swap_collision`, `finiteBernoulliProbability_bkEvent_le_insert`), and the
+    endpoint factorizations. Disjoint occurrence is provided in both the general `Forces`
+    form and the open-witness form, proved equal for increasing events; measure-level
+    statements `setBernoulli_real_disjointOccurrence_le_mul` (+ `Forces` variant, cubic
+    wrapper, and the k-fold `FiniteDisjointOccurrence` product bound). Reimer's Theorem
+    (2.19) is recorded on the topic card as a rejected anti-target with the citation, per
+    the book (stated there without proof). Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.
 
 ## Anti-Library
 
-Nothing rejected yet. Record false starts here with the lesson learned.
+- **Reimer's inequality (Grimmett Thm. (2.19), p. 39).** Rejected as a formalization
+  target (2026-07-04): the source states it without proof, citing Reimer (1997), and no
+  Chapter 2–11 result needs it — the increasing-event case is exactly the BK inequality,
+  and the `A □ B = A ∘ B` reduction for increasing events is proved
+  (`disjointOccurrence_eq_openWitnessDisjointOccurrence`). Lesson: when the book itself
+  defers a proof, record an anti-target instead of importing research-level scope.

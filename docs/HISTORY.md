@@ -788,6 +788,22 @@ Dated milestones and anti-library notes.
     `d/dp E_p(X) = Σ_e E_p(δ_e X)` (finite and measure level); and the second-derivative
     double-sum form of (2.33) with the diagonal-vanishing lemma. Standard axioms only.
 
+71. **General FKG inequality (2026-07-04).** Added
+    `Percolation/Bernoulli/FKGInfinite.lean`: Grimmett Theorem (2.4b) for arbitrary
+    increasing measurable events, `setBernoulli_real_fkg`, with decreasing, mixed and
+    iterated (2.7) corollaries and cubic wrappers. Proof by measure-density approximation
+    (recorded divergence from the book's martingale route, statements unchanged and valid
+    without countability): the finitely supported events form a set algebra generating the
+    ambient σ-algebra (`measurableSpace_eq_generateFrom_finiteSupportEvents`, via the
+    coordinate-evaluation `iSup` and propext), Mathlib's
+    `MeasureDense.of_generateFrom_isSetAlgebra_finite` gives `ε`-approximation, disjoint
+    coordinate blocks are independent (`indep_generateFrom_coordinateEvents`), the splice
+    factorization `setBernoulli_real_inter_finiteCylinder` and decomposition
+    `setBernoulli_real_eq_sum_splice` realize conditioning on a finite trace, and the slice
+    probability `sliceProbability` (tower identity, exactness on supported events, pointwise
+    `L¹` contraction, monotone in the configuration) reduces the general inequality to the
+    finite FKG of `FKG.lean` plus an `ε → 0` limit. Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.

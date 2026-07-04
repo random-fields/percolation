@@ -816,6 +816,26 @@ Dated milestones and anti-library notes.
     `cubicCriticalProbabilityFrom_eq`. Also registered the global
     `IsProbabilityMeasure (bernoulliBondMeasure d p)` instance. Standard axioms only.
 
+73. **Disjoint open connections (2.17) (2026-07-04).** Added
+    `Percolation/Bernoulli/DisjointConnections.lean`: truncated connection events
+    `connectionEventIn` (increasing, supported on their edge set), the witness inclusion of
+    pairwise edge-disjoint open walks into the iterated disjoint occurrence, exhaustion of
+    the full disjoint-occurrence event by the directed family of finite supports, and
+    continuity from below (`Directed.measure_iUnion`) combined with the iterated BK bound,
+    giving `bernoulliBondMeasure_real_existsPairwiseDisjointOpenWalks_le_prod`. Standard
+    axioms only.
+
+74. **Reliability inequalities (2026-07-04).** Added
+    `Percolation/Bernoulli/Reliability.lean`: Grimmett §2.5. Theorem (2.34) — the
+    covariance derivative identity `d/dp P_p(A) = cov(N, 1_A)/(p(1−p))` for arbitrary
+    finitely supported events, by differentiating the Bernoulli weights
+    (`hasDerivAt_finiteBernoulliWeight`), with measure-level and cubic forms; Theorem
+    (2.36)(a) via finite Cauchy–Schwarz and the binomial moments `E N = mp`,
+    `Var N = mp(1−p)`; (2.36)(b) via (2.41) and finite FKG on `N − 1_A`; the scalar
+    inequality (2.44) by rpow calculus; and Theorem (2.38) — `h(p^γ) ≤ h(p)^γ` by induction
+    on the support, with the log-ratio antitonicity corollary at measure level and on the
+    cubic lattice. Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.

@@ -4,9 +4,11 @@ import Percolation.Bernoulli.Basic
 import Percolation.Bernoulli.Increasing
 import Percolation.Bernoulli.BK
 import Percolation.Bernoulli.Coupling
+import Percolation.Bernoulli.DisjointConnections
 import Percolation.Bernoulli.FiniteCube
 import Percolation.Bernoulli.FKG
 import Percolation.Bernoulli.FKGInfinite
+import Percolation.Bernoulli.Reliability
 import Percolation.Bernoulli.Russo
 import Percolation.Critical.Basic
 import Percolation.Critical.VertexIndependence

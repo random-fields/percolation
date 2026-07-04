@@ -9,6 +9,7 @@ import Percolation.Bernoulli.FKG
 import Percolation.Bernoulli.FKGInfinite
 import Percolation.Bernoulli.Russo
 import Percolation.Critical.Basic
+import Percolation.Critical.VertexIndependence
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls
 import Percolation.RandomCluster.Basic

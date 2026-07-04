@@ -804,6 +804,18 @@ Dated milestones and anti-library notes.
     `L¹` contraction, monotone in the configuration) reduces the general inequality to the
     finite FKG of `FKG.lean` plus an `ε → 0` limit. Standard axioms only.
 
+72. **Vertex-independence of `p_c` (2026-07-04).** Added
+    `Percolation/Critical/VertexIndependence.lean`: Grimmett Theorem (2.8) for cubic bond
+    percolation. Vertex-rooted `thetaFrom`/`cubicCriticalProbabilityFrom`; measurability of
+    the vertex-rooted infinite-cluster and two-point connection events by reindexing lattice
+    walks with their direction words (`exists_cubicWalkFrom_copy_eq`); lattice connectivity
+    `nonempty_cubicWalk` by coordinatewise descent on the Manhattan distance; positivity of
+    connections through `Walk.toPath`; the FKG surgery step
+    `P_p(y ↔ x)·θ(p,x) ≤ θ(p,y)` via the general `bernoulliBondMeasure_real_fkg`; vanishing
+    of `θ(p,·)` at `p = 0`; and the zero-set identification giving
+    `cubicCriticalProbabilityFrom_eq`. Also registered the global
+    `IsProbabilityMeasure (bernoulliBondMeasure d p)` instance. Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.

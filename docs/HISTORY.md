@@ -751,6 +751,19 @@ Dated milestones and anti-library notes.
     from the book's coordinate induction recorded on the topic card. All headline
     declarations use only the three standard axioms.
 
+68. **Uniform coupling and Theorem 2.1 (2026-07-03).** Added
+    `Percolation/Bernoulli/Coupling.lean`: Grimmett's i.i.d.-uniform coupling
+    (`couplingMeasure` on `ι → ℝ` via `Measure.infinitePi` of `volume.restrict (Icc 0 1)`),
+    threshold configurations `thresholdConfiguration p = {e | X e < p}` monotone in `p`,
+    and the marginal-law identification
+    `couplingMeasure_map_thresholdConfiguration : map η_p = setBer(univ, p)` (single
+    coordinate law computed by hand on `Prop`, coordinatewise product via
+    `Measure.infinitePi_map_pi`). Theorem (2.1) follows in both forms —
+    `IsIncreasingEvent.setBernoulli_real_mono` and
+    `IsIncreasingRandomVariable.setBernoulli_integral_mono` — for all increasing
+    measurable events/integrable variables, plus the motivating application `theta_mono`.
+    Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.

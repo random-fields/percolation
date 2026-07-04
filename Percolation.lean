@@ -6,6 +6,7 @@ import Percolation.Bernoulli.BK
 import Percolation.Bernoulli.Coupling
 import Percolation.Bernoulli.FiniteCube
 import Percolation.Bernoulli.FKG
+import Percolation.Bernoulli.Russo
 import Percolation.Critical.Basic
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls

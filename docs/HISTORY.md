@@ -777,6 +777,17 @@ Dated milestones and anti-library notes.
     (2.19) is recorded on the topic card as a rejected anti-target with the citation, per
     the book (stated there without proof). Standard axioms only.
 
+70. **Russo's formula (2026-07-04).** Added `Percolation/Bernoulli/Russo.lean`: pivotal
+    coordinates (`IsPivotal`, trace analogue, pivotal counts) and Grimmett §2.4 — the
+    finite Russo derivative in both the `Σ_e P_p(e pivotal)` form (2.27) and the
+    `E_p(N(A))` form (2.26) by induction on the support with the one-coordinate insert
+    split; the measure-level Theorem (2.25)
+    `IsIncreasingEvent.hasDerivAt_setBernoulli_real` through the projIcc-clamped density
+    with cubic wrapper; corollary (2.29) `P(A ∩ {e piv}) = p·P(e piv)`; the growth bound
+    (2.31) `P_{p₂}(A) ≤ (p₂/p₁)^{|E|} P_{p₁}(A)`; Theorem (2.32)
+    `d/dp E_p(X) = Σ_e E_p(δ_e X)` (finite and measure level); and the second-derivative
+    double-sum form of (2.33) with the diagonal-vanishing lemma. Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.

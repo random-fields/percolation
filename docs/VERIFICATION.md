@@ -9,7 +9,7 @@ This is the human-readable comparator surface. Each row should eventually cite a
 |---|---|---|---|
 | Base graph/lattice | vertices and nearest-neighbor bonds | `Percolation.BaseGraph`, production `Percolation.cubicGraph` | Grimmett P Ch. 1 |
 | Bond configuration | each edge is open or closed | `Percolation.BondConfiguration` | P Ch. 1.3 |
-| Increasing event | event preserved when more edges are opened | `Percolation.IncreasingEvent` | P Ch. 2.1; RC Ch. 2 |
+| Increasing event | event preserved when more edges are opened | `Percolation.IsIncreasingEvent` (production, on `Set ι`), legacy scaffold `Percolation.IncreasingEvent` | P Ch. 2.1; RC Ch. 2 |
 | Open connection | vertices joined by an open path | `Percolation.walkIsOpen`, `Percolation.hasOpenPathOfLengthAtLeast`, `Percolation.hasOpenPathOfLengthAtLeastFrom` | P Ch. 1 |
 | Open cluster | connected component of open graph containing a vertex; infinite origin cluster event | `Percolation.openCluster`, `Percolation.cubicOpenCluster`, `Percolation.cubicOpenClusterFrom`, `Percolation.hasInfiniteOpenCluster`, `Percolation.hasInfiniteOpenClusterFrom` | P Ch. 1 |
 | Self-avoiding walk count | Grimmett's `σ(n)` as finite signed-direction words | `Percolation.SelfAvoidingWalk`, `Percolation.selfAvoidingWalkCount` | P Ch. 1.4 |
@@ -22,6 +22,7 @@ This is the human-readable comparator surface. Each row should eventually cite a
 
 | Status | Claim | Lean name | Source | Comparator note |
 |---|---|---|---|---|
+| proved | increasing-event vocabulary and finite-support transfer pack | `Percolation.IsIncreasingEvent`, `Percolation.IsDecreasingEvent`, `Percolation.IsIncreasingRandomVariable`, `Percolation.DependsOn`, `Percolation.DependsOnFun`, `Percolation.finiteBernoulliExpectation`, `Percolation.finiteBernoulliProbability`, `Percolation.finiteCylinder`, `Percolation.DependsOn.measurableSet`, `Percolation.DependsOn.setBernoulli_real_eq_finiteBernoulliProbability`, `Percolation.DependsOnFun.integral_setBernoulli` | `grimmett-percolation-1999`, Ch. 2 §2.1, pp. 32–33 | events on `Set ι` ordered by `⊆`; a finitely supported event is a finite disjoint union of cylinders, hence measurable, and its ambient probability/expectation equals the finite-cube weighted powerset sum; this is the shared substrate for FKG/BK/Russo/reliability below |
 | target | FKG inequality for increasing events in Bernoulli percolation | TBD | P Ch. 2.2 | finite product-space theorem first |
 | target | BK/Reimer inequality | TBD | P Ch. 2.3 | likely deep; isolate finite statement |
 | target | Russo's formula | TBD | P Ch. 2.4 | pivotal-edge encoding is central |

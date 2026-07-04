@@ -720,6 +720,22 @@ Dated milestones and anti-library notes.
     percolation probability now matches the textbook definition while retaining the existing
     Grimmett path-counting estimates.
 
+66. **Chapter 2 vocabulary and finite-cube transfer pack (2026-07-03).** Started the fresh
+    Chapter 2 formalization on `codex/grimmett-chapter-2-followup`. Added
+    `Percolation/Bernoulli/Increasing.lean` with the §2.1 vocabulary on `Set ι`
+    configurations (`IsIncreasingEvent`, `IsDecreasingEvent`, `IsIncreasingRandomVariable`,
+    `DependsOn`, `DependsOnFun`, `restrictTo`, `spliceOn`) and
+    `Percolation/Bernoulli/FiniteCube.lean` with the finite cube model
+    (`finiteBernoulliWeight`/`finiteBernoulliWeightFamily`, `finiteBernoulliExpectation`,
+    `finiteBernoulliProbability`, `finiteCylinder`, `eventTrace`) and the transfer pack:
+    finitely supported events are finite disjoint unions of cylinders, hence measurable
+    (`DependsOn.measurableSet`), and ambient `setBernoulli` probabilities/integrals equal the
+    finite-cube weighted powerset sums
+    (`DependsOn.setBernoulli_real_eq_finiteBernoulliProbability`,
+    `DependsOnFun.integral_setBernoulli`). All headline declarations use only the three
+    standard axioms. This is the shared substrate for FKG, BK, Russo, and the reliability
+    inequalities.
+
 ## Axiom Ledger
 
 Empty.

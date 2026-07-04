@@ -736,6 +736,21 @@ Dated milestones and anti-library notes.
     standard axioms. This is the shared substrate for FKG, BK, Russo, and the reliability
     inequalities.
 
+67. **Finite-support FKG inequality (2026-07-03).** Added
+    `Percolation/Bernoulli/FKG.lean`: Grimmett Theorem (2.4) restricted to finite supports,
+    with the finite core `finiteBernoulliExpectation_mul_fkg` proved by bridging to
+    Mathlib's Ahlswede–Daykin `Finset.four_functions_theorem` on the powerset algebra —
+    the Bernoulli weight is log-supermodular with equality
+    (`finiteBernoulliWeight_mul_weight`). Sign hypotheses are removed by shifting at `∅`
+    (`finiteBernoulliExpectation_mul_fkg_of_monotone`); indicators give the event form
+    `finiteBernoulliProbability_fkg` with decreasing and mixed-monotonicity variants; the
+    transfer pack lifts everything to `setBer(univ, p)`
+    (`setBernoulli_real_fkg_of_dependsOn` and friends), including the iterated corollary
+    (2.7) `setBernoulli_prod_le_real_biInter_fkg`, the observable form
+    `setBernoulli_integral_fkg_of_dependsOnFun`, and cubic-lattice wrappers. Divergence
+    from the book's coordinate induction recorded on the topic card. All headline
+    declarations use only the three standard axioms.
+
 ## Axiom Ledger
 
 Empty.

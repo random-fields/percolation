@@ -10,10 +10,10 @@ this into page-anchored JSON in `kg/derived/`.
 | P1 | Ch. 1.3 | Bond percolation on a graph/lattice; edge configurations | Core/Bernoulli | partial: graphs/probability exist, percolation API absent |
 | P2 | Ch. 1.4 | Critical probability and percolation probability | Critical | absent |
 | P3 | Ch. 1.6 | Site percolation and bond-to-site transformation | Core/Bernoulli | absent |
-| P4 | Ch. 2.1 | Increasing events and stochastic order | Bernoulli | partial: order APIs exist |
-| P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | partial: finite products/order likely reusable |
-| P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | absent/deep |
-| P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | absent |
+| P4 | Ch. 2.1 | Increasing events and stochastic order | Bernoulli | **proved**: `IsIncreasingEvent`/`DependsOn` vocabulary, finite-cube transfer pack, Thm 2.1 via the uniform coupling (`Increasing.lean`, `FiniteCube.lean`, `Coupling.lean`) |
+| P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | **proved**: finite-support FKG via four functions theorem (`FKG.lean`) and general increasing measurable events via measure-density approximation (`FKGInfinite.lean`); Thm 2.8 in `Critical/VertexIndependence.lean` |
+| P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | **proved**: BK 2.12/2.14/2.15 by the two-copy method (`BK.lean`), limit form (2.17) (`DisjointConnections.lean`); Reimer 2.19 recorded as anti-target |
+| P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | **proved**: Thm 2.25 + (2.29)/(2.31)/2.32/(2.33) (`Russo.lean`); §2.5 reliability inequalities 2.34/2.36/2.38 (`Reliability.lean`); §2.6 sprinkling 2.45 in progress |
 | P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |
 | P9 | Ch. 4 | Number of open clusters per vertex | Critical | absent |
 | P10 | Ch. 5 | Menshikov/Aizenman-Barsky subcritical threshold methods | Critical | absent/deep |

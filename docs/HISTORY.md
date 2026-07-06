@@ -857,6 +857,19 @@ Dated milestones and anti-library notes.
     paragraph following Theorem 2.16: decreasing events are positively correlated with
     each other, while increasing and decreasing events are negatively correlated.
 
+78. **Random-cluster tilted measures and covariance decomposition (2026-07-06).**
+    Added `MonotonicMeasures.Tilt` for the one-parameter finite tilted family
+    `FiniteCubeMeasure.tilt` from RC Eq. 2.42, with density factor
+    `FiniteCubeMeasure.tiltWeight` and normalizer `FiniteCubeMeasure.tiltZ`. Proved
+    `FiniteCubeMeasure.tiltZ_pos`, `FiniteCubeMeasure.tilt_expect`,
+    `FiniteCubeMeasure.tilt_strictPositive_iff`,
+    `FiniteCubeMeasure.fkgLatticeCondition_tilt`, and
+    `FiniteCubeMeasure.monotonicMeasure_tilt_of_monotonicMeasure`. Also added the
+    coordinate indicators `FiniteCubeMeasure.edgeIndicator`, the open-count observable
+    `FiniteCubeMeasure.openCountRV`, and the covariance decomposition
+    `FiniteCubeMeasure.tilt_covariance_openCountRV_eq_sum` corresponding to RC Eq.
+    2.45. The derivative formula in RC Theorem 2.43 remains future calculus work.
+
 ## Axiom Ledger
 
 Empty.

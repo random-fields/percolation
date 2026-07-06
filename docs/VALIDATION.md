@@ -40,6 +40,9 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   cancellation step for the non-comparable Hamming-distance induction in RC Theorem 2.3.
 - **[done]** Complement-dual finite-cube measures and the left-side distance-decreasing
   Hamming induction branch for RC Theorem 2.3.
+- **[done]** One-parameter tilted finite-cube measures for RC Eq. 2.42, including
+  strict-positivity preservation, FKG-lattice preservation, monotonicity preservation,
+  and the covariance decomposition RC Eq. 2.45.
 - **[target]** Russo's formula for finite edge sets and increasing events.
 - **[target]** Coupling monotonicity in `p` for Bernoulli percolation.
 - **[target]** Random-cluster FKG for `q ≥ 1` on finite graphs.

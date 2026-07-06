@@ -144,6 +144,36 @@ theorem expect_neg (μ : FiniteCubeMeasure ι) (X : Set ι → ℝ) :
     μ.expect (fun ω => -X ω) = -μ.expect X := by
   simpa using expect_const_mul μ (-1) X
 
+theorem expect_finset_sum {α : Type*} (μ : FiniteCubeMeasure ι) (s : Finset α)
+    (X : α → Set ι → ℝ) :
+    μ.expect (fun ω => s.sum fun a => X a ω) = s.sum fun a => μ.expect (X a) := by
+  rw [expect]
+  calc
+    (∑ ω : Set ι, μ ω * s.sum (fun a => X a ω))
+        = ∑ ω : Set ι, s.sum fun a => μ ω * X a ω := by
+            exact Finset.sum_congr rfl fun ω _ => by rw [Finset.mul_sum]
+    _ = s.sum (fun a => ∑ ω : Set ι, μ ω * X a ω) := by
+            rw [Finset.sum_comm]
+    _ = s.sum fun a => μ.expect (X a) := by
+            exact Finset.sum_congr rfl fun _ _ => rfl
+
+theorem expect_sum {α : Type*} [Fintype α] (μ : FiniteCubeMeasure ι)
+    (X : α → Set ι → ℝ) :
+    μ.expect (fun ω => ∑ a : α, X a ω) = ∑ a : α, μ.expect (X a) := by
+  simpa using expect_finset_sum μ Finset.univ X
+
+theorem covariance_sum_left {α : Type*} [Fintype α] (μ : FiniteCubeMeasure ι)
+    (X : α → Set ι → ℝ) (Y : Set ι → ℝ) :
+    μ.covariance (fun ω => ∑ a : α, X a ω) Y =
+      ∑ a : α, μ.covariance (X a) Y := by
+  rw [covariance]
+  have hmul : (fun ω => (∑ a : α, X a ω) * Y ω) =
+      fun ω => ∑ a : α, X a ω * Y ω := by
+    funext ω
+    rw [Finset.sum_mul]
+  rw [hmul, expect_sum, expect_sum]
+  simp [covariance, Finset.sum_sub_distrib, Finset.sum_mul]
+
 theorem expect_sub_const (μ : FiniteCubeMeasure ι) (X : Set ι → ℝ) (c : ℝ) :
     μ.expect (fun ω => X ω - c) = μ.expect X - c := by
   have hfun : (fun ω => X ω - c) = fun ω => X ω + (fun _ => -c) ω := by

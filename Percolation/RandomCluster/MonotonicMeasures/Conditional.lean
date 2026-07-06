@@ -365,6 +365,14 @@ def OneMonotonicMeasure (μ : FiniteCubeMeasure ι) : Prop :=
       ξ ⊆ ζ → stochLE (conditionOn μ ({e} : Set ι) ξ hξ)
         (conditionOn μ ({e} : Set ι) ζ hζ)
 
+/-- The local Hamming-two FKG inequalities appearing in Theorem 2.19, restricted to
+opposite corners of coordinate squares. -/
+def LocalTwoCoordinateFKG (μ : FiniteCubeMeasure ι) : Prop :=
+  ∀ e f : ι, ∀ ω : Set ι,
+    μ (forceOpen e (forceClosed f ω)) * μ (forceClosed e (forceOpen f ω)) ≤
+      μ (forceOpen e (forceClosed f ω) ∩ forceClosed e (forceOpen f ω)) *
+        μ (forceOpen e (forceClosed f ω) ∪ forceClosed e (forceOpen f ω))
+
 theorem fkgLatticeCondition_conditionOn (μ : FiniteCubeMeasure ι)
     (hFKG : FKGLatticeCondition μ) (F : Set ι) (ξ : Set ι)
     (hden : 0 < conditionDenom μ F ξ) :
@@ -506,6 +514,34 @@ theorem localTwoCoordinateFKG_le_of_oneMonotonicMeasure (μ : FiniteCubeMeasure 
         μ (forceOpen e (forceClosed f ω) ∪ forceClosed e (forceOpen f ω)) := by
   rw [forceOpenClosed_inter_forceClosedOpen, forceOpenClosed_union_forceClosedOpen]
   simpa [mul_comm] using twoCoordinateCross_le_of_oneMonotonicMeasure μ hμ hmono e f ω
+
+/-- The local FKG predicate is equivalent to the cross form after rewriting meet and join. -/
+theorem localTwoCoordinateFKG_iff_cross (μ : FiniteCubeMeasure ι) :
+    LocalTwoCoordinateFKG μ ↔
+      ∀ e f : ι, ∀ ω : Set ι,
+        μ (forceOpen e (forceClosed f ω)) * μ (forceClosed e (forceOpen f ω)) ≤
+          μ (forceOpen e (forceOpen f ω)) * μ (forceClosed e (forceClosed f ω)) := by
+  constructor
+  · intro hlocal e f ω
+    have h := hlocal e f ω
+    rw [forceOpenClosed_inter_forceClosedOpen, forceOpenClosed_union_forceClosedOpen] at h
+    simpa [mul_comm] using h
+  · intro hcross e f ω
+    rw [forceOpenClosed_inter_forceClosedOpen, forceOpenClosed_union_forceClosedOpen]
+    simpa [mul_comm] using hcross e f ω
+
+/-- Full FKG lattice condition implies the local two-coordinate FKG condition. -/
+theorem localTwoCoordinateFKG_of_fkgLatticeCondition (μ : FiniteCubeMeasure ι)
+    (hFKG : FKGLatticeCondition μ) : LocalTwoCoordinateFKG μ := by
+  intro e f ω
+  exact hFKG (forceOpen e (forceClosed f ω)) (forceClosed e (forceOpen f ω))
+
+/-- A strictly positive 1-monotonic measure satisfies the local two-coordinate FKG condition. -/
+theorem localTwoCoordinateFKG_of_oneMonotonicMeasure (μ : FiniteCubeMeasure ι)
+    (hμ : μ.StrictPositive) (hmono : OneMonotonicMeasure μ) :
+    LocalTwoCoordinateFKG μ := by
+  intro e f ω
+  exact localTwoCoordinateFKG_le_of_oneMonotonicMeasure μ hμ hmono e f ω
 
 /-- The `(b) => (a)` implication in Theorem 2.24. -/
 theorem stronglyPositivelyAssociated_of_fkgLatticeCondition (μ : FiniteCubeMeasure ι)

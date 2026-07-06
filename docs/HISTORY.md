@@ -771,6 +771,15 @@ Dated milestones and anti-library notes.
     Hamming-two pair. This is the local-pair shape used by Theorem 2.19; the global
     induction/reduction of Theorem 2.3 is still future work.
 
+71. **Random-cluster local FKG predicate package (2026-07-06).** Added the named
+    predicate `FiniteCubeMeasure.LocalTwoCoordinateFKG`, its cross-form equivalence
+    `FiniteCubeMeasure.localTwoCoordinateFKG_iff_cross`, and bridge theorems from both
+    the full FKG lattice condition and strict positive 1-monotonicity:
+    `FiniteCubeMeasure.localTwoCoordinateFKG_of_fkgLatticeCondition` and
+    `FiniteCubeMeasure.localTwoCoordinateFKG_of_oneMonotonicMeasure`. This packages the
+    local-pair target needed for Theorem 2.19, while leaving the global local Holley
+    criterion induction of Theorem 2.3 as the remaining hard step.
+
 ## Axiom Ledger
 
 Empty.

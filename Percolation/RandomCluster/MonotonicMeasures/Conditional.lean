@@ -168,6 +168,86 @@ def forceOpen (e : ι) (ω : Set ι) : Set ι :=
 def forceClosed (e : ι) (ω : Set ι) : Set ι :=
   ω \ {e}
 
+/-- Coordinates open in `ω` and closed in `η`. -/
+noncomputable def openClosedDisagreeFinset (ω η : Set ι) : Finset ι := by
+  classical
+  exact Finset.univ.filter fun e => e ∈ ω ∧ e ∉ η
+
+/-- Coordinates closed in `ω` and open in `η`. -/
+noncomputable def closedOpenDisagreeFinset (ω η : Set ι) : Finset ι := by
+  classical
+  exact Finset.univ.filter fun e => e ∉ ω ∧ e ∈ η
+
+/-- Hamming distance between two finite-cube configurations. -/
+noncomputable def hammingDistance (ω η : Set ι) : ℕ :=
+  (openClosedDisagreeFinset ω η).card + (closedOpenDisagreeFinset ω η).card
+
+theorem mem_openClosedDisagreeFinset (e : ι) (ω η : Set ι) :
+    e ∈ openClosedDisagreeFinset ω η ↔ e ∈ ω ∧ e ∉ η := by
+  classical
+  simp [openClosedDisagreeFinset]
+
+theorem mem_closedOpenDisagreeFinset (e : ι) (ω η : Set ι) :
+    e ∈ closedOpenDisagreeFinset ω η ↔ e ∉ ω ∧ e ∈ η := by
+  classical
+  simp [closedOpenDisagreeFinset]
+
+theorem disjoint_openClosed_closedOpenDisagreeFinset (ω η : Set ι) :
+    Disjoint (openClosedDisagreeFinset ω η) (closedOpenDisagreeFinset ω η) := by
+  classical
+  rw [Finset.disjoint_left]
+  intro e he₁ he₂
+  rw [mem_openClosedDisagreeFinset] at he₁
+  rw [mem_closedOpenDisagreeFinset] at he₂
+  exact he₂.1 he₁.1
+
+theorem hammingDistance_comm (ω η : Set ι) :
+    hammingDistance ω η = hammingDistance η ω := by
+  classical
+  have h₁ : openClosedDisagreeFinset ω η = closedOpenDisagreeFinset η ω := by
+    ext e
+    simp [openClosedDisagreeFinset, closedOpenDisagreeFinset, and_comm]
+  have h₂ : closedOpenDisagreeFinset ω η = openClosedDisagreeFinset η ω := by
+    ext e
+    simp [openClosedDisagreeFinset, closedOpenDisagreeFinset, and_comm]
+  simp [hammingDistance, h₁, h₂, Nat.add_comm]
+
+theorem hammingDistance_eq_zero_iff (ω η : Set ι) :
+    hammingDistance ω η = 0 ↔ ω = η := by
+  classical
+  rw [hammingDistance, Nat.add_eq_zero_iff]
+  constructor
+  · intro h
+    ext e
+    constructor
+    · intro heω
+      by_contra heη
+      have hemem : e ∈ openClosedDisagreeFinset ω η := by
+        rw [mem_openClosedDisagreeFinset]
+        exact ⟨heω, heη⟩
+      have hcard : (openClosedDisagreeFinset ω η).card = 0 := h.1
+      have hfin : openClosedDisagreeFinset ω η = ∅ := Finset.card_eq_zero.mp hcard
+      rw [hfin] at hemem
+      simp at hemem
+    · intro heη
+      by_contra heω
+      have hemem : e ∈ closedOpenDisagreeFinset ω η := by
+        rw [mem_closedOpenDisagreeFinset]
+        exact ⟨heω, heη⟩
+      have hcard : (closedOpenDisagreeFinset ω η).card = 0 := h.2
+      have hfin : closedOpenDisagreeFinset ω η = ∅ := Finset.card_eq_zero.mp hcard
+      rw [hfin] at hemem
+      simp at hemem
+  · intro h
+    subst h
+    constructor
+    · apply Finset.card_eq_zero.mpr
+      ext e
+      simp [mem_openClosedDisagreeFinset]
+    · apply Finset.card_eq_zero.mpr
+      ext e
+      simp [mem_closedOpenDisagreeFinset]
+
 /-- The event that a conditional coordinate is open. -/
 def coordOpenEvent {F : Set ι} (eF : ConditionCoord F) :
     Set (Set (ConditionCoord F)) :=
@@ -387,6 +467,15 @@ def LocalHolleyTwoCondition (μ ν : FiniteCubeMeasure ι) : Prop :=
 /-- The local hypotheses of the finite local Holley criterion, Theorem 2.3. -/
 def LocalHolleyCondition (μ ν : FiniteCubeMeasure ι) : Prop :=
   LocalHolleyOneCondition μ ν ∧ LocalHolleyTwoCondition μ ν
+
+/-- The pointwise Holley inequality for a fixed pair of configurations. -/
+def HolleyInequalityAt (μ ν : FiniteCubeMeasure ι) (ω η : Set ι) : Prop :=
+  μ ω * ν η ≤ μ (ω ∩ η) * ν (ω ∪ η)
+
+/-- Global Holley is the assertion of the pointwise Holley inequality for all pairs. -/
+theorem holleyCondition_iff_forall_holleyInequalityAt (μ ν : FiniteCubeMeasure ι) :
+    HolleyCondition μ ν ↔ ∀ ω η : Set ι, HolleyInequalityAt μ ν ω η :=
+  Iff.rfl
 
 /-- The local Hamming-two FKG inequalities appearing in Theorem 2.19, restricted to
 opposite corners of coordinate squares. -/
@@ -638,6 +727,44 @@ theorem holleyCondition_of_localHolleyCondition_of_comparable
       aesop
     rw [hinter, hunion]
     exact localHolleyOneCondition_le_of_subset μ ν hν hlocal.1 hηω
+
+/-- The algebraic cancellation step in Grimmett's Hamming-distance induction for
+Theorem 2.3. The two hypotheses are the two smaller Holley inequalities used in the
+displayed multiplication in the proof. -/
+theorem holleyInductionStep_mul_cancel (μ ν : FiniteCubeMeasure ι)
+    {x y middle bridge bottom top : Set ι}
+    (hμmiddle : 0 < μ middle) (hνbridge : 0 < ν bridge)
+    (h₁ : μ y * ν bridge ≤ μ middle * ν top)
+    (h₂ : μ middle * ν x ≤ μ bottom * ν bridge) :
+    μ y * ν x ≤ μ bottom * ν top := by
+  have hmul := mul_le_mul h₁ h₂
+    (mul_nonneg (μ.nonneg middle) (ν.nonneg x))
+    (mul_nonneg (μ.nonneg middle) (ν.nonneg top))
+  have hfactor : (μ middle * ν bridge) * (μ y * ν x) ≤
+      (μ middle * ν bridge) * (μ bottom * ν top) := by
+    calc
+      (μ middle * ν bridge) * (μ y * ν x)
+          = μ y * ν bridge * (μ middle * ν x) := by ring
+      _ ≤ μ middle * ν top * (μ bottom * ν bridge) := hmul
+      _ = (μ middle * ν bridge) * (μ bottom * ν top) := by ring
+  exact le_of_mul_le_mul_left hfactor (mul_pos hμmiddle hνbridge)
+
+/-- A set-rewriting wrapper around `holleyInductionStep_mul_cancel`: if the two smaller
+pointwise Holley inequalities have the meet/join shapes used in the induction, then the
+next crossed pair follows. -/
+theorem holleyInductionStep_of_holleyInequalityAt (μ ν : FiniteCubeMeasure ι)
+    {x y middle bridge bottom top : Set ι}
+    (hμmiddle : 0 < μ middle) (hνbridge : 0 < ν bridge)
+    (h₁ : HolleyInequalityAt μ ν y bridge)
+    (h₂ : HolleyInequalityAt μ ν middle x)
+    (hyb_inter : y ∩ bridge = middle) (hyb_union : y ∪ bridge = top)
+    (hmx_inter : middle ∩ x = bottom) (hmx_union : middle ∪ x = bridge) :
+    μ y * ν x ≤ μ bottom * ν top := by
+  have h₁' : μ y * ν bridge ≤ μ middle * ν top := by
+    simpa [HolleyInequalityAt, hyb_inter, hyb_union] using h₁
+  have h₂' : μ middle * ν x ≤ μ bottom * ν bridge := by
+    simpa [HolleyInequalityAt, hmx_inter, hmx_union] using h₂
+  exact holleyInductionStep_mul_cancel μ ν hμmiddle hνbridge h₁' h₂'
 
 /-- The reverse direction of Theorem 2.6, reduced to the local hypotheses of
 Theorem 2.3: the one-point conditional inequalities imply (2.4) and (2.5). -/

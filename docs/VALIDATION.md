@@ -32,6 +32,8 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
 - **[done]** Reverse-local scaffolding for RC Theorem 2.3 and Theorem 2.6: comparable-pair
   Holley inequalities from one-edge local Holley, opposite-corner Holley from two-edge
   local Holley, and one-point conditional domination implies the local Holley hypotheses.
+- **[done]** Hamming-distance/disagreement finset infrastructure and the algebraic
+  cancellation step for the non-comparable Hamming-distance induction in RC Theorem 2.3.
 - **[target]** Russo's formula for finite edge sets and increasing events.
 - **[target]** Coupling monotonicity in `p` for Bernoulli percolation.
 - **[target]** Random-cluster FKG for `q ≥ 1` on finite graphs.

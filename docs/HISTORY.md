@@ -805,6 +805,21 @@ Dated milestones and anti-library notes.
     remaining Theorem 2.3 task is the non-comparable Hamming-distance induction for
     distance at least three.
 
+74. **Random-cluster Hamming induction-step scaffolding (2026-07-06).** Added
+    disagreement-coordinate finsets `FiniteCubeMeasure.openClosedDisagreeFinset` and
+    `FiniteCubeMeasure.closedOpenDisagreeFinset`, the Hamming distance
+    `FiniteCubeMeasure.hammingDistance`, and basic lemmas including
+    `FiniteCubeMeasure.hammingDistance_comm` and
+    `FiniteCubeMeasure.hammingDistance_eq_zero_iff`. Added the pointwise predicate
+    `FiniteCubeMeasure.HolleyInequalityAt` with
+    `FiniteCubeMeasure.holleyCondition_iff_forall_holleyInequalityAt`, plus the
+    source-shaped cancellation step
+    `FiniteCubeMeasure.holleyInductionStep_mul_cancel` and its meet/join wrapper
+    `FiniteCubeMeasure.holleyInductionStep_of_holleyInequalityAt`. This isolates the
+    algebraic core of Grimmett's non-comparable Hamming-distance induction; the
+    remaining work is the combinatorial construction of the intermediate
+    configurations used by that step.
+
 ## Axiom Ledger
 
 Empty.

@@ -720,6 +720,17 @@ Dated milestones and anti-library notes.
     percolation probability now matches the textbook definition while retaining the existing
     Grimmett path-counting estimates.
 
+66. **Random-cluster Chapter 2 FKG (2026-07-06).** Added
+    `Percolation/RandomCluster/MonotonicMeasures`: an abstract finite-cube probability
+    mass layer for `Set ι`, Holley's inequality (RC Theorem 2.1), and the FKG inequality
+    (RC Theorem 2.16) for strictly positive finite measures satisfying the FKG lattice
+    condition. The FKG proof follows Grimmett's tilt argument from Holley: shift the
+    second increasing observable positive, form the tilted measure, prove Holley's
+    condition from the lattice condition and monotonicity, and subtract the shift. Event
+    positive association (2.18) is available as `FiniteCubeMeasure.prob_fkg`. Public
+    theorem statements use `[Fintype ι]` without public `[DecidableEq ι]`; standard axioms
+    only.
+
 ## Axiom Ledger
 
 Empty.

@@ -5,3 +5,6 @@ import Percolation.Critical.Basic
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls
 import Percolation.RandomCluster.Basic
+import Percolation.RandomCluster.MonotonicMeasures.Basic
+import Percolation.RandomCluster.MonotonicMeasures.Holley
+import Percolation.RandomCluster.MonotonicMeasures.FKG

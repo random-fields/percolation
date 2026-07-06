@@ -17,6 +17,8 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
 - **[target]** FKG inequality for increasing events under Bernoulli product percolation.
 - **[done]** FKG inequality for finite monotonic measures satisfying the FKG lattice condition
   (RC Ch. 2.16).
+- **[done]** Conditional finite-cube monotonic-measure spine: conditionals inherit the FKG
+  lattice condition, yielding the forward implications of RC Ch. 2.24.
 - **[target]** Russo's formula for finite edge sets and increasing events.
 - **[target]** Coupling monotonicity in `p` for Bernoulli percolation.
 - **[target]** Random-cluster FKG for `q ≥ 1` on finite graphs.

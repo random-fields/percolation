@@ -731,6 +731,16 @@ Dated milestones and anti-library notes.
     theorem statements use `[Fintype ι]` without public `[DecidableEq ι]`; standard axioms
     only.
 
+67. **Random-cluster conditional monotonicity spine (2026-07-06).** Added
+    `Percolation/RandomCluster/MonotonicMeasures/Conditional.lean`, formalizing the
+    conditional subcube `Ω_F^ξ` from (2.20)-(2.21) as a finite cube over
+    `ConditionCoord F`. Proved conditionals are strictly positive under strict positivity,
+    conditionals inherit the FKG lattice condition, and FKG-lattice measures are strongly
+    positively associated and monotonic. This gives the `(b) => (a)`, `(b) => (c)`, and
+    `(c) => (d)` implications from Theorem 2.24. The converse direction through
+    1-monotonicity still depends on the local Holley and one-point conditional criteria
+    (Theorems 2.3 and 2.6) plus Theorem 2.19.
+
 ## Axiom Ledger
 
 Empty.

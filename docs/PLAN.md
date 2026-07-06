@@ -31,7 +31,7 @@ this into page-anchored JSON in `kg/derived/`.
 |---|---|---|---|---|
 | RC1 | Ch. 1.2 | Finite random-cluster measure and partition function | RandomCluster | absent |
 | RC2 | Ch. 1.4 | Edwards-Sokal coupling and Potts/Ising marginals | RandomCluster | absent |
-| RC3 | Ch. 2 | Stochastic ordering, positive association, influence, sharp thresholds | RandomCluster | partial: finite monotonic-measure Holley 2.1 and FKG 2.16 proved in `RandomCluster/MonotonicMeasures`; influence and sharp thresholds remain target |
+| RC3 | Ch. 2 | Stochastic ordering, positive association, influence, sharp thresholds | RandomCluster | partial: finite monotonic-measure Holley 2.1, FKG 2.16, and the forward conditional/monotonicity implications of 2.24 proved in `RandomCluster/MonotonicMeasures`; local criteria, influence, and sharp thresholds remain target |
 | RC4 | Ch. 3 | Conditional probabilities, comparison inequalities, series/parallel laws | RandomCluster | absent |
 | RC5 | Ch. 4 | Boundary conditions and infinite-volume weak limits | RandomCluster | absent/deep |
 | RC6 | Ch. 5 | Random-cluster phase transition and percolation probability | RandomCluster/Critical | absent/deep |

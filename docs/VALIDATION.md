@@ -29,6 +29,9 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   condition and from strict positive 1-monotonicity.
 - **[done]** Local Holley predicates for RC Theorem 2.3, with the forward implication from
   global Holley and the self-pair bridge from two-coordinate local Holley to local FKG.
+- **[done]** Reverse-local scaffolding for RC Theorem 2.3 and Theorem 2.6: comparable-pair
+  Holley inequalities from one-edge local Holley, opposite-corner Holley from two-edge
+  local Holley, and one-point conditional domination implies the local Holley hypotheses.
 - **[target]** Russo's formula for finite edge sets and increasing events.
 - **[target]** Coupling monotonicity in `p` for Bernoulli percolation.
 - **[target]** Random-cluster FKG for `q ≥ 1` on finite graphs.

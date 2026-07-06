@@ -791,6 +791,20 @@ Dated milestones and anti-library notes.
     the self-pair local Holley condition to the local FKG predicate used for Theorem
     2.19. The reverse Hamming-distance induction in Theorem 2.3 remains open.
 
+73. **Random-cluster reverse local-Holley scaffolding (2026-07-06).** Added
+    `FiniteCubeMeasure.OnePointConditionalDomination` for the one-point conditional
+    hypothesis of Theorem 2.6, proved
+    `FiniteCubeMeasure.onePointConditionalDomination_of_holleyCondition`, and proved
+    `FiniteCubeMeasure.localHolleyCondition_of_onePointConditionalDomination`, reducing
+    the reverse direction of Theorem 2.6 to the local hypotheses of Theorem 2.3. Also
+    added the comparable-pair and opposite-corner reverse-local pieces
+    `FiniteCubeMeasure.localHolleyOneCondition_closeFinset`,
+    `FiniteCubeMeasure.localHolleyOneCondition_le_of_subset`,
+    `FiniteCubeMeasure.holleyCondition_of_localHolleyCondition_of_comparable`, and
+    `FiniteCubeMeasure.holleyCondition_of_localHolleyCondition_oppositeCorners`. The
+    remaining Theorem 2.3 task is the non-comparable Hamming-distance induction for
+    distance at least three.
+
 ## Axiom Ledger
 
 Empty.

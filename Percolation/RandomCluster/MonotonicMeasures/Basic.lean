@@ -47,6 +47,29 @@ theorem IsIncreasingEvent.indicator_isIncreasingRandomVariable {A : Set (Set ι)
     · simp [Set.indicator_of_notMem hω, Set.indicator_of_mem hη]
     · simp [Set.indicator_of_notMem hω, Set.indicator_of_notMem hη]
 
+theorem IsDecreasingEvent.indicator_isDecreasingRandomVariable {A : Set (Set ι)}
+    (hA : IsDecreasingEvent A) :
+    IsDecreasingRandomVariable (fun ω => A.indicator (fun _ => (1 : ℝ)) ω) := by
+  intro ω η hηω
+  by_cases hω : ω ∈ A
+  · have hη : η ∈ A := hA hηω hω
+    simp [Set.indicator_of_mem hω, Set.indicator_of_mem hη]
+  · by_cases hη : η ∈ A
+    · simp [Set.indicator_of_notMem hω, Set.indicator_of_mem hη]
+    · simp [Set.indicator_of_notMem hω, Set.indicator_of_notMem hη]
+
+theorem IsDecreasingRandomVariable.neg_isIncreasingRandomVariable {X : Set ι → ℝ}
+    (hX : IsDecreasingRandomVariable X) :
+    IsIncreasingRandomVariable (fun ω => -X ω) := by
+  intro ω η hωη
+  simpa using neg_le_neg (hX hωη)
+
+theorem IsIncreasingRandomVariable.neg_isDecreasingRandomVariable {X : Set ι → ℝ}
+    (hX : IsIncreasingRandomVariable X) :
+    IsDecreasingRandomVariable (fun ω => -X ω) := by
+  intro ω η hηω
+  simpa using neg_le_neg (hX hηω)
+
 variable [Fintype ι]
 
 /-- A probability mass function on the finite cube `Set ι`. -/
@@ -116,6 +139,10 @@ theorem expect_const_mul (μ : FiniteCubeMeasure ι) (c : ℝ) (X : Set ι → �
     μ.expect (fun ω => c * X ω) = c * μ.expect X := by
   rw [expect, expect, Finset.mul_sum]
   exact Finset.sum_congr rfl fun _ _ => by ring
+
+theorem expect_neg (μ : FiniteCubeMeasure ι) (X : Set ι → ℝ) :
+    μ.expect (fun ω => -X ω) = -μ.expect X := by
+  simpa using expect_const_mul μ (-1) X
 
 theorem expect_sub_const (μ : FiniteCubeMeasure ι) (X : Set ι → ℝ) (c : ℝ) :
     μ.expect (fun ω => X ω - c) = μ.expect X - c := by

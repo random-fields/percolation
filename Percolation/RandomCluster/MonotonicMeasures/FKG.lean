@@ -107,6 +107,34 @@ theorem positivelyAssociated_of_fkg (μ : FiniteCubeMeasure ι) (hμ : μ.Strict
   intro X Y hX hY
   exact fkg μ hμ hFKG hX hY
 
+/-- FKG with one increasing and one decreasing observable gives the reverse inequality. -/
+theorem fkg_increasing_decreasing (μ : FiniteCubeMeasure ι) (hμ : μ.StrictPositive)
+    (hFKG : FKGLatticeCondition μ) {X Y : Set ι → ℝ}
+    (hX : IsIncreasingRandomVariable X) (hY : IsDecreasingRandomVariable Y) :
+    μ.expect (fun ω => X ω * Y ω) ≤ μ.expect X * μ.expect Y := by
+  have h := fkg μ hμ hFKG hX
+    (IsDecreasingRandomVariable.neg_isIncreasingRandomVariable hY)
+  rw [expect_neg] at h
+  have hprod : (fun ω => X ω * -Y ω) = fun ω => -(X ω * Y ω) := by
+    funext ω
+    ring
+  rw [hprod, expect_neg] at h
+  nlinarith
+
+/-- Decreasing-observable form of FKG. -/
+theorem fkg_decreasing_decreasing (μ : FiniteCubeMeasure ι) (hμ : μ.StrictPositive)
+    (hFKG : FKGLatticeCondition μ) {X Y : Set ι → ℝ}
+    (hX : IsDecreasingRandomVariable X) (hY : IsDecreasingRandomVariable Y) :
+    μ.expect X * μ.expect Y ≤ μ.expect (fun ω => X ω * Y ω) := by
+  have h := fkg μ hμ hFKG (IsDecreasingRandomVariable.neg_isIncreasingRandomVariable hX)
+    (IsDecreasingRandomVariable.neg_isIncreasingRandomVariable hY)
+  rw [expect_neg, expect_neg] at h
+  have hprod : (fun ω => -X ω * -Y ω) = fun ω => X ω * Y ω := by
+    funext ω
+    ring
+  rw [hprod] at h
+  nlinarith
+
 /-- Event form of the FKG inequality, equation (2.18). -/
 theorem prob_fkg (μ : FiniteCubeMeasure ι) (hμ : μ.StrictPositive)
     (hFKG : FKGLatticeCondition μ) {A B : Set (Set ι)}
@@ -114,6 +142,33 @@ theorem prob_fkg (μ : FiniteCubeMeasure ι) (hμ : μ.StrictPositive)
     μ.prob A * μ.prob B ≤ μ.prob (A ∩ B) := by
   have h := fkg μ hμ hFKG hA.indicator_isIncreasingRandomVariable
     hB.indicator_isIncreasingRandomVariable
+  have hmul : (fun ω => A.indicator (fun _ => (1 : ℝ)) ω *
+      B.indicator (fun _ => (1 : ℝ)) ω) = (A ∩ B).indicator (fun _ => (1 : ℝ)) := by
+    funext ω
+    by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB]
+  simpa [prob, hmul] using h
+
+/-- Event FKG for decreasing events. -/
+theorem prob_fkg_decreasing (μ : FiniteCubeMeasure ι) (hμ : μ.StrictPositive)
+    (hFKG : FKGLatticeCondition μ) {A B : Set (Set ι)}
+    (hA : IsDecreasingEvent A) (hB : IsDecreasingEvent B) :
+    μ.prob A * μ.prob B ≤ μ.prob (A ∩ B) := by
+  have h := fkg_decreasing_decreasing μ hμ hFKG
+    (IsDecreasingEvent.indicator_isDecreasingRandomVariable hA)
+    (IsDecreasingEvent.indicator_isDecreasingRandomVariable hB)
+  have hmul : (fun ω => A.indicator (fun _ => (1 : ℝ)) ω *
+      B.indicator (fun _ => (1 : ℝ)) ω) = (A ∩ B).indicator (fun _ => (1 : ℝ)) := by
+    funext ω
+    by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB]
+  simpa [prob, hmul] using h
+
+/-- Increasing and decreasing events are negatively correlated under FKG. -/
+theorem prob_le_mul_of_increasing_decreasing (μ : FiniteCubeMeasure ι)
+    (hμ : μ.StrictPositive) (hFKG : FKGLatticeCondition μ) {A B : Set (Set ι)}
+    (hA : IsIncreasingEvent A) (hB : IsDecreasingEvent B) :
+    μ.prob (A ∩ B) ≤ μ.prob A * μ.prob B := by
+  have h := fkg_increasing_decreasing μ hμ hFKG hA.indicator_isIncreasingRandomVariable
+    (IsDecreasingEvent.indicator_isDecreasingRandomVariable hB)
   have hmul : (fun ω => A.indicator (fun _ => (1 : ℝ)) ω *
       B.indicator (fun _ => (1 : ℝ)) ω) = (A ∩ B).indicator (fun _ => (1 : ℝ)) := by
     funext ω

@@ -17,6 +17,8 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
 - **[target]** FKG inequality for increasing events under Bernoulli product percolation.
 - **[done]** FKG inequality for finite monotonic measures satisfying the FKG lattice condition
   (RC Ch. 2.16).
+- **[done]** Standard RC Ch. 2.2 FKG corollaries for decreasing observables/events and
+  increasing-vs-decreasing negative correlation.
 - **[done]** Conditional finite-cube monotonic-measure spine: conditionals inherit the FKG
   lattice condition, yielding the forward implications of RC Ch. 2.24.
 - **[done]** One-point conditional criterion in both directions for RC Ch. 2.6:

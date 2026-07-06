@@ -847,6 +847,16 @@ Dated milestones and anti-library notes.
     `FiniteCubeMeasure.fkgLatticeCondition_iff_oneMonotonicMeasure` and
     `FiniteCubeMeasure.monotonicMeasure_iff_oneMonotonicMeasure`.
 
+77. **Random-cluster FKG corollaries for decreasing events (2026-07-06).** Added
+    decreasing indicator/observable helper lemmas and expectation negation in
+    `MonotonicMeasures.Basic`, then proved the standard Chapter 2 corollaries in
+    `MonotonicMeasures.FKG`: `FiniteCubeMeasure.fkg_increasing_decreasing`,
+    `FiniteCubeMeasure.fkg_decreasing_decreasing`,
+    `FiniteCubeMeasure.prob_fkg_decreasing`, and
+    `FiniteCubeMeasure.prob_le_mul_of_increasing_decreasing`. These formalize the
+    paragraph following Theorem 2.16: decreasing events are positively correlated with
+    each other, while increasing and decreasing events are negatively correlated.
+
 ## Axiom Ledger
 
 Empty.

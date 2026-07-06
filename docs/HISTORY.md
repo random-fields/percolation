@@ -833,10 +833,27 @@ Dated milestones and anti-library notes.
     two strictly smaller pairs. The full local Holley converse still needs the
     remaining asymmetric branch and the final strong induction assembly.
 
+76. **Random-cluster one-point criterion converse (2026-07-06).** Proved the full
+    finite-cube converse direction of RC Theorem 2.6 directly from one-point conditional
+    domination, avoiding reliance on the unfinished Theorem 2.3 local-Holley induction.
+    The main declarations are
+    `FiniteCubeMeasure.onePointCross_le_of_onePointConditionalDomination`,
+    `FiniteCubeMeasure.onePointConditionalDomination_openFinset_le`,
+    `FiniteCubeMeasure.holleyCondition_of_onePointConditionalDomination`, and the
+    iff package `FiniteCubeMeasure.holleyCondition_iff_onePointConditionalDomination`.
+    This also gives the `(d) => (b)` implication of Theorem 2.24 via
+    `FiniteCubeMeasure.fkgLatticeCondition_of_oneMonotonicMeasure`, together with
+    strict-positive equivalence packages
+    `FiniteCubeMeasure.fkgLatticeCondition_iff_oneMonotonicMeasure` and
+    `FiniteCubeMeasure.monotonicMeasure_iff_oneMonotonicMeasure`.
+
 ## Axiom Ledger
 
 Empty.
 
 ## Anti-Library
 
-Nothing rejected yet. Record false starts here with the lesson learned.
+- A naive attempt to finish the right-side branch of the Theorem 2.3 Hamming induction
+  by complement/swap duality proves the wrong ordered Holley inequality. The reliable
+  path for Theorem 2.6 is the direct product-path proof from one-point conditional
+  domination.

@@ -27,6 +27,8 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   1-monotonicity.
 - **[done]** Named `LocalTwoCoordinateFKG` predicate with bridges from the full FKG lattice
   condition and from strict positive 1-monotonicity.
+- **[done]** Local Holley predicates for RC Theorem 2.3, with the forward implication from
+  global Holley and the self-pair bridge from two-coordinate local Holley to local FKG.
 - **[target]** Russo's formula for finite edge sets and increasing events.
 - **[target]** Coupling monotonicity in `p` for Bernoulli percolation.
 - **[target]** Random-cluster FKG for `q ≥ 1` on finite graphs.

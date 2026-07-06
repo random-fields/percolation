@@ -780,6 +780,17 @@ Dated milestones and anti-library notes.
     local-pair target needed for Theorem 2.19, while leaving the global local Holley
     criterion induction of Theorem 2.3 as the remaining hard step.
 
+72. **Random-cluster local Holley predicates, forward direction (2026-07-06).** Added
+    the Theorem 2.3 local hypotheses `FiniteCubeMeasure.LocalHolleyOneCondition`,
+    `FiniteCubeMeasure.LocalHolleyTwoCondition`, and
+    `FiniteCubeMeasure.LocalHolleyCondition`, corresponding to equations (2.4) and
+    (2.5). Proved the easy direction from global Holley via
+    `FiniteCubeMeasure.localHolleyCondition_of_holleyCondition`, together with the
+    one-edge and two-edge components. Also proved
+    `FiniteCubeMeasure.localHolleyTwoCondition_self_iff_localTwoCoordinateFKG`, tying
+    the self-pair local Holley condition to the local FKG predicate used for Theorem
+    2.19. The reverse Hamming-distance induction in Theorem 2.3 remains open.
+
 ## Axiom Ledger
 
 Empty.

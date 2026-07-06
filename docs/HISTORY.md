@@ -879,6 +879,17 @@ Dated milestones and anti-library notes.
     `FiniteCubeMeasure.fkgLatticeCondition_tilt_iff`, and the strict-positive
     monotonicity iff package `FiniteCubeMeasure.monotonicMeasure_tilt_iff`.
 
+80. **Random-cluster influence symmetry, Lemma 2.50 (2026-07-06).** Added
+    `MonotonicMeasures.Influence` with the finite-cube permutation action
+    `FiniteCubeMeasure.permConfig`, invariant measure/event predicates, ambient
+    coordinate-open/closed events, conditional probabilities `probGivenOpen` and
+    `probGivenClosed`, and `FiniteCubeMeasure.influence`. Proved permutation
+    reindexing of probabilities, inheritance of permutation invariance by the tilted
+    measure via `FiniteCubeMeasure.permInvariantMeasure_tilt`, and the orbit influence
+    equality `FiniteCubeMeasure.influence_tilt_eq_of_permInvariant`, which is the
+    finite-cube form of RC Lemma 2.50. The subgroup/transitivity wrapper for Theorem
+    2.48 remains future work.
+
 ## Axiom Ledger
 
 Empty.

@@ -71,6 +71,14 @@ theorem tiltWeight_mul_inter_union (p : ℝ) (ω η : Set ι) :
   intro e _
   by_cases hω : e ∈ ω <;> by_cases hη : e ∈ η <;> simp [hω, hη, mul_comm]
 
+theorem tiltWeight_one_half (ω : Set ι) :
+    tiltWeight (ι := ι) (1 / 2 : ℝ) ω = ∏ _e : ι, (1 / 2 : ℝ) := by
+  classical
+  unfold tiltWeight
+  refine Finset.prod_congr rfl ?_
+  intro e _
+  by_cases he : e ∈ ω <;> norm_num [he]
+
 /-- The normalizing constant `Z_p` in (2.42). -/
 noncomputable def tiltZ (μ : FiniteCubeMeasure ι) (p : ℝ) : ℝ :=
   ∑ ω : Set ι, μ ω * tiltWeight p ω
@@ -94,6 +102,18 @@ theorem tiltZ_pos (μ : FiniteCubeMeasure ι) {p : ℝ} (h0 : 0 < p) (h1 : p < 1
   refine Finset.sum_pos'
     (fun η _ => mul_nonneg (μ.nonneg η) (le_of_lt (tiltWeight_pos h0 h1 η))) ?_
   exact ⟨ω, Finset.mem_univ ω, mul_pos hω (tiltWeight_pos h0 h1 ω)⟩
+
+theorem tiltZ_one_half (μ : FiniteCubeMeasure ι) :
+    tiltZ μ (1 / 2 : ℝ) = ∏ _e : ι, (1 / 2 : ℝ) := by
+  classical
+  calc
+    tiltZ μ (1 / 2 : ℝ)
+        = ∑ ω : Set ι, μ ω * (∏ _e : ι, (1 / 2 : ℝ)) := by
+            exact Finset.sum_congr rfl fun ω _ => by rw [tiltWeight_one_half]
+    _ = (∑ ω : Set ι, μ ω) * (∏ _e : ι, (1 / 2 : ℝ)) := by
+            rw [Finset.sum_mul]
+    _ = ∏ _e : ι, (1 / 2 : ℝ) := by
+            rw [μ.sum_mass, one_mul]
 
 /-- The tilted measure `μ_p` from equation (2.42). -/
 noncomputable def tilt (μ : FiniteCubeMeasure ι) (p : ℝ) (h0 : 0 < p)
@@ -125,6 +145,22 @@ theorem tilt_expect (μ : FiniteCubeMeasure ι) {p : ℝ} (h0 : 0 < p) (h1 : p <
             exact Finset.sum_congr rfl fun _ _ => by ring
     _ = (∑ ω : Set ι, μ ω * (X ω * tiltWeight p ω)) / tiltZ μ p := by
             rw [← Finset.sum_div]
+
+theorem tilt_apply_one_half (μ : FiniteCubeMeasure ι) (ω : Set ι) :
+    tilt μ (1 / 2 : ℝ) (by norm_num) (by norm_num) ω = μ ω := by
+  classical
+  let c : ℝ := ∏ _e : ι, (1 / 2 : ℝ)
+  have hc : 0 < c := by
+    exact Finset.prod_pos fun _ _ => by norm_num
+  change μ ω * tiltWeight (1 / 2 : ℝ) ω / tiltZ μ (1 / 2 : ℝ) = μ ω
+  rw [tiltWeight_one_half, tiltZ_one_half]
+  change μ ω * c / c = μ ω
+  field_simp [ne_of_gt hc]
+
+theorem tilt_expect_one_half (μ : FiniteCubeMeasure ι) (X : Set ι → ℝ) :
+    (tilt μ (1 / 2 : ℝ) (by norm_num) (by norm_num)).expect X = μ.expect X := by
+  rw [expect, expect]
+  exact Finset.sum_congr rfl fun ω _ => by rw [tilt_apply_one_half]
 
 theorem tilt_strictPositive (μ : FiniteCubeMeasure ι) {p : ℝ} (h0 : 0 < p)
     (h1 : p < 1) (hμ : μ.StrictPositive) :
@@ -184,6 +220,46 @@ theorem fkgLatticeCondition_tilt (μ : FiniteCubeMeasure ι) {p : ℝ} (h0 : 0 <
           simp [z, wi, wu, tilt_apply]
           ring
 
+theorem fkgLatticeCondition_of_tilt (μ : FiniteCubeMeasure ι) {p : ℝ} (h0 : 0 < p)
+    (h1 : p < 1) (hFKG : FKGLatticeCondition (tilt μ p h0 h1)) :
+    FKGLatticeCondition μ := by
+  intro ω η
+  let z := tiltZ μ p
+  let wω := tiltWeight p ω
+  let wη := tiltWeight p η
+  let wi := tiltWeight p (ω ∩ η)
+  let wu := tiltWeight p (ω ∪ η)
+  have hz : 0 < z := by simpa [z] using tiltZ_pos μ h0 h1
+  have hwω : 0 < wω := by simpa [wω] using tiltWeight_pos (ι := ι) h0 h1 ω
+  have hwη : 0 < wη := by simpa [wη] using tiltWeight_pos (ι := ι) h0 h1 η
+  have hw : 0 < wω * wη := mul_pos hwω hwη
+  have hweight : wω * wη = wi * wu := by
+    simpa [wω, wη, wi, wu] using tiltWeight_mul_inter_union (ι := ι) p ω η
+  have htilt := hFKG ω η
+  have hleft : tilt μ p h0 h1 ω * tilt μ p h0 h1 η =
+      ((μ ω * μ η) * (wω * wη)) / (z * z) := by
+    simp [z, wω, wη, tilt_apply]
+    ring
+  have hright : tilt μ p h0 h1 (ω ∩ η) * tilt μ p h0 h1 (ω ∪ η) =
+      ((μ (ω ∩ η) * μ (ω ∪ η)) * (wi * wu)) / (z * z) := by
+    simp [z, wi, wu, tilt_apply]
+    ring
+  have hnorm : ((μ ω * μ η) * (wω * wη)) / (z * z) ≤
+      ((μ (ω ∩ η) * μ (ω ∪ η)) * (wi * wu)) / (z * z) := by
+    rwa [hleft, hright] at htilt
+  have hnorm' : ((μ ω * μ η) * (wω * wη)) / (z * z) ≤
+      ((μ (ω ∩ η) * μ (ω ∪ η)) * (wω * wη)) / (z * z) := by
+    rwa [← hweight] at hnorm
+  have hzsq : 0 < z * z := mul_pos hz hz
+  have hmul := mul_le_mul_of_nonneg_right hnorm' (le_of_lt hzsq)
+  field_simp [ne_of_gt hzsq, ne_of_gt hw] at hmul
+  simpa [mul_assoc] using hmul
+
+theorem fkgLatticeCondition_tilt_iff (μ : FiniteCubeMeasure ι) {p : ℝ}
+    (h0 : 0 < p) (h1 : p < 1) :
+    FKGLatticeCondition (tilt μ p h0 h1) ↔ FKGLatticeCondition μ :=
+  ⟨fkgLatticeCondition_of_tilt μ h0 h1, fkgLatticeCondition_tilt μ h0 h1⟩
+
 theorem monotonicMeasure_tilt_of_monotonicMeasure (μ : FiniteCubeMeasure ι)
     {p : ℝ} (h0 : 0 < p) (h1 : p < 1) (hμ : μ.StrictPositive)
     (hmono : MonotonicMeasure μ) :
@@ -193,6 +269,22 @@ theorem monotonicMeasure_tilt_of_monotonicMeasure (μ : FiniteCubeMeasure ι)
       (oneMonotonicMeasure_of_monotonicMeasure μ hmono)
   exact monotonicMeasure_of_fkgLatticeCondition (tilt μ p h0 h1)
     (fkgLatticeCondition_tilt μ h0 h1 hFKG)
+
+theorem monotonicMeasure_of_tilt (μ : FiniteCubeMeasure ι) {p : ℝ} (h0 : 0 < p)
+    (h1 : p < 1) (hμ : μ.StrictPositive) (hmono : MonotonicMeasure (tilt μ p h0 h1)) :
+    MonotonicMeasure μ := by
+  have htiltμ : (tilt μ p h0 h1).StrictPositive := tilt_strictPositive μ h0 h1 hμ
+  have hFKGtilt : FKGLatticeCondition (tilt μ p h0 h1) :=
+    fkgLatticeCondition_of_oneMonotonicMeasure (tilt μ p h0 h1) htiltμ
+      (oneMonotonicMeasure_of_monotonicMeasure (tilt μ p h0 h1) hmono)
+  exact monotonicMeasure_of_fkgLatticeCondition μ
+    (fkgLatticeCondition_of_tilt μ h0 h1 hFKGtilt)
+
+theorem monotonicMeasure_tilt_iff (μ : FiniteCubeMeasure ι) {p : ℝ}
+    (h0 : 0 < p) (h1 : p < 1) (hμ : μ.StrictPositive) :
+    MonotonicMeasure (tilt μ p h0 h1) ↔ MonotonicMeasure μ :=
+  ⟨monotonicMeasure_of_tilt μ h0 h1 hμ,
+    monotonicMeasure_tilt_of_monotonicMeasure μ h0 h1 hμ⟩
 
 /-- The covariance decomposition (2.45), in finite-cube form. -/
 theorem covariance_openCountRV_eq_sum (μ : FiniteCubeMeasure ι) (X : Set ι → ℝ) :

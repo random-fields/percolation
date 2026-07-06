@@ -870,6 +870,15 @@ Dated milestones and anti-library notes.
     `FiniteCubeMeasure.tilt_covariance_openCountRV_eq_sum` corresponding to RC Eq.
     2.45. The derivative formula in RC Theorem 2.43 remains future calculus work.
 
+79. **Random-cluster tilted-measure preservation equivalences (2026-07-06).**
+    Completed the elementary preservation paragraph before RC Theorem 2.43 for the
+    finite-cube tilted family. Proved the `p = 1/2` pointwise and expectation
+    identities `FiniteCubeMeasure.tilt_apply_one_half` and
+    `FiniteCubeMeasure.tilt_expect_one_half`, the reverse FKG-lattice preservation
+    theorem `FiniteCubeMeasure.fkgLatticeCondition_of_tilt`, the iff package
+    `FiniteCubeMeasure.fkgLatticeCondition_tilt_iff`, and the strict-positive
+    monotonicity iff package `FiniteCubeMeasure.monotonicMeasure_tilt_iff`.
+
 ## Axiom Ledger
 
 Empty.

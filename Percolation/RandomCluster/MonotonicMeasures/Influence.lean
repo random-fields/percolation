@@ -67,6 +67,21 @@ def PermInvariantMeasure (μ : FiniteCubeMeasure ι) (σ : Equiv.Perm ι) : Prop
 def PermInvariantEvent (A : Set (Set ι)) (σ : Equiv.Perm ι) : Prop :=
   ∀ ω : Set ι, permConfig σ ω ∈ A ↔ ω ∈ A
 
+omit [Fintype ι] in
+/-- A family of coordinate permutations acts transitively on coordinates. -/
+def PermFamilyTransitive (Γ : Set (Equiv.Perm ι)) : Prop :=
+  ∀ e f : ι, ∃ σ ∈ Γ, σ e = f
+
+/-- A measure is invariant under every coordinate permutation in a family. -/
+def PermFamilyInvariantMeasure (μ : FiniteCubeMeasure ι) (Γ : Set (Equiv.Perm ι)) :
+    Prop :=
+  ∀ σ ∈ Γ, PermInvariantMeasure μ σ
+
+omit [Fintype ι] in
+/-- An event is invariant under every coordinate permutation in a family. -/
+def PermFamilyInvariantEvent (A : Set (Set ι)) (Γ : Set (Equiv.Perm ι)) : Prop :=
+  ∀ σ ∈ Γ, PermInvariantEvent A σ
+
 theorem tiltWeight_permConfig (p : ℝ) (σ : Equiv.Perm ι) (ω : Set ι) :
     tiltWeight p (permConfig σ ω) = tiltWeight p ω := by
   classical
@@ -206,6 +221,27 @@ theorem influence_tilt_eq_of_permInvariant (μ : FiniteCubeMeasure ι)
     influence (tilt μ p h0 h1) A f = influence (tilt μ p h0 h1) A e :=
   influence_eq_of_permInvariant (tilt μ p h0 h1)
     (permInvariantMeasure_tilt hμ h0 h1) hA hef
+
+/-- Lemma 2.50 packaged for a transitive family of symmetries. -/
+theorem influence_eq_of_permFamilyTransitive (μ : FiniteCubeMeasure ι)
+    {A : Set (Set ι)} {Γ : Set (Equiv.Perm ι)}
+    (hΓ : PermFamilyTransitive Γ) (hμ : PermFamilyInvariantMeasure μ Γ)
+    (hA : PermFamilyInvariantEvent A Γ) (e f : ι) :
+    influence μ A e = influence μ A f := by
+  obtain ⟨σ, hσΓ, hσef⟩ := hΓ e f
+  exact (influence_eq_of_permInvariant μ (hμ σ hσΓ) (hA σ hσΓ) hσef).symm
+
+/-- Lemma 2.50 for a tilted family whose base measure and event are invariant under a
+transitive family of coordinate permutations. -/
+theorem influence_tilt_eq_of_permFamilyTransitive (μ : FiniteCubeMeasure ι)
+    {A : Set (Set ι)} {Γ : Set (Equiv.Perm ι)} {p : ℝ}
+    (h0 : 0 < p) (h1 : p < 1) (hΓ : PermFamilyTransitive Γ)
+    (hμ : PermFamilyInvariantMeasure μ Γ) (hA : PermFamilyInvariantEvent A Γ)
+    (e f : ι) :
+    influence (tilt μ p h0 h1) A e = influence (tilt μ p h0 h1) A f := by
+  obtain ⟨σ, hσΓ, hσef⟩ := hΓ e f
+  exact (influence_tilt_eq_of_permInvariant μ h0 h1 (hμ σ hσΓ) (hA σ hσΓ)
+    hσef).symm
 
 end FiniteCubeMeasure
 

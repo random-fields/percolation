@@ -44,7 +44,8 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   the `p = 1/2` identity, strict-positivity equivalence, FKG-lattice equivalence,
   strict-positive monotonicity equivalence, and the covariance decomposition RC Eq. 2.45.
 - **[done]** Finite-cube influence interface and permutation-symmetry equality for
-  RC Lemma 2.50, including the tilted-family form for `μ_p`.
+  RC Lemma 2.50, including transitive-family packaging and the tilted-family form
+  for `μ_p`.
 - **[target]** Russo's formula for finite edge sets and increasing events.
 - **[target]** Coupling monotonicity in `p` for Bernoulli percolation.
 - **[target]** Random-cluster FKG for `q ≥ 1` on finite graphs.

@@ -890,6 +890,16 @@ Dated milestones and anti-library notes.
     finite-cube form of RC Lemma 2.50. The subgroup/transitivity wrapper for Theorem
     2.48 remains future work.
 
+81. **Random-cluster transitive influence symmetry wrapper (2026-07-06).** Added
+    `FiniteCubeMeasure.PermFamilyTransitive`,
+    `FiniteCubeMeasure.PermFamilyInvariantMeasure`, and
+    `FiniteCubeMeasure.PermFamilyInvariantEvent`, then packaged Lemma 2.50 as
+    `FiniteCubeMeasure.influence_eq_of_permFamilyTransitive` and
+    `FiniteCubeMeasure.influence_tilt_eq_of_permFamilyTransitive`. This gives the
+    Chapter 2 sharp-threshold interface that all coordinates have equal influence
+    whenever the invariant symmetry family is transitive, while leaving a later
+    `Subgroup`/`MulAction` facade as polish rather than a mathematical gap.
+
 ## Axiom Ledger
 
 Empty.

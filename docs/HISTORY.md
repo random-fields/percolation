@@ -762,6 +762,15 @@ Dated milestones and anti-library notes.
     of Theorem 2.6 and Theorem 2.19 still require the global local Holley criterion,
     Theorem 2.3.
 
+70. **Random-cluster local two-coordinate FKG bridge (2026-07-06).** Added
+    `FiniteCubeMeasure.forceOpenClosed_inter_forceClosedOpen`,
+    `FiniteCubeMeasure.forceOpenClosed_union_forceClosedOpen`, and
+    `FiniteCubeMeasure.localTwoCoordinateFKG_le_of_oneMonotonicMeasure`. These identify
+    the meet and join of the opposite two-coordinate corners and rewrite the
+    1-monotonicity cross inequality as the FKG lattice inequality for that local
+    Hamming-two pair. This is the local-pair shape used by Theorem 2.19; the global
+    induction/reduction of Theorem 2.3 is still future work.
+
 ## Axiom Ledger
 
 Empty.

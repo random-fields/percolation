@@ -820,6 +820,19 @@ Dated milestones and anti-library notes.
     remaining work is the combinatorial construction of the intermediate
     configurations used by that step.
 
+75. **Random-cluster left-side Hamming induction branch (2026-07-06).** Added
+    complement-dual finite-cube infrastructure
+    `FiniteCubeMeasure.configComplEquiv`, `FiniteCubeMeasure.complMeasure`,
+    `FiniteCubeMeasure.holleyInequalityAt_complMeasure_swap_iff`, and the local/global
+    complement-swap Holley preservation lemmas. Added Hamming complement and
+    distance-decrease lemmas, then packaged the first asymmetric non-comparable
+    induction branch as
+    `FiniteCubeMeasure.holleyInductionStep_of_openClosed_card_two`: if there are at
+    least two coordinates open in the first configuration and closed in the second, the
+    current pointwise Holley inequality follows from the induction hypothesis on the
+    two strictly smaller pairs. The full local Holley converse still needs the
+    remaining asymmetric branch and the final strong induction assembly.
+
 ## Axiom Ledger
 
 Empty.

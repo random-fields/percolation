@@ -168,6 +168,54 @@ def forceOpen (e : ι) (ω : Set ι) : Set ι :=
 def forceClosed (e : ι) (ω : Set ι) : Set ι :=
   ω \ {e}
 
+omit [Fintype ι] in
+/-- Complementing finite-cube configurations is an involutive equivalence. -/
+noncomputable def configComplEquiv : Set ι ≃ Set ι where
+  toFun := fun ω => ωᶜ
+  invFun := fun ω => ωᶜ
+  left_inv := by
+    intro ω
+    simp
+  right_inv := by
+    intro ω
+    simp
+
+/-- Push a finite cube measure through configuration complementation. -/
+noncomputable def complMeasure (μ : FiniteCubeMeasure ι) : FiniteCubeMeasure ι where
+  mass := fun ω => μ ωᶜ
+  nonneg := by
+    intro ω
+    exact μ.nonneg _
+  sum_mass := by
+    rw [← μ.sum_mass]
+    rw [Fintype.sum_equiv (configComplEquiv (ι := ι)) (fun ω : Set ι => μ ωᶜ)
+      (fun η : Set ι => μ η)]
+    intro ω
+    simp [configComplEquiv]
+
+theorem complMeasure_apply (μ : FiniteCubeMeasure ι) (ω : Set ι) :
+    complMeasure μ ω = μ ωᶜ :=
+  rfl
+
+theorem complMeasure_strictPositive (μ : FiniteCubeMeasure ι) (hμ : μ.StrictPositive) :
+    (complMeasure μ).StrictPositive := by
+  intro ω
+  exact hμ _
+
+omit [Fintype ι] in
+theorem compl_forceOpen (e : ι) (ω : Set ι) :
+    (forceOpen e ω)ᶜ = forceClosed e ωᶜ := by
+  ext x
+  simp [forceOpen, forceClosed]
+  tauto
+
+omit [Fintype ι] in
+theorem compl_forceClosed (e : ι) (ω : Set ι) :
+    (forceClosed e ω)ᶜ = forceOpen e ωᶜ := by
+  ext x
+  simp [forceOpen, forceClosed]
+  tauto
+
 /-- Coordinates open in `ω` and closed in `η`. -/
 noncomputable def openClosedDisagreeFinset (ω η : Set ι) : Finset ι := by
   classical
@@ -212,6 +260,23 @@ theorem hammingDistance_comm (ω η : Set ι) :
     simp [openClosedDisagreeFinset, closedOpenDisagreeFinset, and_comm]
   simp [hammingDistance, h₁, h₂, Nat.add_comm]
 
+theorem openClosedDisagreeFinset_compl (ω η : Set ι) :
+    openClosedDisagreeFinset ωᶜ ηᶜ = closedOpenDisagreeFinset ω η := by
+  classical
+  ext e
+  simp [mem_openClosedDisagreeFinset, mem_closedOpenDisagreeFinset]
+
+theorem closedOpenDisagreeFinset_compl (ω η : Set ι) :
+    closedOpenDisagreeFinset ωᶜ ηᶜ = openClosedDisagreeFinset ω η := by
+  classical
+  ext e
+  simp [mem_openClosedDisagreeFinset, mem_closedOpenDisagreeFinset]
+
+theorem hammingDistance_compl_compl (ω η : Set ι) :
+    hammingDistance ωᶜ ηᶜ = hammingDistance ω η := by
+  simp [hammingDistance, openClosedDisagreeFinset_compl, closedOpenDisagreeFinset_compl,
+    Nat.add_comm]
+
 theorem hammingDistance_eq_zero_iff (ω η : Set ι) :
     hammingDistance ω η = 0 ↔ ω = η := by
   classical
@@ -247,6 +312,73 @@ theorem hammingDistance_eq_zero_iff (ω η : Set ι) :
     · apply Finset.card_eq_zero.mpr
       ext e
       simp [mem_closedOpenDisagreeFinset]
+
+theorem card_openClosedDisagreeFinset_forceClosed_left_lt {e : ι} {ω η : Set ι}
+    (he : e ∈ openClosedDisagreeFinset ω η) :
+    (openClosedDisagreeFinset (forceClosed e ω) η).card <
+      (openClosedDisagreeFinset ω η).card := by
+  classical
+  have hset : openClosedDisagreeFinset (forceClosed e ω) η =
+      (openClosedDisagreeFinset ω η).erase e := by
+    ext x
+    by_cases hxe : x = e
+    · subst hxe
+      simp [mem_openClosedDisagreeFinset, forceClosed]
+    · simp [mem_openClosedDisagreeFinset, forceClosed, hxe]
+  rw [hset]
+  exact Finset.card_erase_lt_of_mem he
+
+theorem closedOpenDisagreeFinset_forceClosed_left (e : ι) {ω η : Set ι}
+    (heη : e ∉ η) :
+    closedOpenDisagreeFinset (forceClosed e ω) η = closedOpenDisagreeFinset ω η := by
+  classical
+  ext x
+  by_cases hxe : x = e
+  · subst hxe
+    simp [mem_closedOpenDisagreeFinset, forceClosed, heη]
+  · simp [mem_closedOpenDisagreeFinset, forceClosed, hxe]
+
+theorem hammingDistance_forceClosed_left_lt {e : ι} {ω η : Set ι}
+    (he : e ∈ openClosedDisagreeFinset ω η) :
+    hammingDistance (forceClosed e ω) η < hammingDistance ω η := by
+  classical
+  have heη : e ∉ η := (mem_openClosedDisagreeFinset e ω η).1 he |>.2
+  rw [hammingDistance,
+    closedOpenDisagreeFinset_forceClosed_left e heη, hammingDistance]
+  have hcard := card_openClosedDisagreeFinset_forceClosed_left_lt he
+  omega
+
+theorem card_openClosedDisagreeFinset_left_bridge (e : ι) {ω η : Set ι}
+    (heω : e ∈ ω) (heη : e ∉ η) :
+    (openClosedDisagreeFinset ω (η ∪ forceClosed e ω)).card = 1 := by
+  classical
+  have hset : openClosedDisagreeFinset ω (η ∪ forceClosed e ω) = {e} := by
+    ext x
+    by_cases hxe : x = e
+    · subst hxe
+      simp [mem_openClosedDisagreeFinset, forceClosed, heω, heη]
+    · simp [mem_openClosedDisagreeFinset, forceClosed, hxe]
+      tauto
+  rw [hset]
+  simp
+
+theorem closedOpenDisagreeFinset_left_bridge (e : ι) (ω η : Set ι) :
+    closedOpenDisagreeFinset ω (η ∪ forceClosed e ω) =
+      closedOpenDisagreeFinset ω η := by
+  classical
+  ext x
+  simp [mem_closedOpenDisagreeFinset, forceClosed]
+  tauto
+
+theorem hammingDistance_left_bridge_lt {e : ι} {ω η : Set ι}
+    (he : e ∈ openClosedDisagreeFinset ω η)
+    (hmore : 1 < (openClosedDisagreeFinset ω η).card) :
+    hammingDistance ω (η ∪ forceClosed e ω) < hammingDistance ω η := by
+  classical
+  have he' := (mem_openClosedDisagreeFinset e ω η).1 he
+  rw [hammingDistance, card_openClosedDisagreeFinset_left_bridge e he'.1 he'.2,
+    closedOpenDisagreeFinset_left_bridge, hammingDistance]
+  omega
 
 /-- The event that a conditional coordinate is open. -/
 def coordOpenEvent {F : Set ι} (eF : ConditionCoord F) :
@@ -472,10 +604,56 @@ def LocalHolleyCondition (μ ν : FiniteCubeMeasure ι) : Prop :=
 def HolleyInequalityAt (μ ν : FiniteCubeMeasure ι) (ω η : Set ι) : Prop :=
   μ ω * ν η ≤ μ (ω ∩ η) * ν (ω ∪ η)
 
+/-- Pointwise Holley duality under complementing configurations and swapping measures. -/
+theorem holleyInequalityAt_complMeasure_swap_iff (μ ν : FiniteCubeMeasure ι)
+    (ω η : Set ι) :
+    HolleyInequalityAt (complMeasure ν) (complMeasure μ) ηᶜ ωᶜ ↔
+      HolleyInequalityAt μ ν ω η := by
+  simp [HolleyInequalityAt, complMeasure, mul_comm, Set.compl_inter, Set.compl_union,
+    Set.union_comm, Set.inter_comm]
+
 /-- Global Holley is the assertion of the pointwise Holley inequality for all pairs. -/
 theorem holleyCondition_iff_forall_holleyInequalityAt (μ ν : FiniteCubeMeasure ι) :
     HolleyCondition μ ν ↔ ∀ ω η : Set ι, HolleyInequalityAt μ ν ω η :=
   Iff.rfl
+
+/-- Global Holley is invariant under complementing configurations and swapping the two
+measures. This is the duality used to cover the second asymmetric case in the local
+Holley induction. -/
+theorem holleyCondition_complMeasure_swap_iff (μ ν : FiniteCubeMeasure ι) :
+    HolleyCondition (complMeasure ν) (complMeasure μ) ↔ HolleyCondition μ ν := by
+  constructor
+  · intro h ω η
+    have hdual := h ηᶜ ωᶜ
+    simpa [HolleyCondition, complMeasure, mul_comm, Set.compl_inter, Set.compl_union,
+      Set.union_comm, Set.inter_comm] using hdual
+  · intro h ω η
+    have hbase := h ηᶜ ωᶜ
+    simpa [HolleyCondition, complMeasure, mul_comm, Set.compl_inter, Set.compl_union,
+      Set.union_comm, Set.inter_comm] using hbase
+
+/-- The one-coordinate local Holley condition is preserved by the complement/swap duality. -/
+theorem localHolleyOneCondition_complMeasure_swap (μ ν : FiniteCubeMeasure ι)
+    (hlocal : LocalHolleyOneCondition μ ν) :
+    LocalHolleyOneCondition (complMeasure ν) (complMeasure μ) := by
+  intro e ω
+  have h := hlocal e ωᶜ
+  simpa [complMeasure, compl_forceOpen, compl_forceClosed, mul_comm] using h
+
+/-- The two-coordinate local Holley condition is preserved by the complement/swap duality. -/
+theorem localHolleyTwoCondition_complMeasure_swap (μ ν : FiniteCubeMeasure ι)
+    (hlocal : LocalHolleyTwoCondition μ ν) :
+    LocalHolleyTwoCondition (complMeasure ν) (complMeasure μ) := by
+  intro e f ω
+  have h := hlocal e f ωᶜ
+  simpa [complMeasure, compl_forceOpen, compl_forceClosed, mul_comm] using h
+
+/-- The local hypotheses of Theorem 2.3 are preserved by the complement/swap duality. -/
+theorem localHolleyCondition_complMeasure_swap (μ ν : FiniteCubeMeasure ι)
+    (hlocal : LocalHolleyCondition μ ν) :
+    LocalHolleyCondition (complMeasure ν) (complMeasure μ) :=
+  ⟨localHolleyOneCondition_complMeasure_swap μ ν hlocal.1,
+    localHolleyTwoCondition_complMeasure_swap μ ν hlocal.2⟩
 
 /-- The local Hamming-two FKG inequalities appearing in Theorem 2.19, restricted to
 opposite corners of coordinate squares. -/
@@ -765,6 +943,53 @@ theorem holleyInductionStep_of_holleyInequalityAt (μ ν : FiniteCubeMeasure ι)
   have h₂' : μ middle * ν x ≤ μ bottom * ν bridge := by
     simpa [HolleyInequalityAt, hmx_inter, hmx_union] using h₂
   exact holleyInductionStep_mul_cancel μ ν hμmiddle hνbridge h₁' h₂'
+
+/-- The set-theoretic Hamming-induction step obtained by deleting one coordinate from the
+first configuration. The two Holley hypotheses are the strictly smaller pairs that appear
+in the induction once this coordinate is not the only `ω \ η` disagreement. -/
+theorem holleyInductionStep_of_openClosed_disagreement (μ ν : FiniteCubeMeasure ι)
+    (hμ : μ.StrictPositive) (hν : ν.StrictPositive) {ω η : Set ι} {e : ι}
+    (heω : e ∈ ω) (heη : e ∉ η)
+    (h₁ : HolleyInequalityAt μ ν ω (η ∪ forceClosed e ω))
+    (h₂ : HolleyInequalityAt μ ν (forceClosed e ω) η) :
+    HolleyInequalityAt μ ν ω η := by
+  have hyb_inter : ω ∩ (η ∪ forceClosed e ω) = forceClosed e ω := by
+    ext x
+    by_cases hxe : x = e
+    · subst hxe
+      simp [forceClosed, heω, heη]
+    · simp [forceClosed, hxe]
+      tauto
+  have hyb_union : ω ∪ (η ∪ forceClosed e ω) = ω ∪ η := by
+    ext x
+    simp [forceClosed]
+    tauto
+  have hmx_inter : forceClosed e ω ∩ η = ω ∩ η := by
+    ext x
+    by_cases hxe : x = e
+    · subst hxe
+      simp [forceClosed, heη]
+    · simp [forceClosed, hxe]
+  have hmx_union : forceClosed e ω ∪ η = η ∪ forceClosed e ω := by
+    ext x
+    simp [Set.mem_union, or_comm]
+  exact holleyInductionStep_of_holleyInequalityAt μ ν (hμ _) (hν _) h₁ h₂
+    hyb_inter hyb_union hmx_inter hmx_union
+
+/-- The first asymmetric Hamming-induction case for Theorem 2.3: when there are at
+least two coordinates open in `ω` and closed in `η`, delete one such coordinate and
+invoke the induction hypothesis on the two strictly smaller pairs. -/
+theorem holleyInductionStep_of_openClosed_card_two (μ ν : FiniteCubeMeasure ι)
+    (hμ : μ.StrictPositive) (hν : ν.StrictPositive) {ω η : Set ι} {e : ι}
+    (he : e ∈ openClosedDisagreeFinset ω η)
+    (hmore : 1 < (openClosedDisagreeFinset ω η).card)
+    (hIH : ∀ a b : Set ι, hammingDistance a b < hammingDistance ω η →
+      HolleyInequalityAt μ ν a b) :
+    HolleyInequalityAt μ ν ω η := by
+  have he' := (mem_openClosedDisagreeFinset e ω η).1 he
+  exact holleyInductionStep_of_openClosed_disagreement μ ν hμ hν he'.1 he'.2
+    (hIH ω (η ∪ forceClosed e ω) (hammingDistance_left_bridge_lt he hmore))
+    (hIH (forceClosed e ω) η (hammingDistance_forceClosed_left_lt he))
 
 /-- The reverse direction of Theorem 2.6, reduced to the local hypotheses of
 Theorem 2.3: the one-point conditional inequalities imply (2.4) and (2.5). -/

@@ -160,6 +160,27 @@ theorem conditionOn_strictPositive (μ : FiniteCubeMeasure ι) (hμ : μ.StrictP
   intro ωF
   exact div_pos (hμ _) hden
 
+/-- The event that a conditional coordinate is open. -/
+def coordOpenEvent {F : Set ι} (eF : ConditionCoord F) :
+    Set (Set (ConditionCoord F)) :=
+  {ωF | eF ∈ ωF}
+
+omit [Fintype ι] in
+theorem isIncreasingEvent_coordOpenEvent {F : Set ι} (eF : ConditionCoord F) :
+    IsIncreasingEvent (coordOpenEvent eF) := by
+  intro ωF ηF hωη hω
+  exact hωη hω
+
+/-- The unique coordinate in the one-point conditional cube over `{e}`. -/
+def singletonConditionCoord (e : ι) : ConditionCoord ({e} : Set ι) :=
+  ⟨e, rfl⟩
+
+/-- One-point conditional probability that coordinate `e` is open. -/
+noncomputable def onePointOpenProb (μ : FiniteCubeMeasure ι) (e : ι) (ξ : Set ι)
+    (hden : 0 < conditionDenom μ ({e} : Set ι) ξ) : ℝ :=
+  (conditionOn μ ({e} : Set ι) ξ hden).prob
+    (coordOpenEvent (singletonConditionCoord e))
+
 /-- Strong positive association: every positive conditional measure is positively associated. -/
 def StronglyPositivelyAssociated (μ : FiniteCubeMeasure ι) : Prop :=
   ∀ (F : Set ι) (ξ : Set ι) (hden : 0 < conditionDenom μ F ξ),
@@ -206,31 +227,50 @@ theorem fkgLatticeCondition_conditionOn (μ : FiniteCubeMeasure ι)
       dsimp [conditionOn]
       field_simp [ne_of_gt hden]
 
-theorem holleyCondition_conditionOn_of_subset (μ : FiniteCubeMeasure ι)
-    (hFKG : FKGLatticeCondition μ) (F : Set ι) {ξ ζ : Set ι} (hξζ : ξ ⊆ ζ)
-    (hξ : 0 < conditionDenom μ F ξ) (hζ : 0 < conditionDenom μ F ζ) :
-    HolleyCondition (conditionOn μ F ξ hξ) (conditionOn μ F ζ hζ) := by
+theorem holleyCondition_conditionOn_pair_of_subset (μ ν : FiniteCubeMeasure ι)
+    (hH : HolleyCondition μ ν) (F : Set ι) {ξ ζ : Set ι} (hξζ : ξ ⊆ ζ)
+    (hξ : 0 < conditionDenom μ F ξ) (hζ : 0 < conditionDenom ν F ζ) :
+    HolleyCondition (conditionOn μ F ξ hξ) (conditionOn ν F ζ hζ) := by
   intro ωF ηF
-  have hbase := hFKG (conditionSplice F ξ ωF) (conditionSplice F ζ ηF)
+  have hbase := hH (conditionSplice F ξ ωF) (conditionSplice F ζ ηF)
   have hbase' :
-      μ (conditionSplice F ξ ωF) * μ (conditionSplice F ζ ηF) ≤
+      μ (conditionSplice F ξ ωF) * ν (conditionSplice F ζ ηF) ≤
         μ (conditionSplice F ξ (ωF ∩ ηF)) *
-          μ (conditionSplice F ζ (ωF ∪ ηF)) := by
+          ν (conditionSplice F ζ (ωF ∪ ηF)) := by
     simpa [conditionSplice_inter_of_subset hξζ, conditionSplice_union_of_subset hξζ] using hbase
   have hdiv := div_le_div_of_nonneg_right hbase'
     (mul_nonneg (le_of_lt hξ) (le_of_lt hζ))
   calc
-    conditionOn μ F ξ hξ ωF * conditionOn μ F ζ hζ ηF =
-        (μ (conditionSplice F ξ ωF) * μ (conditionSplice F ζ ηF)) /
-          (conditionDenom μ F ξ * conditionDenom μ F ζ) := by
+    conditionOn μ F ξ hξ ωF * conditionOn ν F ζ hζ ηF =
+        (μ (conditionSplice F ξ ωF) * ν (conditionSplice F ζ ηF)) /
+          (conditionDenom μ F ξ * conditionDenom ν F ζ) := by
       dsimp [conditionOn]
       field_simp [ne_of_gt hξ, ne_of_gt hζ]
     _ ≤ (μ (conditionSplice F ξ (ωF ∩ ηF)) *
-          μ (conditionSplice F ζ (ωF ∪ ηF))) /
-          (conditionDenom μ F ξ * conditionDenom μ F ζ) := hdiv
-    _ = conditionOn μ F ξ hξ (ωF ∩ ηF) * conditionOn μ F ζ hζ (ωF ∪ ηF) := by
+          ν (conditionSplice F ζ (ωF ∪ ηF))) /
+          (conditionDenom μ F ξ * conditionDenom ν F ζ) := hdiv
+    _ = conditionOn μ F ξ hξ (ωF ∩ ηF) * conditionOn ν F ζ hζ (ωF ∪ ηF) := by
       dsimp [conditionOn]
       field_simp [ne_of_gt hξ, ne_of_gt hζ]
+
+theorem holleyCondition_conditionOn_of_subset (μ : FiniteCubeMeasure ι)
+    (hFKG : FKGLatticeCondition μ) (F : Set ι) {ξ ζ : Set ι} (hξζ : ξ ⊆ ζ)
+    (hξ : 0 < conditionDenom μ F ξ) (hζ : 0 < conditionDenom μ F ζ) :
+    HolleyCondition (conditionOn μ F ξ hξ) (conditionOn μ F ζ hζ) := by
+  exact holleyCondition_conditionOn_pair_of_subset μ μ hFKG F hξζ hξ hζ
+
+/-- The easy direction of Theorem 2.6: Holley implies one-point conditional monotonicity. -/
+theorem onePointOpenProb_le_of_holleyCondition (μ ν : FiniteCubeMeasure ι)
+    (hH : HolleyCondition μ ν) (e : ι) {ξ ζ : Set ι} (hξζ : ξ ⊆ ζ)
+    (hξ : 0 < conditionDenom μ ({e} : Set ι) ξ)
+    (hζ : 0 < conditionDenom ν ({e} : Set ι) ζ) :
+    onePointOpenProb μ e ξ hξ ≤ onePointOpenProb ν e ζ hζ := by
+  have hstoch : stochLE (conditionOn μ ({e} : Set ι) ξ hξ)
+      (conditionOn ν ({e} : Set ι) ζ hζ) :=
+    stochLE_of_holley _ _
+      (holleyCondition_conditionOn_pair_of_subset μ ν hH ({e} : Set ι) hξζ hξ hζ)
+  have hInc := isIncreasingEvent_coordOpenEvent (singletonConditionCoord e)
+  exact hstoch _ hInc.indicator_isIncreasingRandomVariable
 
 /-- The `(b) => (a)` implication in Theorem 2.24. -/
 theorem stronglyPositivelyAssociated_of_fkgLatticeCondition (μ : FiniteCubeMeasure ι)

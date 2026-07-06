@@ -741,6 +741,15 @@ Dated milestones and anti-library notes.
     1-monotonicity still depends on the local Holley and one-point conditional criteria
     (Theorems 2.3 and 2.6) plus Theorem 2.19.
 
+68. **Random-cluster one-point conditional criterion slice (2026-07-06).** Added
+    `FiniteCubeMeasure.coordOpenEvent`, `FiniteCubeMeasure.onePointOpenProb`,
+    `FiniteCubeMeasure.holleyCondition_conditionOn_pair_of_subset`, and
+    `FiniteCubeMeasure.onePointOpenProb_le_of_holleyCondition`. This proves the easy
+    direction of RC Theorem 2.6 / Eq. 2.7: Holley's condition for a pair of finite-cube
+    measures implies monotonicity of the one-coordinate conditional open probability
+    under ordered boundary conditions. The converse direction remains future work through
+    the local Holley criterion.
+
 ## Axiom Ledger
 
 Empty.

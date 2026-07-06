@@ -160,6 +160,14 @@ theorem conditionOn_strictPositive (μ : FiniteCubeMeasure ι) (hμ : μ.StrictP
   intro ωF
   exact div_pos (hμ _) hden
 
+/-- The configuration obtained by forcing coordinate `e` to be open. -/
+def forceOpen (e : ι) (ω : Set ι) : Set ι :=
+  insert e ω
+
+/-- The configuration obtained by forcing coordinate `e` to be closed. -/
+def forceClosed (e : ι) (ω : Set ι) : Set ι :=
+  ω \ {e}
+
 /-- The event that a conditional coordinate is open. -/
 def coordOpenEvent {F : Set ι} (eF : ConditionCoord F) :
     Set (Set (ConditionCoord F)) :=
@@ -175,11 +183,168 @@ theorem isIncreasingEvent_coordOpenEvent {F : Set ι} (eF : ConditionCoord F) :
 def singletonConditionCoord (e : ι) : ConditionCoord ({e} : Set ι) :=
   ⟨e, rfl⟩
 
+omit [Fintype ι] in
+/-- Splicing the full one-point conditional configuration forces the coordinate open. -/
+theorem conditionSplice_singleton_univ (e : ι) (ξ : Set ι) :
+    conditionSplice ({e} : Set ι) ξ
+        (Set.univ : Set (ConditionCoord ({e} : Set ι))) =
+      forceOpen e ξ := by
+  ext x
+  by_cases hx : x = e
+  · subst hx
+    simp [forceOpen, mem_conditionSplice_of_mem]
+  · have hxF : x ∉ ({e} : Set ι) := by simpa using hx
+    simp [forceOpen, mem_conditionSplice_of_notMem hxF, hx]
+
+omit [Fintype ι] in
+/-- Splicing the empty one-point conditional configuration forces the coordinate closed. -/
+theorem conditionSplice_singleton_empty (e : ι) (ξ : Set ι) :
+    conditionSplice ({e} : Set ι) ξ
+        (∅ : Set (ConditionCoord ({e} : Set ι))) =
+      forceClosed e ξ := by
+  ext x
+  by_cases hx : x = e
+  · subst hx
+    simp [forceClosed, mem_conditionSplice_of_mem]
+  · have hxF : x ∉ ({e} : Set ι) := by simpa using hx
+    simp [forceClosed, mem_conditionSplice_of_notMem hxF, hx]
+
+omit [Fintype ι] in
+lemma set_eq_univ_of_singletonConditionCoord_mem (e : ι)
+    {ωF : Set (ConditionCoord ({e} : Set ι))}
+    (hmem : singletonConditionCoord e ∈ ωF) : ωF = Set.univ := by
+  ext x
+  constructor
+  · intro _
+    trivial
+  · intro _
+    rcases x with ⟨x, hxF⟩
+    have hx_eq : x = e := by simpa using hxF
+    subst hx_eq
+    exact hmem
+
+omit [Fintype ι] in
+lemma set_eq_empty_of_singletonConditionCoord_notMem (e : ι)
+    {ωF : Set (ConditionCoord ({e} : Set ι))}
+    (hmem : singletonConditionCoord e ∉ ωF) : ωF = ∅ := by
+  ext x
+  constructor
+  · intro hx
+    rcases x with ⟨x, hxF⟩
+    have hx_eq : x = e := by simpa using hxF
+    subst hx_eq
+    exact False.elim (hmem hx)
+  · intro hx
+    simp at hx
+
+omit [Fintype ι] in
+noncomputable def singletonConditionSetEquivBool (e : ι) :
+    Set (ConditionCoord ({e} : Set ι)) ≃ Bool := by
+  classical
+  exact
+    { toFun := fun ωF => if singletonConditionCoord e ∈ ωF then true else false
+      invFun := fun b => if b then Set.univ else ∅
+      left_inv := by
+        intro ωF
+        by_cases hmem : singletonConditionCoord e ∈ ωF
+        · rw [set_eq_univ_of_singletonConditionCoord_mem e hmem]
+          simp
+        · rw [set_eq_empty_of_singletonConditionCoord_notMem e hmem]
+          simp
+      right_inv := by
+        intro b
+        cases b <;> simp }
+
+theorem sum_singletonConditionCoord (e : ι)
+    (f : Set (ConditionCoord ({e} : Set ι)) → ℝ) :
+    (∑ ωF, f ωF) = f ∅ + f Set.univ := by
+  classical
+  rw [Fintype.sum_equiv (singletonConditionSetEquivBool e) f
+    (fun b => f (if b then Set.univ else ∅))]
+  · simp
+    ring
+  · intro x
+    simp [singletonConditionSetEquivBool]
+    by_cases hmem : singletonConditionCoord e ∈ x
+    · rw [set_eq_univ_of_singletonConditionCoord_mem e hmem]
+      simp
+    · rw [set_eq_empty_of_singletonConditionCoord_notMem e hmem]
+      simp
+
+theorem conditionDenom_singleton (μ : FiniteCubeMeasure ι) (e : ι) (ξ : Set ι) :
+    conditionDenom μ ({e} : Set ι) ξ = μ (forceClosed e ξ) + μ (forceOpen e ξ) := by
+  rw [conditionDenom, sum_singletonConditionCoord e]
+  rw [conditionSplice_singleton_empty, conditionSplice_singleton_univ]
+
 /-- One-point conditional probability that coordinate `e` is open. -/
 noncomputable def onePointOpenProb (μ : FiniteCubeMeasure ι) (e : ι) (ξ : Set ι)
     (hden : 0 < conditionDenom μ ({e} : Set ι) ξ) : ℝ :=
   (conditionOn μ ({e} : Set ι) ξ hden).prob
     (coordOpenEvent (singletonConditionCoord e))
+
+theorem prob_coordOpenEvent_singleton (μ : FiniteCubeMeasure ι) (e : ι) (ξ : Set ι)
+    (hden : 0 < conditionDenom μ ({e} : Set ι) ξ) :
+    (conditionOn μ ({e} : Set ι) ξ hden).prob
+      (coordOpenEvent (singletonConditionCoord e)) =
+      conditionOn μ ({e} : Set ι) ξ hden Set.univ := by
+  rw [prob, expect]
+  classical
+  rw [Finset.sum_eq_single Set.univ]
+  · simp [coordOpenEvent]
+  · intro b _ hne
+    have hnot : singletonConditionCoord e ∉ b := by
+      intro hmem
+      exact hne (set_eq_univ_of_singletonConditionCoord_mem e hmem)
+    simp [coordOpenEvent, hnot]
+  · intro hnot
+    simp at hnot
+
+theorem onePointOpenProb_eq_div (μ : FiniteCubeMeasure ι) (e : ι) (ξ : Set ι)
+    (hden : 0 < conditionDenom μ ({e} : Set ι) ξ) :
+    onePointOpenProb μ e ξ hden =
+      μ (forceOpen e ξ) / (μ (forceClosed e ξ) + μ (forceOpen e ξ)) := by
+  rw [onePointOpenProb, prob_coordOpenEvent_singleton, conditionOn_apply,
+    conditionSplice_singleton_univ, conditionDenom_singleton]
+
+/-- Equation (2.14): one-point conditional order is equivalent to the cross
+multiplied two-atom inequality. -/
+theorem onePointOpenProb_le_iff_cross (μ ν : FiniteCubeMeasure ι) (e : ι)
+    (ξ ζ : Set ι) (hμ : 0 < conditionDenom μ ({e} : Set ι) ξ)
+    (hν : 0 < conditionDenom ν ({e} : Set ι) ζ) :
+    onePointOpenProb μ e ξ hμ ≤ onePointOpenProb ν e ζ hν ↔
+      μ (forceOpen e ξ) * ν (forceClosed e ζ) ≤
+        ν (forceOpen e ζ) * μ (forceClosed e ξ) := by
+  have hμ' : 0 < μ (forceClosed e ξ) + μ (forceOpen e ξ) := by
+    simpa [conditionDenom_singleton] using hμ
+  have hν' : 0 < ν (forceClosed e ζ) + ν (forceOpen e ζ) := by
+    simpa [conditionDenom_singleton] using hν
+  rw [onePointOpenProb_eq_div, onePointOpenProb_eq_div]
+  constructor
+  · intro h
+    have hmul := mul_le_mul_of_nonneg_right h (le_of_lt (mul_pos hμ' hν'))
+    field_simp [ne_of_gt hμ', ne_of_gt hν'] at hmul
+    nlinarith
+  · intro h
+    have hcross :
+        μ (forceOpen e ξ) * (ν (forceClosed e ζ) + ν (forceOpen e ζ)) ≤
+          ν (forceOpen e ζ) * (μ (forceClosed e ξ) + μ (forceOpen e ξ)) := by
+      nlinarith
+    have hden := div_le_div_of_nonneg_right hcross (le_of_lt (mul_pos hμ' hν'))
+    have hleft :
+        (μ (forceOpen e ξ) * (ν (forceClosed e ζ) + ν (forceOpen e ζ))) /
+          ((μ (forceClosed e ξ) + μ (forceOpen e ξ)) *
+            (ν (forceClosed e ζ) + ν (forceOpen e ζ))) =
+        μ (forceOpen e ξ) /
+          (μ (forceClosed e ξ) + μ (forceOpen e ξ)) := by
+      field_simp [ne_of_gt hμ', ne_of_gt hν']
+    have hright :
+        (ν (forceOpen e ζ) * (μ (forceClosed e ξ) + μ (forceOpen e ξ))) /
+          ((μ (forceClosed e ξ) + μ (forceOpen e ξ)) *
+            (ν (forceClosed e ζ) + ν (forceOpen e ζ))) =
+        ν (forceOpen e ζ) /
+          (ν (forceClosed e ζ) + ν (forceOpen e ζ)) := by
+      field_simp [ne_of_gt hμ', ne_of_gt hν']
+    rwa [hleft, hright] at hden
 
 /-- Strong positive association: every positive conditional measure is positively associated. -/
 def StronglyPositivelyAssociated (μ : FiniteCubeMeasure ι) : Prop :=
@@ -271,6 +436,49 @@ theorem onePointOpenProb_le_of_holleyCondition (μ ν : FiniteCubeMeasure ι)
       (holleyCondition_conditionOn_pair_of_subset μ ν hH ({e} : Set ι) hξζ hξ hζ)
   have hInc := isIncreasingEvent_coordOpenEvent (singletonConditionCoord e)
   exact hstoch _ hInc.indicator_isIncreasingRandomVariable
+
+/-- Equation (2.14) as a consequence of Holley's condition. -/
+theorem onePointCross_le_of_holleyCondition (μ ν : FiniteCubeMeasure ι)
+    (hH : HolleyCondition μ ν) (e : ι) {ξ ζ : Set ι} (hξζ : ξ ⊆ ζ)
+    (hξ : 0 < conditionDenom μ ({e} : Set ι) ξ)
+    (hζ : 0 < conditionDenom ν ({e} : Set ι) ζ) :
+    μ (forceOpen e ξ) * ν (forceClosed e ζ) ≤
+      ν (forceOpen e ζ) * μ (forceClosed e ξ) := by
+  exact (onePointOpenProb_le_iff_cross μ ν e ξ ζ hξ hζ).1
+    (onePointOpenProb_le_of_holleyCondition μ ν hH e hξζ hξ hζ)
+
+/-- A 1-monotonic measure has nondecreasing one-point conditional open probabilities. -/
+theorem onePointOpenProb_le_of_oneMonotonicMeasure (μ : FiniteCubeMeasure ι)
+    (hmono : OneMonotonicMeasure μ) (e : ι) {ξ ζ : Set ι} (hξζ : ξ ⊆ ζ)
+    (hξ : 0 < conditionDenom μ ({e} : Set ι) ξ)
+    (hζ : 0 < conditionDenom μ ({e} : Set ι) ζ) :
+    onePointOpenProb μ e ξ hξ ≤ onePointOpenProb μ e ζ hζ := by
+  have hstoch := hmono e ξ ζ hξ hζ hξζ
+  have hInc := isIncreasingEvent_coordOpenEvent (singletonConditionCoord e)
+  exact hstoch _ hInc.indicator_isIncreasingRandomVariable
+
+/-- The cross-multiplied one-point inequality generated by 1-monotonicity. -/
+theorem onePointCross_le_of_oneMonotonicMeasure (μ : FiniteCubeMeasure ι)
+    (hmono : OneMonotonicMeasure μ) (e : ι) {ξ ζ : Set ι} (hξζ : ξ ⊆ ζ)
+    (hξ : 0 < conditionDenom μ ({e} : Set ι) ξ)
+    (hζ : 0 < conditionDenom μ ({e} : Set ι) ζ) :
+    μ (forceOpen e ξ) * μ (forceClosed e ζ) ≤
+      μ (forceOpen e ζ) * μ (forceClosed e ξ) := by
+  exact (onePointOpenProb_le_iff_cross μ μ e ξ ζ hξ hζ).1
+    (onePointOpenProb_le_of_oneMonotonicMeasure μ hmono e hξζ hξ hζ)
+
+/-- A two-coordinate local cross inequality generated by 1-monotonicity. -/
+theorem twoCoordinateCross_le_of_oneMonotonicMeasure (μ : FiniteCubeMeasure ι)
+    (hμ : μ.StrictPositive) (hmono : OneMonotonicMeasure μ) (e f : ι) (ω : Set ι) :
+    μ (forceOpen e (forceClosed f ω)) * μ (forceClosed e (forceOpen f ω)) ≤
+      μ (forceOpen e (forceOpen f ω)) * μ (forceClosed e (forceClosed f ω)) := by
+  have hsub : forceClosed f ω ⊆ forceOpen f ω := by
+    intro x hx
+    simp [forceClosed, forceOpen] at hx ⊢
+    exact Or.inr hx.1
+  exact onePointCross_le_of_oneMonotonicMeasure μ hmono e hsub
+    (conditionDenom_pos_of_strictPositive μ hμ ({e} : Set ι) (forceClosed f ω))
+    (conditionDenom_pos_of_strictPositive μ hμ ({e} : Set ι) (forceOpen f ω))
 
 /-- The `(b) => (a)` implication in Theorem 2.24. -/
 theorem stronglyPositivelyAssociated_of_fkgLatticeCondition (μ : FiniteCubeMeasure ι)

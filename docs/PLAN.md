@@ -15,7 +15,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | **proved**: BK 2.12/2.14/2.15 by the two-copy method (`BK.lean`), limit form (2.17) (`DisjointConnections.lean`); Reimer 2.19 recorded as anti-target |
 | P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | **proved**: Thm 2.25 + (2.29)/(2.31)/2.32/(2.33) (`Russo.lean`); §2.5 reliability inequalities 2.34/2.36/2.38 (`Reliability.lean`); §2.6 sprinkling 2.45 proved (`Sprinkling.lean`) |
 | P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |
-| P9 | Ch. 4 | Number of open clusters per vertex | Critical | absent |
+| P9 | Ch. 4 | Number of open clusters per vertex | Critical | **proved conditional slices**: finite component-count squeeze and cubic open-cluster bridge for Thm. 4.2; coefficient-table entropy bound for Thm. 4.20; uniform-majorant `C¹` animal-series theorem and exact (4.32) derivative for Thm. 4.31 (`OpenClusterDensity.lean`, `LatticeAnimals.lean`, `ClusterDensityDerivative.lean`); multiparameter box ergodic theorem, concrete cubic-animal enumeration/(4.25), sharp 4.20 constant, L¹ convergence, and discharge of the 4.31 majorant remain |
 | P10 | Ch. 5 | Menshikov/Aizenman-Barsky subcritical threshold methods | Critical | absent/deep |
 | P11 | Ch. 6 | Systematic subcritical phase estimates | Critical | absent/deep |
 | P12 | Ch. 7 | Supercritical renormalization and slab criteria | Critical | absent/deep |

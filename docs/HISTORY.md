@@ -848,6 +848,21 @@ Dated milestones and anti-library notes.
     completes the Chapter 2 milestone plan M1–M10; stretch targets (2.28), (2.30), (2.49)
     and the L² form of 2.4(a) remain recorded on the topic card. Standard axioms only.
 
+76. **Grimmett Chapter 4 open-cluster density (2026-07-09).** Added
+    `Percolation/Critical/OpenClusterDensity.lean`, `LatticeAnimals.lean`, and
+    `ClusterDensityDerivative.lean`. For Theorem (4.2), proved the exact finite-graph identity
+    `Σ_v |C(v)|⁻¹ = #components`, boundary/escaping-component squeeze inequalities, the cubic
+    open-graph/production-cluster equivalence, `κ(p) = E_p(|C|⁻¹)`, and the almost-sure normalized
+    finite-volume limit conditional on the explicitly named multiparameter box-ergodic and
+    boundary inputs. For Theorem (4.20), proved an elementary binary-relative-entropy bound and
+    the finite exceptional-pair sum at coefficient-table level, conditional on (4.25), with the
+    recorded weaker exponent `-n x² p²(1-p)²/18` and `n ≥ 2`. For Theorem (4.31), formalized the
+    animal expansion, exact derivative summand (4.32), and a Mathlib uniform-limit theorem giving
+    `ContDiffOn ℝ 1` on `[0,1]` under an explicit summable derivative majorant. The three measured
+    autoformalization windows used 312,517 / 318,792 / 55,995 tokens and 14m44s / 14m51s / 3m10s,
+    respectively. Full build green, zero `sorry`, standard axioms only; all uninstantiated source
+    inputs and constant/endpoint divergences are recorded in `topic-04-cluster-density.md`.
+
 ## Axiom Ledger
 
 Empty.

@@ -13,6 +13,9 @@ import Percolation.Bernoulli.Russo
 import Percolation.Bernoulli.Sprinkling
 import Percolation.Critical.Basic
 import Percolation.Critical.VertexIndependence
+import Percolation.Critical.OpenClusterDensity
+import Percolation.Critical.LatticeAnimals
+import Percolation.Critical.ClusterDensityDerivative
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls
 import Percolation.RandomCluster.Basic

@@ -30,5 +30,8 @@ source corpus in `kg/`, planning and verification docs in `docs/`, Lean modules 
 4. [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — informal-to-formal map and source links.
 5. [`audit/`](audit/) + [`formalization.yaml`](formalization.yaml) — comparator-facing
    faithfulness, validation, and axiom/sorry tracking.
+6. [`AUTOMATED_REVIEW.md`](AUTOMATED_REVIEW.md) — mandatory chapter/batch review protocol with
+   source correspondence, concrete and adversarial tests, Comparator challenges, axiom audits,
+   independent-agent review, and PR reporting.
 
 Working with an agent? Start with [`AGENTS.md`](AGENTS.md).

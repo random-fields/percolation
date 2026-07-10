@@ -50,6 +50,11 @@ Do not mark a theorem "faithful" until this trail exists. If an axiom is introdu
 independent read-only review whose job is to refute it, then record the result in
 `audit/vetting/`.
 
+For chapter-scale, multi-theorem, or generated autoformalization batches, read and follow
+[`AUTOMATED_REVIEW.md`](AUTOMATED_REVIEW.md) before claiming completion or opening the final PR.
+Its source inventory, test-case, counterexample, Comparator, transitive-axiom, independent-review,
+and PR-summary gates are mandatory for those batches.
+
 ## Axiom and Sorry Rules
 
 - `main` should be build-green and sorry-free once the initial scaffold is replaced by real

@@ -41,8 +41,8 @@ formalization window has yet completed; it is not an estimate.
 | Proposition 6.49 | 127–128 | `τ(0,x)≤(1-χ⁻¹)^|x|`, hence `ξ≤χ` below criticality | `Percolation.twoPointConnectivity_le_one_sub_susceptibility_inv_pow`, `Percolation.correlationLength_le_susceptibility`, `Percolation.susceptibility_tendsto_top_at_critical` | proved; `correlationLength` is ENNReal-valued, equals `⊤` at `p_c`, and the divergence theorem uses the left-neighborhood filter | jointly measured | jointly measured |
 | Theorem 6.75, (6.77) | 132 | Subcritical cluster size has an exponential tail | missing | target; exact (6.77) assumes `n>χ²`, general strict exponential is eventual |  |  |
 | Theorem 6.78, (6.80), (6.82)–(6.83) | 132–134 | Exact-size and finite-tail exponential rates exist, are positive below criticality, and `ζ≤φ` | missing | target |  |  |
-| Lemma 6.87 | 134–135 | A finite nonempty terminal set has a removable terminal preserving connectivity of the rest | missing | target; finite-set correction is mandatory |  |  |
-| Lemma 6.89 | 135–136 | Three-point connectivity is bounded by a sum of three two-point products | missing | target in `ℝ≥0∞` |  |  |
+| Lemma 6.87 | 134–135 | A finite nonempty terminal set has a removable terminal preserving connectivity of the rest | `Percolation.exists_terminal_deletion_preserves_connected` | proved for an arbitrary connected ambient graph and a finite nonempty `Finset`; deletion is encoded by `deleteIncidenceSet` | jointly measured | jointly measured |
+| Lemma 6.89 | 135–136 | Three-point connectivity is bounded by a sum of three two-point products | `Percolation.threePointConnectivity_le_tsum_prod` | proved in `ℝ≥0∞`; includes deterministic first-hit tripod extraction and iterated BK | jointly measured | jointly measured |
 | (6.93)–(6.97) | 136–138 | Skeleton tree-graph bound, skeleton count, moment bound, and exponential-moment bound | missing | target; all-density connectivity sums use `ℝ≥0∞` |  |  |
 | Lemma 6.102 | 139–141 | Normalized exact cluster-size probabilities satisfy the animal-concatenation inequality | missing | target |  |  |
 | Theorem 6.108 | 142–145 | `κ` and `χ` are analytic on `[0,p_c)` | missing | target must bundle analytic series with equality to the probabilistic functions |  |  |
@@ -54,6 +54,7 @@ formalization window has yet completed; it is not an estimate.
 | Coordinate-box geometry and finite support | `L∞` distance, norm comparison, surfaces, exact internal edge support, first-hit paths, event measurability/monotonicity, and initial 6.1 scaffold | 5m23s | 119,967 |
 | Theorem 6.10 and its shared block/rate infrastructure | exact face counts, translations, coordinate permutations/reflections, BK upper block, FKG lower block, two-sided corrected Fekete theorem, logarithmic rate, and public constants | 32m44s | 358,918 |
 | Theorem 6.44 and Propositions 6.47–6.49 with shared two-point infrastructure | graph-isomorphism measure transport, axis Fekete rate, face reflection, arbitrary signed-coordinate concatenation, shell-mass selection, susceptibility comparison, ENNReal correlation length, and critical divergence | 62m09s | 725,848 |
+| Lemmas 6.87 and 6.89 with tripod infrastructure | minimum finite connected carrier, removable terminal, first-hit path splitting, component-local tripods, open-graph transport, and endpoint-safe BK summation | 19m51s | 205,604 |
 
 The initial window included the first 6.1 scaffold before an internal counter snapshot was taken.
 It is charged once to shared infrastructure and is not duplicated in the theorem row.  The 6.1
@@ -73,3 +74,7 @@ The two-point window runs from `(3442s, 813954)` through `(7171s, 1539802)`. Bec
 counter snapshot was taken between 6.44, 6.47, and 6.49, this is reported as one joint measured
 window and is charged exactly once. No reconstructed per-theorem split is presented as measured
 telemetry.
+
+The initial tree-graph window runs from `(7644s, 1620051)` through `(8835s, 1825655)`. It jointly
+measures Lemmas 6.87 and 6.89 and their shared tripod infrastructure; no reconstructed split is
+reported.

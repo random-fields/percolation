@@ -2,8 +2,8 @@
 
 - Review id: `chapter-06-2026-07-10-worktree`
 - Scope: coordinate-box and two-point infrastructure; Grimmett Theorems 6.1, 6.10, 6.14, 6.44,
-  and Propositions 6.47 and 6.49
-- Source: `grimmett-percolation-1999`, Chapter 6, pp. 117–128
+  Propositions 6.47 and 6.49, and Lemmas 6.87 and 6.89
+- Source: `grimmett-percolation-1999`, Chapter 6, pp. 117–136
 - Branch: `agent/grimmett-chapter-6-autoformalization`
 - Revision: dirty worktree; preliminary review evidence only
 - Lean verification: `lake env lean audit/reviews/chapter-06/2026-07-10-worktree/cases/Theorem61.lean`
@@ -12,6 +12,7 @@
 - Lean verification: `lake env lean audit/reviews/chapter-06/2026-07-10-worktree/cases/Theorem644.lean`
 - Lean verification: `lake env lean audit/reviews/chapter-06/2026-07-10-worktree/cases/Proposition647.lean`
 - Lean verification: `lake env lean audit/reviews/chapter-06/2026-07-10-worktree/cases/Proposition649.lean`
+- Lean verification: `lake env lean audit/reviews/chapter-06/2026-07-10-worktree/cases/Lemmas687689.lean`
 - Comparator: not yet run; `landrun` and `lean4export` are unavailable locally
 - Independent review: `/root/chapter6_source_review`, read-only first pass
 

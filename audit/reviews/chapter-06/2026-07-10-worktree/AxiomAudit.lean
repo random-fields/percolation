@@ -1,4 +1,4 @@
-import Percolation.Critical.TwoPoint
+import Percolation.Critical.TreeGraph
 
 #print axioms Percolation.boxRadiusTail_exponential_decay_of_susceptibility_lt_top
 #print axioms Percolation.mem_boxRadiusConnectionEvent_iff_exists_connection
@@ -17,3 +17,5 @@ import Percolation.Critical.TwoPoint
 #print axioms Percolation.twoPointConnectivity_le_one_sub_susceptibility_inv_pow
 #print axioms Percolation.correlationLength_le_susceptibility
 #print axioms Percolation.susceptibility_tendsto_top_at_critical
+#print axioms Percolation.exists_terminal_deletion_preserves_connected
+#print axioms Percolation.threePointConnectivity_le_tsum_prod

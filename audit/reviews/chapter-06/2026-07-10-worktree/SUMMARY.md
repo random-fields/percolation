@@ -21,4 +21,10 @@
   refuted.
 - Axiom audit: all reviewed 6.44–6.49 declarations report exactly `propext`, `Classical.choice`,
   and `Quot.sound`.
+- Lemma 6.87: the ambient graph remains arbitrary, the corrected finite nonempty terminal domain
+  is explicit, and the proof uses no finite-ambient shortcut. The infinite path with all integers
+  terminal is recorded as the counterexample to omitting finiteness: deleting any integer leaves
+  terminals on two disconnected sides.
+- Lemma 6.89: deterministic tripods, repeated-terminal zero-length branches, and ENNReal BK sums
+  pass; the real-`tsum` endpoint anti-pattern is not used.
 - Chapter status: incomplete.

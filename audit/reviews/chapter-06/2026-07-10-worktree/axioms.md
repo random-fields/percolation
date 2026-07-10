@@ -25,3 +25,5 @@ Declarations:
 - `Percolation.twoPointConnectivity_le_one_sub_susceptibility_inv_pow`
 - `Percolation.correlationLength_le_susceptibility`
 - `Percolation.susceptibility_tendsto_top_at_critical`
+- `Percolation.exists_terminal_deletion_preserves_connected`
+- `Percolation.threePointConnectivity_le_tsum_prod`

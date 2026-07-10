@@ -305,7 +305,119 @@ theorem radiusTail_one_lt_one {d : ℕ} {p : I} (hp1 : (p : ℝ) < 1) :
   change mu.real (radiusConnectionEvent d cubicOrigin 1) < 1
   linarith
 
+/-- Interpolate geometric decay on a positive block scale to a unit-prefactor
+exponential bound at every radius.  This is the classical block argument used
+after finite susceptibility is known. -/
+theorem radiusTail_exponential_decay_of_susceptibility_lt_top
+    {d : ℕ} {p : I} (hp1 : (p : ℝ) < 1)
+    (hchi : susceptibility d p < ⊤) :
+    ∃ c : ℝ, 0 < c ∧ ∀ n : ℕ,
+      radiusTail d p n ≤ Real.exp (-c * n) := by
+  let g : ℕ → ℝ := radiusTail d p
+  have hg0 : g 0 = 1 := radiusTail_zero d p
+  have hg1lt : g 1 < 1 := radiusTail_one_lt_one hp1
+  have hg_nonneg : ∀ n, 0 ≤ g n := fun _ ↦ measureReal_nonneg
+  by_cases hg1zero : g 1 = 0
+  · refine ⟨1, by norm_num, ?_⟩
+    intro n
+    rcases n with _ | n
+    · simp [g, hg0]
+    · have hle : g (n + 1) ≤ g 1 :=
+        radiusTail_antitone d p (by omega)
+      rw [hg1zero] at hle
+      exact hle.trans (Real.exp_pos _).le
+  · have hg1pos : 0 < g 1 := lt_of_le_of_ne (hg_nonneg 1) (Ne.symm hg1zero)
+    obtain ⟨R, hR0, hblock⟩ :=
+      radiusTail_mul_block_le_pow_half_of_susceptibility_lt_top hchi
+    let c₁ : ℝ := Real.log 2 / (2 * R)
+    let c₂ : ℝ := -Real.log (g 1) / R
+    let c : ℝ := min c₁ c₂
+    have hRreal : (0 : ℝ) < R := by exact_mod_cast hR0
+    have hc₁ : 0 < c₁ := by
+      dsimp only [c₁]
+      exact div_pos (Real.log_pos (by norm_num)) (mul_pos (by norm_num) hRreal)
+    have hlogg : Real.log (g 1) < 0 := Real.log_neg hg1pos hg1lt
+    have hc₂ : 0 < c₂ := by
+      dsimp only [c₂]
+      exact div_pos (neg_pos.mpr hlogg) hRreal
+    have hc : 0 < c := lt_min hc₁ hc₂
+    refine ⟨c, hc, ?_⟩
+    intro n
+    by_cases hn0 : n = 0
+    · subst n
+      simp [g, hg0]
+    by_cases hnR : n < R
+    · have hgn : g n ≤ g 1 :=
+        radiusTail_antitone d p (Nat.one_le_iff_ne_zero.mpr hn0)
+      have hc_le : c ≤ c₂ := min_le_right _ _
+      have hnRreal : (n : ℝ) ≤ R := by exact_mod_cast hnR.le
+      have hcn : c * n ≤ -Real.log (g 1) := by
+        have hc0 : 0 ≤ c := hc.le
+        have hn0real : (0 : ℝ) ≤ n := by positivity
+        calc
+          c * (n : ℝ) ≤ c * R :=
+            mul_le_mul_of_nonneg_left hnRreal hc0
+          _ ≤ c₂ * R := mul_le_mul_of_nonneg_right hc_le hRreal.le
+          _ = -Real.log (g 1) := by
+            dsimp only [c₂]
+            field_simp [hRreal.ne']
+      calc
+        g n ≤ g 1 := hgn
+        _ = Real.exp (Real.log (g 1)) := (Real.exp_log hg1pos).symm
+        _ ≤ Real.exp (-c * n) := by
+          apply Real.exp_le_exp.mpr
+          linarith
+    · have hRn : R ≤ n := Nat.le_of_not_gt hnR
+      let k := n / R
+      have hkpos : 0 < k := Nat.div_pos hRn hR0
+      have hkR : k * R ≤ n := Nat.div_mul_le_self n R
+      have hgn : g n ≤ g (k * R) := radiusTail_antitone d p hkR
+      have hgeom : g (k * R) ≤ (1 / 2 : ℝ) ^ k := hblock k
+      have hmod : n % R < R := Nat.mod_lt n hR0
+      have hdecomp : k * R + n % R = n := by
+        simpa [k, Nat.mul_comm] using Nat.div_add_mod n R
+      have hRle : R ≤ k * R := by
+        simpa using Nat.mul_le_mul_right R (Nat.succ_le_iff.mpr hkpos)
+      have hnTwo : n ≤ 2 * k * R := by
+        calc
+          n ≤ k * R + R := by omega
+          _ ≤ k * R + k * R := Nat.add_le_add_left hRle _
+          _ = 2 * k * R := by ring
+      have hnTwoReal : (n : ℝ) ≤ 2 * k * R := by exact_mod_cast hnTwo
+      have hc_le : c ≤ c₁ := min_le_left _ _
+      have hck : c * n ≤ Real.log 2 * k := by
+        have hc0 : 0 ≤ c := hc.le
+        calc
+          c * (n : ℝ) ≤ c * (2 * k * R) :=
+            mul_le_mul_of_nonneg_left hnTwoReal hc0
+          _ ≤ c₁ * (2 * k * R) := by
+            apply mul_le_mul_of_nonneg_right hc_le
+            positivity
+          _ = Real.log 2 * k := by
+            dsimp only [c₁]
+            field_simp [hRreal.ne']
+      have hhalfExp : (1 / 2 : ℝ) ^ k =
+          Real.exp (-(Real.log 2) * k) := by
+        calc
+          (1 / 2 : ℝ) ^ k = (Real.exp (-Real.log 2)) ^ k := by
+            congr 1
+            rw [Real.exp_neg, Real.exp_log (by norm_num : (0 : ℝ) < 2)]
+            norm_num
+          _ = Real.exp ((k : ℝ) * (-Real.log 2)) := by
+            rw [← Real.exp_nat_mul]
+          _ = Real.exp (-(Real.log 2) * k) := by
+            congr 1
+            ring
+      calc
+        g n ≤ g (k * R) := hgn
+        _ ≤ (1 / 2 : ℝ) ^ k := hgeom
+        _ = Real.exp (-(Real.log 2) * k) := hhalfExp
+        _ ≤ Real.exp (-c * n) := by
+          apply Real.exp_le_exp.mpr
+          linarith
+
 #print axioms radiusTail_mul_block_le_pow_half_of_susceptibility_lt_top
+#print axioms radiusTail_exponential_decay_of_susceptibility_lt_top
 
 #print axioms radiusTail_add_le_sphereConnectionSum_mul
 

@@ -36,6 +36,7 @@ import Percolation.Critical.GhostConclusion
 import Percolation.Critical.SusceptibilityThreshold
 import Percolation.Critical.Translation
 import Percolation.Critical.RadiusBlock
+import Percolation.Critical.RadiusDecay
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries

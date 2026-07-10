@@ -35,7 +35,7 @@ formalization window has yet completed; it is not an estimate.
 |---|---:|---|---|---|---:|---:|
 | Theorem 6.1, (6.2) | 117–120 | If `χ(p)<∞`, connection from `0` to `∂B(n)` is at most `exp (-n σ(p))` | `Percolation.boxRadiusTail_exponential_decay_of_susceptibility_lt_top` | proved for the chapter range `2 ≤ d`, all `n`; no extra public `p<1` hypothesis | 2m25s | 39,091 |
 | Theorem 6.10, (6.11), (6.33)–(6.36) | 120–124 | The box-radius logarithmic rate exists and has two-sided polynomial corrections | `Percolation.boxRadiusTail_logRate_tendsto`, `Percolation.boxRadiusTail_twoSided_decay` | proved; constants are quantified before `p`, bounds require `n>0`, and use denominator/positive-power forms | 32m44s | 358,918 |
-| Theorem 6.14, (6.15)–(6.18), (6.40) | 121, 124–125 | Continuity, monotonicity, strict subcritical decrease, zero-density divergence, and critical value | missing | target; (6.40) ratio form uses `b<1` |  |  |
+| Theorem 6.14, (6.15)–(6.18), (6.40) | 121, 124–125 | Continuity, monotonicity, strict subcritical decrease, zero-density divergence, and critical value | `Percolation.boxRadiusDecayRate_continuousOn`, `Percolation.boxRadiusDecayRate_antitoneOn_pos`, `Percolation.boxRadiusDecayRate_strictAntiOn_subcritical`, `Percolation.boxRadiusDecayRate_tendsto_top_at_zero`, `Percolation.boxRadiusDecayRate_critical_eq_zero`, `Percolation.boxRadiusDecayRate_log_ratio_comparison` | proved; continuity is a uniform limit of finite-event polynomials, the critical value does not assume `θ(p_c)=0`, and (6.40) carries the necessary `b<1` hypothesis | 16m45s | 294,286 |
 | Theorem 6.44, (6.45)–(6.46) | 126 | Axis two-point function has rate `φ` and lower bound `c p / n^(4(d-1)) * exp(-nφ)` | missing | target; `n≥1` |  |  |
 | Proposition 6.47, (6.48) | 126–127 | General two-point function has matching norm-dependent exponential bounds | missing | target; lower bound requires `x≠0` and contains `p^(d*|x|)` |  |  |
 | Proposition 6.49 | 127–128 | `τ(0,x)≤(1-χ⁻¹)^|x|`, hence `ξ≤χ` below criticality | missing | target; source-facing `ξ` restricted to `p≤p_c` |  |  |
@@ -63,3 +63,7 @@ adversarial cases, module build, and axiom audit from counter snapshots `(328s, 
 The 6.10 window runs from `(473s, 160750)` through `(2437s, 519668)`. It necessarily combines
 the theorem with its new shared symmetry, face-event, and corrected-subadditivity infrastructure;
 no reconstructed split is presented.
+
+The 6.14 window runs from `(2437s, 519668)` through `(3442s, 813954)`. It includes the uniform
+finite-radius approximation, the box-tail-to-`θ` squeeze, the self-avoiding-walk endpoint bound,
+all local verification, and the corrected source-domain audit for (6.40).

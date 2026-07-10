@@ -585,9 +585,88 @@ theorem boxRadiusConnectionEvent_subset_radiusConnectionEvent
     ((mem_cubicBoxSurface.mp hy).ge.trans (cubicLInfDist_le_l1Dist x y))
   exact ⟨z, hz, connectionEventIn_subset d _ x z hzconn⟩
 
+/-- A Manhattan-radius connection at radius `d * n` must leave the coordinate box of
+radius `n`, giving the reverse comparison needed to identify the box-tail limit. -/
+theorem radiusConnectionEvent_mul_dimension_subset_boxRadiusConnectionEvent
+    {d : ℕ} (hd : 0 < d) (x : Cubic d) (n : ℕ) :
+    radiusConnectionEvent d x (d * n) ⊆ boxRadiusConnectionEvent d x n := by
+  intro ω hω
+  rw [mem_radiusConnectionEvent_iff_exists_connection] at hω
+  rcases hω with ⟨y, hy, w, hwopen⟩
+  have hl1 : cubicL1Dist x y = d * n := mem_cubicMetricSphere_iff_l1Dist_eq.mp hy
+  have hmul : d * n ≤ d * cubicLInfDist x y := by
+    rw [← hl1]
+    exact cubicL1Dist_le_card_mul_lInfDist x y
+  have hlinf : n ≤ cubicLInfDist x y := le_of_mul_le_mul_left hmul hd
+  exact exists_open_walk_to_cubicBoxSurface_in_box w hwopen hlinf
+
 theorem boxRadiusTail_le_radiusTail (d : ℕ) (p : I) (n : ℕ) :
     boxRadiusTail d p n ≤ radiusTail d p n := by
   exact measureReal_mono (boxRadiusConnectionEvent_subset_radiusConnectionEvent d _ n)
+
+theorem radiusTail_mul_dimension_le_boxRadiusTail
+    {d : ℕ} (hd : 0 < d) (p : I) (n : ℕ) :
+    radiusTail d p (d * n) ≤ boxRadiusTail d p n := by
+  exact measureReal_mono
+    (radiusConnectionEvent_mul_dimension_subset_boxRadiusConnectionEvent hd cubicOrigin n)
+
+/-- Coordinate-box radius probabilities decrease to the percolation probability. -/
+theorem boxRadiusTail_tendsto_theta
+    {d : ℕ} (hd : 0 < d) (p : I) :
+    Filter.Tendsto (boxRadiusTail d p) Filter.atTop (nhds (theta d p)) := by
+  have hsubseq : Filter.Tendsto (fun n : ℕ ↦ radiusTail d p (d * n)) Filter.atTop
+      (nhds (theta d p)) := by
+    apply (radiusTail_tendsto_theta d p).comp
+    rw [Filter.tendsto_atTop]
+    intro b
+    filter_upwards [Filter.eventually_ge_atTop b] with n hn
+    exact hn.trans (by
+      simpa using Nat.mul_le_mul_right n hd)
+  exact hsubseq.squeeze (radiusTail_tendsto_theta d p)
+    (fun n ↦ radiusTail_mul_dimension_le_boxRadiusTail hd p n)
+    (fun n ↦ boxRadiusTail_le_radiusTail d p n)
+
+/-- Reaching the coordinate-box surface of radius `n` produces an open self-avoiding path
+of length at least `n` from the origin. -/
+theorem boxRadiusConnectionEvent_subset_hasOpenPathOfLengthAtLeast
+    (d n : ℕ) :
+    boxRadiusConnectionEvent d cubicOrigin n ⊆
+      {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeast d ω n} := by
+  intro ω hω
+  rw [mem_boxRadiusConnectionEvent_iff_exists_connection] at hω
+  rcases hω with ⟨y, hy, w, hwopen⟩
+  let q : (cubicGraph d).Walk cubicOrigin y := w.toPath
+  refine ⟨y, q, w.toPath.2, ?_, walkIsOpen_toPath w hwopen⟩
+  calc
+    n = cubicLInfDist cubicOrigin y := (mem_cubicBoxSurface.mp hy).symm
+    _ ≤ cubicL1Dist cubicOrigin y := cubicLInfDist_le_l1Dist _ _
+    _ ≤ q.length := cubicL1Dist_le_walk_length q
+
+/-- The elementary path-counting upper bound for the coordinate-box radius event. -/
+theorem boxRadiusTail_le_selfAvoidingWalkCount_mul_pow
+    (d : ℕ) (p : I) (n : ℕ) :
+    boxRadiusTail d p n ≤
+      (selfAvoidingWalkCount d n : ℝ) * (p : ℝ) ^ n := by
+  calc
+    boxRadiusTail d p n ≤
+        (bernoulliBondMeasure d p).real
+          {ω : EdgeConfiguration d | hasOpenPathOfLengthAtLeast d ω n} :=
+      measureReal_mono (boxRadiusConnectionEvent_subset_hasOpenPathOfLengthAtLeast d n)
+    _ ≤ (selfAvoidingWalkCount d n : ℝ) * (p : ℝ) ^ n :=
+      bernoulliBondMeasure_real_hasOpenPathOfLengthAtLeast_le d n p
+
+/-- Crude but uniform path-counting bound `βₚ(n) ≤ ((2d)p)ⁿ`. -/
+theorem boxRadiusTail_le_direction_count_mul_density_pow
+    (d : ℕ) (p : I) (n : ℕ) :
+    boxRadiusTail d p n ≤ (((2 * d : ℕ) : ℝ) * (p : ℝ)) ^ n := by
+  calc
+    boxRadiusTail d p n ≤
+        (selfAvoidingWalkCount d n : ℝ) * (p : ℝ) ^ n :=
+      boxRadiusTail_le_selfAvoidingWalkCount_mul_pow d p n
+    _ ≤ (((2 * d : ℕ) : ℝ) ^ n) * (p : ℝ) ^ n := by
+      apply mul_le_mul_of_nonneg_right _ (pow_nonneg p.property.1 n)
+      exact_mod_cast selfAvoidingWalkCount_le_directionWords d n
+    _ = (((2 * d : ℕ) : ℝ) * (p : ℝ)) ^ n := (mul_pow _ _ _).symm
 
 /-! ### Grimmett, Theorem 6.1 -/
 

@@ -24,7 +24,10 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
 ## Tier C — Percolation Theorems
 
 - **[target]** Existence and monotonicity of the critical probability `p_c`.
-- **[target]** Subcritical exponential decay, first as a conditional theorem if needed.
+- **[done]** Subcritical exponential decay by Menshikov's source-order argument
+  (`radiusTail_exponential_decay_of_lt_critical`), including the full pivotal-sausage,
+  renewal, master-inequality, and inverse-square-root bootstrap chain; independently,
+  Aizenman–Barsky's ghost-field route proves finite susceptibility below `p_c`.
 - **[target]** Burton-Keane uniqueness of the infinite cluster under standard hypotheses.
 - **[target]** Planar duality for bond percolation on the square lattice.
 - **[target]** `p_c = 1/2` for bond percolation on `Z^2`.

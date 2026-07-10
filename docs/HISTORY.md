@@ -863,6 +863,29 @@ Dated milestones and anti-library notes.
     respectively. Full build green, zero `sorry`, standard axioms only; all uninstantiated source
     inputs and constant/endpoint divergences are recorded in `topic-04-cluster-density.md`.
 
+77. **Unconditional Chapter 4 animal and differentiability theorems (2026-07-10).** Replaced the
+    conditional 4.20/4.31 endpoints by concrete source-facing declarations. `CubicBondAnimal` and
+    its exact cluster cylinders discharge (4.25); `cubicAnimal_largeDeviation_sharp_one_le` proves
+    Grimmett's prefactor and exponent for every `n ≥ 1`, with `x ≤ 1/100` as an explicit witness
+    for the book's uniform small-`x` range. `concreteClusterDensitySeries_eq_openClustersPerVertex`
+    identifies the actual coefficient series, while
+    `concreteClusterDensitySeries_contDiffOn_unitInterval` proves `C¹` on `[0,1]`: sharp 4.20
+    controls the interior, a two-sided animal majorant handles `p=0`, and periodic component counts
+    plus a square detour handle `p=1`. Theorem 4.2 remains conditional exactly as recorded on the
+    Chapter 4 comparator card.
+
+78. **Grimmett Chapter 5 exponential decay (2026-07-10).** Added the complete selected Chapter 5
+    scope in `Percolation/Critical/`: the cubic L¹ metric/radius/susceptibility layer; finite
+    two-edge Menger and pivotal-sausage exploration; finite Wald renewal comparison; direct
+    Lemmas 5.12, 5.17, 5.24 and master inequality (5.22); Menshikov's source-order proof of
+    Theorem 5.4 and its 5.2/5.7 consequences; right continuity and Theorem 5.8; the mixed
+    edge/green product model and equations (5.42)–(5.47); periodic cubic tori, inhomogeneous BK,
+    concrete torus animals, and Appendix I limits (5.64)–(5.66); infinite-volume Lemmas 5.51 and
+    5.53; Proposition 5.49; Theorem 5.48; and the independent ghost-field proof of Theorem 5.2.
+    The public threshold theorem proves (5.3). Both routes are assumption-free, all headline axiom
+    audits use only `propext`, `Classical.choice`, and `Quot.sound`, and the full measured ledger is
+    in `audit/topics/topic-05-exponential-decay.md`.
+
 ## Axiom Ledger
 
 Empty.

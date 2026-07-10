@@ -18,6 +18,7 @@ import Percolation.Critical.VertexIndependence
 import Percolation.Critical.OpenClusterDensity
 import Percolation.Critical.Radius
 import Percolation.Critical.PivotalSausage
+import Percolation.Critical.FiniteRenewal
 import Percolation.Critical.ExponentialDecay
 import Percolation.Critical.ThetaContinuity
 import Percolation.Critical.GhostField

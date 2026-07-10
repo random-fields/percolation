@@ -183,12 +183,14 @@ theorem summable_finiteClusterSizeProbability (d : ℕ) (p : I) :
       measureReal_mono (Set.subset_univ _) (measure_ne_top _ _)
     _ = 1 := probReal_univ
 
+/-- Cluster size with infinite clusters assigned zero. -/
+noncomputable def finiteClusterSizeWeight (d : ℕ) (ω : EdgeConfiguration d) : ℝ≥0∞ := by
+  classical
+  exact if (cubicOpenCluster d ω).Finite then clusterSizeENNReal d ω else 0
+
 /-- Extended finite-cluster susceptibility `χᶠ(p)`. Infinite clusters contribute zero. -/
 noncomputable def finiteSusceptibility (d : ℕ) (p : I) : ℝ≥0∞ :=
-  by
-    classical
-    exact ∫⁻ ω, if (cubicOpenCluster d ω).Finite then clusterSizeENNReal d ω else 0
-      ∂bernoulliBondMeasure d p
+  ∫⁻ ω, finiteClusterSizeWeight d ω ∂bernoulliBondMeasure d p
 
 /-- Grimmett's ghost susceptibility `χ(p,γ)=E(|C|; C∩G=∅)`. -/
 noncomputable def ghostSusceptibility (d : ℕ) (p γ : I) : ℝ≥0∞ :=
@@ -459,6 +461,232 @@ theorem ghostSusceptibility_eq_series (d : ℕ) (p γ : I) (hγ : 0 < (γ : ℝ)
       apply tsum_congr
       intro n
       rw [lintegral_indicator_const (measurableSet_finiteClusterSizeEvent d n)]
+
+/-- Finite-cluster size, with infinite clusters assigned zero, as a disjoint size-class sum. -/
+theorem finiteClusterSizeWeight_eq_tsum (d : ℕ) (ω : EdgeConfiguration d) :
+    finiteClusterSizeWeight d ω =
+      ∑' n : ℕ, (finiteClusterSizeEvent d n).indicator (fun _ ↦ (n : ℝ≥0∞)) ω := by
+  classical
+  unfold finiteClusterSizeWeight
+  by_cases hC : (cubicOpenCluster d ω).Finite
+  · rw [if_pos hC, clusterSizeENNReal_eq_ncard_of_finite hC]
+    let k := (cubicOpenCluster d ω).ncard
+    have hevent : ∀ n : ℕ, ω ∈ finiteClusterSizeEvent d n ↔ n = k := by
+      intro n
+      rw [finiteClusterSizeEvent, Set.mem_setOf_eq,
+        clusterSizeENNReal_eq_ncard_of_finite hC]
+      constructor
+      · intro h
+        exact Nat.cast_injective h.symm
+      · rintro rfl
+        rfl
+    simp_rw [Set.indicator_apply, hevent]
+    rw [tsum_ite_eq]
+  · rw [if_neg hC]
+    have hCinf : (cubicOpenCluster d ω).Infinite := hC
+    have htop : clusterSizeENNReal d ω = ⊤ :=
+      (clusterSizeENNReal_eq_top_iff d ω).mpr hCinf
+    simp [finiteClusterSizeEvent, htop]
+
+/-- The finite susceptibility is the first moment of the finite cluster-size distribution. -/
+theorem finiteSusceptibility_eq_series (d : ℕ) (p : I) :
+    finiteSusceptibility d p =
+      ∑' n : ℕ, (n : ℝ≥0∞) *
+        bernoulliBondMeasure d p (finiteClusterSizeEvent d n) := by
+  unfold finiteSusceptibility
+  calc
+    (∫⁻ ω, finiteClusterSizeWeight d ω ∂bernoulliBondMeasure d p) =
+        ∫⁻ ω, ∑' n : ℕ, (finiteClusterSizeEvent d n).indicator
+          (fun _ ↦ (n : ℝ≥0∞)) ω ∂bernoulliBondMeasure d p := by
+      apply lintegral_congr
+      exact finiteClusterSizeWeight_eq_tsum d
+    _ = ∑' n : ℕ, ∫⁻ ω, (finiteClusterSizeEvent d n).indicator
+          (fun _ ↦ (n : ℝ≥0∞)) ω ∂bernoulliBondMeasure d p := by
+      rw [lintegral_tsum]
+      intro n
+      exact (measurable_const.indicator (measurableSet_finiteClusterSizeEvent d n)).aemeasurable
+    _ = _ := by
+      apply tsum_congr
+      intro n
+      rw [lintegral_indicator_const (measurableSet_finiteClusterSizeEvent d n)]
+
+/-- Real-parameter extension of the positive-green-density susceptibility series. -/
+noncomputable def ghostSusceptibilitySeries (d : ℕ) (p : I) (γ : ℝ) : ℝ≥0∞ :=
+  ∑' n : ℕ, (n : ℝ≥0∞) * ENNReal.ofReal ((1 - γ) ^ n) *
+    bernoulliBondMeasure d p (finiteClusterSizeEvent d n)
+
+theorem ghostSusceptibility_eq_ghostSusceptibilitySeries (d : ℕ) (p γ : I)
+    (hγ : 0 < (γ : ℝ)) :
+    ghostSusceptibility d p γ = ghostSusceptibilitySeries d p γ := by
+  simpa [ghostSusceptibilitySeries] using ghostSusceptibility_eq_series d p γ hγ
+
+theorem finiteSusceptibility_toReal_eq_series (d : ℕ) (p : I) :
+    (finiteSusceptibility d p).toReal =
+      ∑' n : ℕ, (n : ℝ) * finiteClusterSizeProbability d p n := by
+  rw [finiteSusceptibility_eq_series, ENNReal.tsum_toReal_eq]
+  · apply tsum_congr
+    intro n
+    simp only [ENNReal.toReal_mul, ENNReal.toReal_natCast]
+    rfl
+  · intro n
+    exact ENNReal.mul_ne_top (ENNReal.natCast_ne_top n)
+      (measure_ne_top (bernoulliBondMeasure d p) (finiteClusterSizeEvent d n))
+
+theorem summable_finiteSusceptibility_real_series {d : ℕ} {p : I}
+    (hfinite : finiteSusceptibility d p ≠ ⊤) :
+    Summable (fun n : ℕ ↦ (n : ℝ) * finiteClusterSizeProbability d p n) := by
+  let bE : ℕ → ℝ≥0∞ := fun n ↦ (n : ℝ≥0∞) *
+    bernoulliBondMeasure d p (finiteClusterSizeEvent d n)
+  let bN : ℕ → NNReal := fun n ↦ (bE n).toNNReal
+  have hbE (n : ℕ) : (bN n : ℝ≥0∞) = bE n := by
+    exact ENNReal.coe_toNNReal <|
+      ENNReal.mul_ne_top (ENNReal.natCast_ne_top n)
+        (measure_ne_top (bernoulliBondMeasure d p) (finiteClusterSizeEvent d n))
+  have hsumE : (∑' n : ℕ, (bN n : ℝ≥0∞)) ≠ ⊤ := by
+    simp_rw [hbE]
+    simpa [bE, finiteSusceptibility_eq_series] using hfinite
+  have hsumN : Summable bN := ENNReal.tsum_coe_ne_top_iff_summable.mp hsumE
+  have hsumR : Summable (fun n : ℕ ↦ (bN n : ℝ)) := NNReal.summable_coe.mpr hsumN
+  apply hsumR.congr
+  intro n
+  rw [show (bN n : ℝ) = (bE n).toReal by
+    rw [← ENNReal.coe_toReal (bN n), hbE]]
+  simp [bE, finiteClusterSizeProbability, measureReal_def]
+
+theorem ghostSusceptibilitySeries_eq_ofReal_tsum {d : ℕ} {p : I} {γ : ℝ}
+    (hq : 0 ≤ 1 - γ)
+    (hsum : Summable (fun n : ℕ ↦
+      (n : ℝ) * (1 - γ) ^ n * finiteClusterSizeProbability d p n)) :
+    ghostSusceptibilitySeries d p γ =
+      ENNReal.ofReal (∑' n : ℕ,
+        (n : ℝ) * (1 - γ) ^ n * finiteClusterSizeProbability d p n) := by
+  rw [ENNReal.ofReal_tsum_of_nonneg]
+  · unfold ghostSusceptibilitySeries
+    apply tsum_congr
+    intro n
+    rw [ENNReal.ofReal_mul (mul_nonneg (Nat.cast_nonneg n) (pow_nonneg hq n)),
+      ENNReal.ofReal_mul (Nat.cast_nonneg n), ENNReal.ofReal_natCast,
+      ENNReal.ofReal_pow hq]
+    unfold finiteClusterSizeProbability
+    rw [ofReal_measureReal]
+  · intro n
+    exact mul_nonneg (mul_nonneg (Nat.cast_nonneg n) (pow_nonneg hq n))
+      (finiteClusterSizeProbability_nonneg d p n)
+  · exact hsum
+
+/-- Grimmett (5.46): as positive green density decreases to zero, ghost susceptibility
+converges to finite susceptibility.  The codomain is `ℝ≥0∞`, so this includes the case
+`χᶠ(p)=∞`. -/
+theorem ghostSusceptibility_tendsto_finiteSusceptibility (d : ℕ) (p : I) :
+    Tendsto (ghostSusceptibilitySeries d p) (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (finiteSusceptibility d p)) := by
+  by_cases hfinite : finiteSusceptibility d p = ⊤
+  · rw [hfinite]
+    apply ENNReal.tendsto_nhds_top
+    intro N
+    have htotal : (N : ℝ≥0∞) <
+        ∑' n : ℕ, (n : ℝ≥0∞) *
+          bernoulliBondMeasure d p (finiteClusterSizeEvent d n) := by
+      rw [← finiteSusceptibility_eq_series, hfinite]
+      exact ENNReal.natCast_lt_top N
+    rw [ENNReal.tsum_eq_iSup_nat, lt_iSup_iff] at htotal
+    obtain ⟨K, hK⟩ := htotal
+    have hpartial : Tendsto
+        (fun γ : ℝ ↦ ∑ n ∈ Finset.range K,
+          (n : ℝ≥0∞) * ENNReal.ofReal ((1 - γ) ^ n) *
+            bernoulliBondMeasure d p (finiteClusterSizeEvent d n))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (∑ n ∈ Finset.range K, (n : ℝ≥0∞) *
+          bernoulliBondMeasure d p (finiteClusterSizeEvent d n))) := by
+      apply tendsto_finsetSum
+      intro n hn
+      have hr : Tendsto
+          (fun γ : ℝ ↦ (n : ℝ) * (1 - γ) ^ n *
+            finiteClusterSizeProbability d p n)
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds ((n : ℝ) * finiteClusterSizeProbability d p n)) := by
+        have hc : ContinuousAt
+            (fun γ : ℝ ↦ (n : ℝ) * (1 - γ) ^ n *
+              finiteClusterSizeProbability d p n) 0 := by
+          fun_prop
+        simpa using hc.tendsto.mono_left inf_le_left
+      have hof := ENNReal.continuous_ofReal.continuousAt.tendsto.comp hr
+      have htarget : ENNReal.ofReal
+          ((n : ℝ) * finiteClusterSizeProbability d p n) =
+          (n : ℝ≥0∞) *
+            bernoulliBondMeasure d p (finiteClusterSizeEvent d n) := by
+        rw [ENNReal.ofReal_mul (Nat.cast_nonneg n), ENNReal.ofReal_natCast]
+        unfold finiteClusterSizeProbability
+        rw [ofReal_measureReal]
+      rw [htarget] at hof
+      apply hof.congr'
+      filter_upwards [self_mem_nhdsWithin,
+        (eventually_lt_nhds (show (0 : ℝ) < 1 by norm_num)).filter_mono inf_le_left]
+        with γ hγ0 hγ1
+      simp only [Set.mem_Ioi] at hγ0
+      simp only [Function.comp_apply]
+      symm
+      rw [ENNReal.ofReal_mul
+          (mul_nonneg (Nat.cast_nonneg n) (pow_nonneg (by linarith) n)),
+        ENNReal.ofReal_mul (Nat.cast_nonneg n), ENNReal.ofReal_natCast,
+        ENNReal.ofReal_pow (by linarith)]
+      unfold finiteClusterSizeProbability
+      rw [ofReal_measureReal]
+    have hevent : ∀ᶠ γ : ℝ in nhdsWithin 0 (Set.Ioi 0),
+        (N : ℝ≥0∞) < ∑ n ∈ Finset.range K,
+          (n : ℝ≥0∞) * ENNReal.ofReal ((1 - γ) ^ n) *
+            bernoulliBondMeasure d p (finiteClusterSizeEvent d n) :=
+      hpartial (Ioi_mem_nhds hK)
+    filter_upwards [hevent] with γ hγ
+    exact hγ.trans_le (ENNReal.sum_le_tsum (Finset.range K))
+  · have hBsum := summable_finiteSusceptibility_real_series hfinite
+    have hterm : ∀ n : ℕ, Tendsto
+        (fun γ : ℝ ↦ (n : ℝ) * (1 - γ) ^ n * finiteClusterSizeProbability d p n)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds ((n : ℝ) * finiteClusterSizeProbability d p n)) := by
+      intro n
+      have hc : ContinuousAt
+          (fun γ : ℝ ↦ (n : ℝ) * (1 - γ) ^ n *
+            finiteClusterSizeProbability d p n) 0 := by
+        fun_prop
+      simpa using hc.tendsto.mono_left inf_le_left
+    have hbound : ∀ᶠ γ : ℝ in nhdsWithin 0 (Set.Ioi 0), ∀ n : ℕ,
+        ‖(n : ℝ) * (1 - γ) ^ n * finiteClusterSizeProbability d p n‖ ≤
+          (n : ℝ) * finiteClusterSizeProbability d p n := by
+      filter_upwards [self_mem_nhdsWithin,
+        (eventually_lt_nhds (show (0 : ℝ) < 1 by norm_num)).filter_mono inf_le_left]
+        with γ hγ0 hγ1
+      simp only [Set.mem_Ioi] at hγ0
+      intro n
+      have hq0 : 0 ≤ 1 - γ := by linarith
+      have hq1 : 1 - γ ≤ 1 := by linarith
+      rw [Real.norm_eq_abs, abs_mul, abs_mul,
+        abs_of_nonneg (Nat.cast_nonneg n), abs_pow, abs_of_nonneg hq0,
+        abs_of_nonneg (finiteClusterSizeProbability_nonneg d p n)]
+      exact mul_le_mul_of_nonneg_right
+        (mul_le_of_le_one_right (Nat.cast_nonneg n) (pow_le_one₀ hq0 hq1))
+        (finiteClusterSizeProbability_nonneg d p n)
+    have hreal := tendsto_tsum_of_dominated_convergence hBsum hterm hbound
+    rw [← finiteSusceptibility_toReal_eq_series d p] at hreal
+    have hofReal := ENNReal.continuous_ofReal.continuousAt.tendsto.comp hreal
+    rw [ENNReal.ofReal_toReal hfinite] at hofReal
+    apply hofReal.congr'
+    filter_upwards [self_mem_nhdsWithin,
+      (eventually_lt_nhds (show (0 : ℝ) < 1 by norm_num)).filter_mono inf_le_left]
+      with γ hγ0 hγ1
+    simp only [Set.mem_Ioi] at hγ0
+    symm
+    apply ghostSusceptibilitySeries_eq_ofReal_tsum (by linarith)
+    apply hBsum.of_norm_bounded
+    intro n
+    have hq0 : 0 ≤ 1 - γ := by linarith
+    have hq1 : 1 - γ ≤ 1 := by linarith
+    rw [Real.norm_eq_abs, abs_mul, abs_mul,
+      abs_of_nonneg (Nat.cast_nonneg n), abs_pow, abs_of_nonneg hq0,
+      abs_of_nonneg (finiteClusterSizeProbability_nonneg d p n)]
+    exact mul_le_mul_of_nonneg_right
+      (mul_le_of_le_one_right (Nat.cast_nonneg n) (pow_le_one₀ hq0 hq1))
+      (finiteClusterSizeProbability_nonneg d p n)
 
 /-! ### The differential identity (5.47) -/
 

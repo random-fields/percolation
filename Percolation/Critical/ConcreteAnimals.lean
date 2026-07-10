@@ -57,6 +57,113 @@ theorem mem_cubicIncidentEdges_of_endpoint {d : ℕ} {V : Finset (Cubic d)}
   rw [he]
   exact cubicStepEdge_mem_cubicIncidentEdges hxV a
 
+theorem mem_cubicIncidentEdges_iff_exists_endpoint {d : ℕ} {V : Finset (Cubic d)}
+    {e : CubicEdge d} :
+    e ∈ cubicIncidentEdges d V ↔ ∃ x ∈ V, x ∈ (e : Sym2 (Cubic d)) := by
+  constructor
+  · classical
+    simp only [cubicIncidentEdges, Finset.mem_biUnion, Finset.mem_image,
+      Finset.mem_univ, true_and]
+    rintro ⟨x, hxV, a, rfl⟩
+    exact ⟨x, hxV, by simp [cubicStepEdge]⟩
+  · rintro ⟨x, hxV, hxe⟩
+    exact mem_cubicIncidentEdges_of_endpoint hxV hxe
+
+/-- A finite connected origin cluster with `n` vertices lies in the graph ball of radius
+`n-1`.  The proof erases loops from an open witness and counts its distinct support. -/
+theorem cubicOpenCluster_subset_metricBall_of_ncard_eq {d n : ℕ}
+    {ω : EdgeConfiguration d} (hfinite : (cubicOpenCluster d ω).Finite)
+    (hcard : (cubicOpenCluster d ω).ncard = n) :
+    cubicOpenCluster d ω ⊆ (cubicMetricBall d cubicOrigin (n - 1) : Set (Cubic d)) := by
+  intro y hy
+  rcases hy with ⟨w, hopen⟩
+  let q : (cubicGraph d).Walk cubicOrigin y := w.toPath
+  have hqpath : q.IsPath := w.toPath.2
+  have hqopen : walkIsOpen ω q := walkIsOpen_toPath w hopen
+  have hsupport : q.support.toFinset ⊆ hfinite.toFinset := by
+    intro z hz
+    rw [List.mem_toFinset] at hz
+    rw [Set.Finite.mem_toFinset]
+    exact mem_cubicOpenClusterFrom_of_mem_support hqopen hz
+  have hqcard : q.support.toFinset.card = q.length + 1 := by
+    rw [List.toFinset_card_of_nodup hqpath.support_nodup,
+      SimpleGraph.Walk.length_support]
+  have hclcard : hfinite.toFinset.card = n := by
+    rw [← Set.ncard_eq_toFinset_card (cubicOpenCluster d ω) hfinite, hcard]
+  have hlen : q.length + 1 ≤ n := by
+    rw [← hqcard, ← hclcard]
+    exact Finset.card_le_card hsupport
+  change y ∈ cubicMetricBall d cubicOrigin (n - 1)
+  rw [mem_cubicMetricBall_iff_l1Dist_le]
+  exact (cubicL1Dist_le_walk_length q).trans (by omega)
+
+/-- All open cubic edges incident to a fixed finite origin cluster.  These are exactly the
+occupied edges of the corresponding bond animal. -/
+noncomputable def finiteClusterEdges {d : ℕ} (ω : EdgeConfiguration d)
+    (hfinite : (cubicOpenCluster d ω).Finite) : Finset (CubicEdge d) := by
+  classical
+  exact (cubicIncidentEdges d hfinite.toFinset).filter fun e ↦ e ∈ ω
+
+@[simp]
+theorem mem_finiteClusterEdges {d : ℕ} {ω : EdgeConfiguration d}
+    {hfinite : (cubicOpenCluster d ω).Finite} {e : CubicEdge d} :
+    e ∈ finiteClusterEdges ω hfinite ↔
+      e ∈ cubicIncidentEdges d hfinite.toFinset ∧ e ∈ ω := by
+  simp [finiteClusterEdges]
+
+theorem endpoint_mem_cubicOpenCluster_of_mem_finiteClusterEdges {d : ℕ}
+    {ω : EdgeConfiguration d} {hfinite : (cubicOpenCluster d ω).Finite}
+    {e : CubicEdge d} (he : e ∈ finiteClusterEdges ω hfinite)
+    {y : Cubic d} (hy : y ∈ (e : Sym2 (Cubic d))) :
+    y ∈ cubicOpenCluster d ω := by
+  have hedata := mem_finiteClusterEdges.mp he
+  obtain ⟨x, hxV, hxe⟩ := mem_cubicIncidentEdges_iff_exists_endpoint.mp hedata.1
+  have hxC : x ∈ cubicOpenCluster d ω := by
+    simpa using hxV
+  obtain ⟨z, heq⟩ := Sym2.mem_iff_exists.mp hxe
+  have hy' : y = x ∨ y = z := by
+    rw [heq, Sym2.mem_iff] at hy
+    exact hy
+  rcases hy' with hyx | hyz
+  · simpa [hyx] using hxC
+  · have hzC : z ∈ cubicOpenCluster d ω := by
+      rcases hxC with ⟨w, hw⟩
+      have hxz : (cubicGraph d).Adj x z := by
+        rw [← SimpleGraph.mem_edgeSet]
+        exact heq ▸ e.2
+      refine ⟨w.concat hxz, ?_⟩
+      rw [SimpleGraph.Walk.concat_eq_append]
+      apply walkIsOpen_append hw
+      intro f hf
+      simp only [SimpleGraph.Walk.edges_cons, SimpleGraph.Walk.edges_nil,
+        List.mem_singleton] at hf
+      have hfedge : f ∈ (cubicGraph d).edgeSet := by
+        rw [hf]
+        exact (SimpleGraph.mem_edgeSet (cubicGraph d)).mpr hxz
+      have hfe : (⟨f, hfedge⟩ : CubicEdge d) = e := by
+        apply Subtype.ext
+        exact hf.trans heq.symm
+      simpa [hfe] using hedata.2
+    simpa [hyz] using hzC
+
+theorem cubicEdge_mem_cubicMetricBallEdges_of_out_mem {d n : ℕ} {x : Cubic d}
+    {e : CubicEdge d}
+    (hu : e.1.out.1 ∈ cubicMetricBall d x n)
+    (hv : e.1.out.2 ∈ cubicMetricBall d x n) :
+    e ∈ cubicMetricBallEdges d x n := by
+  have hadj : (cubicGraph d).Adj e.1.out.1 e.1.out.2 := by
+    rw [← SimpleGraph.mem_edgeSet]
+    convert e.2 using 1
+    exact e.1.out_eq
+  obtain ⟨a, ha⟩ := (cubicGraph_adj_iff_exists_stepFrom _ _).mp hadj
+  have heq : e = cubicStepEdge e.1.out.1 a := by
+    apply Subtype.ext
+    change e.1 = s(e.1.out.1, cubicStepFrom e.1.out.1 a)
+    rw [← ha]
+    exact e.1.out_eq.symm
+  rw [heq]
+  exact cubicStepEdge_mem_cubicMetricBallEdges hu (ha ▸ hv)
+
 /-- A concrete rooted finite bond animal with exactly `n` vertices.  The ambient ball bounds
 make the type manifestly finite; connectivity proves that this bound loses no rooted animal. -/
 structure CubicBondAnimal (d n : ℕ) where
@@ -108,6 +215,49 @@ instance : Finite (CubicBondAnimal d n) :=
   Finite.of_injective (candidateEmbedding d n) (candidateEmbedding d n).injective
 
 noncomputable instance : Fintype (CubicBondAnimal d n) := Fintype.ofFinite _
+
+/-- The canonical concrete animal encoded by a finite origin cluster. -/
+noncomputable def ofFiniteCluster {ω : EdgeConfiguration d}
+    (hfinite : (cubicOpenCluster d ω).Finite)
+    (hcard : (cubicOpenCluster d ω).ncard = n) : CubicBondAnimal d n where
+  vertices := hfinite.toFinset
+  vertices_subset := by
+    intro x hx
+    exact cubicOpenCluster_subset_metricBall_of_ncard_eq hfinite hcard (by simpa using hx)
+  edges := finiteClusterEdges ω hfinite
+  edges_subset := by
+    intro e he
+    apply cubicEdge_mem_cubicMetricBallEdges_of_out_mem
+    · exact cubicOpenCluster_subset_metricBall_of_ncard_eq hfinite hcard
+        (endpoint_mem_cubicOpenCluster_of_mem_finiteClusterEdges he
+          (Sym2.out_fst_mem e.1))
+    · exact cubicOpenCluster_subset_metricBall_of_ncard_eq hfinite hcard
+        (endpoint_mem_cubicOpenCluster_of_mem_finiteClusterEdges he
+          (Sym2.out_snd_mem e.1))
+  origin_mem := by
+    rw [Set.Finite.mem_toFinset]
+    exact ⟨SimpleGraph.Walk.nil, by intro e he; cases he⟩
+  vertices_card := by
+    rw [← Set.ncard_eq_toFinset_card (cubicOpenCluster d ω) hfinite, hcard]
+  edge_endpoints := by
+    intro e he x hx
+    rw [Set.Finite.mem_toFinset]
+    exact endpoint_mem_cubicOpenCluster_of_mem_finiteClusterEdges he hx
+  connected := by
+    intro x hx
+    rw [Set.Finite.mem_toFinset] at hx
+    rcases hx with ⟨w, hw⟩
+    refine ⟨w, ?_⟩
+    intro e he
+    apply mem_finiteClusterEdges.mpr
+    constructor
+    · apply mem_cubicIncidentEdges_of_endpoint (x := e.1.out.1)
+      · rw [Set.Finite.mem_toFinset]
+        exact mem_cubicOpenClusterFrom_of_mem_support hw
+          (w.mem_support_of_mem_edges ((mem_walkEdgeFinset_iff w e).mp he)
+            (Sym2.out_fst_mem e.1))
+      · exact Sym2.out_fst_mem e.1
+    · simpa using hw e.1 ((mem_walkEdgeFinset_iff w e).mp he)
 
 theorem nonempty_graph_walk_of_cubicWalk (A : CubicBondAnimal d n)
     {u v : Cubic d} (hu : u ∈ A.vertices) (hv : v ∈ A.vertices)
@@ -347,6 +497,19 @@ theorem boundary_card_pos (A : CubicBondAnimal d n) (hd : 0 < d) :
 is closed. -/
 def clusterCylinder (A : CubicBondAnimal d n) : Set (EdgeConfiguration d) :=
   openEdgeSetEvent d A.edges ∩ closedEdgeSetEvent d A.boundary
+
+theorem ofFiniteCluster_mem_clusterCylinder {ω : EdgeConfiguration d}
+    (hfinite : (cubicOpenCluster d ω).Finite)
+    (hcard : (cubicOpenCluster d ω).ncard = n) :
+    ω ∈ (ofFiniteCluster hfinite hcard).clusterCylinder := by
+  constructor
+  · rw [mem_openEdgeSetEvent]
+    intro e he
+    exact (mem_finiteClusterEdges.mp he).2
+  · rw [mem_closedEdgeSetEvent, Set.disjoint_left]
+    intro e heBoundary heOpen
+    have heData := Finset.mem_sdiff.mp heBoundary
+    exact heData.2 (mem_finiteClusterEdges.mpr ⟨heData.1, heOpen⟩)
 
 theorem measurableSet_clusterCylinder (A : CubicBondAnimal d n) :
     MeasurableSet A.clusterCylinder :=

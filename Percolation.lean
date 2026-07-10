@@ -26,6 +26,7 @@ import Percolation.Critical.TorusGhostField
 import Percolation.Critical.TorusDifferential
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
+import Percolation.Critical.ConcreteClusterSeries
 import Percolation.Critical.ClusterDensityDerivative
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls

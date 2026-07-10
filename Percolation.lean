@@ -41,6 +41,7 @@ import Percolation.Critical.ClusterTail
 import Percolation.Critical.MenshikovBootstrap
 import Percolation.Critical.PivotalExploration
 import Percolation.Critical.PivotalConditioning
+import Percolation.Critical.ResidualTerminal
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries

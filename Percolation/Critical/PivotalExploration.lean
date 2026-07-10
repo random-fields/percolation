@@ -128,6 +128,59 @@ private noncomputable def canonicalTailAfterDart
     rw [List.getElem_idxOf hi] at hget
     exact congrArg (fun q ↦ q.toProd.2) hget |>.symm) rfl
 
+/-- Canonical witness tail beginning immediately after a selected pivotal
+dart, with its starting endpoint definitionally exposed. -/
+noncomputable def canonicalTailWalkAfterDart
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a : (cubicGraph d).Dart}
+    (ha : a ∈ (canonicalRadiusWitness hω).walk.darts) :
+    (cubicGraph d).Walk a.toProd.2 (canonicalRadiusWitness hω).endpoint :=
+  canonicalTailAfterDart hω ha
+
+theorem canonicalTailWalkAfterDart_darts
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a : (cubicGraph d).Dart}
+    (ha : a ∈ (canonicalRadiusWitness hω).walk.darts) :
+    (canonicalTailWalkAfterDart hω ha).darts =
+      (canonicalRadiusWitness hω).walk.darts.drop
+        ((canonicalRadiusWitness hω).walk.darts.idxOf a + 1) := by
+  simp [canonicalTailWalkAfterDart, canonicalTailAfterDart, SimpleGraph.Walk.darts_copy,
+    SimpleGraph.Walk.darts_drop]
+
+theorem canonicalTailWalkAfterDart_support
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a : (cubicGraph d).Dart}
+    (ha : a ∈ (canonicalRadiusWitness hω).walk.darts) :
+    (canonicalTailWalkAfterDart hω ha).support =
+      ((canonicalRadiusWitness hω).walk.drop
+        ((canonicalRadiusWitness hω).walk.darts.idxOf a + 1)).support := by
+  simp [canonicalTailWalkAfterDart, canonicalTailAfterDart]
+
+theorem canonicalTailWalkAfterDart_edges
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a : (cubicGraph d).Dart}
+    (ha : a ∈ (canonicalRadiusWitness hω).walk.darts) :
+    (canonicalTailWalkAfterDart hω ha).edges =
+      (canonicalRadiusWitness hω).walk.edges.drop
+        ((canonicalRadiusWitness hω).walk.darts.idxOf a + 1) := by
+  simp [canonicalTailWalkAfterDart, canonicalTailAfterDart,
+    SimpleGraph.Walk.edges_drop]
+
+theorem canonicalTailWalkAfterDart_isPath
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a : (cubicGraph d).Dart}
+    (ha : a ∈ (canonicalRadiusWitness hω).walk.darts) :
+    (canonicalTailWalkAfterDart hω ha).IsPath := by
+  unfold canonicalTailWalkAfterDart canonicalTailAfterDart
+  simpa [SimpleGraph.Walk.isPath_def] using
+    ((canonicalRadiusWitness hω).isPath.drop
+      ((canonicalRadiusWitness hω).walk.darts.idxOf a + 1))
+
 /-- The oriented first endpoint of a pivotal dart lies in its deleted reachable
 set. -/
 theorem pivotalDart_fst_mem_radiusDeletedReachableVertices

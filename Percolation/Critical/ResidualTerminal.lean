@@ -13,6 +13,49 @@ namespace Percolation
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal unitInterval
 
+/-- The local radius event restricted to the unexposed exterior edge set.
+This is the event to which BK is applied after conditioning on a pivotal
+exploration cylinder. -/
+def residualLocalRadiusEvent (d : ℕ) (x : Cubic d) (n : ℕ)
+    (D : Finset (Cubic d)) (y : Cubic d) (m : ℕ) :
+    Set (EdgeConfiguration d) :=
+  connectionEventOff d
+    (cubicMetricBallEdges d x n \ radiusIncidentEdgesOf d x n D)
+    ∅ y (cubicMetricSphere d y m)
+
+theorem isIncreasingEvent_residualLocalRadiusEvent
+    (d : ℕ) (x : Cubic d) (n : ℕ) (D : Finset (Cubic d))
+    (y : Cubic d) (m : ℕ) :
+    IsIncreasingEvent (residualLocalRadiusEvent d x n D y m) :=
+  isIncreasingEvent_connectionEventOff d _ ∅ y (cubicMetricSphere d y m)
+
+theorem dependsOn_residualLocalRadiusEvent
+    (d : ℕ) (x : Cubic d) (n : ℕ) (D : Finset (Cubic d))
+    (y : Cubic d) (m : ℕ) :
+    DependsOn (cubicMetricBallEdges d x n \ radiusIncidentEdgesOf d x n D)
+      (residualLocalRadiusEvent d x n D y m) :=
+  dependsOn_connectionEventOff d _ ∅ y (cubicMetricSphere d y m)
+
+theorem mem_residualLocalRadiusEvent_of_mem_radiusConnectionEvent
+    {d n m : ℕ} {x y : Cubic d} {D : Finset (Cubic d)}
+    {η : EdgeConfiguration d}
+    (hη : η ∈ radiusConnectionEvent d y m)
+    (hηE : ∀ e : CubicEdge d, e ∈ η →
+      e ∈ cubicMetricBallEdges d x n \ radiusIncidentEdgesOf d x n D) :
+    η ∈ residualLocalRadiusEvent d x n D y m := by
+  rcases mem_radiusConnectionEvent_iff_exists_connection.mp hη with
+    ⟨z, hz, q, hqopen⟩
+  refine ⟨z, hz, q, hqopen, ?_, by simp⟩
+  intro e he
+  rw [mem_walkEdgeFinset_iff] at he
+  exact hηE e (hqopen e.1 he)
+
+theorem bernoulliBondMeasure_real_residualLocalRadiusEvent_le
+    {d n m : ℕ} {x y : Cubic d} (p : I) (D : Finset (Cubic d)) :
+    (bernoulliBondMeasure d p).real (residualLocalRadiusEvent d x n D y m) ≤
+      radiusTail d p m :=
+  bernoulliBondMeasure_real_connectionEventOff_sphere_le p _ ∅ y
+
 private theorem filter_drop_succ_idxOf
     { α : Type* } [DecidableEq α] (P : α → Bool) (l : List α)
     {a : α} (ha : a ∈ l) (hPa : P a = true) :
@@ -570,7 +613,7 @@ theorem mem_disjointOccurrence_of_edgeDisjoint_residual_outerWalks
         ⟨y, hyBall⟩ v)
     (hpq : p.edges.Disjoint q.edges) :
     η ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d y m)
+      (residualLocalRadiusEvent d x n D y m)
       (radiusConnectionEventOffExploration d x n D y
         (cubicMetricSphere d x n)) := by
   let ξ := openOnFiniteEdges
@@ -606,10 +649,14 @@ theorem mem_disjointOccurrence_of_edgeDisjoint_residual_outerWalks
     fun e he ↦ (hHξ he).1
   have hKE : K ⊆ cubicMetricBallEdges d x n \ radiusIncidentEdgesOf d x n D :=
     fun e he ↦ (hKξ he).1
-  have hHlocal : (H : Set (CubicEdge d)) ∈ radiusConnectionEvent d y m := by
+  have hHradius : (H : Set (CubicEdge d)) ∈ radiusConnectionEvent d y m := by
     apply exists_open_walk_to_cubicMetricSphere_in_ball p'
       (walkIsOpen_walkEdgeFinset p')
     exact hOuterFar u.1 hu
+  have hHlocal : (H : Set (CubicEdge d)) ∈
+      residualLocalRadiusEvent d x n D y m :=
+    mem_residualLocalRadiusEvent_of_mem_radiusConnectionEvent hHradius
+      (fun _ he ↦ hHE he)
   have hKoff : (K : Set (CubicEdge d)) ∈
       radiusConnectionEventOffExploration d x n D y (cubicMetricSphere d x n) := by
     refine ⟨v.1, hv, q', walkIsOpen_walkEdgeFinset q', hKE, ?_⟩
@@ -633,7 +680,7 @@ theorem mem_disjointOccurrence_of_residual_terminal_paths
         (some ⟨y, hyBall⟩) none}
     (hp : p.IsPath) (hq : q.IsPath) (hpq : p.edges.Disjoint q.edges) :
     η ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d y m)
+      (residualLocalRadiusEvent d x n D y m)
       (radiusConnectionEventOffExploration d x n D y
         (cubicMetricSphere d x n)) := by
   classical
@@ -656,14 +703,18 @@ theorem mem_disjointOccurrence_of_residual_terminal_paths
     fun e he ↦ (mem_openOnFiniteEdges.mp (hQξ he)).1
   have local_of_projection
       {r : (radiusTerminalGraph ξ z True).Walk (some source) none}
-      (R : RadiusTerminalProjectionFrom ξ source z True r) :
-      (R.edgeFinset : Set (CubicEdge d)) ∈ radiusConnectionEvent d y m := by
-    apply exists_open_walk_to_cubicMetricSphere_in_ball R.cubicWalk
-      (walkIsOpen_walkEdgeFinset R.cubicWalk)
-    rcases R.terminal_kind with hOuter | ⟨_, hrz⟩
-    · exact hOuterFar R.endpoint.1 hOuter
-    · rw [hrz]
-      exact (mem_cubicMetricSphere_iff_l1Dist_eq.mp hzLocal).ge
+      (R : RadiusTerminalProjectionFrom ξ source z True r)
+      (hRE : R.edgeFinset ⊆ E) :
+      (R.edgeFinset : Set (CubicEdge d)) ∈
+        residualLocalRadiusEvent d x n D y m := by
+    apply mem_residualLocalRadiusEvent_of_mem_radiusConnectionEvent
+    · apply exists_open_walk_to_cubicMetricSphere_in_ball R.cubicWalk
+        (walkIsOpen_walkEdgeFinset R.cubicWalk)
+      rcases R.terminal_kind with hOuter | ⟨_, hrz⟩
+      · exact hOuterFar R.endpoint.1 hOuter
+      · rw [hrz]
+        exact (mem_cubicMetricSphere_iff_l1Dist_eq.mp hzLocal).ge
+    · exact fun _ he ↦ hRE he
   have off_of_projection
       {r : (radiusTerminalGraph ξ z True).Walk (some source) none}
       (R : RadiusTerminalProjectionFrom ξ source z True r)
@@ -685,13 +736,13 @@ theorem mem_disjointOccurrence_of_residual_terminal_paths
     exact List.disjoint_left.mp hpq heP heQ
   rcases P.terminal_kind with hPOuter | hPShortcut
   · exact ⟨Q.edgeFinset, P.edgeFinset, hfinDisj.symm, hQη, hPη,
-      local_of_projection Q, off_of_projection P hPOuter hPE⟩
+      local_of_projection Q hQE, off_of_projection P hPOuter hPE⟩
   · have hQOuter : Q.endpoint.1 ∈ cubicMetricSphere d x n := by
       rcases Q.terminal_kind with h | h
       · exact h
       · exact (hnotBothShortcut ⟨hPShortcut, h⟩).elim
     exact ⟨P.edgeFinset, Q.edgeFinset, hfinDisj, hPη, hQη,
-      local_of_projection P, off_of_projection Q hQOuter hQE⟩
+      local_of_projection P hPE, off_of_projection Q hQOuter hQE⟩
 
 theorem mem_disjointOccurrence_of_residual_terminal_overlap_avoidance
     {d n m : ℕ} {x y : Cubic d} {D : Finset (Cubic d)}
@@ -711,7 +762,7 @@ theorem mem_disjointOccurrence_of_residual_terminal_overlap_avoidance
           (some ⟨y, hyBall⟩) none,
         e ∉ r.edges) :
     η ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d y m)
+      (residualLocalRadiusEvent d x n D y m)
       (radiusConnectionEventOffExploration d x n D y
         (cubicMetricSphere d x n)) := by
   have hreach := TwoEdgeMenger.isEdgeReachable_two_of_walks_and_overlap_avoidance
@@ -877,7 +928,7 @@ theorem mem_disjointOccurrence_of_residual_nonpivotal_prefix_of_strict
       ¬IsPivotal (radiusConnectionEventOffExploration d x n D y
         (cubicMetricSphere d x n)) e η) :
     η ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d y m)
+      (residualLocalRadiusEvent d x n D y m)
       (radiusConnectionEventOffExploration d x n D y
         (cubicMetricSphere d x n)) := by
   classical
@@ -966,7 +1017,7 @@ theorem mem_disjointOccurrence_of_residual_nonpivotal_prefix_of_witness
       ¬IsPivotal (radiusConnectionEventOffExploration d x n D y
         (cubicMetricSphere d x n)) e η) :
     η ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d y m)
+      (residualLocalRadiusEvent d x n D y m)
       (radiusConnectionEventOffExploration d x n D y
         (cubicMetricSphere d x n)) := by
   classical
@@ -1088,7 +1139,7 @@ theorem sausageGapPrefixNextLong_mem_residual_disjointOccurrence_of_strict
     (hlong : r < sausageGap d x n ω (rs.length + 1)) :
     let D := radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω
     ω ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d a.toProd.2 (r + 1))
+      (residualLocalRadiusEvent d x n D a.toProd.2 (r + 1))
       (radiusConnectionEventOffExploration d x n D a.toProd.2
         (cubicMetricSphere d x n)) := by
   classical
@@ -1200,7 +1251,7 @@ theorem sausageGapPrefixNextLong_mem_residual_disjointOccurrence_endpoint
         (canonicalRadiusWitness hprefix.1).endpoint) :
     let D := radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω
     ω ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d a.toProd.2 (r + 1))
+      (residualLocalRadiusEvent d x n D a.toProd.2 (r + 1))
       (radiusConnectionEventOffExploration d x n D a.toProd.2
         (cubicMetricSphere d x n)) := by
   classical
@@ -1344,7 +1395,7 @@ theorem sausageGapPrefixNextLong_mem_residual_disjointOccurrence_nonendpoint
         (canonicalRadiusWitness hprefix.1).endpoint) :
     let D := radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω
     ω ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d a.toProd.2 (r + 1))
+      (residualLocalRadiusEvent d x n D a.toProd.2 (r + 1))
       (radiusConnectionEventOffExploration d x n D a.toProd.2
         (cubicMetricSphere d x n)) := by
   classical
@@ -1425,7 +1476,7 @@ theorem sausageGapPrefixNextLong_mem_residual_disjointOccurrence
     (hlong : r < sausageGap d x n ω (rs.length + 1)) :
     let D := radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω
     ω ∈ OpenWitnessDisjointOccurrence
-      (radiusConnectionEvent d a.toProd.2 (r + 1))
+      (residualLocalRadiusEvent d x n D a.toProd.2 (r + 1))
       (radiusConnectionEventOffExploration d x n D a.toProd.2
         (cubicMetricSphere d x n)) := by
   dsimp only

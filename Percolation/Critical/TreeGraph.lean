@@ -1,6 +1,7 @@
 import Percolation.Critical.TwoPoint
 import Percolation.Bernoulli.DisjointConnections
 import Mathlib.Combinatorics.SimpleGraph.Acyclic
+import Mathlib.Data.Nat.Factorial.DoubleFactorial
 
 /-!
 # Tree-graph inequalities and cluster moments
@@ -431,7 +432,43 @@ theorem threePointConnectivity_le_tsum_prod
               (twoPointConnectivity_nonneg d p u x₁)),
             ENNReal.ofReal_mul (twoPointConnectivity_nonneg d p u x₀)]
 
+/-! ### Labelled skeleton enumeration (6.95)--(6.96) -/
+
+/-- Number of isomorphism classes of labelled trivalent skeletons with `n` exterior vertices.
+The source only uses `n ≥ 3`; totalized values below three are harmless implementation detail. -/
+def connectivitySkeletonCount (n : ℕ) : ℕ := Nat.doubleFactorial (2 * n - 5)
+
+/-- Finite cardinality-facing index for labelled skeletons. -/
+abbrev CubicConnectivitySkeletonIndex (n : ℕ) := Fin (connectivitySkeletonCount n)
+
+@[simp] theorem connectivitySkeletonCount_three : connectivitySkeletonCount 3 = 1 := by decide
+@[simp] theorem connectivitySkeletonCount_four : connectivitySkeletonCount 4 = 3 := by decide
+@[simp] theorem connectivitySkeletonCount_five : connectivitySkeletonCount 5 = 15 := by decide
+
+/-- Recurrence (6.95): insert the newest exterior vertex into one of the `2n-3` old edges. -/
+theorem connectivitySkeletonCount_succ {n : ℕ} (hn : 3 ≤ n) :
+    connectivitySkeletonCount (n + 1) = (2 * n - 3) * connectivitySkeletonCount n := by
+  unfold connectivitySkeletonCount
+  have h₁ : 2 * (n + 1) - 5 = (2 * n - 5) + 2 := by omega
+  have h₂ : 2 * n - 5 + 2 = 2 * n - 3 := by omega
+  rw [h₁, Nat.doubleFactorial_add_two, h₂]
+
+/-- Factorial form of (6.96).  Multiplication is used instead of truncated natural-number
+division, so the statement records the exact arithmetic identity without a divisibility side
+condition hidden in notation. -/
+theorem connectivitySkeletonCount_eq_doubleFactorial
+    {n : ℕ} (hn : 2 ≤ n) :
+    2 ^ (n - 1) * Nat.factorial (n - 1) * connectivitySkeletonCount (n + 1) =
+      Nat.factorial (2 * n - 2) := by
+  have hEven : 2 * n - 2 = 2 * (n - 1) := by omega
+  have hOdd : 2 * (n + 1) - 5 = 2 * n - 3 := by omega
+  have hSucc : 2 * n - 2 = (2 * n - 3) + 1 := by omega
+  rw [← Nat.doubleFactorial_two_mul (n - 1), connectivitySkeletonCount, hOdd]
+  rw [← hEven, hSucc]
+  exact (Nat.factorial_eq_mul_doubleFactorial (2 * n - 3)).symm
+
 #print axioms exists_terminal_deletion_preserves_connected
 #print axioms threePointConnectivity_le_tsum_prod
+#print axioms connectivitySkeletonCount_eq_doubleFactorial
 
 end Percolation

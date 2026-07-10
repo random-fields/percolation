@@ -1,5 +1,6 @@
 import Percolation.Core.Configuration
 import Percolation.Core.Cubic
+import Percolation.Core.TwoEdgeMenger
 import Percolation.Bernoulli.Basic
 import Percolation.Bernoulli.Increasing
 import Percolation.Bernoulli.BK
@@ -14,6 +15,9 @@ import Percolation.Bernoulli.Sprinkling
 import Percolation.Critical.Basic
 import Percolation.Critical.VertexIndependence
 import Percolation.Critical.OpenClusterDensity
+import Percolation.Critical.Radius
+import Percolation.Critical.PivotalSausage
+import Percolation.Critical.ExponentialDecay
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ClusterDensityDerivative
 import Percolation.Planar.Basic

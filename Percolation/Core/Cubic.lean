@@ -1,4 +1,6 @@
 import Mathlib.Combinatorics.SimpleGraph.Paths
+import Mathlib.Combinatorics.SimpleGraph.Metric
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finite.Card
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.Vector
@@ -201,6 +203,132 @@ theorem cubicWalk_start_coord_le_end_add_length {d : ℕ} {u v : Cubic d}
       have hstep := cubicStepFrom_coord_sub_one_le u₀ a i
       simp only [SimpleGraph.Walk.length_cons, Nat.cast_add, Nat.cast_one]
       omega
+
+/-! ### The graph metric on the cubic lattice -/
+
+/-- The Manhattan (`ℓ¹`) distance on the cubic lattice. -/
+def cubicL1Dist {d : ℕ} (x y : Cubic d) : ℕ :=
+  ∑ i, (y i - x i).natAbs
+
+@[simp]
+theorem cubicL1Dist_self {d : ℕ} (x : Cubic d) : cubicL1Dist x x = 0 := by
+  simp [cubicL1Dist]
+
+theorem cubicL1Dist_comm {d : ℕ} (x y : Cubic d) :
+    cubicL1Dist x y = cubicL1Dist y x := by
+  apply Finset.sum_congr rfl
+  intro i _hi
+  rw [show x i - y i = -(y i - x i) by omega, Int.natAbs_neg]
+
+theorem cubicL1Dist_triangle {d : ℕ} (x y z : Cubic d) :
+    cubicL1Dist x z ≤ cubicL1Dist x y + cubicL1Dist y z := by
+  simp only [cubicL1Dist, ← Finset.sum_add_distrib]
+  apply Finset.sum_le_sum
+  intro i _hi
+  have h := Int.natAbs_add_le (y i - x i) (z i - y i)
+  convert h using 1
+  all_goals omega
+
+/-- A nearest-neighbor step has Manhattan length one. -/
+theorem cubicL1Dist_stepFrom {d : ℕ} (x : Cubic d) (a : CubicDirection d) :
+    cubicL1Dist x (cubicStepFrom x a) = 1 := by
+  classical
+  rcases a with ⟨i, b⟩
+  rw [cubicL1Dist, Finset.sum_eq_single i]
+  · by_cases hb : b <;> simp [cubicStepFrom, cubicDirectionIncrement, hb]
+  · intro j _hj hji
+    simp [cubicStepFrom, Function.update_of_ne hji]
+  · simp
+
+/-- Every cubic walk has length at least the Manhattan distance between its endpoints. -/
+theorem cubicL1Dist_le_walk_length {d : ℕ} {x y : Cubic d}
+    (w : (cubicGraph d).Walk x y) : cubicL1Dist x y ≤ w.length := by
+  induction w with
+  | nil => simp
+  | @cons u v z huv p ih =>
+      rcases (cubicGraph_adj_iff_exists_stepFrom u v).mp huv with ⟨a, rfl⟩
+      calc
+        cubicL1Dist u z ≤
+            cubicL1Dist u (cubicStepFrom u a) + cubicL1Dist (cubicStepFrom u a) z :=
+          cubicL1Dist_triangle _ _ _
+        _ = 1 + cubicL1Dist (cubicStepFrom u a) z := by rw [cubicL1Dist_stepFrom]
+        _ ≤ 1 + p.length := Nat.add_le_add_left ih 1
+        _ = (SimpleGraph.Walk.cons (cubicGraph_adj_stepFrom u a) p).length := by
+          simp only [SimpleGraph.Walk.length_cons]
+          omega
+
+/-- Coordinate-by-coordinate motion gives a cubic walk whose length is exactly the Manhattan
+distance. -/
+theorem exists_cubicWalk_length_eq_l1Dist (d : ℕ) (x y : Cubic d) :
+    ∃ w : (cubicGraph d).Walk x y, w.length = cubicL1Dist x y := by
+  classical
+  suffices h : ∀ (n : ℕ) (x : Cubic d), cubicL1Dist x y = n →
+      ∃ w : (cubicGraph d).Walk x y, w.length = n by
+    obtain ⟨w, hw⟩ := h (cubicL1Dist x y) x rfl
+    exact ⟨w, hw⟩
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    intro x hx
+    by_cases hxy : x = y
+    · subst hxy
+      exact ⟨SimpleGraph.Walk.nil, by simpa using hx⟩
+    · have hne : ∃ i, x i ≠ y i := by
+        by_contra hall
+        refine hxy (funext fun i => ?_)
+        by_contra hne'
+        exact hall ⟨i, hne'⟩
+      obtain ⟨i, hi⟩ := hne
+      set a : CubicDirection d := (i, decide (x i < y i)) with ha
+      set x' := cubicStepFrom x a with hx'
+      have hstep_i : x' i = if x i < y i then x i + 1 else x i - 1 := by
+        rw [hx', cubicStepFrom, ha]
+        by_cases hlt : x i < y i
+        · simp [cubicDirectionIncrement, hlt]
+        · simp [cubicDirectionIncrement, hlt, sub_eq_neg_add, add_comm]
+      have hstep_ne : ∀ j, j ≠ i → x' j = x j := by
+        intro j hj
+        rw [hx', cubicStepFrom, ha]
+        simp [hj]
+      have hdrop : (y i - x' i).natAbs + 1 = (y i - x i).natAbs := by
+        rw [hstep_i]
+        by_cases hlt : x i < y i
+        · simp only [hlt, if_true]
+          omega
+        · simp only [hlt, if_false]
+          have : y i < x i := lt_of_le_of_ne (not_lt.mp hlt) (Ne.symm hi)
+          omega
+      have hsum : cubicL1Dist x' y + 1 = n := by
+        rw [← hx]
+        simp only [cubicL1Dist]
+        rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i),
+          ← Finset.sum_erase_add _ (fun j => (y j - x j).natAbs) (Finset.mem_univ i)]
+        have herase : ∑ j ∈ Finset.univ.erase i, (y j - x' j).natAbs =
+            ∑ j ∈ Finset.univ.erase i, (y j - x j).natAbs :=
+          Finset.sum_congr rfl fun j hj =>
+            by rw [hstep_ne j (Finset.mem_erase.mp hj).1]
+        omega
+      obtain ⟨w, hw⟩ := ih (n - 1) (by omega) x' (by omega)
+      refine ⟨SimpleGraph.Walk.cons (cubicGraph_adj_stepFrom x a) w, ?_⟩
+      simp only [SimpleGraph.Walk.length_cons, hw]
+      omega
+
+/-- The graph distance in the nearest-neighbor cubic lattice is the Manhattan distance. -/
+theorem cubicGraph_dist_eq_l1Dist (d : ℕ) (x y : Cubic d) :
+    (cubicGraph d).dist x y = cubicL1Dist x y := by
+  obtain ⟨w, hw⟩ := exists_cubicWalk_length_eq_l1Dist d x y
+  have hreach : (cubicGraph d).Reachable x y := ⟨w⟩
+  apply le_antisymm
+  · simpa [hw] using SimpleGraph.dist_le w
+  · obtain ⟨q, hq⟩ := hreach.exists_walk_length_eq_dist
+    simpa [hq] using cubicL1Dist_le_walk_length q
+
+theorem cubicL1Dist_eq_zero_iff {d : ℕ} {x y : Cubic d} :
+    cubicL1Dist x y = 0 ↔ x = y := by
+  obtain ⟨w, _hw⟩ := exists_cubicWalk_length_eq_l1Dist d x y
+  have hreach : (cubicGraph d).Reachable x y := ⟨w⟩
+  rw [← cubicGraph_dist_eq_l1Dist]
+  exact hreach.dist_eq_zero_iff
 
 /-- Embed the first `m` coordinates of the cubic lattice into `d` dimensions, filling all other
 coordinates with zero. The dimension hypothesis is carried by the lemmas below. -/

@@ -1,6 +1,7 @@
 import Percolation.Core.Configuration
 import Percolation.Core.Cubic
 import Percolation.Core.TwoEdgeMenger
+import Percolation.Core.TwoEdgeMengerToSet
 import Percolation.Bernoulli.Basic
 import Percolation.Bernoulli.Increasing
 import Percolation.Bernoulli.BK

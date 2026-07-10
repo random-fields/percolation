@@ -1,5 +1,6 @@
 import Percolation.Critical.Radius
 import Percolation.Core.TwoEdgeMenger
+import Percolation.Core.TwoEdgeMengerToSet
 import Percolation.Bernoulli.Russo
 
 /-!
@@ -989,7 +990,7 @@ theorem mem_openWitnessDisjointOccurrence_of_nonpivotal_prefix {d n m : ℕ}
 
 /-- Grimmett's deterministic inclusion (5.14): if the first sausage is longer than `r`,
 `A_{r+1}` and `A_n` have disjoint open witnesses. -/
-theorem firstSausageLong_mem_disjointOccurrence {d n r : ℕ}
+theorem firstSausageLong_mem_disjointOccurrence_of_lt {d n r : ℕ}
     {x : Cubic d} {ω : EdgeConfiguration d}
     (hω : ω ∈ radiusConnectionEvent d x n) (hrn : r + 1 < n)
     (hgap : r < sausageGap d x n ω 1) :
@@ -1027,8 +1028,12 @@ def firstSausageLongEvent (d : ℕ) (x : Cubic d) (n r : ℕ) :
     Set (EdgeConfiguration d) :=
   {ω | ω ∈ radiusConnectionEvent d x n ∧ r < sausageGap d x n ω 1}
 
+def firstSausageShortEvent (d : ℕ) (x : Cubic d) (n r : ℕ) :
+    Set (EdgeConfiguration d) :=
+  {ω | ω ∈ radiusConnectionEvent d x n ∧ sausageGap d x n ω 1 ≤ r}
+
 /-- The probability form of (5.14), obtained from the deterministic inclusion and BK. -/
-theorem firstSausageLong_probability_le {d n r : ℕ}
+theorem firstSausageLong_probability_le_of_lt {d n r : ℕ}
     (p : I) (hrn : r + 1 < n) :
     (bernoulliBondMeasure d p).real (firstSausageLongEvent d cubicOrigin n r) ≤
       radiusTail d p (r + 1) * radiusTail d p n := by
@@ -1039,7 +1044,7 @@ theorem firstSausageLong_probability_le {d n r : ℕ}
           (radiusConnectionEvent d cubicOrigin n)) := by
       apply measureReal_mono
       intro ω hω
-      exact firstSausageLong_mem_disjointOccurrence hω.1 hrn hω.2
+      exact firstSausageLong_mem_disjointOccurrence_of_lt hω.1 hrn hω.2
       exact MeasureTheory.measure_ne_top _ _
     _ ≤ (bernoulliBondMeasure d p).real
           (radiusConnectionEvent d cubicOrigin (r + 1)) *
@@ -1147,5 +1152,221 @@ theorem radiusPivotalDarts_length_eq_count {d n : ℕ} {x : Cubic d}
         exact hae
   rw [radiusPivotalCount, ← hfinset, List.toFinset_card_of_nodup hmap_nodup,
     List.length_map]
+
+noncomputable def cubicMetricSphereInBall (d : ℕ) (x : Cubic d) (n : ℕ) :
+    Finset {y : Cubic d // y ∈ cubicMetricBall d x n} :=
+  (cubicMetricBall d x n).attach.filter fun y ↦ y.1 ∈ cubicMetricSphere d x n
+
+@[simp]
+theorem mem_cubicMetricSphereInBall {d n : ℕ} {x : Cubic d}
+    (y : {q : Cubic d // q ∈ cubicMetricBall d x n}) :
+    y ∈ cubicMetricSphereInBall d x n ↔ y.1 ∈ cubicMetricSphere d x n := by
+  simp [cubicMetricSphereInBall]
+
+theorem mem_disjointOccurrence_of_edgeDisjoint_openBallWalks {d n : ℕ}
+    {x : Cubic d} {ω : EdgeConfiguration d}
+    {u v : {y : Cubic d // y ∈ cubicMetricBall d x n}}
+    (hu : u.1 ∈ cubicMetricSphere d x n) (hv : v.1 ∈ cubicMetricSphere d x n)
+    (p : (radiusOpenBallGraph ω).Walk ⟨x, by simp⟩ u)
+    (q : (radiusOpenBallGraph ω).Walk ⟨x, by simp⟩ v)
+    (hpq : p.edges.Disjoint q.edges) :
+    ω ∈ OpenWitnessDisjointOccurrence
+      (radiusConnectionEvent d x n) (radiusConnectionEvent d x n) := by
+  let p' := p.map (radiusOpenBallToCubicHom ω)
+  let q' := q.map (radiusOpenBallToCubicHom ω)
+  let H := walkEdgeFinset p'
+  let K := walkEdgeFinset q'
+  have hHK : Disjoint H K := by
+    rw [Finset.disjoint_left]
+    intro e heH heK
+    have hep : (e : Sym2 (Cubic d)) ∈ p'.edges :=
+      (mem_walkEdgeFinset_iff p' e).mp heH
+    have heq : (e : Sym2 (Cubic d)) ∈ q'.edges :=
+      (mem_walkEdgeFinset_iff q' e).mp heK
+    change (e : Sym2 (Cubic d)) ∈
+      (p.map (radiusOpenBallToCubicHom ω)).edges at hep
+    change (e : Sym2 (Cubic d)) ∈
+      (q.map (radiusOpenBallToCubicHom ω)).edges at heq
+    rw [SimpleGraph.Walk.edges_map] at hep heq
+    obtain ⟨f, hfp, hfe⟩ := List.mem_map.mp hep
+    obtain ⟨g, hgq, hge⟩ := List.mem_map.mp heq
+    have hfg : f = g := by
+      apply Sym2.map.injective Subtype.val_injective
+      exact hfe.trans hge.symm
+    subst g
+    exact List.disjoint_left.mp hpq hfp hgq
+  have hHω : (H : Set (CubicEdge d)) ⊆ ω := by
+    intro e he
+    have he' : (e : Sym2 (Cubic d)) ∈ p'.edges :=
+      (mem_walkEdgeFinset_iff p' e).mp he
+    exact walkIsOpen_map_radiusOpenBallToCubicHom p e.1 he'
+  have hKω : (K : Set (CubicEdge d)) ⊆ ω := by
+    intro e he
+    have he' : (e : Sym2 (Cubic d)) ∈ q'.edges :=
+      (mem_walkEdgeFinset_iff q' e).mp he
+    exact walkIsOpen_map_radiusOpenBallToCubicHom q e.1 he'
+  have hHA : (H : Set (CubicEdge d)) ∈ radiusConnectionEvent d x n := by
+    apply mem_radiusConnectionEvent_iff_exists_connection.mpr
+    exact ⟨u.1, hu, p', walkIsOpen_walkEdgeFinset p'⟩
+  have hKA : (K : Set (CubicEdge d)) ∈ radiusConnectionEvent d x n := by
+    apply mem_radiusConnectionEvent_iff_exists_connection.mpr
+    exact ⟨v.1, hv, q', walkIsOpen_walkEdgeFinset q'⟩
+  exact ⟨H, K, hHK, hHω, hKω, hHA, hKA⟩
+
+/-- Endpoint case of (5.14): when `r = n-1`, the doubled-terminal target-set Menger theorem
+removes the artificial bottleneck at the outer sphere. -/
+theorem firstSausageLong_endpoint_mem_disjointOccurrence {d n : ℕ}
+    {x : Cubic d} {ω : EdgeConfiguration d} (hn : 0 < n)
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    (hgap : n - 1 < sausageGap d x n ω 1) :
+    ω ∈ OpenWitnessDisjointOccurrence
+      (radiusConnectionEvent d x n) (radiusConnectionEvent d x n) := by
+  classical
+  have hnn : n - 1 + 1 ≤ n := by omega
+  let y := (canonicalRadiusWitness hω).walk.getVert (firstRadiusHitIndex hω hnn)
+  have hydist : cubicL1Dist x y = n := by
+    have h := firstRadiusHit_dist_eq hω hnn
+    change cubicL1Dist x y = n - 1 + 1 at h
+    omega
+  have hyball : y ∈ cubicMetricBall d x n := by
+    rw [mem_cubicMetricBall_iff_l1Dist_le, hydist]
+  let z : {q : Cubic d // q ∈ cubicMetricBall d x n} := ⟨y, hyball⟩
+  let q := firstRadiusHitWalk hω hnn
+  have hz : z.1 ∈ cubicMetricSphere d x n := by
+    rw [mem_cubicMetricSphere_iff_l1Dist_eq]
+    exact hydist
+  have hqopen : walkIsOpen ω q :=
+    walkIsOpen_take (canonicalRadiusWitness hω).walk
+      (canonicalRadiusWitness hω).isOpen (firstRadiusHitIndex hω hnn)
+  have hWball : ∀ a ∈ (canonicalRadiusWitness hω).walk.support,
+      a ∈ cubicMetricBall d x n :=
+    walk_support_subset_cubicMetricBall_of_edges (by simp)
+      (canonicalRadiusWitness hω).walk (canonicalRadiusWitness hω).edge_subset
+  have hqball : ∀ a ∈ q.support, a ∈ cubicMetricBall d x n := by
+    intro a ha
+    exact hWball a ((SimpleGraph.Walk.isSubwalk_take
+      (canonicalRadiusWitness hω).walk (firstRadiusHitIndex hω hnn)).support_subset ha)
+  let T := cubicMetricSphereInBall d x n
+  have hzT : z ∈ T := by simpa [T] using hz
+  let p₀ := (radiusPrefixOpenBallLift z q hqopen hqball).walk
+  have havoid : ∀ f : Sym2 {y : Cubic d // y ∈ cubicMetricBall d x n},
+      ∃ t ∈ T, ∃ p : (radiusOpenBallGraph ω).Walk ⟨x, by simp⟩ t,
+        f ∉ p.edges := by
+    intro f
+    by_cases hfedge : f ∈ (radiusOpenBallGraph ω).edgeSet
+    · let ef : CubicEdge d := ⟨Sym2.map Subtype.val f, by
+        induction f using Sym2.inductionOn with
+        | _ a b =>
+            have hab : (radiusOpenBallGraph ω).Adj a b := by
+              rw [← SimpleGraph.mem_edgeSet]
+              exact hfedge
+            obtain ⟨e, he, _⟩ := hab
+            change s(a.1, b.1) ∈ (cubicGraph d).edgeSet
+            exact he ▸ e.2⟩
+      have hef_nonpiv : ¬IsPivotal (radiusConnectionEvent d x n) ef ω := by
+        intro hpiv
+        have hefq : (ef : Sym2 (Cubic d)) ∈ q.edges :=
+          pivotal_mem_witness_walk hω hz q hqopen
+            (walkEdgeFinset_subset_cubicMetricBallEdges_of_support q hqball) hpiv
+        have hefFin : ef ∈ walkEdgeFinset q := (mem_walkEdgeFinset_iff q ef).mpr hefq
+        exact (firstRadiusHitWalk_edge_not_pivotal_of_lt_sausageGap
+          hω hnn hgap hefFin) hpiv
+      have hclosed : ω \ {ef} ∈ radiusConnectionEvent d x n :=
+        mem_diff_singleton_of_mem_increasingEvent_of_not_pivotal
+          (isIncreasingEvent_radiusConnectionEvent d x n) hω hef_nonpiv
+      let L := canonicalRadiusOpenBallLiftOfSubset Set.diff_subset hclosed
+      let tL : {y : Cubic d // y ∈ cubicMetricBall d x n} :=
+        ⟨(canonicalRadiusWitness hclosed).endpoint,
+          cubicMetricSphere_subset_ball d x n
+            (canonicalRadiusWitness hclosed).sphere_mem⟩
+      have ht : tL ∈ T := by
+        simpa [T] using (canonicalRadiusWitness hclosed).sphere_mem
+      let pL : (radiusOpenBallGraph ω).Walk ⟨x, by simp⟩ tL :=
+        L.walk.copy rfl (Subtype.ext rfl)
+      refine ⟨tL, ht, pL, ?_⟩
+      intro hfL
+      have hfL' : f ∈ L.walk.edges := by simpa [pL] using hfL
+      have hfW : Sym2.map Subtype.val f ∈ (canonicalRadiusWitness hclosed).walk.edges := by
+        rw [← L.map_edges]
+        exact List.mem_map.mpr ⟨f, hfL', rfl⟩
+      have hefOpen : ef ∈ ω \ {ef} := (canonicalRadiusWitness hclosed).isOpen _ hfW
+      exact hefOpen.2 rfl
+    · refine ⟨z, hzT, p₀, ?_⟩
+      intro hfp
+      exact hfedge (p₀.edges_subset_edgeSet hfp)
+  obtain ⟨t₁, t₂, p, q, hpq⟩ := TwoEdgeMenger.exists_two_edgeDisjoint_walks_to_finset
+    (G := radiusOpenBallGraph ω) hzT p₀ havoid
+  apply mem_disjointOccurrence_of_edgeDisjoint_openBallWalks
+    ((mem_cubicMetricSphereInBall t₁.1).mp t₁.2)
+    ((mem_cubicMetricSphereInBall t₂.1).mp t₂.2) p q hpq
+
+/-- Full deterministic inclusion (5.14), including the endpoint `r = n-1`. -/
+theorem firstSausageLong_mem_disjointOccurrence {d n r : ℕ}
+    {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n) (hrn : r + 1 ≤ n)
+    (hgap : r < sausageGap d x n ω 1) :
+    ω ∈ OpenWitnessDisjointOccurrence
+      (radiusConnectionEvent d x (r + 1)) (radiusConnectionEvent d x n) := by
+  rcases hrn.lt_or_eq with hlt | heq
+  · exact firstSausageLong_mem_disjointOccurrence_of_lt hω hlt hgap
+  · have hn : 0 < n := by omega
+    have hend := firstSausageLong_endpoint_mem_disjointOccurrence hn hω (by omega)
+    simpa [heq] using hend
+
+/-- Full probability form of (5.14), valid for `r+1 ≤ n`. -/
+theorem firstSausageLong_probability_le {d n r : ℕ}
+    (p : I) (hrn : r + 1 ≤ n) :
+    (bernoulliBondMeasure d p).real
+        (firstSausageLongEvent d cubicOrigin n r) ≤
+      radiusTail d p (r + 1) * radiusTail d p n := by
+  calc
+    (bernoulliBondMeasure d p).real
+        (firstSausageLongEvent d cubicOrigin n r) ≤
+        (bernoulliBondMeasure d p).real (OpenWitnessDisjointOccurrence
+          (radiusConnectionEvent d cubicOrigin (r + 1))
+          (radiusConnectionEvent d cubicOrigin n)) := by
+      apply measureReal_mono
+      intro ω hω
+      exact firstSausageLong_mem_disjointOccurrence hω.1 hrn hω.2
+      exact MeasureTheory.measure_ne_top _ _
+    _ ≤ (bernoulliBondMeasure d p).real
+          (radiusConnectionEvent d cubicOrigin (r + 1)) *
+        (bernoulliBondMeasure d p).real
+          (radiusConnectionEvent d cubicOrigin n) :=
+      bernoulliBondMeasure_real_disjointOccurrence_le_mul p
+        (isIncreasingEvent_radiusConnectionEvent d cubicOrigin (r + 1))
+        (isIncreasingEvent_radiusConnectionEvent d cubicOrigin n)
+        (dependsOn_radiusConnectionEvent d cubicOrigin (r + 1))
+        (dependsOn_radiusConnectionEvent d cubicOrigin n)
+    _ = radiusTail d p (r + 1) * radiusTail d p n := rfl
+
+/-- Lemma 5.12 for the first sausage, in the unnormalized form equivalent to conditioning on
+`A_n`. This formulation avoids division by `P(A_n)`. -/
+theorem firstSausageGap_cdf_ge {d n r : ℕ} (p : I) (hrn : r + 1 ≤ n) :
+    (1 - radiusTail d p (r + 1)) * radiusTail d p n ≤
+      (bernoulliBondMeasure d p).real
+        (firstSausageShortEvent d cubicOrigin n r) := by
+  let μ := bernoulliBondMeasure d p
+  let A := radiusConnectionEvent d cubicOrigin n
+  let S := firstSausageShortEvent d cubicOrigin n r
+  let L := firstSausageLongEvent d cubicOrigin n r
+  have hcover : A ⊆ S ∪ L := by
+    intro ω hω
+    by_cases h : sausageGap d cubicOrigin n ω 1 ≤ r
+    · exact Or.inl ⟨hω, h⟩
+    · exact Or.inr ⟨hω, lt_of_not_ge h⟩
+  have hbase : radiusTail d p n ≤ μ.real (S ∪ L) := by
+    simpa [μ, A, radiusTail] using
+      measureReal_mono hcover (MeasureTheory.measure_ne_top μ (S ∪ L))
+  have hunion : μ.real (S ∪ L) ≤ μ.real S + μ.real L :=
+    measureReal_union_le S L
+  have hlong : μ.real L ≤ radiusTail d p (r + 1) * radiusTail d p n := by
+    simpa [μ, L] using firstSausageLong_probability_le p hrn
+  calc
+    (1 - radiusTail d p (r + 1)) * radiusTail d p n =
+        radiusTail d p n - radiusTail d p (r + 1) * radiusTail d p n := by ring
+    _ ≤ μ.real S := by linarith
+    _ = (bernoulliBondMeasure d p).real
+        (firstSausageShortEvent d cubicOrigin n r) := rfl
 
 end Percolation

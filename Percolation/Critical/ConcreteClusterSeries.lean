@@ -726,6 +726,84 @@ theorem concreteClusterDensitySeries_eq_openClustersPerVertex
     openClustersPerVertex_eq_tsum_finiteClusterSizeProbability]
   exact tsum_congr fun n ↦ concreteClusterDensityLevel_eq_probability hd n p
 
+/-- **Grimmett, Theorem 4.20, including the `n = 1` endpoint.**
+
+This is the source-facing concrete theorem: for every positive animal size and the explicit
+uniform range `0 < x ≤ 1/100`, the exceptional animal mass has Grimmett's prefactor and exponent.
+The `n ≥ 2` case is `cubicAnimal_largeDeviation_sharp`; for `n = 1`, the entire exceptional sum
+is bounded by the cluster-size probability, while the displayed right-hand side is at least one. -/
+theorem cubicAnimal_largeDeviation_sharp_one_le {d n : ℕ} {p x : ℝ}
+    (hd : 0 < d) (hn : 1 ≤ n) (hp0 : 0 < p) (hp1 : p < 1)
+    (hx0 : 0 < x) (hx : x ≤ 1 / 100) :
+    ∑ z ∈ exceptionalAnimalPairs d n p x,
+        (cubicAnimalCount d n z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+      (3 * d ^ 2 * n ^ 2 : ℕ) *
+        Real.exp (-((n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3)) := by
+  by_cases hn2 : 2 ≤ n
+  · exact cubicAnimal_largeDeviation_sharp hd hn2 hp0 hp1 hx0 hx
+  · have hnEq : n = 1 := by omega
+    subst n
+    simp only [one_pow, mul_one, Nat.cast_one, one_mul] at ⊢
+    let pI : I := ⟨p, hp0.le, hp1.le⟩
+    have hsubset : exceptionalAnimalPairs d 1 p x ⊆ animalParameterPairs d 1 := by
+      exact Finset.filter_subset _ _
+    have hsumLe :
+        ∑ z ∈ exceptionalAnimalPairs d 1 p x,
+            (cubicAnimalCount d 1 z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+          ∑ z ∈ animalParameterPairs d 1,
+            (cubicAnimalCount d 1 z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 := by
+      apply Finset.sum_le_sum_of_subset_of_nonneg hsubset
+      intro z _hz _hzExc
+      positivity
+    have hx1 : x ≤ 1 := hx.trans (by norm_num)
+    have hxSq : x ^ 2 ≤ 1 := by nlinarith [sq_nonneg (1 - x)]
+    have hpSq : p ^ 2 ≤ 1 := by nlinarith [sq_nonneg (1 - p)]
+    have hq0 : 0 ≤ 1 - p := by linarith
+    have hq1 : 1 - p ≤ 1 := by linarith
+    have hxp : x ^ 2 * p ^ 2 ≤ 1 := by
+      calc
+        x ^ 2 * p ^ 2 ≤ 1 * p ^ 2 := mul_le_mul_of_nonneg_right hxSq (sq_nonneg p)
+        _ ≤ 1 * 1 := mul_le_mul_of_nonneg_left hpSq zero_le_one
+        _ = 1 := one_mul 1
+    have hall : x ^ 2 * p ^ 2 * (1 - p) ≤ 1 := by
+      calc
+        x ^ 2 * p ^ 2 * (1 - p) ≤ 1 * (1 - p) :=
+          mul_le_mul_of_nonneg_right hxp hq0
+        _ ≤ 1 * 1 := mul_le_mul_of_nonneg_left hq1 zero_le_one
+        _ = 1 := one_mul 1
+    let a : ℝ := x ^ 2 * p ^ 2 * (1 - p) / 3
+    have ha : a ≤ 1 / 3 := by
+      dsimp only [a]
+      exact div_le_div_of_nonneg_right hall (by norm_num)
+    have hExp : (2 / 3 : ℝ) ≤ Real.exp (-a) := by
+      calc
+        (2 / 3 : ℝ) ≤ 1 - a := by linarith
+        _ = 1 + (-a) := by ring
+        _ ≤ Real.exp (-a) := by simpa [add_comm] using Real.add_one_le_exp (-a)
+    have hd1 : 1 ≤ d := by omega
+    have hdSq : 1 ≤ d ^ 2 := by
+      simpa [pow_two] using Nat.mul_le_mul hd1 hd1
+    have hcoefNat : 3 ≤ 3 * d ^ 2 := by omega
+    have hcoef : (3 : ℝ) ≤ (3 * d ^ 2 : ℕ) := by exact_mod_cast hcoefNat
+    have hRhs : (1 : ℝ) ≤ (3 * d ^ 2 : ℕ) * Real.exp (-a) := by
+      calc
+        (1 : ℝ) ≤ 3 * (2 / 3 : ℝ) := by norm_num
+        _ ≤ (3 * d ^ 2 : ℕ) * Real.exp (-a) :=
+          mul_le_mul hcoef hExp (by norm_num) (by positivity)
+    calc
+      ∑ z ∈ exceptionalAnimalPairs d 1 p x,
+          (cubicAnimalCount d 1 z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+          ∑ z ∈ animalParameterPairs d 1,
+            (cubicAnimalCount d 1 z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 := hsumLe
+      _ = finiteClusterSizeProbability d pI 1 := by
+        symm
+        exact finiteClusterSizeProbability_eq_sum_cubicAnimalCount hd 1 pI
+      _ ≤ 1 := finiteClusterSizeProbability_le_one d pI 1
+      _ ≤ (3 * d ^ 2 : ℕ) * Real.exp (-(x ^ 2 * p ^ 2 * (1 - p) / 3)) := by
+        simpa [a] using hRhs
+
+#print axioms cubicAnimal_largeDeviation_sharp_one_le
+
 end
 
 end Percolation

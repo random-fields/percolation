@@ -1692,6 +1692,8 @@ theorem torusClusterDensitySeries_tendsto_openClustersPerVertex
       atTop (nhds (openClustersPerVertex d p)) :=
   torusClusterDensitySeries_tendsto_openClustersPerVertex_aux d p
 
+#print axioms concreteClusterDensitySeries_contDiffOn_unitInterval
+
 end
 
 end Percolation

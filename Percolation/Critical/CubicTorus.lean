@@ -18,6 +18,16 @@ open scoped BigOperators
 /-- The vertex set of the side-`2N` periodic cubic lattice. -/
 abbrev CubicTorus (d N : ℕ) := Fin d → ZMod (2 * N)
 
+/-- The quotient map from the cubic lattice to the side-`2N` periodic lattice. -/
+def cubicToTorus {d : ℕ} (N : ℕ) (x : Cubic d) : CubicTorus d N :=
+  fun i ↦ (x i : ZMod (2 * N))
+
+@[simp]
+theorem cubicToTorus_origin (d N : ℕ) :
+    cubicToTorus N (cubicOrigin : Cubic d) = 0 := by
+  ext i
+  simp [cubicToTorus, cubicOrigin]
+
 /-- A signed nearest-neighbour step on the periodic cubic lattice. -/
 def cubicTorusStepFrom {d N : ℕ} (x : CubicTorus d N) (a : CubicDirection d) :
     CubicTorus d N :=
@@ -34,6 +44,18 @@ theorem cubicTorusStepFrom_apply_of_ne {d N : ℕ} (x : CubicTorus d N)
     {i j : Fin d} (hij : j ≠ i) (b : Bool) :
     cubicTorusStepFrom x (i, b) j = x j := by
   simp [cubicTorusStepFrom, Function.update_of_ne hij]
+
+theorem cubicToTorus_stepFrom {d N : ℕ} (x : Cubic d) (a : CubicDirection d) :
+    cubicToTorus N (cubicStepFrom x a) =
+      cubicTorusStepFrom (cubicToTorus N x) a := by
+  rcases a with ⟨i, b⟩
+  ext j
+  by_cases hji : j = i
+  · subst j
+    simp [cubicToTorus, cubicStepFrom, cubicTorusStepFrom,
+      cubicDirectionIncrement]
+  · simp [cubicToTorus, cubicStepFrom, cubicTorusStepFrom,
+      Function.update_of_ne hji]
 
 /-- One orientation of periodic nearest-neighbour adjacency. -/
 def cubicTorusStep (d N : ℕ) (x y : CubicTorus d N) : Prop :=
@@ -106,6 +128,150 @@ theorem cubicTorusGraph_adj_iff_exists_stepFrom {d N : ℕ} (hN : 2 ≤ N)
         exact hj.symm
   · rintro ⟨a, rfl⟩
     exact cubicTorusGraph_adj_stepFrom hN x a
+
+/-- The quotient map is a graph homomorphism. -/
+def cubicToTorusHom {d N : ℕ} (hN : 2 ≤ N) :
+    cubicGraph d →g cubicTorusGraph d N where
+  toFun := cubicToTorus N
+  map_rel' := by
+    intro x y hxy
+    obtain ⟨a, ha⟩ := (cubicGraph_adj_iff_exists_stepFrom x y).mp hxy
+    subst y
+    rw [cubicToTorus_stepFrom]
+    exact cubicTorusGraph_adj_stepFrom hN _ _
+
+/-- No two lattice vertices in an `ℓ1` ball of radius `< N` are identified by the
+side-`2N` quotient.  This is the local injectivity used in Appendix I. -/
+theorem cubicToTorus_injOn_metricBall {d N r : ℕ} (hrN : r < N) :
+    Set.InjOn (cubicToTorus N)
+      {x : Cubic d | cubicL1Dist cubicOrigin x ≤ r} := by
+  intro x hx y hy hxy
+  change cubicL1Dist cubicOrigin x ≤ r at hx
+  change cubicL1Dist cubicOrigin y ≤ r at hy
+  funext i
+  have hcast : (x i : ZMod (2 * N)) = (y i : ZMod (2 * N)) :=
+    congrFun hxy i
+  have hdiv : ((2 * N : ℕ) : ℤ) ∣ y i - x i :=
+    (ZMod.intCast_eq_intCast_iff_dvd_sub (x i) (y i) (2 * N)).mp hcast
+  have hcoord : (y i - x i).natAbs ≤ cubicL1Dist x y :=
+    cubicL1Dist_coord_le x y i
+  have htriangle : cubicL1Dist x y ≤
+      cubicL1Dist cubicOrigin x + cubicL1Dist cubicOrigin y := by
+    have h := cubicL1Dist_triangle x cubicOrigin y
+    simpa [cubicL1Dist_comm] using h
+  have hlt : (y i - x i).natAbs < 2 * N := by
+    omega
+  have hzero : y i - x i = 0 := by
+    apply Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hdiv
+    simpa using hlt
+  omega
+
+/-! ### Lifting finite torus walks to the cubic lattice -/
+
+def cubicTorusVerticesFrom {d N : ℕ} (x : CubicTorus d N) :
+    List (CubicDirection d) → List (CubicTorus d N)
+  | [] => [x]
+  | a :: steps => x :: cubicTorusVerticesFrom (cubicTorusStepFrom x a) steps
+
+def cubicTorusEndpointFrom {d N : ℕ} (x : CubicTorus d N) :
+    List (CubicDirection d) → CubicTorus d N
+  | [] => x
+  | a :: steps => cubicTorusEndpointFrom (cubicTorusStepFrom x a) steps
+
+theorem cubicToTorus_cubicVerticesFrom {d N : ℕ} (x : Cubic d)
+    (steps : List (CubicDirection d)) :
+    (cubicVerticesFrom x steps).map (cubicToTorus N) =
+      cubicTorusVerticesFrom (cubicToTorus N x) steps := by
+  induction steps generalizing x with
+  | nil => rfl
+  | cons a steps ih =>
+      simp only [cubicVerticesFrom, cubicTorusVerticesFrom, List.map_cons,
+        List.cons.injEq, true_and]
+      rw [ih, cubicToTorus_stepFrom]
+
+theorem cubicToTorus_cubicEndpointFrom {d N : ℕ} (x : Cubic d)
+    (steps : List (CubicDirection d)) :
+    cubicToTorus N (cubicEndpointFrom x steps) =
+      cubicTorusEndpointFrom (cubicToTorus N x) steps := by
+  induction steps generalizing x with
+  | nil => rfl
+  | cons a steps ih =>
+      simp only [cubicEndpointFrom, cubicTorusEndpointFrom]
+      rw [ih, cubicToTorus_stepFrom]
+
+noncomputable def cubicTorusDartDirection {d N : ℕ} (hN : 2 ≤ N)
+    (a : (cubicTorusGraph d N).Dart) : CubicDirection d :=
+  Classical.choose ((cubicTorusGraph_adj_iff_exists_stepFrom hN a.fst a.snd).mp a.adj)
+
+theorem cubicTorusDartDirection_spec {d N : ℕ} (hN : 2 ≤ N)
+    (a : (cubicTorusGraph d N).Dart) :
+    a.snd = cubicTorusStepFrom a.fst (cubicTorusDartDirection hN a) :=
+  Classical.choose_spec ((cubicTorusGraph_adj_iff_exists_stepFrom hN a.fst a.snd).mp a.adj)
+
+noncomputable def cubicTorusWalkDirections {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} (w : (cubicTorusGraph d N).Walk u v) :
+    List (CubicDirection d) :=
+  w.darts.map (cubicTorusDartDirection hN)
+
+@[simp]
+theorem cubicTorusWalkDirections_length {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} (w : (cubicTorusGraph d N).Walk u v) :
+    (cubicTorusWalkDirections hN w).length = w.length := by
+  simp [cubicTorusWalkDirections]
+
+theorem cubicTorusVerticesFrom_walkDirections {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} (w : (cubicTorusGraph d N).Walk u v) :
+    cubicTorusVerticesFrom u (cubicTorusWalkDirections hN w) = w.support := by
+  induction w with
+  | nil => rfl
+  | @cons u y v huy p ih =>
+      change u :: cubicTorusVerticesFrom
+          (cubicTorusStepFrom u (cubicTorusDartDirection hN ⟨(u, y), huy⟩))
+          (cubicTorusWalkDirections hN p) = u :: p.support
+      rw [← cubicTorusDartDirection_spec hN ⟨(u, y), huy⟩, ih]
+
+theorem cubicTorusEndpointFrom_walkDirections {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} (w : (cubicTorusGraph d N).Walk u v) :
+    cubicTorusEndpointFrom u (cubicTorusWalkDirections hN w) = v := by
+  induction w with
+  | nil => rfl
+  | @cons u y v huy p ih =>
+      change cubicTorusEndpointFrom
+          (cubicTorusStepFrom u (cubicTorusDartDirection hN ⟨(u, y), huy⟩))
+          (cubicTorusWalkDirections hN p) = v
+      rw [← cubicTorusDartDirection_spec hN ⟨(u, y), huy⟩, ih]
+
+/-- Lift a torus walk after choosing a lattice lift of its first vertex. -/
+noncomputable def cubicLiftOfTorusWalk {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} (w : (cubicTorusGraph d N).Walk u v)
+    (x : Cubic d) :
+    (cubicGraph d).Walk x
+      (cubicEndpointFrom x (cubicTorusWalkDirections hN w)) :=
+  cubicWalkFrom x (cubicTorusWalkDirections hN w)
+
+theorem cubicLiftOfTorusWalk_endpoint_projection {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} (w : (cubicTorusGraph d N).Walk u v)
+    (x : Cubic d) (hx : cubicToTorus N x = u) :
+    cubicToTorus N (cubicEndpointFrom x (cubicTorusWalkDirections hN w)) = v := by
+  rw [cubicToTorus_cubicEndpointFrom, hx,
+    cubicTorusEndpointFrom_walkDirections hN w]
+
+theorem cubicLiftOfTorusWalk_support_projection {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} (w : (cubicTorusGraph d N).Walk u v)
+    (x : Cubic d) (hx : cubicToTorus N x = u) :
+    (cubicLiftOfTorusWalk hN w x).support.map (cubicToTorus N) = w.support := by
+  rw [cubicLiftOfTorusWalk, cubicWalkFrom_support,
+    cubicToTorus_cubicVerticesFrom, hx,
+    cubicTorusVerticesFrom_walkDirections hN w]
+
+theorem cubicLiftOfTorusWalk_isPath {d N : ℕ} (hN : 2 ≤ N)
+    {u v : CubicTorus d N} {w : (cubicTorusGraph d N).Walk u v}
+    (hw : w.IsPath) (x : Cubic d) (hx : cubicToTorus N x = u) :
+    (cubicLiftOfTorusWalk hN w x).IsPath := by
+  rw [SimpleGraph.Walk.isPath_def]
+  apply List.Nodup.of_map (cubicToTorus N)
+  rw [cubicLiftOfTorusWalk_support_projection hN w x hx]
+  exact hw.support_nodup
 
 /-- For side length at least four, the `2d` signed directions give distinct neighbours. -/
 theorem cubicTorusStepFrom_injective_direction {d N : ℕ} (hN : 2 ≤ N)

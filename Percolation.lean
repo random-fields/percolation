@@ -24,7 +24,9 @@ import Percolation.Critical.ThetaContinuity
 import Percolation.Critical.GhostField
 import Percolation.Critical.CubicTorus
 import Percolation.Critical.TorusGhostField
+import Percolation.Critical.TorusAnimals
 import Percolation.Critical.TorusDifferential
+import Percolation.Critical.AppendixLimits
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries

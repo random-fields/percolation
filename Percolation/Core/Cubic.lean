@@ -210,6 +210,13 @@ theorem cubicWalk_start_coord_le_end_add_length {d : ℕ} {u v : Cubic d}
 def cubicL1Dist {d : ℕ} (x y : Cubic d) : ℕ :=
   ∑ i, (y i - x i).natAbs
 
+theorem cubicL1Dist_coord_le {d : ℕ} (x y : Cubic d) (i : Fin d) :
+    (y i - x i).natAbs ≤ cubicL1Dist x y := by
+  rw [cubicL1Dist]
+  exact Finset.single_le_sum
+    (f := fun j : Fin d ↦ (y j - x j).natAbs) (fun _ _ ↦ Nat.zero_le _)
+    (Finset.mem_univ i)
+
 @[simp]
 theorem cubicL1Dist_self {d : ℕ} (x : Cubic d) : cubicL1Dist x x = 0 := by
   simp [cubicL1Dist]

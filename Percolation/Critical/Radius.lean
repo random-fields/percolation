@@ -47,13 +47,6 @@ theorem mem_cubicMetricSphere {d n : ℕ} {x y : Cubic d} :
     y ∈ cubicMetricSphere d x n ↔ y ∈ cubicMetricBox d x n ∧ cubicL1Dist x y = n := by
   simp [cubicMetricSphere]
 
-theorem cubicL1Dist_coord_le {d : ℕ} (x y : Cubic d) (i : Fin d) :
-    (y i - x i).natAbs ≤ cubicL1Dist x y := by
-  rw [cubicL1Dist]
-  exact Finset.single_le_sum
-    (f := fun j : Fin d ↦ (y j - x j).natAbs) (fun _ _ ↦ Nat.zero_le _)
-    (Finset.mem_univ i)
-
 /-- The coordinate box in the definition of `cubicMetricBall` is only an enumeration device:
 membership is exactly the Manhattan-distance inequality. -/
 theorem mem_cubicMetricBall_iff_l1Dist_le {d n : ℕ} {x y : Cubic d} :

@@ -541,6 +541,14 @@ private theorem criticalZeroSet_bddAbove (d : ℕ) :
   rintro q ⟨p, _hp, rfl⟩
   exact p.2.2
 
+/-- The real critical probability defined from unit-interval densities is at most one. -/
+theorem cubicCriticalProbability_le_one (d : ℕ) :
+    cubicCriticalProbability d ≤ 1 := by
+  rw [cubicCriticalProbability]
+  apply csSup_le (criticalZeroSet_nonempty d)
+  rintro q ⟨p, _hp, rfl⟩
+  exact p.property.2
+
 /-- The defining supremum for `p_c` implies vanishing of `θ` strictly below `p_c`. -/
 theorem theta_eq_zero_of_lt_criticalProbability {d : ℕ} {p : I}
     (hp : (p : ℝ) < cubicCriticalProbability d) : theta d p = 0 := by

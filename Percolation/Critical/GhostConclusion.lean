@@ -34,18 +34,6 @@ theorem finiteSusceptibility_eq_susceptibility_of_theta_eq_zero
   apply Set.not_infinite.mp
   exact hω
 
-private theorem cubicCriticalProbability_le_one (d : ℕ) :
-    cubicCriticalProbability d ≤ 1 := by
-  let A : Set ℝ := ((fun p : I ↦ (p : ℝ)) '' {p : I | theta d p = 0})
-  let p0 : I := ⟨0, by norm_num, by norm_num⟩
-  have hA0 : (0 : ℝ) ∈ A := by
-    refine ⟨p0, ?_, rfl⟩
-    exact theta_eq_zero_of_mul_cubicConnectiveConstant_lt_one d p0 (by simp [p0])
-  rw [cubicCriticalProbability]
-  exact csSup_le ⟨0, hA0⟩ fun x hx ↦ by
-    rcases hx with ⟨q, _hq, rfl⟩
-    exact q.property.2
-
 /-- Grimmett, Theorem 5.2, via the independent Aizenman--Barsky ghost-field proof. -/
 theorem susceptibility_lt_top_of_lt_critical_via_ghost
     (d : ℕ) (hd : 2 ≤ d) (p : I)

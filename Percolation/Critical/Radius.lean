@@ -153,6 +153,44 @@ theorem cubicStepEdge_mem_cubicMetricBallEdges {d n : ℕ} {x y : Cubic d}
     Finset.mem_filter, Finset.mem_univ, true_and]
   exact ⟨y, hy, a, hya, rfl⟩
 
+theorem endpoint_mem_cubicMetricBall_of_edge_mem {d n : ℕ} {x z : Cubic d}
+    {e : CubicEdge d} (he : e ∈ cubicMetricBallEdges d x n)
+    (hz : z ∈ (e : Sym2 (Cubic d))) : z ∈ cubicMetricBall d x n := by
+  classical
+  simp only [cubicMetricBallEdges, Finset.mem_biUnion, Finset.mem_image,
+    Finset.mem_filter, Finset.mem_univ, true_and] at he
+  obtain ⟨y, hy, a, hya, rfl⟩ := he
+  rw [cubicStepEdge, Sym2.mem_iff] at hz
+  rcases hz with rfl | rfl
+  · exact hy
+  · exact hya
+
+theorem walk_support_subset_cubicMetricBall_of_edges {d n : ℕ} {x u v : Cubic d}
+    (hu : u ∈ cubicMetricBall d x n) (w : (cubicGraph d).Walk u v)
+    (hw : walkEdgeFinset w ⊆ cubicMetricBallEdges d x n) :
+    ∀ z ∈ w.support, z ∈ cubicMetricBall d x n := by
+  induction w with
+  | nil => simpa using hu
+  | @cons u y v huy p ih =>
+      intro z hz
+      simp only [SimpleGraph.Walk.support_cons, List.mem_cons] at hz
+      rcases hz with rfl | hz
+      · exact hu
+      · let e : CubicEdge d := ⟨s(u, y), by
+          rw [SimpleGraph.mem_edgeSet]
+          exact huy⟩
+        have hew : e ∈ walkEdgeFinset (SimpleGraph.Walk.cons huy p) := by
+          rw [mem_walkEdgeFinset_iff]
+          simp [e]
+        have hy : y ∈ cubicMetricBall d x n :=
+          endpoint_mem_cubicMetricBall_of_edge_mem (hw hew) (by simp [e])
+        have hp : walkEdgeFinset p ⊆ cubicMetricBallEdges d x n := by
+          intro f hf
+          apply hw
+          rw [mem_walkEdgeFinset_iff] at hf ⊢
+          simp [hf]
+        exact ih hy hp z hz
+
 /-- If every vertex of a walk lies in a metric ball, every traversed edge belongs to the
 finite edge set of that ball. -/
 theorem walkEdgeFinset_subset_cubicMetricBallEdges_of_support {d n : ℕ}

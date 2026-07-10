@@ -607,6 +607,28 @@ theorem isEdgeReachable_two_iff_exists_edgeDisjoint_paths [Fintype V] {u v : V} 
         simpa only [Set.mem_singleton_iff, ne_eq] using
           (fun h : e' = e ↦ hep (h ▸ he')))⟩
 
+/-- A deletion criterion useful for exploration arguments. Two proposed walks suffice unless
+the deleted edge lies on both; in that overlap case an edge-dependent avoiding walk may be
+supplied. -/
+theorem isEdgeReachable_two_of_walks_and_overlap_avoidance {u v : V}
+    (p q : G.Walk u v)
+    (havoid : ∀ e, e ∈ p.edges → e ∈ q.edges → ∃ r : G.Walk u v, e ∉ r.edges) :
+    G.IsEdgeReachable 2 u v := by
+  rw [SimpleGraph.isEdgeReachable_two]
+  intro e
+  by_cases hep : e ∈ p.edges
+  · by_cases heq : e ∈ q.edges
+    · obtain ⟨r, her⟩ := havoid e hep heq
+      exact ⟨r.toDeleteEdges {e} (fun e' he' ↦ by
+        simpa only [Set.mem_singleton_iff, ne_eq] using
+          (fun h : e' = e ↦ her (h ▸ he')))⟩
+    · exact ⟨q.toDeleteEdges {e} (fun e' he' ↦ by
+        simpa only [Set.mem_singleton_iff, ne_eq] using
+          (fun h : e' = e ↦ heq (h ▸ he')))⟩
+  · exact ⟨p.toDeleteEdges {e} (fun e' he' ↦ by
+      simpa only [Set.mem_singleton_iff, ne_eq] using
+        (fun h : e' = e ↦ hep (h ▸ he')))⟩
+
 end TwoEdgeMenger
 
 end Percolation

@@ -102,7 +102,7 @@ theorem finiteBernoulliExpectation_comm {κ : Type*}
     (E : Finset ι) (F : Finset κ) (p q : ℝ) (X : Finset ι → Finset κ → ℝ) :
     finiteBernoulliExpectation E p (fun s ↦ finiteBernoulliExpectation F q (X s)) =
       finiteBernoulliExpectation F q (fun t ↦ finiteBernoulliExpectation E p (fun s ↦ X s t)) := by
-  simp only [finiteBernoulliExpectation, Finset.mul_sum, mul_assoc]
+  simp only [finiteBernoulliExpectation, Finset.mul_sum]
   rw [Finset.sum_comm]
   apply Finset.sum_congr rfl
   intro t _ht
@@ -127,10 +127,382 @@ def finiteBernoulliExpectationFamily [DecidableEq ι] (E : Finset ι) (q : ι �
     (X : Finset ι → ℝ) : ℝ :=
   ∑ s ∈ E.powerset, finiteBernoulliWeightFamily E q s * X s
 
+/-- Adjoining a closed coordinate multiplies an inhomogeneous weight by `1 - q a`. -/
+theorem finiteBernoulliWeightFamily_insert_of_notMem [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) {s : Finset ι} (hs : s ⊆ E)
+    (q : ι → ℝ) :
+    finiteBernoulliWeightFamily (insert a E) q s =
+      (1 - q a) * finiteBernoulliWeightFamily E q s := by
+  have has : a ∉ s := fun has ↦ ha (hs has)
+  have hsdiff : insert a E \ s = insert a (E \ s) := by
+    ext x
+    by_cases hxa : x = a <;> simp [hxa, ha, has]
+  unfold finiteBernoulliWeightFamily
+  rw [hsdiff, Finset.prod_insert]
+  · ring
+  · simp [ha]
+
+/-- Adjoining an open coordinate multiplies an inhomogeneous weight by `q a`. -/
+theorem finiteBernoulliWeightFamily_insert_insert [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) {s : Finset ι} (hs : s ⊆ E)
+    (q : ι → ℝ) :
+    finiteBernoulliWeightFamily (insert a E) q (insert a s) =
+      q a * finiteBernoulliWeightFamily E q s := by
+  have has : a ∉ s := fun has ↦ ha (hs has)
+  have hsdiff : insert a E \ insert a s = E \ s := by
+    ext x
+    by_cases hxa : x = a <;> simp [hxa, ha]
+  unfold finiteBernoulliWeightFamily
+  rw [Finset.prod_insert has, hsdiff]
+  ring
+
+/-- Conditioning on one fresh coordinate in an inhomogeneous finite Bernoulli cube. -/
+theorem finiteBernoulliExpectationFamily_insert [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (q : ι → ℝ)
+    (X : Finset ι → ℝ) :
+    finiteBernoulliExpectationFamily (insert a E) q X =
+      q a * finiteBernoulliExpectationFamily E q (fun s ↦ X (insert a s)) +
+        (1 - q a) * finiteBernoulliExpectationFamily E q X := by
+  have hdisj : Disjoint E.powerset (E.powerset.image (insert a)) := by
+    rw [Finset.disjoint_left]
+    intro t ht hti
+    rcases Finset.mem_image.mp hti with ⟨s, _, rfl⟩
+    exact ha (Finset.mem_powerset.mp ht (Finset.mem_insert_self a s))
+  have hinj : ∀ s ∈ E.powerset, ∀ t ∈ E.powerset,
+      insert a s = insert a t → s = t := by
+    intro s hs t ht hst
+    have has : a ∉ s := fun h ↦ ha (Finset.mem_powerset.mp hs h)
+    have hat : a ∉ t := fun h ↦ ha (Finset.mem_powerset.mp ht h)
+    rw [← Finset.erase_insert has, ← Finset.erase_insert hat, hst]
+  rw [finiteBernoulliExpectationFamily, Finset.powerset_insert,
+    Finset.sum_union hdisj, Finset.sum_image hinj]
+  have h1 : ∀ s ∈ E.powerset,
+      finiteBernoulliWeightFamily (insert a E) q s * X s =
+        (1 - q a) * (finiteBernoulliWeightFamily E q s * X s) := by
+    intro s hs
+    rw [finiteBernoulliWeightFamily_insert_of_notMem ha
+      (Finset.mem_powerset.mp hs)]
+    ring
+  have h2 : ∀ s ∈ E.powerset,
+      finiteBernoulliWeightFamily (insert a E) q (insert a s) * X (insert a s) =
+        q a * (finiteBernoulliWeightFamily E q s * X (insert a s)) := by
+    intro s hs
+    rw [finiteBernoulliWeightFamily_insert_insert ha
+      (Finset.mem_powerset.mp hs)]
+    ring
+  rw [Finset.sum_congr rfl h1, Finset.sum_congr rfl h2,
+    ← Finset.mul_sum, ← Finset.mul_sum,
+    finiteBernoulliExpectationFamily, finiteBernoulliExpectationFamily]
+  ring
+
 /-- Inhomogeneous probability on the finite cube. -/
 noncomputable def finiteBernoulliProbabilityFamily [DecidableEq ι] (E : Finset ι)
     (q : ι → ℝ) (T : Set (Finset ι)) : ℝ :=
   finiteBernoulliExpectationFamily E q (T.indicator fun _ => 1)
+
+theorem finiteBernoulliExpectationFamily_one [DecidableEq ι]
+    (E : Finset ι) (q : ι → ℝ) :
+    finiteBernoulliExpectationFamily E q (fun _ ↦ (1 : ℝ)) = 1 := by
+  unfold finiteBernoulliExpectationFamily
+  simpa using sum_finiteBernoulliWeightFamily E q
+
+@[simp]
+theorem finiteBernoulliProbabilityFamily_univ [DecidableEq ι]
+    (E : Finset ι) (q : ι → ℝ) :
+    finiteBernoulliProbabilityFamily E q Set.univ = 1 := by
+  unfold finiteBernoulliProbabilityFamily
+  simpa using finiteBernoulliExpectationFamily_one E q
+
+theorem finiteBernoulliProbabilityFamily_congr [DecidableEq ι]
+    {E : Finset ι} {q : ι → ℝ} {T U : Set (Finset ι)}
+    (h : ∀ s ∈ E.powerset, (s ∈ T ↔ s ∈ U)) :
+    finiteBernoulliProbabilityFamily E q T =
+      finiteBernoulliProbabilityFamily E q U := by
+  unfold finiteBernoulliProbabilityFamily finiteBernoulliExpectationFamily
+  apply Finset.sum_congr rfl
+  intro s hs
+  by_cases hT : s ∈ T
+  · rw [Set.indicator_of_mem hT, Set.indicator_of_mem ((h s hs).mp hT)]
+  · rw [Set.indicator_of_notMem hT,
+      Set.indicator_of_notMem fun hU ↦ hT ((h s hs).mpr hU)]
+
+/-- A prescribed trace on a coordinate block. -/
+def finiteTraceCylinder [DecidableEq ι] (R r : Finset ι) : Set (Finset ι) :=
+  {s | R ∩ s = r}
+
+/-- `T` ignores the coordinates in `R`: changing only those coordinates leaves membership
+unchanged. -/
+def TraceIgnores [DecidableEq ι] (R : Finset ι) (T : Set (Finset ι)) : Prop :=
+  ∀ s t, (∀ a, a ∉ R → (a ∈ s ↔ a ∈ t)) → (s ∈ T ↔ t ∈ T)
+
+theorem TraceIgnores.mono [DecidableEq ι] {R S : Finset ι}
+    {T : Set (Finset ι)} (h : TraceIgnores R T) (hSR : S ⊆ R) :
+    TraceIgnores S T := by
+  intro s t hagree
+  exact h s t fun a haR ↦ hagree a fun haS ↦ haR (hSR haS)
+
+theorem TraceIgnores.insert_iff [DecidableEq ι] {R : Finset ι}
+    {T : Set (Finset ι)} (hT : TraceIgnores R T) {a : ι} (haR : a ∈ R)
+    (s : Finset ι) : insert a s ∈ T ↔ s ∈ T := by
+  apply hT
+  intro x hxR
+  have hxa : x ≠ a := fun hxa ↦ hxR (hxa ▸ haR)
+  simp [hxa]
+
+def insertTraceSection [DecidableEq ι] (a : ι)
+    (T : Set (Finset ι)) : Set (Finset ι) :=
+  {s | insert a s ∈ T}
+
+theorem finiteBernoulliProbabilityFamily_insert [DecidableEq ι]
+    {E : Finset ι} {a : ι} (ha : a ∉ E) (q : ι → ℝ)
+    (T : Set (Finset ι)) :
+    finiteBernoulliProbabilityFamily (insert a E) q T =
+      q a * finiteBernoulliProbabilityFamily E q (insertTraceSection a T) +
+        (1 - q a) * finiteBernoulliProbabilityFamily E q T := by
+  unfold finiteBernoulliProbabilityFamily
+  rw [finiteBernoulliExpectationFamily_insert ha]
+  congr 1
+
+theorem insertTraceSection_finiteTraceCylinder_of_mem [DecidableEq ι]
+    {R r : Finset ι} {a : ι} (haR : a ∉ R) (har : a ∈ r) :
+    insertTraceSection a (finiteTraceCylinder (insert a R) r) =
+      finiteTraceCylinder R (r.erase a) := by
+  ext s
+  unfold insertTraceSection finiteTraceCylinder
+  simp only [Set.mem_setOf_eq]
+  constructor
+  · intro h
+    apply Finset.ext
+    intro x
+    have hx := Finset.ext_iff.mp h x
+    by_cases hxa : x = a
+    · subst x
+      simp [haR]
+    · simpa [hxa, haR] using hx
+  · intro h
+    apply Finset.ext
+    intro x
+    have hx := Finset.ext_iff.mp h x
+    by_cases hxa : x = a
+    · subst x
+      simp [har]
+    · simpa [hxa, haR] using hx
+
+/-- A prescribed coordinate block is independent of any trace event which ignores that
+block.  This is the finite inhomogeneous conditioning identity used for the ghost-field
+cluster explorations. -/
+theorem finiteBernoulliProbabilityFamily_finiteTraceCylinder_inter_of_ignores
+    [DecidableEq ι] {E R r : Finset ι} (q : ι → ℝ)
+    (hRE : R ⊆ E) (hrR : r ⊆ R) {T : Set (Finset ι)}
+    (hT : TraceIgnores R T) :
+    finiteBernoulliProbabilityFamily E q (finiteTraceCylinder R r ∩ T) =
+      finiteBernoulliWeightFamily R q r *
+        finiteBernoulliProbabilityFamily E q T := by
+  induction R using Finset.induction generalizing E r with
+  | empty =>
+      have hr : r = ∅ := Finset.subset_empty.mp hrR
+      subst r
+      have hcyl : finiteTraceCylinder (∅ : Finset ι) ∅ = Set.univ := by
+        ext s
+        simp [finiteTraceCylinder]
+      rw [hcyl, Set.univ_inter]
+      simp [finiteBernoulliWeightFamily]
+  | @insert a R haR ih =>
+      have haE : a ∈ E := hRE (Finset.mem_insert_self a R)
+      let E₀ := E.erase a
+      have haE₀ : a ∉ E₀ := Finset.notMem_erase a E
+      have hE : E = insert a E₀ := (Finset.insert_erase haE).symm
+      have hRE₀ : R ⊆ E₀ := by
+        intro x hxR
+        apply Finset.mem_erase.mpr
+        exact ⟨fun hxa ↦ haR (hxa ▸ hxR), hRE (Finset.mem_insert_of_mem hxR)⟩
+      have hT₀ : TraceIgnores R T :=
+        hT.mono (Finset.subset_insert a R)
+      have hTsection : insertTraceSection a T = T := by
+        ext s
+        exact hT.insert_iff (Finset.mem_insert_self a R) s
+      have hprobT : finiteBernoulliProbabilityFamily (insert a E₀) q T =
+          finiteBernoulliProbabilityFamily E₀ q T := by
+        rw [finiteBernoulliProbabilityFamily_insert haE₀, hTsection]
+        ring
+      rw [hE, finiteBernoulliProbabilityFamily_insert haE₀]
+      by_cases har : a ∈ r
+      · let r₀ := r.erase a
+        have hr₀R : r₀ ⊆ R := by
+          intro x hxr
+          have hxr' := Finset.mem_of_mem_erase hxr
+          have hx := hrR hxr'
+          rw [Finset.mem_insert] at hx
+          exact hx.resolve_left fun hxa ↦ (Finset.mem_erase.mp hxr).1 hxa
+        have hopen : insertTraceSection a
+            (finiteTraceCylinder (insert a R) r ∩ T) =
+            finiteTraceCylinder R r₀ ∩ T := by
+          ext s
+          simp only [insertTraceSection, Set.mem_setOf_eq, Set.mem_inter_iff]
+          rw [hT.insert_iff (Finset.mem_insert_self a R)]
+          apply and_congr
+          · exact Set.ext_iff.mp
+              (insertTraceSection_finiteTraceCylinder_of_mem haR har) s
+          · exact Iff.rfl
+        have hclosed : finiteBernoulliProbabilityFamily E₀ q
+            (finiteTraceCylinder (insert a R) r ∩ T) = 0 := by
+          calc
+            finiteBernoulliProbabilityFamily E₀ q
+                (finiteTraceCylinder (insert a R) r ∩ T) =
+                finiteBernoulliProbabilityFamily E₀ q ∅ := by
+              apply finiteBernoulliProbabilityFamily_congr
+              intro s hs
+              constructor
+              · rintro ⟨hcyl, _⟩
+                have has : a ∉ s := fun has ↦
+                  haE₀ (Finset.mem_powerset.mp hs has)
+                unfold finiteTraceCylinder at hcyl
+                have ha := Finset.ext_iff.mp hcyl a
+                simp [haR, har, has] at ha
+              · simp
+            _ = 0 := by
+              unfold finiteBernoulliProbabilityFamily finiteBernoulliExpectationFamily
+              simp
+        rw [hopen, hclosed, mul_zero, add_zero,
+          ih hRE₀ hr₀R hT₀, hprobT]
+        have hrEq : r = insert a r₀ := (Finset.insert_erase har).symm
+        rw [hrEq, finiteBernoulliWeightFamily_insert_insert haR hr₀R]
+        ring
+      · have hrR' : r ⊆ R := by
+          intro x hxr
+          have hx := hrR hxr
+          rw [Finset.mem_insert] at hx
+          exact hx.resolve_left fun hxa ↦ har (hxa ▸ hxr)
+        have hopen : finiteBernoulliProbabilityFamily E₀ q
+            (insertTraceSection a
+              (finiteTraceCylinder (insert a R) r ∩ T)) = 0 := by
+          calc
+            finiteBernoulliProbabilityFamily E₀ q
+                (insertTraceSection a
+                  (finiteTraceCylinder (insert a R) r ∩ T)) =
+                finiteBernoulliProbabilityFamily E₀ q ∅ := by
+              apply finiteBernoulliProbabilityFamily_congr
+              intro s hs
+              constructor
+              · rintro ⟨hcyl, _⟩
+                unfold finiteTraceCylinder at hcyl
+                have ha := Finset.ext_iff.mp hcyl a
+                simp [haR, har] at ha
+              · simp
+            _ = 0 := by
+              unfold finiteBernoulliProbabilityFamily finiteBernoulliExpectationFamily
+              simp
+        have hclosed : finiteBernoulliProbabilityFamily E₀ q
+            (finiteTraceCylinder (insert a R) r ∩ T) =
+            finiteBernoulliProbabilityFamily E₀ q
+              (finiteTraceCylinder R r ∩ T) := by
+          apply finiteBernoulliProbabilityFamily_congr
+          intro s hs
+          have has : a ∉ s := fun has ↦
+            haE₀ (Finset.mem_powerset.mp hs has)
+          simp only [Set.mem_inter_iff]
+          constructor <;> rintro ⟨hcyl, hmem⟩ <;> refine ⟨?_, hmem⟩
+          · unfold finiteTraceCylinder at hcyl ⊢
+            simpa [haR, har, has] using hcyl
+          · unfold finiteTraceCylinder at hcyl ⊢
+            simpa [haR, har, has] using hcyl
+        rw [hopen, mul_zero, zero_add, hclosed,
+          ih hRE₀ hrR' hT₀, hprobT,
+          finiteBernoulliWeightFamily_insert_of_notMem haR hrR']
+        ring
+
+theorem finiteBernoulliProbabilityFamily_finiteTraceCylinder
+    [DecidableEq ι] {E R r : Finset ι} (q : ι → ℝ)
+    (hRE : R ⊆ E) (hrR : r ⊆ R) :
+    finiteBernoulliProbabilityFamily E q (finiteTraceCylinder R r) =
+      finiteBernoulliWeightFamily R q r := by
+  have hignore : TraceIgnores R (Set.univ : Set (Finset ι)) := by
+    intro s t hagree
+    simp
+  have h := finiteBernoulliProbabilityFamily_finiteTraceCylinder_inter_of_ignores
+    q hRE hrR hignore
+  simpa [finiteBernoulliProbabilityFamily_univ] using h
+
+theorem finiteBernoulliProbabilityFamily_finiteTraceCylinder_inter_indep
+    [DecidableEq ι] {E R r : Finset ι} (q : ι → ℝ)
+    (hRE : R ⊆ E) (hrR : r ⊆ R) {T : Set (Finset ι)}
+    (hT : TraceIgnores R T) :
+    finiteBernoulliProbabilityFamily E q (finiteTraceCylinder R r ∩ T) =
+      finiteBernoulliProbabilityFamily E q (finiteTraceCylinder R r) *
+        finiteBernoulliProbabilityFamily E q T := by
+  rw [finiteBernoulliProbabilityFamily_finiteTraceCylinder_inter_of_ignores
+    q hRE hrR hT,
+    finiteBernoulliProbabilityFamily_finiteTraceCylinder q hRE hrR]
+
+theorem finiteBernoulliProbabilityFamily_mono [DecidableEq ι]
+    {E : Finset ι} {q : ι → ℝ}
+    (hq0 : ∀ a ∈ E, 0 ≤ q a) (hq1 : ∀ a ∈ E, q a ≤ 1)
+    {T U : Set (Finset ι)} (hTU : T ⊆ U) :
+    finiteBernoulliProbabilityFamily E q T ≤
+      finiteBernoulliProbabilityFamily E q U := by
+  unfold finiteBernoulliProbabilityFamily finiteBernoulliExpectationFamily
+  apply Finset.sum_le_sum
+  intro s hs
+  have hw := finiteBernoulliWeightFamily_nonneg hq0 hq1
+    (Finset.mem_powerset.mp hs)
+  by_cases hT : s ∈ T
+  · rw [Set.indicator_of_mem hT, Set.indicator_of_mem (hTU hT)]
+  · rw [Set.indicator_of_notMem hT]
+    by_cases hU : s ∈ U
+    · rw [Set.indicator_of_mem hU]
+      simpa using hw
+    · rw [Set.indicator_of_notMem hU]
+
+theorem finiteBernoulliProbabilityFamily_nonneg [DecidableEq ι]
+    {E : Finset ι} {q : ι → ℝ}
+    (hq0 : ∀ a ∈ E, 0 ≤ q a) (hq1 : ∀ a ∈ E, q a ≤ 1)
+    (T : Set (Finset ι)) :
+    0 ≤ finiteBernoulliProbabilityFamily E q T := by
+  unfold finiteBernoulliProbabilityFamily finiteBernoulliExpectationFamily
+  apply Finset.sum_nonneg
+  intro s hs
+  have hw := finiteBernoulliWeightFamily_nonneg hq0 hq1
+    (Finset.mem_powerset.mp hs)
+  by_cases hT : s ∈ T
+  · simpa [hT] using hw
+  · simp [hT]
+
+def finsetUnionTrace {k : Type*} [DecidableEq k]
+    (F : Finset k) (T : k → Set (Finset ι)) : Set (Finset ι) :=
+  {s | ∃ i ∈ F, s ∈ T i}
+
+theorem finiteBernoulliProbabilityFamily_finsetUnionTrace_le_sum
+    [DecidableEq ι] {k : Type*} [DecidableEq k]
+    {E : Finset ι} {q : ι → ℝ}
+    (hq0 : ∀ a ∈ E, 0 ≤ q a) (hq1 : ∀ a ∈ E, q a ≤ 1)
+    (F : Finset k) (T : k → Set (Finset ι)) :
+    finiteBernoulliProbabilityFamily E q (finsetUnionTrace F T) ≤
+      ∑ i ∈ F, finiteBernoulliProbabilityFamily E q (T i) := by
+  unfold finiteBernoulliProbabilityFamily finiteBernoulliExpectationFamily
+  rw [Finset.sum_comm]
+  apply Finset.sum_le_sum
+  intro s hs
+  have hw := finiteBernoulliWeightFamily_nonneg hq0 hq1
+    (Finset.mem_powerset.mp hs)
+  by_cases hu : s ∈ finsetUnionTrace F T
+  · rw [Set.indicator_of_mem hu]
+    obtain ⟨i, hiF, hiT⟩ := hu
+    have hsum := Finset.single_le_sum
+      (s := F)
+      (f := fun j ↦ finiteBernoulliWeightFamily E q s *
+        (T j).indicator (fun _ ↦ (1 : ℝ)) s)
+      (fun j hj ↦ by
+        by_cases hjT : s ∈ T j
+        · simpa [hjT] using hw
+        · simp [hjT]) hiF
+    simpa [hiT] using hsum
+  · rw [Set.indicator_of_notMem hu]
+    rw [mul_zero]
+    apply Finset.sum_nonneg
+    intro i hi
+    by_cases hiT : s ∈ T i
+    · simpa [hiT] using hw
+    · simp [hiT]
 
 theorem finiteBernoulliExpectationFamily_const [DecidableEq ι] (E : Finset ι) (p : ℝ)
     (X : Finset ι → ℝ) :
@@ -160,6 +532,14 @@ theorem finiteBernoulliExpectation_const_mul (E : Finset ι) (p c : ℝ) (X : Fi
       c * finiteBernoulliExpectation E p X := by
   rw [finiteBernoulliExpectation, finiteBernoulliExpectation, Finset.mul_sum]
   exact Finset.sum_congr rfl fun s _ => by ring
+
+theorem finiteBernoulliExpectation_finset_sum {k : Type*}
+    (E : Finset ι) (p : ℝ) (F : Finset k) (X : k → Finset ι → ℝ) :
+    finiteBernoulliExpectation E p (fun s ↦ ∑ i ∈ F, X i s) =
+      ∑ i ∈ F, finiteBernoulliExpectation E p (X i) := by
+  unfold finiteBernoulliExpectation
+  simp only [Finset.mul_sum]
+  rw [Finset.sum_comm]
 
 theorem finiteBernoulliExpectation_const (E : Finset ι) (p c : ℝ) :
     finiteBernoulliExpectation E p (fun _ => c) = c := by

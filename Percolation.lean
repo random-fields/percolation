@@ -28,6 +28,8 @@ import Percolation.Critical.TorusAnimals
 import Percolation.Critical.TorusDifferential
 import Percolation.Critical.AppendixLimits
 import Percolation.Critical.TorusGhostJoint
+import Percolation.Critical.TorusGhostConditioning
+import Percolation.Critical.GhostDifferential
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries

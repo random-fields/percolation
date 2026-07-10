@@ -547,25 +547,6 @@ theorem finiteBernoulliWeightFamily_disjSum
   simp
   ring
 
-theorem finiteBernoulliProbabilityFamily_congr {E : Finset ι} {q : ι → ℝ}
-    {T U : Set (Finset ι)} (h : ∀ s ∈ E.powerset, (s ∈ T ↔ s ∈ U)) :
-    finiteBernoulliProbabilityFamily E q T = finiteBernoulliProbabilityFamily E q U := by
-  rw [finiteBernoulliProbabilityFamily_eq_sum_indicator,
-    finiteBernoulliProbabilityFamily_eq_sum_indicator]
-  apply Finset.sum_congr rfl
-  intro s hs
-  by_cases hsT : s ∈ T
-  · rw [Set.indicator_of_mem hsT, Set.indicator_of_mem ((h s hs).mp hsT)]
-  · rw [Set.indicator_of_notMem hsT,
-      Set.indicator_of_notMem fun hsU ↦ hsT ((h s hs).mpr hsU)]
-
-@[simp]
-theorem finiteBernoulliProbabilityFamily_univ (E : Finset ι) (q : ι → ℝ) :
-    finiteBernoulliProbabilityFamily E q (Set.univ : Set (Finset ι)) = 1 := by
-  rw [finiteBernoulliProbabilityFamily_eq_sum_indicator]
-  simp only [Set.indicator_of_mem (Set.mem_univ _), mul_one]
-  exact sum_finiteBernoulliWeightFamily E q
-
 /-- Product factorization for two independent copies of an inhomogeneous cube. -/
 theorem finiteBernoulliProbabilityFamily_disjSum_left_right
     (E : Finset ι) (q : ι → ℝ) (T U : Set (Finset ι)) :

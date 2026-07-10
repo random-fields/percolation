@@ -48,6 +48,7 @@ import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries
 import Percolation.Critical.ClusterDensityDerivative
+import Percolation.Critical.ClusterDensityEndpoints
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls
 import Percolation.RandomCluster.Basic

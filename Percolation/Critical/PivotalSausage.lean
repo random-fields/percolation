@@ -44,12 +44,122 @@ theorem exists_radiusConnectionWitness {d n : ℕ} {x : Cubic d} {ω : EdgeConfi
   rw [mem_walkEdgeFinset_iff]
   exact SimpleGraph.Walk.edges_toPath_subset w he
 
-/-- A fixed witness, used only to turn the source's path-independent pivotal ordering into a
-total Lean function. -/
+/-- The geometric data of a radius witness, separated from its configuration-dependent
+openness proof so canonical choice can be extensional in a finite trace. -/
+structure RadiusConnectionData (d : ℕ) (x : Cubic d) (n : ℕ) where
+  endpoint : Cubic d
+  sphere_mem : endpoint ∈ cubicMetricSphere d x n
+  walk : (cubicGraph d).Walk x endpoint
+  isPath : walk.IsPath
+  edge_subset : walkEdgeFinset walk ⊆ cubicMetricBallEdges d x n
+
+theorem exists_radiusConnectionData {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n) :
+    ∃ W : RadiusConnectionData d x n, walkIsOpen ω W.walk := by
+  obtain ⟨V⟩ := exists_radiusConnectionWitness hω
+  exact ⟨⟨V.endpoint, V.sphere_mem, V.walk, V.isPath, V.edge_subset⟩, V.isOpen⟩
+
+noncomputable def canonicalRadiusConnectionData {d n : ℕ} {x : Cubic d}
+    (ω : EdgeConfiguration d) (hω : ω ∈ radiusConnectionEvent d x n) :
+    RadiusConnectionData d x n :=
+  Classical.choose (exists_radiusConnectionData hω)
+
+theorem canonicalRadiusConnectionData_isOpen {d n : ℕ} {x : Cubic d}
+    (ω : EdgeConfiguration d) (hω : ω ∈ radiusConnectionEvent d x n) :
+    walkIsOpen ω (canonicalRadiusConnectionData ω hω).walk :=
+  Classical.choose_spec (exists_radiusConnectionData hω)
+
+/-- The canonical finite-support representative of a configuration for the radius event. -/
+def radiusTraceConfiguration (d : ℕ) (x : Cubic d) (n : ℕ)
+    (ω : EdgeConfiguration d) : EdgeConfiguration d :=
+  (restrictTo (cubicMetricBallEdges d x n) ω : Finset (CubicEdge d))
+
+theorem radiusTraceConfiguration_mem_iff {d n : ℕ} {x : Cubic d}
+    {ω : EdgeConfiguration d} {e : CubicEdge d}
+    (he : e ∈ cubicMetricBallEdges d x n) :
+    e ∈ radiusTraceConfiguration d x n ω ↔ e ∈ ω := by
+  simp [radiusTraceConfiguration, mem_restrictTo, he]
+
+theorem radiusTraceConfiguration_mem_event {d n : ℕ} {x : Cubic d}
+    {ω : EdgeConfiguration d} (hω : ω ∈ radiusConnectionEvent d x n) :
+    radiusTraceConfiguration d x n ω ∈ radiusConnectionEvent d x n := by
+  exact (dependsOn_radiusConnectionEvent d x n (fun e he ↦
+    (radiusTraceConfiguration_mem_iff he).symm)).mp hω
+
+/-- A fixed witness chosen from the canonical finite-support representative.  In particular,
+unlike a choice made directly from `ω`, its walk is determined by the trace on the metric-ball
+edge support. -/
 noncomputable def canonicalRadiusWitness {d n : ℕ} {x : Cubic d}
     {ω : EdgeConfiguration d} (hω : ω ∈ radiusConnectionEvent d x n) :
-    RadiusConnectionWitness d x n ω :=
-  Classical.choice (exists_radiusConnectionWitness hω)
+    RadiusConnectionWitness d x n ω := by
+  let ω₀ := radiusTraceConfiguration d x n ω
+  let W : RadiusConnectionData d x n :=
+    canonicalRadiusConnectionData ω₀ (radiusTraceConfiguration_mem_event hω)
+  exact
+    { endpoint := W.endpoint
+      sphere_mem := W.sphere_mem
+      walk := W.walk
+      isPath := W.isPath
+      isOpen := fun e he ↦
+        (radiusTraceConfiguration_mem_iff (W.edge_subset ((mem_walkEdgeFinset_iff _ _).mpr he))).mp
+          (canonicalRadiusConnectionData_isOpen ω₀
+            (radiusTraceConfiguration_mem_event hω) e he)
+      edge_subset := W.edge_subset }
+
+theorem radiusTraceConfiguration_eq_of_agree {d n : ℕ} {x : Cubic d}
+    {ω η : EdgeConfiguration d}
+    (hagree : ∀ e ∈ cubicMetricBallEdges d x n, (e ∈ ω ↔ e ∈ η)) :
+    radiusTraceConfiguration d x n ω = radiusTraceConfiguration d x n η := by
+  ext e
+  by_cases he : e ∈ cubicMetricBallEdges d x n
+  · rw [radiusTraceConfiguration_mem_iff he, radiusTraceConfiguration_mem_iff he]
+    exact hagree e he
+  · simp [radiusTraceConfiguration, mem_restrictTo, he]
+
+theorem canonicalRadiusWitness_walk_eq_of_agree {d n : ℕ} {x : Cubic d}
+    {ω η : EdgeConfiguration d}
+    (hagree : ∀ e ∈ cubicMetricBallEdges d x n, (e ∈ ω ↔ e ∈ η))
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    (hη : η ∈ radiusConnectionEvent d x n) :
+    (canonicalRadiusWitness hω).walk.darts = (canonicalRadiusWitness hη).walk.darts := by
+  have htrace := radiusTraceConfiguration_eq_of_agree hagree
+  let qω : {ζ : EdgeConfiguration d // ζ ∈ radiusConnectionEvent d x n} :=
+    ⟨radiusTraceConfiguration d x n ω, radiusTraceConfiguration_mem_event hω⟩
+  let qη : {ζ : EdgeConfiguration d // ζ ∈ radiusConnectionEvent d x n} :=
+    ⟨radiusTraceConfiguration d x n η, radiusTraceConfiguration_mem_event hη⟩
+  have hq : qω = qη := Subtype.ext htrace
+  have hdata := congrArg
+    (fun q : {ζ : EdgeConfiguration d // ζ ∈ radiusConnectionEvent d x n} ↦
+      canonicalRadiusConnectionData q.1 q.2) hq
+  change (canonicalRadiusConnectionData qω.1 qω.2).walk.darts =
+    (canonicalRadiusConnectionData qη.1 qη.2).walk.darts
+  exact congrArg (fun W : RadiusConnectionData d x n ↦ W.walk.darts) hdata
+
+theorem radiusConnectionEvent_mem_iff_of_agree {d n : ℕ} {x : Cubic d}
+    {ω η : EdgeConfiguration d}
+    (hagree : ∀ e ∈ cubicMetricBallEdges d x n, (e ∈ ω ↔ e ∈ η)) :
+    ω ∈ radiusConnectionEvent d x n ↔ η ∈ radiusConnectionEvent d x n :=
+  dependsOn_radiusConnectionEvent d x n hagree
+
+theorem isPivotal_radiusConnectionEvent_iff_of_agree {d n : ℕ} {x : Cubic d}
+    {ω η : EdgeConfiguration d}
+    (hagree : ∀ e ∈ cubicMetricBallEdges d x n, (e ∈ ω ↔ e ∈ η))
+    (e : CubicEdge d) :
+    IsPivotal (radiusConnectionEvent d x n) e ω ↔
+      IsPivotal (radiusConnectionEvent d x n) e η := by
+  have hins : ∀ f ∈ cubicMetricBallEdges d x n,
+      (f ∈ insert e ω ↔ f ∈ insert e η) := by
+    intro f hf
+    simp only [Set.mem_insert_iff]
+    exact or_congr Iff.rfl (hagree f hf)
+  have hdel : ∀ f ∈ cubicMetricBallEdges d x n,
+      (f ∈ ω \ {e} ↔ f ∈ η \ {e}) := by
+    intro f hf
+    simp only [Set.mem_diff, Set.mem_singleton_iff]
+    exact and_congr (hagree f hf) Iff.rfl
+  unfold IsPivotal
+  rw [radiusConnectionEvent_mem_iff_of_agree hins,
+    radiusConnectionEvent_mem_iff_of_agree hdel]
 
 theorem firstRadiusHit_exists {d n m : ℕ} {x : Cubic d}
     {ω : EdgeConfiguration d} (hω : ω ∈ radiusConnectionEvent d x n) (hmn : m ≤ n) :
@@ -163,6 +273,21 @@ noncomputable def radiusPivotalDarts {d n : ℕ} {x : Cubic d}
   exact (canonicalRadiusWitness hω).walk.darts.filter fun a ↦
     decide (IsPivotal (radiusConnectionEvent d x n) (cubicEdgeOfDart a) ω)
 
+theorem radiusPivotalDarts_eq_of_agree {d n : ℕ} {x : Cubic d}
+    {ω η : EdgeConfiguration d}
+    (hagree : ∀ e ∈ cubicMetricBallEdges d x n, (e ∈ ω ↔ e ∈ η))
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    (hη : η ∈ radiusConnectionEvent d x n) :
+    radiusPivotalDarts hω = radiusPivotalDarts hη := by
+  classical
+  unfold radiusPivotalDarts
+  rw [canonicalRadiusWitness_walk_eq_of_agree hagree hω hη]
+  apply List.filter_congr
+  intro a _ha
+  apply Bool.eq_iff_iff.mpr
+  simp only [decide_eq_true_eq]
+  exact isPivotal_radiusConnectionEvent_iff_of_agree hagree (cubicEdgeOfDart a)
+
 theorem radiusPivotalDarts_nodup {d n : ℕ} {x : Cubic d}
     {ω : EdgeConfiguration d} (hω : ω ∈ radiusConnectionEvent d x n) :
     (radiusPivotalDarts hω).Nodup := by
@@ -182,21 +307,165 @@ noncomputable def radiusPivotalCount (d : ℕ) (x : Cubic d) (n : ℕ)
     (ω : EdgeConfiguration d) : ℕ :=
   (radiusPivotalEdgeFinset d x n ω).card
 
-/-- The `k`-th pivotal sausage gap, indexed from one as in Grimmett.  It is zero when `Aₙ`
+/-- Read a one-based sausage gap from a list of consistently oriented pivotal darts. -/
+def sausageGapOfList {d : ℕ} (x : Cubic d) (n : ℕ)
+    (L : List ((cubicGraph d).Dart)) : ℕ → ℕ
+  | 0 => n
+  | 1 => match L[0]? with
+      | none => n
+      | some a => cubicL1Dist x a.fst
+  | k + 2 => match L[k + 1]?, L[k]? with
+      | some a, some b => cubicL1Dist b.snd a.fst
+      | _, _ => n
+
+/-- The `k`-th pivotal sausage gap, indexed from one as in Grimmett.  It is `n` when `Aₙ`
 does not occur or fewer than `k` pivotal edges exist. -/
 noncomputable def sausageGap (d : ℕ) (x : Cubic d) (n : ℕ)
     (ω : EdgeConfiguration d) (k : ℕ) : ℕ := by
   classical
   by_cases hω : ω ∈ radiusConnectionEvent d x n
-  · let L := radiusPivotalDarts hω
-    by_cases hk : 1 ≤ k ∧ k ≤ L.length
-    · let a := L[k - 1]'(by omega)
-      by_cases hk1 : k = 1
-      · exact cubicL1Dist x a.fst
-      · let b := L[k - 2]'(by omega)
-        exact cubicL1Dist b.snd a.fst
-    · exact n
+  · exact sausageGapOfList x n (radiusPivotalDarts hω) k
   · exact n
+
+theorem sausageGap_eq_of_agree {d n k : ℕ} {x : Cubic d}
+    {ω η : EdgeConfiguration d}
+    (hagree : ∀ e ∈ cubicMetricBallEdges d x n, (e ∈ ω ↔ e ∈ η)) :
+    sausageGap d x n ω k = sausageGap d x n η k := by
+  classical
+  have hA := radiusConnectionEvent_mem_iff_of_agree hagree
+  by_cases hω : ω ∈ radiusConnectionEvent d x n
+  · have hη : η ∈ radiusConnectionEvent d x n := hA.mp hω
+    have hL := radiusPivotalDarts_eq_of_agree hagree hω hη
+    unfold sausageGap
+    simp only [hω, hη, ↓reduceDIte]
+    rw [hL]
+  · have hη : η ∉ radiusConnectionEvent d x n := fun h ↦ hω (hA.mpr h)
+    simp [sausageGap, hω, hη]
+
+theorem dependsOnFun_sausageGap (d : ℕ) (x : Cubic d) (n k : ℕ) :
+    DependsOnFun (cubicMetricBallEdges d x n) (fun ω ↦ sausageGap d x n ω k) :=
+  fun _ω _η hagree ↦ sausageGap_eq_of_agree hagree
+
+/-- The event fixing the first `rs.length` sausage gaps to the listed values, always together
+with the radius event `Aₙ`.  This is the event denoted `B` in the general part of Grimmett's
+proof of Lemma 5.12. -/
+def sausageGapPrefixEvent (d : ℕ) (x : Cubic d) (n : ℕ) (rs : List ℕ) :
+    Set (EdgeConfiguration d) :=
+  {ω | ω ∈ radiusConnectionEvent d x n ∧
+    ∀ i (hi : i < rs.length), sausageGap d x n ω (i + 1) = rs[i]}
+
+/-- Prefix event with the next sausage constrained by `ρₖ ≤ r`. -/
+def sausageGapPrefixNextShortEvent (d : ℕ) (x : Cubic d) (n : ℕ)
+    (rs : List ℕ) (r : ℕ) : Set (EdgeConfiguration d) :=
+  {ω | ω ∈ sausageGapPrefixEvent d x n rs ∧
+    sausageGap d x n ω (rs.length + 1) ≤ r}
+
+/-- Prefix event with the next sausage constrained by `ρₖ > r`. -/
+def sausageGapPrefixNextLongEvent (d : ℕ) (x : Cubic d) (n : ℕ)
+    (rs : List ℕ) (r : ℕ) : Set (EdgeConfiguration d) :=
+  {ω | ω ∈ sausageGapPrefixEvent d x n rs ∧
+    r < sausageGap d x n ω (rs.length + 1)}
+
+theorem dependsOn_sausageGapPrefixEvent (d : ℕ) (x : Cubic d) (n : ℕ) (rs : List ℕ) :
+    DependsOn (cubicMetricBallEdges d x n) (sausageGapPrefixEvent d x n rs) := by
+  intro ω η hagree
+  constructor
+  · rintro ⟨hω, hgaps⟩
+    refine ⟨(radiusConnectionEvent_mem_iff_of_agree hagree).mp hω, fun i hi ↦ ?_⟩
+    rw [← sausageGap_eq_of_agree hagree]
+    exact hgaps i hi
+  · rintro ⟨hη, hgaps⟩
+    refine ⟨(radiusConnectionEvent_mem_iff_of_agree hagree).mpr hη, fun i hi ↦ ?_⟩
+    rw [sausageGap_eq_of_agree hagree]
+    exact hgaps i hi
+
+theorem dependsOn_sausageGapPrefixNextShortEvent
+    (d : ℕ) (x : Cubic d) (n : ℕ) (rs : List ℕ) (r : ℕ) :
+    DependsOn (cubicMetricBallEdges d x n)
+      (sausageGapPrefixNextShortEvent d x n rs r) := by
+  intro ω η hagree
+  constructor <;> rintro ⟨hprefix, hnext⟩
+  · exact ⟨(dependsOn_sausageGapPrefixEvent d x n rs hagree).mp hprefix,
+      (sausageGap_eq_of_agree hagree) ▸ hnext⟩
+  · exact ⟨(dependsOn_sausageGapPrefixEvent d x n rs hagree).mpr hprefix,
+      (sausageGap_eq_of_agree hagree).symm ▸ hnext⟩
+
+theorem dependsOn_sausageGapPrefixNextLongEvent
+    (d : ℕ) (x : Cubic d) (n : ℕ) (rs : List ℕ) (r : ℕ) :
+    DependsOn (cubicMetricBallEdges d x n)
+      (sausageGapPrefixNextLongEvent d x n rs r) := by
+  intro ω η hagree
+  constructor <;> rintro ⟨hprefix, hnext⟩
+  · exact ⟨(dependsOn_sausageGapPrefixEvent d x n rs hagree).mp hprefix,
+      (sausageGap_eq_of_agree hagree) ▸ hnext⟩
+  · exact ⟨(dependsOn_sausageGapPrefixEvent d x n rs hagree).mpr hprefix,
+      (sausageGap_eq_of_agree hagree).symm ▸ hnext⟩
+
+theorem measurableSet_sausageGapPrefixEvent (d : ℕ) (x : Cubic d) (n : ℕ)
+    (rs : List ℕ) : MeasurableSet (sausageGapPrefixEvent d x n rs) :=
+  (dependsOn_sausageGapPrefixEvent d x n rs).measurableSet
+
+theorem measurableSet_sausageGapPrefixNextShortEvent (d : ℕ) (x : Cubic d) (n : ℕ)
+    (rs : List ℕ) (r : ℕ) : MeasurableSet (sausageGapPrefixNextShortEvent d x n rs r) :=
+  (dependsOn_sausageGapPrefixNextShortEvent d x n rs r).measurableSet
+
+theorem measurableSet_sausageGapPrefixNextLongEvent (d : ℕ) (x : Cubic d) (n : ℕ)
+    (rs : List ℕ) (r : ℕ) : MeasurableSet (sausageGapPrefixNextLongEvent d x n rs r) :=
+  (dependsOn_sausageGapPrefixNextLongEvent d x n rs r).measurableSet
+
+theorem sausageGap_lt_n_imp_index_le_pivotalDarts_length
+    {d n k : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    (hgap : sausageGap d x n ω k < n) :
+    1 ≤ k ∧ k ≤ (radiusPivotalDarts hω).length := by
+  classical
+  cases k with
+  | zero =>
+      simp [sausageGap, hω, sausageGapOfList] at hgap
+  | succ j =>
+      refine ⟨by omega, ?_⟩
+      unfold sausageGap at hgap
+      simp only [hω, ↓reduceDIte] at hgap
+      cases j with
+      | zero =>
+          simp only [sausageGapOfList] at hgap
+          generalize hget : (radiusPivotalDarts hω)[0]? = q at hgap
+          cases q with
+          | none => simp at hgap
+          | some a =>
+              have hj : 0 < (radiusPivotalDarts hω).length :=
+                (List.getElem?_eq_some_iff.mp hget).choose
+              omega
+      | succ j =>
+          simp only [sausageGapOfList] at hgap
+          generalize hcur : (radiusPivotalDarts hω)[j + 1]? = q at hgap
+          cases q with
+          | none => simp at hgap
+          | some a =>
+              generalize hprev : (radiusPivotalDarts hω)[j]? = q at hgap
+              cases q with
+              | none => simp at hgap
+              | some b =>
+                  have hj : j + 1 < (radiusPivotalDarts hω).length :=
+                    (List.getElem?_eq_some_iff.mp hcur).choose
+                  omega
+
+theorem sausageGapPrefix_length_le_pivotalDarts_length
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d} {rs : List ℕ}
+    (hprefix : ω ∈ sausageGapPrefixEvent d x n rs)
+    (hrs : rs.sum + rs.length ≤ n) :
+    rs.length ≤ (radiusPivotalDarts hprefix.1).length := by
+  by_cases hlen : rs.length = 0
+  · omega
+  · let i := rs.length - 1
+    have hi : i < rs.length := by omega
+    have hri : rs[i] ≤ rs.sum := List.le_sum_of_mem (List.getElem_mem hi)
+    have hrslt : rs[i] < n := by omega
+    have hgap : sausageGap d x n ω (i + 1) < n := by
+      rw [hprefix.2 i hi]
+      exact hrslt
+    have hiLen := (sausageGap_lt_n_imp_index_le_pivotalDarts_length hprefix.1 hgap).2
+    omega
 
 theorem sausageGap_one_eq_firstPivotalDist {d n : ℕ} {x : Cubic d}
     {ω : EdgeConfiguration d} (hω : ω ∈ radiusConnectionEvent d x n)
@@ -206,11 +475,10 @@ theorem sausageGap_one_eq_firstPivotalDist {d n : ℕ} {x : Cubic d}
   classical
   unfold sausageGap
   simp only [hω, ↓reduceDIte]
-  split
-  next hk =>
-    simp
-  next hk =>
-    exact (hk ⟨by omega, hL⟩).elim
+  change sausageGapOfList x n (radiusPivotalDarts hω) 1 = _
+  simp only [sausageGapOfList]
+  rw [show (radiusPivotalDarts hω)[0]? =
+      some ((radiusPivotalDarts hω)[0]'hL) by simp_all]
 
 theorem firstRadiusHitWalk_edge_not_pivotal_of_lt_sausageGap {d n r : ℕ}
     {x : Cubic d} {ω : EdgeConfiguration d}

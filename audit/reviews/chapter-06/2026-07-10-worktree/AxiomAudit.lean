@@ -1,4 +1,4 @@
-import Percolation.Critical.BoxRadiusProperties
+import Percolation.Critical.TwoPoint
 
 #print axioms Percolation.boxRadiusTail_exponential_decay_of_susceptibility_lt_top
 #print axioms Percolation.mem_boxRadiusConnectionEvent_iff_exists_connection
@@ -11,3 +11,9 @@ import Percolation.Critical.BoxRadiusProperties
 #print axioms Percolation.boxRadiusDecayRate_strictAntiOn_subcritical
 #print axioms Percolation.boxRadiusDecayRate_tendsto_top_at_zero
 #print axioms Percolation.boxRadiusDecayRate_critical_eq_zero
+#print axioms Percolation.twoPointConnectivity_axis_logRate_tendsto
+#print axioms Percolation.twoPointConnectivity_axis_twoSided_decay
+#print axioms Percolation.twoPointConnectivity_twoSided_decay
+#print axioms Percolation.twoPointConnectivity_le_one_sub_susceptibility_inv_pow
+#print axioms Percolation.correlationLength_le_susceptibility
+#print axioms Percolation.susceptibility_tendsto_top_at_critical

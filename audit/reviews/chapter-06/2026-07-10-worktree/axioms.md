@@ -19,4 +19,9 @@ Declarations:
 - `Percolation.boxRadiusTail_exponential_decay_of_susceptibility_lt_top`
 - `Percolation.mem_boxRadiusConnectionEvent_iff_exists_connection`
 - `Percolation.cubicL1Dist_le_card_mul_lInfDist`
-
+- `Percolation.twoPointConnectivity_axis_logRate_tendsto`
+- `Percolation.twoPointConnectivity_axis_twoSided_decay`
+- `Percolation.twoPointConnectivity_twoSided_decay`
+- `Percolation.twoPointConnectivity_le_one_sub_susceptibility_inv_pow`
+- `Percolation.correlationLength_le_susceptibility`
+- `Percolation.susceptibility_tendsto_top_at_critical`

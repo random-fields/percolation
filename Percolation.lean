@@ -43,6 +43,7 @@ import Percolation.Critical.CubicSymmetry
 import Percolation.Critical.BoxFaces
 import Percolation.Critical.BoxRadiusRate
 import Percolation.Critical.BoxRadiusProperties
+import Percolation.Critical.TwoPoint
 import Percolation.Critical.RadiusDecay
 import Percolation.Critical.ClusterTail
 import Percolation.Critical.MenshikovBootstrap

@@ -36,9 +36,9 @@ formalization window has yet completed; it is not an estimate.
 | Theorem 6.1, (6.2) | 117–120 | If `χ(p)<∞`, connection from `0` to `∂B(n)` is at most `exp (-n σ(p))` | `Percolation.boxRadiusTail_exponential_decay_of_susceptibility_lt_top` | proved for the chapter range `2 ≤ d`, all `n`; no extra public `p<1` hypothesis | 2m25s | 39,091 |
 | Theorem 6.10, (6.11), (6.33)–(6.36) | 120–124 | The box-radius logarithmic rate exists and has two-sided polynomial corrections | `Percolation.boxRadiusTail_logRate_tendsto`, `Percolation.boxRadiusTail_twoSided_decay` | proved; constants are quantified before `p`, bounds require `n>0`, and use denominator/positive-power forms | 32m44s | 358,918 |
 | Theorem 6.14, (6.15)–(6.18), (6.40) | 121, 124–125 | Continuity, monotonicity, strict subcritical decrease, zero-density divergence, and critical value | `Percolation.boxRadiusDecayRate_continuousOn`, `Percolation.boxRadiusDecayRate_antitoneOn_pos`, `Percolation.boxRadiusDecayRate_strictAntiOn_subcritical`, `Percolation.boxRadiusDecayRate_tendsto_top_at_zero`, `Percolation.boxRadiusDecayRate_critical_eq_zero`, `Percolation.boxRadiusDecayRate_log_ratio_comparison` | proved; continuity is a uniform limit of finite-event polynomials, the critical value does not assume `θ(p_c)=0`, and (6.40) carries the necessary `b<1` hypothesis | 16m45s | 294,286 |
-| Theorem 6.44, (6.45)–(6.46) | 126 | Axis two-point function has rate `φ` and lower bound `c p / n^(4(d-1)) * exp(-nφ)` | missing | target; `n≥1` |  |  |
-| Proposition 6.47, (6.48) | 126–127 | General two-point function has matching norm-dependent exponential bounds | missing | target; lower bound requires `x≠0` and contains `p^(d*|x|)` |  |  |
-| Proposition 6.49 | 127–128 | `τ(0,x)≤(1-χ⁻¹)^|x|`, hence `ξ≤χ` below criticality | missing | target; source-facing `ξ` restricted to `p≤p_c` |  |  |
+| Theorem 6.44, (6.45)–(6.46) | 126 | Axis two-point function has rate `φ` and lower bound `c p / n^(4(d-1)) * exp(-nφ)` | `Percolation.twoPointConnectivity_axis_logRate_tendsto`, `Percolation.twoPointConnectivity_axis_twoSided_decay` | proved; the dimension-only constant is quantified before `p`, and the displayed bound requires `n>0` | jointly measured | jointly measured |
+| Proposition 6.47, (6.48) | 126–127 | General two-point function has matching norm-dependent exponential bounds | `Percolation.twoPointConnectivity_twoSided_decay` | proved; lower bound requires `x≠0` and contains the corrected `p^(d*|x|)` factor; upper bound handles `x=0` exactly | jointly measured | jointly measured |
+| Proposition 6.49 | 127–128 | `τ(0,x)≤(1-χ⁻¹)^|x|`, hence `ξ≤χ` below criticality | `Percolation.twoPointConnectivity_le_one_sub_susceptibility_inv_pow`, `Percolation.correlationLength_le_susceptibility`, `Percolation.susceptibility_tendsto_top_at_critical` | proved; `correlationLength` is ENNReal-valued, equals `⊤` at `p_c`, and the divergence theorem uses the left-neighborhood filter | jointly measured | jointly measured |
 | Theorem 6.75, (6.77) | 132 | Subcritical cluster size has an exponential tail | missing | target; exact (6.77) assumes `n>χ²`, general strict exponential is eventual |  |  |
 | Theorem 6.78, (6.80), (6.82)–(6.83) | 132–134 | Exact-size and finite-tail exponential rates exist, are positive below criticality, and `ζ≤φ` | missing | target |  |  |
 | Lemma 6.87 | 134–135 | A finite nonempty terminal set has a removable terminal preserving connectivity of the rest | missing | target; finite-set correction is mandatory |  |  |
@@ -53,6 +53,7 @@ formalization window has yet completed; it is not an estimate.
 |---|---|---:|---:|
 | Coordinate-box geometry and finite support | `L∞` distance, norm comparison, surfaces, exact internal edge support, first-hit paths, event measurability/monotonicity, and initial 6.1 scaffold | 5m23s | 119,967 |
 | Theorem 6.10 and its shared block/rate infrastructure | exact face counts, translations, coordinate permutations/reflections, BK upper block, FKG lower block, two-sided corrected Fekete theorem, logarithmic rate, and public constants | 32m44s | 358,918 |
+| Theorem 6.44 and Propositions 6.47–6.49 with shared two-point infrastructure | graph-isomorphism measure transport, axis Fekete rate, face reflection, arbitrary signed-coordinate concatenation, shell-mass selection, susceptibility comparison, ENNReal correlation length, and critical divergence | 62m09s | 725,848 |
 
 The initial window included the first 6.1 scaffold before an internal counter snapshot was taken.
 It is charged once to shared infrastructure and is not duplicated in the theorem row.  The 6.1
@@ -67,3 +68,8 @@ no reconstructed split is presented.
 The 6.14 window runs from `(2437s, 519668)` through `(3442s, 813954)`. It includes the uniform
 finite-radius approximation, the box-tail-to-`θ` squeeze, the self-avoiding-walk endpoint bound,
 all local verification, and the corrected source-domain audit for (6.40).
+
+The two-point window runs from `(3442s, 813954)` through `(7171s, 1539802)`. Because no reliable
+counter snapshot was taken between 6.44, 6.47, and 6.49, this is reported as one joint measured
+window and is charged exactly once. No reconstructed per-theorem split is presented as measured
+telemetry.

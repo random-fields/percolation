@@ -1037,6 +1037,136 @@ theorem torusGhostTheta_p_deriv_le
         d N hN p γ hγ0 hγ1]
       ring
 
+/-- Disjoint occurrence of an event which ignores a coordinate block ignores that block as
+well; witnesses may be restricted to the complementary coordinates. -/
+theorem TraceIgnores.traceDisjointOccurrence_self
+    {i : Type*} [DecidableEq i] {R : Finset i} {T : Set (Finset i)}
+    (hT : TraceIgnores R T) :
+    TraceIgnores R (TraceDisjointOccurrence T T) := by
+  intro s t hagree
+  constructor
+  · rintro ⟨H, K, hHK, hHs, hKs, hHT, hKT⟩
+    let H' := H \ R
+    let K' := K \ R
+    have hH'T : H' ∈ T := by
+      apply (hT H H' ?_).mp hHT
+      intro a haR
+      simp [H', haR]
+    have hK'T : K' ∈ T := by
+      apply (hT K K' ?_).mp hKT
+      intro a haR
+      simp [K', haR]
+    refine ⟨H', K', ?_, ?_, ?_, hH'T, hK'T⟩
+    · rw [Finset.disjoint_left]
+      intro a haH haK
+      exact Finset.disjoint_left.mp hHK
+        (Finset.mem_sdiff.mp haH).1 (Finset.mem_sdiff.mp haK).1
+    · intro a haH
+      have haData := Finset.mem_sdiff.mp haH
+      exact (hagree a haData.2).mp (hHs haData.1)
+    · intro a haK
+      have haData := Finset.mem_sdiff.mp haK
+      exact (hagree a haData.2).mp (hKs haData.1)
+  · rintro ⟨H, K, hHK, hHt, hKt, hHT, hKT⟩
+    let H' := H \ R
+    let K' := K \ R
+    have hH'T : H' ∈ T := by
+      apply (hT H H' ?_).mp hHT
+      intro a haR
+      simp [H', haR]
+    have hK'T : K' ∈ T := by
+      apply (hT K K' ?_).mp hKT
+      intro a haR
+      simp [K', haR]
+    refine ⟨H', K', ?_, ?_, ?_, hH'T, hK'T⟩
+    · rw [Finset.disjoint_left]
+      intro a haH haK
+      exact Finset.disjoint_left.mp hHK
+        (Finset.mem_sdiff.mp haH).1 (Finset.mem_sdiff.mp haK).1
+    · intro a haH
+      have haData := Finset.mem_sdiff.mp haH
+      exact (hagree a haData.2).mpr (hHt haData.1)
+    · intro a haK
+      have haData := Finset.mem_sdiff.mp haK
+      exact (hagree a haData.2).mpr (hKt haData.1)
+
+theorem mem_finiteTraceCylinder_insert_pattern
+    {i : Type*} [DecidableEq i] {R r t : Finset i} {a : i}
+    (ht : t ∈ finiteTraceCylinder R r) (haR : a ∈ R) :
+    insert a t ∈ finiteTraceCylinder R (insert a r) := by
+  unfold finiteTraceCylinder at ht ⊢
+  apply Finset.ext
+  intro x
+  have hx := Finset.ext_iff.mp ht x
+  by_cases hxa : x = a
+  · subst x
+    simp [haR]
+  · simpa [hxa] using hx
+
+/-- Exact finite additivity for a pairwise-disjoint finite family of trace events. -/
+theorem finiteBernoulliProbabilityFamily_finsetUnionTrace_eq_sum_of_disjoint
+    {i κ : Type*} [DecidableEq i] [DecidableEq κ]
+    (E : Finset i) (q : i → ℝ) (F : Finset κ) (T : κ → Set (Finset i))
+    (hdisj : ∀ a ∈ F, ∀ b ∈ F, a ≠ b → Disjoint (T a) (T b)) :
+    finiteBernoulliProbabilityFamily E q (finsetUnionTrace F T) =
+      ∑ a ∈ F, finiteBernoulliProbabilityFamily E q (T a) := by
+  induction F using Finset.induction_on with
+  | empty =>
+      unfold finsetUnionTrace finiteBernoulliProbabilityFamily
+        finiteBernoulliExpectationFamily
+      simp
+  | @insert a F ha ih =>
+      have hunion : finsetUnionTrace (insert a F) T =
+          T a ∪ finsetUnionTrace F T := by
+        ext s
+        simp [finsetUnionTrace]
+      have hpair : ∀ b ∈ F, Disjoint (T a) (T b) := by
+        intro b hb
+        exact hdisj a (Finset.mem_insert_self a F) b
+          (Finset.mem_insert_of_mem hb) (fun hab ↦ ha (hab ▸ hb))
+      have hleft : Disjoint (T a) (finsetUnionTrace F T) := by
+        rw [Set.disjoint_left]
+        intro s hsa hsF
+        obtain ⟨b, hb, hsb⟩ := hsF
+        exact Set.disjoint_left.mp (hpair b hb) hsa hsb
+      rw [hunion, finiteBernoulliProbabilityFamily_union_of_disjoint E q hleft,
+        ih (fun b hb c hc hbc ↦ hdisj b (Finset.mem_insert_of_mem hb)
+          c (Finset.mem_insert_of_mem hc) hbc), Finset.sum_insert ha]
+
+/-- Opening one coordinate in a cylinder multiplies its probability relative to the closed
+cylinder by the exact Bernoulli factor, while an independent event is unchanged. -/
+theorem one_sub_mul_probability_insert_pattern_eq
+    {i : Type*} [DecidableEq i] {E R r : Finset i} {a : i}
+    (q : i → ℝ) (T : Set (Finset i))
+    (hRE : R ⊆ E) (hrR : r ⊆ R) (haR : a ∈ R) (har : a ∉ r)
+    (hT : TraceIgnores R T) :
+    (1 - q a) * finiteBernoulliProbabilityFamily E q
+        (finiteTraceCylinder R (insert a r) ∩ T) =
+      q a * finiteBernoulliProbabilityFamily E q
+        (finiteTraceCylinder R r ∩ T) := by
+  let R₀ := R.erase a
+  have haR₀ : a ∉ R₀ := Finset.notMem_erase a R
+  have hR : R = insert a R₀ := (Finset.insert_erase haR).symm
+  have hrR₀ : r ⊆ R₀ := by
+    intro x hxr
+    exact Finset.mem_erase.mpr ⟨fun hxa ↦ har (hxa ▸ hxr), hrR hxr⟩
+  have hopenSubset : insert a r ⊆ R := Finset.insert_subset haR hrR
+  have hopen := finiteBernoulliProbabilityFamily_finiteTraceCylinder_inter_indep
+    (q := q) hRE hopenSubset hT
+  have hclosed := finiteBernoulliProbabilityFamily_finiteTraceCylinder_inter_indep
+    (q := q) hRE hrR hT
+  have hwOpen : finiteBernoulliWeightFamily R q (insert a r) =
+      q a * finiteBernoulliWeightFamily R₀ q r := by
+    rw [hR, finiteBernoulliWeightFamily_insert_insert haR₀ hrR₀]
+  have hwClosed : finiteBernoulliWeightFamily R q r =
+      (1 - q a) * finiteBernoulliWeightFamily R₀ q r := by
+    rw [hR, finiteBernoulliWeightFamily_insert_of_notMem haR₀ hrR₀]
+  rw [hopen, hclosed,
+    finiteBernoulliProbabilityFamily_finiteTraceCylinder q hRE hopenSubset,
+    finiteBernoulliProbabilityFamily_finiteTraceCylinder q hRE hrR,
+    hwOpen, hwClosed]
+  ring
+
 end
 
 end Percolation

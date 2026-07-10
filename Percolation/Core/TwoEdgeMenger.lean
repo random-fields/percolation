@@ -629,6 +629,135 @@ theorem isEdgeReachable_two_of_walks_and_overlap_avoidance {u v : V}
       simpa only [Set.mem_singleton_iff, ne_eq] using
         (fun h : e' = e ↦ hep (h ▸ he')))⟩
 
+omit [DecidableEq V] in
+/-- On a path whose endpoints are not two-edge-reachable, the first vertex (from the
+initial endpoint) which is two-edge-reachable to the terminal endpoint is entered across a
+bridge.  This is the finite "last pivotal edge" decomposition used in Grimmett (5.72). -/
+theorem exists_bridge_before_twoEdgeReachable_tail [Fintype V]
+    {u v : V} (p : G.Walk u v)
+    (huv : ¬ G.IsEdgeReachable 2 u v) :
+    ∃ i : ℕ, i < p.length ∧
+    G.IsBridge s(p.getVert i, p.getVert (i + 1)) ∧
+      G.IsEdgeReachable 2 (p.getVert (i + 1)) v := by
+  classical
+  let P : ℕ → Prop := fun j ↦
+    j ≤ p.length ∧ G.IsEdgeReachable 2 (p.getVert j) v
+  have hex : ∃ j, P j := by
+    refine ⟨p.length, le_rfl, ?_⟩
+    simp
+  let j := Nat.find hex
+  have hj : P j := Nat.find_spec hex
+  have hjpos : 0 < j := by
+    by_contra hj0
+    have hjz : j = 0 := Nat.eq_zero_of_not_pos hj0
+    apply huv
+    simpa [P, j, hjz] using hj.2
+  let i := j - 1
+  have hij : i + 1 = j := Nat.sub_add_cancel hjpos
+  have hi : i < p.length := by
+    dsimp only [i]
+    omega
+  have htail : G.IsEdgeReachable 2 (p.getVert (i + 1)) v := by
+    rw [hij]
+    exact hj.2
+  have hprev : ¬ G.IsEdgeReachable 2 (p.getVert i) v := by
+    intro hprev
+    have hPi : P i := ⟨by omega, hprev⟩
+    exact Nat.find_min hex (by dsimp only [i]; omega) hPi
+  have hadj : G.Adj (p.getVert i) (p.getVert (i + 1)) :=
+    p.adj_getVert_succ hi
+  have hnotTwo : ¬ G.IsEdgeReachable 2 (p.getVert i) (p.getVert (i + 1)) := by
+    intro htwo
+    exact hprev (htwo.trans htail)
+  refine ⟨i, hi, ?_, htail⟩
+  exact SimpleGraph.isBridge_iff_adj_and_not_isEdgeConnected_two.mpr
+    ⟨hadj, hnotTwo⟩
+
+omit [DecidableEq V] in
+/-- A two-edge-connected tail remains two-edge-connected after deleting the bridge which
+enters it.  This is the graph-theoretic fact needed to close the last pivotal edge while
+retaining the two disjoint continuations to the target.
+
+Indeed, a path between two-edge-reachable vertices cannot traverse a bridge: if it did, its
+two endpoints would be two-edge-reachable by `IsTrail.isEdgeReachable_two_of_isEdgeReachable_two`.
+-/
+theorem delete_bridge_isEdgeReachable_two_of_isEdgeReachable_two
+    {x y v : V} (hbridge : G.IsBridge s(x, y))
+    (hyv : G.IsEdgeReachable 2 y v) :
+    (G.deleteEdges {s(x, y)}).IsEdgeReachable 2 y v := by
+  classical
+  rw [SimpleGraph.isEdgeReachable_two]
+  intro f
+  have hreach : (G.deleteEdges {f}).Reachable y v :=
+    SimpleGraph.isEdgeReachable_two.mp hyv f
+  obtain ⟨q, hq⟩ := hreach.exists_isPath
+  let qG : G.Walk y v := q.mapLe (G.deleteEdges_le {f})
+  have hqG : qG.IsPath := by
+    simpa [qG] using hq.mapLe (G.deleteEdges_le {f})
+  have hbridgeNotTwo : ¬ G.IsEdgeReachable 2 x y :=
+    (SimpleGraph.isBridge_iff_adj_and_not_isEdgeConnected_two.mp hbridge).2
+  have hqAvoidBridge : s(x, y) ∉ qG.edges := by
+    intro hxy
+    apply hbridgeNotTwo
+    exact hqG.isTrail.isEdgeReachable_two_of_isEdgeReachable_two hyv
+      (qG.fst_mem_support_of_mem_edges hxy)
+      (qG.snd_mem_support_of_mem_edges hxy)
+  rw [SimpleGraph.deleteEdges_deleteEdges]
+  refine ⟨qG.toDeleteEdges ({s(x, y)} ∪ {f}) ?_⟩
+  intro e he
+  rw [Set.mem_union, Set.mem_singleton_iff, Set.mem_singleton_iff]
+  push Not
+  refine ⟨fun hexy ↦ hqAvoidBridge (hexy ▸ he), ?_⟩
+  intro hef
+  have heq : e ∈ q.edges := by
+    simpa [qG, SimpleGraph.Walk.edges_mapLe_eq_edges] using he
+  have heEdgeSet := q.edges_subset_edgeSet heq
+  rw [SimpleGraph.edgeSet_deleteEdges] at heEdgeSet
+  exact heEdgeSet.2 (by simp [hef])
+
+omit [DecidableEq V] in
+/-- If an edge at a specified position of a path is a bridge, deleting it disconnects the
+endpoints of that path. -/
+theorem not_reachable_delete_bridge_of_isPath_getVert
+    {u v : V} (p : G.Walk u v) (hp : p.IsPath) {i : ℕ} (hi : i < p.length)
+    (hbridge : G.IsBridge s(p.getVert i, p.getVert (i + 1))) :
+    ¬ (G.deleteEdges {s(p.getVert i, p.getVert (i + 1))}).Reachable u v := by
+  classical
+  let e : Sym2 V := s(p.getVert i, p.getVert (i + 1))
+  have hedgeAt : p.edges[i]'(p.length_edges.symm ▸ hi) = e := by
+    have hiD : i < p.darts.length := by simpa [p.length_darts] using hi
+    simp only [SimpleGraph.Walk.edges, List.getElem_map]
+    rw [p.darts_getElem_eq_getVert i hiD]
+    rfl
+  have hedgeTake : e ∈ p.edges.take (i + 1) := by
+    rw [List.mem_take_iff_getElem]
+    refine ⟨i, ?_, hedgeAt⟩
+    simp only [p.length_edges]
+    omega
+  have hedgeDrop : e ∈ p.edges.drop i := by
+    rw [List.mem_drop_iff_getElem]
+    refine ⟨0, ?_, ?_⟩
+    · simpa [p.length_edges] using hi
+    · simpa using hedgeAt
+  have hprefix : e ∉ (p.take i).edges := by
+    rw [p.edges_take]
+    intro he
+    exact List.disjoint_left.mp
+      (List.disjoint_take_drop hp.isTrail.edges_nodup (le_refl i)) he hedgeDrop
+  have hsuffix : e ∉ (p.drop (i + 1)).edges := by
+    rw [p.edges_drop]
+    intro he
+    exact List.disjoint_left.mp
+      (List.disjoint_take_drop hp.isTrail.edges_nodup (le_refl (i + 1))) hedgeTake he
+  intro huv
+  obtain ⟨q⟩ := huv
+  let qpre := (p.take i).toDeleteEdge e hprefix
+  let qsuf := (p.drop (i + 1)).toDeleteEdge e hsuffix
+  have hxy : (G.deleteEdges {e}).Reachable
+      (p.getVert i) (p.getVert (i + 1)) := by
+    exact ⟨qpre.reverse.append q |>.append qsuf.reverse⟩
+  exact (SimpleGraph.isBridge_iff.mp hbridge).2 (by simpa [e] using hxy)
+
 end TwoEdgeMenger
 
 end Percolation

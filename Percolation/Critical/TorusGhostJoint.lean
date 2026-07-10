@@ -12,7 +12,7 @@ Fubini bridge back to the nested polynomial used elsewhere in the development.
 namespace Percolation
 
 open Set
-open scoped BigOperators unitInterval
+open scoped BigOperators unitInterval Classical
 
 noncomputable section
 
@@ -42,7 +42,7 @@ theorem finiteBernoulliExpectationFamily_disjSum_mixed
       finiteBernoulliExpectationFamily E q fun s ↦
         finiteBernoulliExpectationFamily F r fun t ↦ X (s.disjSum t) := by
   unfold finiteBernoulliExpectationFamily
-  simp only [Finset.mul_sum, mul_assoc]
+  simp only [Finset.mul_sum]
   rw [← Finset.sum_product']
   refine Finset.sum_nbij' (fun w ↦ (w.toLeft, w.toRight))
     (fun x ↦ x.1.disjSum x.2) ?_ ?_ ?_ ?_ ?_
@@ -110,6 +110,24 @@ theorem finiteBernoulliProbabilityFamily_disjSum_mixed
         fun hc ↦ h1 hc.1
       rw [Set.indicator_of_notMem hmem, Set.indicator_of_notMem h1]
       ring
+
+/-- Finite inhomogeneous Bernoulli probability is additive on disjoint trace events. -/
+theorem finiteBernoulliProbabilityFamily_union_of_disjoint
+    {ι : Type*} [DecidableEq ι] (E : Finset ι) (q : ι → ℝ)
+    {T U : Set (Finset ι)} (hTU : Disjoint T U) :
+    finiteBernoulliProbabilityFamily E q (T ∪ U) =
+      finiteBernoulliProbabilityFamily E q T +
+        finiteBernoulliProbabilityFamily E q U := by
+  rw [finiteBernoulliProbabilityFamily_eq_sum_indicator,
+    finiteBernoulliProbabilityFamily_eq_sum_indicator,
+    finiteBernoulliProbabilityFamily_eq_sum_indicator,
+    ← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro s hs
+  by_cases hT : s ∈ T
+  · have hU : s ∉ U := fun hU ↦ Set.disjoint_left.mp hTU hT hU
+    simp [hT, hU]
+  · by_cases hU : s ∈ U <;> simp [hT, hU]
 
 theorem finiteBernoulliProbabilityFamily_map_equiv
     {ι : Type*} [DecidableEq ι] (E : Finset ι) (q : ι → ℝ) (f : ι ≃ ι)
@@ -388,6 +406,414 @@ theorem torusGhostReach_disjointOccurrence_le_theta_sq
   rw [finiteBernoulliProbabilityFamily_torusGhostReachJointTrace
     d N hN p γ x] at hbk
   simpa [pow_two] using hbk
+
+def finiteHitsTrace {ι : Type*} (S : Finset ι) : Set (Finset ι) :=
+  {t | ∃ x ∈ S, x ∈ t}
+
+def finiteAvoidsTrace {ι : Type*} (S : Finset ι) : Set (Finset ι) :=
+  {t | Disjoint S t}
+
+noncomputable def finiteExactlyOneTrace {ι : Type*}
+    (S : Finset ι) : Set (Finset ι) := by
+  classical
+  exact {t | (S ∩ t).card = 1}
+
+theorem finiteBernoulliProbability_avoids_finset
+    {ι : Type*} [DecidableEq ι] {E S : Finset ι} (hSE : S ⊆ E) (p : I) :
+    finiteBernoulliProbability E p (finiteAvoidsTrace S) =
+      (1 - (p : ℝ)) ^ S.card := by
+  have hpartition : finiteBernoulliProbability E p (finiteAvoidsTrace S) +
+      finiteBernoulliProbability E p (finiteHitsTrace S) = 1 := by
+    unfold finiteBernoulliProbability
+    rw [← finiteBernoulliExpectation_add]
+    calc
+      finiteBernoulliExpectation E p
+          (fun t ↦ (finiteAvoidsTrace S).indicator (fun _ ↦ (1 : ℝ)) t +
+            (finiteHitsTrace S).indicator (fun _ ↦ (1 : ℝ)) t) =
+          finiteBernoulliExpectation E p (fun _ ↦ (1 : ℝ)) := by
+        apply finiteBernoulliExpectation_congr
+        intro t ht
+        by_cases h : Disjoint S t
+        · have hn : t ∉ finiteHitsTrace S := by
+            rintro ⟨x, hxS, hxt⟩
+            exact Finset.disjoint_left.mp h hxS hxt
+          have hav : t ∈ finiteAvoidsTrace S := h
+          rw [Set.indicator_of_mem hav, Set.indicator_of_notMem hn]
+          norm_num
+        · have hh : t ∈ finiteHitsTrace S := by
+            rw [Finset.not_disjoint_iff] at h
+            obtain ⟨x, hxS, hxt⟩ := h
+            exact ⟨x, hxS, hxt⟩
+          simp [finiteAvoidsTrace, h, hh]
+      _ = 1 := finiteBernoulliExpectation_one E p
+  have hhit := finiteBernoulliProbability_hits_finset hSE p
+  change finiteBernoulliProbability E p (finiteHitsTrace S) = _ at hhit
+  linarith
+
+theorem finiteBernoulliProbability_exactlyOne_finset
+    {ι : Type*} [DecidableEq ι] {E S : Finset ι} (hSE : S ⊆ E) (p : I) :
+    finiteBernoulliProbability E p (finiteExactlyOneTrace S) =
+      (S.card : ℝ) * (p : ℝ) * (1 - (p : ℝ)) ^ (S.card - 1) := by
+  letI : DecidableEq ι := Classical.decEq ι
+  induction E using Finset.induction generalizing S with
+  | empty =>
+      have hS : S = ∅ := Finset.subset_empty.mp hSE
+      subst S
+      simp [finiteExactlyOneTrace, finiteBernoulliProbability,
+        finiteBernoulliExpectation]
+  | @insert a E ha ih =>
+      by_cases haS : a ∈ S
+      · let S₀ := S.erase a
+        have hS : S = insert a S₀ := by
+          simp [S₀, haS]
+        have hS₀E : S₀ ⊆ E := by
+          intro x hx
+          have hxS : x ∈ S := Finset.mem_of_mem_erase hx
+          have hxIns := hSE hxS
+          rw [Finset.mem_insert] at hxIns
+          have hane : a ∉ S₀ := by simp [S₀]
+          exact hxIns.resolve_left fun hxa ↦
+            hane (hxa ▸ hx)
+        unfold finiteBernoulliProbability
+        conv_lhs =>
+          rw [finiteBernoulliExpectation_insert (E := E) (a := a) ha]
+        have hopen : finiteBernoulliExpectation E p
+            (fun t ↦ (finiteExactlyOneTrace S).indicator (fun _ ↦ (1 : ℝ)) (insert a t)) =
+            finiteBernoulliProbability E p (finiteAvoidsTrace S₀) := by
+          unfold finiteBernoulliProbability
+          apply finiteBernoulliExpectation_congr
+          intro t ht
+          have hat : a ∉ t := fun hat ↦ ha (Finset.mem_powerset.mp ht hat)
+          have hinter : S ∩ insert a t = insert a (S₀ ∩ t) := by
+            ext x
+            by_cases hxa : x = a
+            · subst x
+              simp [haS, hat, S₀]
+            · simp [hxa, S₀]
+          have hiff : insert a t ∈ finiteExactlyOneTrace S ↔
+              t ∈ finiteAvoidsTrace S₀ := by
+            rw [finiteExactlyOneTrace, finiteAvoidsTrace, Set.mem_setOf_eq,
+              Set.mem_setOf_eq, hinter, Finset.card_insert_of_notMem]
+            · rw [Finset.disjoint_iff_inter_eq_empty, ← Finset.card_eq_zero]
+              omega
+            · simp [hat]
+          by_cases h : insert a t ∈ finiteExactlyOneTrace S
+          · rw [Set.indicator_of_mem h, Set.indicator_of_mem (hiff.mp h)]
+          · rw [Set.indicator_of_notMem h,
+              Set.indicator_of_notMem fun h' ↦ h (hiff.mpr h')]
+        have hclosed : finiteBernoulliExpectation E p
+            (fun t ↦ (finiteExactlyOneTrace S).indicator (fun _ ↦ (1 : ℝ)) t) =
+            finiteBernoulliProbability E p (finiteExactlyOneTrace S₀) := by
+          unfold finiteBernoulliProbability
+          apply finiteBernoulliExpectation_congr
+          intro t ht
+          have hat : a ∉ t := fun hat ↦ ha (Finset.mem_powerset.mp ht hat)
+          have hinter : S ∩ t = S₀ ∩ t := by ext x; simp [S₀, hat]
+          by_cases h : t ∈ finiteExactlyOneTrace S
+          · rw [Set.indicator_of_mem h, Set.indicator_of_mem]
+            simpa [finiteExactlyOneTrace, hinter] using h
+          · rw [Set.indicator_of_notMem h, Set.indicator_of_notMem]
+            intro h'
+            exact h (by simpa [finiteExactlyOneTrace, hinter] using h')
+        rw [hopen, hclosed,
+          finiteBernoulliProbability_avoids_finset hS₀E p, ih hS₀E]
+        have hcard : S.card = S₀.card + 1 := by
+          rw [hS, Finset.card_insert_of_notMem]
+          simp [S₀]
+        rw [hcard]
+        simp only [Nat.cast_add, Nat.cast_one, Nat.add_sub_cancel]
+        cases hk : S₀.card with
+        | zero => simp
+        | succ k =>
+            rw [Nat.succ_sub_one, pow_succ]
+            ring
+      · have hSE' : S ⊆ E := by
+          intro x hx
+          have hxIns := hSE hx
+          rw [Finset.mem_insert] at hxIns
+          exact hxIns.resolve_left fun hxa ↦ haS (hxa ▸ hx)
+        unfold finiteBernoulliProbability
+        conv_lhs =>
+          rw [finiteBernoulliExpectation_insert (E := E) (a := a) ha]
+        have hsameInsert : finiteBernoulliExpectation E p
+            (fun t ↦ (finiteExactlyOneTrace S).indicator (fun _ ↦ (1 : ℝ)) (insert a t)) =
+            finiteBernoulliProbability E p (finiteExactlyOneTrace S) := by
+          unfold finiteBernoulliProbability
+          apply finiteBernoulliExpectation_congr
+          intro t ht
+          have hinter : S ∩ insert a t = S ∩ t := by ext x; simp [haS]
+          by_cases h : insert a t ∈ finiteExactlyOneTrace S
+          · rw [Set.indicator_of_mem h, Set.indicator_of_mem]
+            simpa [finiteExactlyOneTrace, hinter] using h
+          · rw [Set.indicator_of_notMem h, Set.indicator_of_notMem]
+            intro h'
+            exact h (by simpa [finiteExactlyOneTrace, hinter] using h')
+        have hsame : finiteBernoulliExpectation E p
+            (fun t ↦ (finiteExactlyOneTrace S).indicator (fun _ ↦ (1 : ℝ)) t) =
+            finiteBernoulliProbability E p (finiteExactlyOneTrace S) := rfl
+        rw [hsameInsert, hsame, ih hSE']
+        ring
+
+def torusOriginGreenCount (d N : ℕ) (hN : 2 ≤ N)
+    (s : Finset (TorusGhostCoordinate d N)) : ℕ :=
+  ((cubicTorusOpenClusterFinset d N hN
+    (s.toLeft : Set (CubicTorusEdge d N))) ∩ s.toRight).card
+
+def torusExactlyOneGreenTrace (d N : ℕ) (hN : 2 ≤ N) :
+    Set (Finset (TorusGhostCoordinate d N)) :=
+  {s | torusOriginGreenCount d N hN s = 1}
+
+def torusAtLeastTwoGreenTrace (d N : ℕ) (hN : 2 ≤ N) :
+    Set (Finset (TorusGhostCoordinate d N)) :=
+  {s | 2 ≤ torusOriginGreenCount d N hN s}
+
+theorem finiteBernoulliProbabilityFamily_torusExactlyOneGreenTrace
+    (d N : ℕ) (hN : 2 ≤ N) (p γ : I)
+    (hγ0 : 0 < (γ : ℝ)) (hγ1 : (γ : ℝ) < 1) :
+    finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+        (torusGhostCoordinateDensity p γ) (torusExactlyOneGreenTrace d N hN) =
+      (γ : ℝ) * torusGhostThetaGammaDerivative d N hN p γ := by
+  unfold finiteBernoulliProbabilityFamily
+  unfold torusGhostCoordinateFinset torusGhostCoordinateDensity
+  rw [finiteBernoulliExpectationFamily_disjSum_mixed]
+  simp_rw [finiteBernoulliExpectationFamily_const]
+  calc
+    finiteBernoulliExpectation (cubicTorusEdgeFinset d N hN) p
+        (fun ω ↦ finiteBernoulliExpectation (cubicTorusVertexFinset d N hN) γ
+          (fun G ↦ (torusExactlyOneGreenTrace d N hN).indicator
+            (fun _ ↦ (1 : ℝ)) (ω.disjSum G))) =
+      finiteBernoulliExpectation (cubicTorusEdgeFinset d N hN) p (fun ω ↦
+        let S := cubicTorusOpenClusterFinset d N hN
+          (ω : Set (CubicTorusEdge d N))
+        (S.card : ℝ) * (γ : ℝ) * (1 - (γ : ℝ)) ^ (S.card - 1)) := by
+      apply finiteBernoulliExpectation_congr
+      intro ω hω
+      let S := cubicTorusOpenClusterFinset d N hN
+        (ω : Set (CubicTorusEdge d N))
+      have hprob := finiteBernoulliProbability_exactlyOne_finset
+        (E := cubicTorusVertexFinset d N hN) (S := S)
+        (restrictTo_subset _ _) γ
+      rw [finiteBernoulliProbability] at hprob
+      change finiteBernoulliExpectation (cubicTorusVertexFinset d N hN) γ
+          (fun G ↦ (torusExactlyOneGreenTrace d N hN).indicator
+            (fun _ ↦ (1 : ℝ)) (ω.disjSum G)) =
+        (S.card : ℝ) * (γ : ℝ) * (1 - (γ : ℝ)) ^ (S.card - 1)
+      rw [← hprob]
+      apply finiteBernoulliExpectation_congr
+      intro G hG
+      have hmem : ω.disjSum G ∈ torusExactlyOneGreenTrace d N hN ↔
+          G ∈ finiteExactlyOneTrace S := by
+        unfold torusExactlyOneGreenTrace torusOriginGreenCount finiteExactlyOneTrace
+        simp only [Set.mem_setOf_eq, Finset.toLeft_disjSum, Finset.toRight_disjSum]
+        constructor
+        · intro h
+          rw [Finset.card_eq_one] at h ⊢
+          obtain ⟨x, hx⟩ := h
+          refine ⟨x, Finset.ext fun y ↦ ?_⟩
+          have hxy := Finset.ext_iff.mp hx y
+          simpa [S] using hxy
+        · intro h
+          rw [Finset.card_eq_one] at h ⊢
+          obtain ⟨x, hx⟩ := h
+          refine ⟨x, Finset.ext fun y ↦ ?_⟩
+          have hxy := Finset.ext_iff.mp hx y
+          simpa [S] using hxy
+      by_cases h : ω.disjSum G ∈ torusExactlyOneGreenTrace d N hN
+      · rw [Set.indicator_of_mem h, Set.indicator_of_mem (hmem.mp h)]
+      · rw [Set.indicator_of_notMem h,
+          Set.indicator_of_notMem fun h' ↦ h (hmem.mpr h')]
+    _ = (γ : ℝ) * torusGhostThetaGammaDerivativeByCluster d N hN p γ := by
+      unfold torusGhostThetaGammaDerivativeByCluster
+      rw [← finiteBernoulliExpectation_const_mul]
+      apply finiteBernoulliExpectation_congr
+      intro ω hω
+      ring
+    _ = (γ : ℝ) * torusGhostThetaGammaDerivative d N hN p γ := by
+      rw [torusGhostThetaGammaDerivative_eq_byCluster d N hN p γ hγ0 hγ1]
+
+/-- Two disjoint open witnesses from the origin to green vertices necessarily expose two
+distinct green vertices in the origin cluster.  This is the deterministic inclusion used
+before applying BK in Grimmett's equation (5.71). -/
+theorem torusGhostReach_disjointOccurrence_subset_atLeastTwoGreenTrace
+    (d N : ℕ) (hN : 2 ≤ N) :
+    TraceDisjointOccurrence
+        (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+        (torusGhostReachJointTrace d N (cubicTorusOrigin d N)) ⊆
+      torusAtLeastTwoGreenTrace d N hN := by
+  rintro s ⟨H, K, hdisj, hHs, hKs, hH, hK⟩
+  obtain ⟨y, hyH, hyC⟩ := hH
+  obtain ⟨z, hzK, hzC⟩ := hK
+  have hyG : y ∈ s.toRight := Finset.toRight_subset_toRight hHs hyH
+  have hzG : z ∈ s.toRight := Finset.toRight_subset_toRight hKs hzK
+  have hyCluster : y ∈ cubicTorusOpenCluster d N
+      (s.toLeft : Set (CubicTorusEdge d N)) :=
+    cubicTorusOpenCluster_mono
+      (Finset.coe_subset.mpr (Finset.toLeft_subset_toLeft hHs)) hyC
+  have hzCluster : z ∈ cubicTorusOpenCluster d N
+      (s.toLeft : Set (CubicTorusEdge d N)) :=
+    cubicTorusOpenCluster_mono
+      (Finset.coe_subset.mpr (Finset.toLeft_subset_toLeft hKs)) hzC
+  have hyMem : y ∈ cubicTorusOpenClusterFinset d N hN
+      (s.toLeft : Set (CubicTorusEdge d N)) ∩ s.toRight :=
+    Finset.mem_inter.mpr ⟨(mem_cubicTorusOpenClusterFinset hN).mpr hyCluster, hyG⟩
+  have hzMem : z ∈ cubicTorusOpenClusterFinset d N hN
+      (s.toLeft : Set (CubicTorusEdge d N)) ∩ s.toRight :=
+    Finset.mem_inter.mpr ⟨(mem_cubicTorusOpenClusterFinset hN).mpr hzCluster, hzG⟩
+  have hyz : y ≠ z := by
+    intro hyz
+    subst z
+    exact Finset.disjoint_left.mp hdisj
+      (Finset.mem_toRight.mp hyH) (Finset.mem_toRight.mp hzK)
+  unfold torusAtLeastTwoGreenTrace torusOriginGreenCount
+  rw [Set.mem_setOf_eq, Nat.succ_le_iff, Finset.one_lt_card]
+  exact ⟨y, hyMem, z, hzMem, hyz⟩
+
+theorem mem_torusGhostHitJointTrace_iff_originGreenCount_pos
+    (d N : ℕ) (hN : 2 ≤ N) (s : Finset (TorusGhostCoordinate d N)) :
+    s ∈ torusGhostHitJointTrace d N ↔ 0 < torusOriginGreenCount d N hN s := by
+  unfold torusGhostHitJointTrace torusOriginGreenCount
+  rw [Set.mem_setOf_eq, Finset.card_pos]
+  constructor
+  · rintro ⟨y, hyG, hyC⟩
+    exact ⟨y, Finset.mem_inter.mpr
+      ⟨(mem_cubicTorusOpenClusterFinset hN).mpr hyC, hyG⟩⟩
+  · rintro ⟨y, hy⟩
+    obtain ⟨hyC, hyG⟩ := Finset.mem_inter.mp hy
+    exact ⟨y, hyG, (mem_cubicTorusOpenClusterFinset hN).mp hyC⟩
+
+/-- Equation (5.68), at the event level: hitting the green set means that the origin
+cluster contains exactly one green vertex or at least two. -/
+theorem torusGhostHitJointTrace_eq_exactlyOne_union_atLeastTwo
+    (d N : ℕ) (hN : 2 ≤ N) :
+    torusGhostHitJointTrace d N =
+      torusExactlyOneGreenTrace d N hN ∪ torusAtLeastTwoGreenTrace d N hN := by
+  ext s
+  rw [mem_torusGhostHitJointTrace_iff_originGreenCount_pos d N hN]
+  unfold torusExactlyOneGreenTrace torusAtLeastTwoGreenTrace
+  simp only [Set.mem_union, Set.mem_setOf_eq]
+  omega
+
+theorem disjoint_torusExactlyOneGreenTrace_torusAtLeastTwoGreenTrace
+    (d N : ℕ) (hN : 2 ≤ N) :
+    Disjoint (torusExactlyOneGreenTrace d N hN)
+      (torusAtLeastTwoGreenTrace d N hN) := by
+  rw [Set.disjoint_left]
+  intro s hOne hTwo
+  exact (by
+    unfold torusExactlyOneGreenTrace at hOne
+    unfold torusAtLeastTwoGreenTrace at hTwo
+    simp only [Set.mem_setOf_eq] at hOne hTwo
+    omega)
+
+noncomputable def torusGhostExceptionalTrace (d N : ℕ) (hN : 2 ≤ N) :
+    Set (Finset (TorusGhostCoordinate d N)) :=
+  torusAtLeastTwoGreenTrace d N hN \
+    TraceDisjointOccurrence
+      (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+      (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+
+theorem torusAtLeastTwoGreenTrace_eq_disjointOccurrence_union_exceptional
+    (d N : ℕ) (hN : 2 ≤ N) :
+    torusAtLeastTwoGreenTrace d N hN =
+      TraceDisjointOccurrence
+          (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+          (torusGhostReachJointTrace d N (cubicTorusOrigin d N)) ∪
+        torusGhostExceptionalTrace d N hN := by
+  apply Set.Subset.antisymm
+  · intro s hs
+    by_cases hd : s ∈ TraceDisjointOccurrence
+        (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+        (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+    · exact Or.inl hd
+    · exact Or.inr ⟨hs, hd⟩
+  · rintro s (hs | hs)
+    · exact torusGhostReach_disjointOccurrence_subset_atLeastTwoGreenTrace d N hN hs
+    · exact hs.1
+
+theorem disjoint_torusGhostReach_disjointOccurrence_exceptional
+    (d N : ℕ) (hN : 2 ≤ N) :
+    Disjoint
+      (TraceDisjointOccurrence
+        (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+        (torusGhostReachJointTrace d N (cubicTorusOrigin d N)))
+      (torusGhostExceptionalTrace d N hN) := by
+  rw [Set.disjoint_left]
+  intro s hs hse
+  exact hse.2 hs
+
+/-- The probability form of equations (5.68)--(5.70), before the exceptional event is
+estimated by pivotal edges. -/
+theorem torusGhostThetaPolynomial_eq_gamma_mul_gammaDerivative_add_atLeastTwo
+    (d N : ℕ) (hN : 2 ≤ N) (p γ : I)
+    (hγ0 : 0 < (γ : ℝ)) (hγ1 : (γ : ℝ) < 1) :
+    torusGhostThetaPolynomial d N hN p γ =
+      (γ : ℝ) * torusGhostThetaGammaDerivative d N hN p γ +
+        finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+          (torusGhostCoordinateDensity p γ)
+          (torusAtLeastTwoGreenTrace d N hN) := by
+  rw [← finiteBernoulliProbabilityFamily_torusGhostHitJointTrace d N hN p γ,
+    torusGhostHitJointTrace_eq_exactlyOne_union_atLeastTwo d N hN,
+    finiteBernoulliProbabilityFamily_union_of_disjoint
+      (torusGhostCoordinateFinset d N hN) (torusGhostCoordinateDensity p γ)
+      (disjoint_torusExactlyOneGreenTrace_torusAtLeastTwoGreenTrace d N hN),
+    finiteBernoulliProbabilityFamily_torusExactlyOneGreenTrace
+      d N hN p γ hγ0 hγ1]
+
+theorem finiteBernoulliProbabilityFamily_torusAtLeastTwoGreenTrace_eq
+    (d N : ℕ) (hN : 2 ≤ N) (p γ : I) :
+    finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+        (torusGhostCoordinateDensity p γ)
+        (torusAtLeastTwoGreenTrace d N hN) =
+      finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+          (torusGhostCoordinateDensity p γ)
+          (TraceDisjointOccurrence
+            (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+            (torusGhostReachJointTrace d N (cubicTorusOrigin d N))) +
+        finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+          (torusGhostCoordinateDensity p γ)
+          (torusGhostExceptionalTrace d N hN) := by
+  rw [torusAtLeastTwoGreenTrace_eq_disjointOccurrence_union_exceptional d N hN,
+    finiteBernoulliProbabilityFamily_union_of_disjoint
+      (torusGhostCoordinateFinset d N hN) (torusGhostCoordinateDensity p γ)
+      (disjoint_torusGhostReach_disjointOccurrence_exceptional d N hN)]
+
+/-- Finite-volume precursor to Lemma 5.53: after the exact one-green term and BK term,
+only Grimmett's exceptional pivotal event remains to be bounded. -/
+theorem torusGhostThetaPolynomial_le_gammaDerivative_add_sq_add_exceptional
+    (d N : ℕ) (hN : 2 ≤ N) (p γ : I)
+    (hγ0 : 0 < (γ : ℝ)) (hγ1 : (γ : ℝ) < 1) :
+    torusGhostThetaPolynomial d N hN p γ ≤
+      (γ : ℝ) * torusGhostThetaGammaDerivative d N hN p γ +
+        torusGhostThetaPolynomial d N hN p γ ^ 2 +
+          finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+            (torusGhostCoordinateDensity p γ)
+            (torusGhostExceptionalTrace d N hN) := by
+  have hbk := torusGhostReach_disjointOccurrence_le_theta_sq
+    d N hN p γ (cubicTorusOrigin d N)
+  calc
+    torusGhostThetaPolynomial d N hN p γ =
+        (γ : ℝ) * torusGhostThetaGammaDerivative d N hN p γ +
+          finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+            (torusGhostCoordinateDensity p γ)
+            (torusAtLeastTwoGreenTrace d N hN) :=
+      torusGhostThetaPolynomial_eq_gamma_mul_gammaDerivative_add_atLeastTwo
+        d N hN p γ hγ0 hγ1
+    _ = (γ : ℝ) * torusGhostThetaGammaDerivative d N hN p γ +
+          (finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+              (torusGhostCoordinateDensity p γ)
+              (TraceDisjointOccurrence
+                (torusGhostReachJointTrace d N (cubicTorusOrigin d N))
+                (torusGhostReachJointTrace d N (cubicTorusOrigin d N))) +
+            finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+              (torusGhostCoordinateDensity p γ)
+              (torusGhostExceptionalTrace d N hN)) := by
+      rw [finiteBernoulliProbabilityFamily_torusAtLeastTwoGreenTrace_eq]
+    _ ≤ (γ : ℝ) * torusGhostThetaGammaDerivative d N hN p γ +
+          torusGhostThetaPolynomial d N hN p γ ^ 2 +
+            finiteBernoulliProbabilityFamily (torusGhostCoordinateFinset d N hN)
+              (torusGhostCoordinateDensity p γ)
+              (torusGhostExceptionalTrace d N hN) := by
+      linarith
 
 end
 

@@ -1,5 +1,4 @@
-import Percolation.Critical.PivotalSausage
-import Percolation.Critical.FiniteRenewal
+import Percolation.Critical.SausageRenewal
 import Percolation.Bernoulli.Reliability
 
 /-!
@@ -140,6 +139,62 @@ theorem conditionalExpectedRadiusPivotalCount_nonneg
   unfold conditionalExpectedRadiusPivotalCount
   exact div_nonneg (Finset.sum_nonneg fun _e _he ↦ measureReal_nonneg) hg.le
 
+theorem radiusTail_pos_of_pos_density
+    {d n : ℕ} {p : I} (hd : 0 < d) (hp : 0 < (p : ℝ)) :
+    0 < radiusTail d p n := by
+  classical
+  let i : Fin d := ⟨0, hd⟩
+  let y : Cubic d := fun j ↦ if j = i then (n : ℤ) else 0
+  have hydist : cubicL1Dist cubicOrigin y = n := by
+    rw [cubicL1Dist]
+    calc
+      (∑ j, (y j - cubicOrigin j).natAbs) =
+          (y i - cubicOrigin i).natAbs := by
+        apply Finset.sum_eq_single i
+        · intro j _hj hji
+          simp [y, cubicOrigin, hji]
+        · simp
+      _ = n := by simp [y, cubicOrigin]
+  have hy : y ∈ cubicMetricSphere d cubicOrigin n :=
+    mem_cubicMetricSphere_iff_l1Dist_eq.mpr hydist
+  have hsub : connectionEvent d cubicOrigin y ⊆
+      radiusConnectionEvent d cubicOrigin n := by
+    intro ω hω
+    rw [mem_radiusConnectionEvent_iff_exists_connection]
+    exact ⟨y, hy, hω⟩
+  rw [radiusTail]
+  exact lt_of_lt_of_le
+    (bernoulliBondMeasure_real_connectionEvent_pos d hp cubicOrigin y)
+    (measureReal_mono hsub)
+
+/-- Equation (5.21): the actual conditional pivotal count dominates the iid
+renewal count built from the radius-tail law. -/
+theorem radiusRenewalExpectedCount_le_conditionalExpectedRadiusPivotalCount
+    {d n : ℕ} {p : I} (hg : 0 < radiusTail d p n) :
+    radiusRenewalExpectedCount d p n ≤
+      conditionalExpectedRadiusPivotalCount d p cubicOrigin n := by
+  rw [conditionalExpectedRadiusPivotalCount, radiusRenewalExpectedCount]
+  rw [le_div_iff₀ (by simpa [radiusTail] using hg)]
+  simpa [radiusTail] using
+    finiteRenewalExpectedRenewalCount_mul_radiusTail_le_pivotalNumerator d n p
+
+/-- **Grimmett, Lemma 5.17.** On `Aₙ`, the conditional mean number of
+pivotal edges is at least `n / (gₚ(0)+⋯+gₚ(n)) - 1`. -/
+theorem conditionalExpectedPivotalCount_ge_of_radiusTail_pos
+    {d n : ℕ} {p : I} (hg : 0 < radiusTail d p n) :
+    (n : ℝ) / (∑ i ∈ Finset.range (n + 1), radiusTail d p i) - 1 ≤
+      conditionalExpectedRadiusPivotalCount d p cubicOrigin n :=
+  (radiusRenewalExpectedCount_ge d p n).trans
+    (radiusRenewalExpectedCount_le_conditionalExpectedRadiusPivotalCount hg)
+
+/-- **Grimmett, Lemma 5.17**, in its source-facing parameter range. -/
+theorem conditionalExpectedPivotalCount_ge
+    {d n : ℕ} {p : I} (hd : 0 < d) (hp : 0 < (p : ℝ)) :
+    (n : ℝ) / (∑ i ∈ Finset.range (n + 1), radiusTail d p i) - 1 ≤
+      conditionalExpectedRadiusPivotalCount d p cubicOrigin n :=
+  conditionalExpectedPivotalCount_ge_of_radiusTail_pos
+    (radiusTail_pos_of_pos_density hd hp)
+
 /-- Integrated master inequality (5.22), from the pivotal lower bound supplied by Lemma 5.17. -/
 theorem radiusTail_master_inequality_of_pivotal_bound
     {d n : ℕ} {α β : I}
@@ -219,3 +274,5 @@ theorem radiusTail_master_inequality_of_pivotal_bound
     _ = _ := rfl
 
 end Percolation
+
+#print axioms Percolation.conditionalExpectedPivotalCount_ge

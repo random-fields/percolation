@@ -593,6 +593,79 @@ theorem sausageGap_conditional_cdf_ge
         _ = (bernoulliBondMeasure d p).real
             (sausageGapPrefixNextShortEvent d cubicOrigin n (q :: qs) r) := rfl
 
+/-! ### Prefix extension sums -/
+
+theorem sausageGapPrefixEvent_append_singleton
+    {d n t : ℕ} {x : Cubic d} {rs : List ℕ} :
+    sausageGapPrefixEvent d x n (rs ++ [t]) =
+      sausageGapPrefixEvent d x n rs ∩
+        {ω | sausageGap d x n ω (rs.length + 1) = t} := by
+  ext ω
+  constructor
+  · intro h
+    refine ⟨⟨h.1, ?_⟩, ?_⟩
+    · intro i hi
+      have hval := h.2 i (by simp; omega)
+      simpa [List.getElem_append_left hi] using hval
+    · have hval := h.2 rs.length (by simp)
+      simpa using hval
+  · rintro ⟨hprefix, hnext⟩
+    refine ⟨hprefix.1, ?_⟩
+    intro i hi
+    by_cases hir : i < rs.length
+    · have hval := hprefix.2 i hir
+      simpa [List.getElem_append_left hir] using hval
+    · have hieq : i = rs.length := by
+        simp only [List.length_append, List.length_singleton] at hi
+        omega
+      subst i
+      simpa using hnext
+
+theorem sausageGapPrefixNextShortEvent_eq_iUnion_extensions
+    {d n r : ℕ} {x : Cubic d} {rs : List ℕ} :
+    sausageGapPrefixNextShortEvent d x n rs r =
+      ⋃ t ∈ Finset.range (r + 1),
+        sausageGapPrefixEvent d x n (rs ++ [t]) := by
+  ext ω
+  constructor
+  · rintro ⟨hprefix, hshort⟩
+    rw [Set.mem_iUnion₂]
+    let t := sausageGap d x n ω (rs.length + 1)
+    refine ⟨t, Finset.mem_range.mpr (by omega), ?_⟩
+    rw [sausageGapPrefixEvent_append_singleton]
+    exact ⟨hprefix, rfl⟩
+  · rw [Set.mem_iUnion₂]
+    rintro ⟨t, ht, hext⟩
+    rw [sausageGapPrefixEvent_append_singleton] at hext
+    exact ⟨hext.1, by
+      rw [hext.2]
+      have := Finset.mem_range.mp ht
+      omega⟩
+
+theorem pairwiseDisjoint_sausageGapPrefixEvent_extensions
+    {d n r : ℕ} {x : Cubic d} {rs : List ℕ} :
+    Set.PairwiseDisjoint (↑(Finset.range (r + 1)) : Set ℕ)
+      (fun t ↦ sausageGapPrefixEvent d x n (rs ++ [t])) := by
+  intro t _ht u _hu htu
+  change Disjoint (sausageGapPrefixEvent d x n (rs ++ [t]))
+    (sausageGapPrefixEvent d x n (rs ++ [u]))
+  rw [Set.disjoint_left]
+  intro ω hωt hωu
+  rw [sausageGapPrefixEvent_append_singleton] at hωt hωu
+  exact htu (hωt.2.symm.trans hωu.2)
+
+theorem bernoulliBondMeasure_real_sausageGapPrefixNextShortEvent_eq_sum
+    {d n r : ℕ} {x : Cubic d} (p : I) (rs : List ℕ) :
+    (bernoulliBondMeasure d p).real
+        (sausageGapPrefixNextShortEvent d x n rs r) =
+      ∑ t ∈ Finset.range (r + 1),
+        (bernoulliBondMeasure d p).real
+          (sausageGapPrefixEvent d x n (rs ++ [t])) := by
+  rw [sausageGapPrefixNextShortEvent_eq_iUnion_extensions]
+  exact measureReal_biUnion_finset
+    pairwiseDisjoint_sausageGapPrefixEvent_extensions
+    (fun t _ ↦ measurableSet_sausageGapPrefixEvent d x n (rs ++ [t]))
+
 end Percolation
 
 #print axioms Percolation.sausageGap_conditional_cdf_ge

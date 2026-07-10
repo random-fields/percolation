@@ -30,6 +30,7 @@ import Percolation.Critical.AppendixLimits
 import Percolation.Critical.TorusGhostJoint
 import Percolation.Critical.TorusGhostConditioning
 import Percolation.Critical.GhostDifferential
+import Percolation.Critical.GhostSqrt
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries

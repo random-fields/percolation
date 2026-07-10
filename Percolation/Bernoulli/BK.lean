@@ -241,6 +241,65 @@ theorem finiteBernoulliProbability_le_of_injOn {E : Finset ι} {p : ℝ}
   exact Finset.mem_filter.mpr
     ⟨Finset.mem_powerset.mpr (hsub s hsE' hsT), hmem s hsE' hsT⟩
 
+/-! #### Inhomogeneous probability transport -/
+
+theorem finiteBernoulliProbabilityFamily_eq_sum_indicator [DecidableEq ι]
+    (E : Finset ι) (q : ι → ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliProbabilityFamily E q T =
+      ∑ s ∈ E.powerset,
+        finiteBernoulliWeightFamily E q s * T.indicator (fun _ ↦ 1) s := by
+  rfl
+
+theorem finiteBernoulliProbabilityFamily_eq_sum_filter [DecidableEq ι]
+    (E : Finset ι) (q : ι → ℝ) (T : Set (Finset ι)) [DecidablePred (· ∈ T)] :
+    finiteBernoulliProbabilityFamily E q T =
+      ∑ s ∈ E.powerset.filter (· ∈ T), finiteBernoulliWeightFamily E q s := by
+  rw [finiteBernoulliProbabilityFamily_eq_sum_indicator, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  by_cases hs : s ∈ T
+  · rw [Set.indicator_of_mem hs, if_pos hs, mul_one]
+  · rw [Set.indicator_of_notMem hs, if_neg hs, mul_zero]
+
+/-- Injection transport for an inhomogeneous finite product measure. -/
+theorem finiteBernoulliProbabilityFamily_le_of_injOn [DecidableEq ι]
+    {E : Finset ι} {q : ι → ℝ}
+    (hq0 : ∀ e ∈ E, 0 ≤ q e) (hq1 : ∀ e ∈ E, q e ≤ 1)
+    {T U : Set (Finset ι)} (φ : Finset ι → Finset ι)
+    (hsub : ∀ s, s ⊆ E → s ∈ T → φ s ⊆ E)
+    (hmem : ∀ s, s ⊆ E → s ∈ T → φ s ∈ U)
+    (hweight : ∀ s, s ⊆ E → s ∈ T →
+      finiteBernoulliWeightFamily E q (φ s) = finiteBernoulliWeightFamily E q s)
+    (hinj : ∀ s, s ⊆ E → s ∈ T → ∀ t, t ⊆ E → t ∈ T → φ s = φ t → s = t) :
+    finiteBernoulliProbabilityFamily E q T ≤ finiteBernoulliProbabilityFamily E q U := by
+  classical
+  rw [finiteBernoulliProbabilityFamily_eq_sum_filter,
+    finiteBernoulliProbabilityFamily_eq_sum_filter]
+  have hstep1 :
+      ∑ s ∈ E.powerset.filter (· ∈ T), finiteBernoulliWeightFamily E q s =
+        ∑ s ∈ E.powerset.filter (· ∈ T), finiteBernoulliWeightFamily E q (φ s) := by
+    refine Finset.sum_congr rfl fun s hs ↦ ?_
+    obtain ⟨hsE, hsT⟩ := Finset.mem_filter.mp hs
+    exact (hweight s (Finset.mem_powerset.mp hsE) hsT).symm
+  have hstep2 :
+      ∑ s ∈ E.powerset.filter (· ∈ T), finiteBernoulliWeightFamily E q (φ s) =
+        ∑ t ∈ (E.powerset.filter (· ∈ T)).image φ,
+          finiteBernoulliWeightFamily E q t := by
+    refine (Finset.sum_image fun s hs t ht h ↦ ?_).symm
+    obtain ⟨hsE, hsT⟩ := Finset.mem_filter.mp hs
+    obtain ⟨htE, htT⟩ := Finset.mem_filter.mp ht
+    exact hinj s (Finset.mem_powerset.mp hsE) hsT t
+      (Finset.mem_powerset.mp htE) htT h
+  rw [hstep1, hstep2]
+  refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun t ht _ ↦
+    finiteBernoulliWeightFamily_nonneg hq0 hq1
+      (Finset.mem_powerset.mp (Finset.mem_filter.mp ht).1)
+  intro t ht
+  obtain ⟨s, hs, rfl⟩ := Finset.mem_image.mp ht
+  obtain ⟨hsE, hsT⟩ := Finset.mem_filter.mp hs
+  exact Finset.mem_filter.mpr
+    ⟨Finset.mem_powerset.mpr (hsub s (Finset.mem_powerset.mp hsE) hsT),
+      hmem s (Finset.mem_powerset.mp hsE) hsT⟩
+
 /-! ### The two-copy cube
 
 Following Grimmett pp. 39–41, the finite BK core is proved on the doubled cube
@@ -429,6 +488,135 @@ theorem finiteBernoulliWeight_disjSum {E : Finset ι} (p : ℝ) {w : Finset (ι 
   rw [hsub, pow_add, pow_add]
   ring
 
+/-! #### Inhomogeneous doubled weights -/
+
+/-- The doubled cube uses the same coordinate density on each copy. -/
+def doubledBernoulliDensity (q : ι → ℝ) : ι ⊕ ι → ℝ := Sum.elim q q
+
+theorem finiteBernoulliWeightFamily_map_equiv
+    (E : Finset ι) (q : ι → ℝ) (f : ι ≃ ι)
+    (hE : E.map f.toEmbedding = E) (hq : ∀ a, q (f a) = q a)
+    (s : Finset ι) :
+    finiteBernoulliWeightFamily E q (s.map f.toEmbedding) =
+      finiteBernoulliWeightFamily E q s := by
+  unfold finiteBernoulliWeightFamily
+  rw [Finset.prod_map]
+  have hsdiff : E \ s.map f.toEmbedding = (E \ s).map f.toEmbedding := by
+    calc
+      E \ s.map f.toEmbedding = E.map f.toEmbedding \ s.map f.toEmbedding := by rw [hE]
+      _ = (E \ s).map f.toEmbedding :=
+        (Finset.map_sdiff (f := f.toEmbedding) E s).symm
+  rw [hsdiff, Finset.prod_map]
+  have hq' (a : ι) : q (f.toEmbedding a) = q a := hq a
+  simp_rw [hq']
+
+theorem doubledBernoulliDensity_swap (q : ι → ℝ) (a : ι) (z : ι ⊕ ι) :
+    doubledBernoulliDensity q (Equiv.swap (Sum.inl a) (Sum.inr a) z) =
+      doubledBernoulliDensity q z := by
+  rcases z with z | z <;> by_cases hz : z = a
+  · subst z
+    simp [doubledBernoulliDensity]
+  · simp [doubledBernoulliDensity, Equiv.swap_apply_of_ne_of_ne, hz]
+  · subst z
+    simp [doubledBernoulliDensity]
+  · simp [doubledBernoulliDensity, Equiv.swap_apply_of_ne_of_ne, hz]
+
+theorem finiteBernoulliWeightFamily_bkSwap
+    {E : Finset ι} {q : ι → ℝ} {a : ι} (haE : a ∈ E) (w : Finset (ι ⊕ ι)) :
+    finiteBernoulliWeightFamily (E.disjSum E) (doubledBernoulliDensity q) (bkSwap a w) =
+      finiteBernoulliWeightFamily (E.disjSum E) (doubledBernoulliDensity q) w := by
+  have hsupport : bkSwap a (E.disjSum E) = E.disjSum E :=
+    bkSwap_eq_self_of_mem (by simpa using haE) (by simpa using haE)
+  exact finiteBernoulliWeightFamily_map_equiv (E.disjSum E)
+    (doubledBernoulliDensity q) (Equiv.swap (Sum.inl a) (Sum.inr a)) hsupport
+    (doubledBernoulliDensity_swap q a) w
+
+theorem finiteBernoulliWeightFamily_disjSum
+    {E : Finset ι} (q : ι → ℝ) {w : Finset (ι ⊕ ι)} (hw : w ⊆ E.disjSum E) :
+    finiteBernoulliWeightFamily (E.disjSum E) (doubledBernoulliDensity q) w =
+      finiteBernoulliWeightFamily E q w.toLeft *
+        finiteBernoulliWeightFamily E q w.toRight := by
+  unfold finiteBernoulliWeightFamily doubledBernoulliDensity
+  obtain ⟨hL, hR⟩ := Finset.subset_disjSum.mp hw
+  rw [show w = w.toLeft.disjSum w.toRight by
+    exact (@Finset.toLeft_disjSum_toRight _ _ w).symm]
+  have hsdiff : E.disjSum E \ (w.toLeft.disjSum w.toRight) =
+      (E \ w.toLeft).disjSum (E \ w.toRight) := by
+    ext (a | a) <;> simp
+  rw [hsdiff]
+  simp
+  ring
+
+theorem finiteBernoulliProbabilityFamily_congr {E : Finset ι} {q : ι → ℝ}
+    {T U : Set (Finset ι)} (h : ∀ s ∈ E.powerset, (s ∈ T ↔ s ∈ U)) :
+    finiteBernoulliProbabilityFamily E q T = finiteBernoulliProbabilityFamily E q U := by
+  rw [finiteBernoulliProbabilityFamily_eq_sum_indicator,
+    finiteBernoulliProbabilityFamily_eq_sum_indicator]
+  apply Finset.sum_congr rfl
+  intro s hs
+  by_cases hsT : s ∈ T
+  · rw [Set.indicator_of_mem hsT, Set.indicator_of_mem ((h s hs).mp hsT)]
+  · rw [Set.indicator_of_notMem hsT,
+      Set.indicator_of_notMem fun hsU ↦ hsT ((h s hs).mpr hsU)]
+
+@[simp]
+theorem finiteBernoulliProbabilityFamily_univ (E : Finset ι) (q : ι → ℝ) :
+    finiteBernoulliProbabilityFamily E q (Set.univ : Set (Finset ι)) = 1 := by
+  rw [finiteBernoulliProbabilityFamily_eq_sum_indicator]
+  simp only [Set.indicator_of_mem (Set.mem_univ _), mul_one]
+  exact sum_finiteBernoulliWeightFamily E q
+
+/-- Product factorization for two independent copies of an inhomogeneous cube. -/
+theorem finiteBernoulliProbabilityFamily_disjSum_left_right
+    (E : Finset ι) (q : ι → ℝ) (T U : Set (Finset ι)) :
+    finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+        {w : Finset (ι ⊕ ι) | w.toLeft ∈ T ∧ w.toRight ∈ U} =
+      finiteBernoulliProbabilityFamily E q T * finiteBernoulliProbabilityFamily E q U := by
+  rw [finiteBernoulliProbabilityFamily_eq_sum_indicator,
+    finiteBernoulliProbabilityFamily_eq_sum_indicator,
+    finiteBernoulliProbabilityFamily_eq_sum_indicator, Finset.sum_mul_sum,
+    ← Finset.sum_product']
+  refine Finset.sum_nbij' (fun w ↦ (w.toLeft, w.toRight))
+    (fun x ↦ x.1.disjSum x.2) ?_ ?_ ?_ ?_ ?_
+  · intro w hw
+    obtain ⟨hL, hR⟩ := Finset.subset_disjSum.mp (Finset.mem_powerset.mp hw)
+    rw [Finset.mem_product]
+    exact ⟨Finset.mem_powerset.mpr hL, Finset.mem_powerset.mpr hR⟩
+  · intro x hx
+    rw [Finset.mem_product] at hx
+    exact Finset.mem_powerset.mpr
+      (Finset.disjSum_mono (Finset.mem_powerset.mp hx.1)
+        (Finset.mem_powerset.mp hx.2))
+  · intro w _
+    exact Finset.toLeft_disjSum_toRight
+  · intro x _
+    simp
+  · intro w hw
+    rw [finiteBernoulliWeightFamily_disjSum q (Finset.mem_powerset.mp hw)]
+    by_cases h1 : w.toLeft ∈ T
+    · by_cases h2 : w.toRight ∈ U
+      · have hmem : w ∈ {w : Finset (ι ⊕ ι) | w.toLeft ∈ T ∧ w.toRight ∈ U} :=
+          ⟨h1, h2⟩
+        rw [Set.indicator_of_mem hmem, Set.indicator_of_mem h1,
+          Set.indicator_of_mem h2]
+        ring
+      · have hmem : w ∉ {w : Finset (ι ⊕ ι) | w.toLeft ∈ T ∧ w.toRight ∈ U} :=
+          fun hc ↦ h2 hc.2
+        rw [Set.indicator_of_notMem hmem, Set.indicator_of_notMem h2]
+        ring
+    · have hmem : w ∉ {w : Finset (ι ⊕ ι) | w.toLeft ∈ T ∧ w.toRight ∈ U} :=
+        fun hc ↦ h1 hc.1
+      rw [Set.indicator_of_notMem hmem, Set.indicator_of_notMem h1]
+      ring
+
+theorem finiteBernoulliProbabilityFamily_disjSum_left
+    (E : Finset ι) (q : ι → ℝ) (T : Set (Finset ι)) :
+    finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+        {w : Finset (ι ⊕ ι) | w.toLeft ∈ T} =
+      finiteBernoulliProbabilityFamily E q T := by
+  have h := finiteBernoulliProbabilityFamily_disjSum_left_right E q T Set.univ
+  simpa using h
+
 omit [DecidableEq ι] in
 /-- Product factorization on the doubled cube: the probability that the first copy lies in
 `T` and the second in `U` is `P(T) P(U)` (Grimmett p. 40, "since `P₁₂` is a product
@@ -529,6 +717,16 @@ theorem finiteBernoulliProbability_bkEvent_self {E : Finset ι} (p : ℝ)
       finiteBernoulliProbability E p T * finiteBernoulliProbability E p U := by
   rw [← finiteBernoulliProbability_disjSum_left_right]
   exact finiteBernoulliProbability_congr fun w hw =>
+    mem_bkEvent_self_iff hT hU (Finset.mem_powerset.mp hw)
+
+/-- Inhomogeneous endpoint `S=E`: the doubled event factors into the two marginals. -/
+theorem finiteBernoulliProbabilityFamily_bkEvent_self {E : Finset ι} (q : ι → ℝ)
+    {T U : Set (Finset ι)} (hT : IsIncreasingTrace T) (hU : IsIncreasingTrace U) :
+    finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+        (bkEvent E T U) =
+      finiteBernoulliProbabilityFamily E q T * finiteBernoulliProbabilityFamily E q U := by
+  rw [← finiteBernoulliProbabilityFamily_disjSum_left_right]
+  exact finiteBernoulliProbabilityFamily_congr fun w hw ↦
     mem_bkEvent_self_iff hT hU (Finset.mem_powerset.mp hw)
 
 /-! #### The interpolation step (Grimmett (2.21), pp. 40–41) -/
@@ -673,6 +871,61 @@ theorem finiteBernoulliProbability_bkEvent_le_insert {E S : Finset ι} {a : ι}
         have := congrArg (bkSwap a) heq
         rwa [bkSwap_bkSwap, bkSwap_bkSwap] at this
 
+/-- The one-coordinate interpolation step for arbitrary coordinate densities. -/
+theorem finiteBernoulliProbabilityFamily_bkEvent_le_insert
+    {E S : Finset ι} {a : ι} (haE : a ∈ E) (haS : a ∉ S)
+    {q : ι → ℝ} (hq0 : ∀ e ∈ E, 0 ≤ q e) (hq1 : ∀ e ∈ E, q e ≤ 1)
+    (T U : Set (Finset ι)) :
+    finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+        (bkEvent S T U) ≤
+      finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+        (bkEvent (insert a S) T U) := by
+  classical
+  have hdouble0 : ∀ z ∈ E.disjSum E, 0 ≤ doubledBernoulliDensity q z := by
+    rintro (e | e) he <;> simp only [doubledBernoulliDensity, Sum.elim_inl,
+      Sum.elim_inr] <;> exact hq0 e (by simpa using he)
+  have hdouble1 : ∀ z ∈ E.disjSum E, doubledBernoulliDensity q z ≤ 1 := by
+    rintro (e | e) he <;> simp only [doubledBernoulliDensity, Sum.elim_inl,
+      Sum.elim_inr] <;> exact hq1 e (by simpa using he)
+  refine finiteBernoulliProbabilityFamily_le_of_injOn hdouble0 hdouble1
+    (fun w ↦ if w ∈ bkEvent (insert a S) T U then w else bkSwap a w) ?_ ?_ ?_ ?_
+  · intro w hwE _
+    dsimp only
+    by_cases hw : w ∈ bkEvent (insert a S) T U
+    · rwa [if_pos hw]
+    · rw [if_neg hw]
+      exact bkSwap_subset_disjSum haE hwE
+  · intro w _ hwS
+    dsimp only
+    by_cases hw : w ∈ bkEvent (insert a S) T U
+    · rwa [if_pos hw]
+    · rw [if_neg hw]
+      obtain ⟨H, K, hd, hHw, hKw, hHT, hKU⟩ := mem_bkEvent.mp hwS
+      by_cases hK : Sum.inl a ∈ K
+      · exact bkSwap_mem_bkEvent_insert haS hd hHw hKw hHT hKU hK
+      · exact absurd (mem_bkEvent_insert_of_inl_notMem haS hd hHw hKw hHT hKU hK) hw
+  · intro w _ _
+    dsimp only
+    by_cases hw : w ∈ bkEvent (insert a S) T U
+    · rw [if_pos hw]
+    · rw [if_neg hw]
+      exact finiteBernoulliWeightFamily_bkSwap haE w
+  · intro w₁ _ hw₁ w₂ _ hw₂ heq
+    dsimp only at heq
+    by_cases h1 : w₁ ∈ bkEvent (insert a S) T U
+    · by_cases h2 : w₂ ∈ bkEvent (insert a S) T U
+      · rwa [if_pos h1, if_pos h2] at heq
+      · rw [if_pos h1, if_neg h2] at heq
+        subst heq
+        exact (bkEvent_swap_collision haS hw₂ h2 hw₁ h1).elim
+    · by_cases h2 : w₂ ∈ bkEvent (insert a S) T U
+      · rw [if_neg h1, if_pos h2] at heq
+        subst heq
+        exact (bkEvent_swap_collision haS hw₁ h1 hw₂ h2).elim
+      · rw [if_neg h1, if_neg h2] at heq
+        have := congrArg (bkSwap a) heq
+        rwa [bkSwap_bkSwap, bkSwap_bkSwap] at this
+
 /-- The interpolation chain from `S = ∅` to any `S ⊆ E` (Grimmett p. 40, iterating
 (2.21)). -/
 theorem finiteBernoulliProbability_bkEvent_empty_le {E : Finset ι} {p : ℝ}
@@ -689,6 +942,26 @@ theorem finiteBernoulliProbability_bkEvent_empty_le {E : Finset ι} {p : ℝ}
     have hSE : S ⊆ E := (Finset.subset_insert a S).trans hsub
     exact (ih hSE).trans
       (finiteBernoulliProbability_bkEvent_le_insert haE haS hp0 hp1 T U)
+
+/-- The full inhomogeneous interpolation chain. -/
+theorem finiteBernoulliProbabilityFamily_bkEvent_empty_le
+    {E : Finset ι} {q : ι → ℝ}
+    (hq0 : ∀ e ∈ E, 0 ≤ q e) (hq1 : ∀ e ∈ E, q e ≤ 1)
+    (T U : Set (Finset ι)) :
+    ∀ S : Finset ι, S ⊆ E →
+      finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+          (bkEvent (∅ : Finset ι) T U) ≤
+        finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+          (bkEvent S T U) := by
+  intro S
+  induction S using Finset.induction_on with
+  | empty => exact fun _ ↦ le_rfl
+  | insert a S haS ih =>
+      intro hsub
+      have haE : a ∈ E := hsub (Finset.mem_insert_self a S)
+      have hSE : S ⊆ E := (Finset.subset_insert a S).trans hsub
+      exact (ih hSE).trans
+        (finiteBernoulliProbabilityFamily_bkEvent_le_insert haE haS hq0 hq1 T U)
 
 end TwoCopy
 
@@ -709,6 +982,26 @@ theorem finiteBernoulliProbability_traceDisjointOccurrence_le_mul [DecidableEq �
         finiteBernoulliProbability_bkEvent_empty_le hp0 hp1 T U E Finset.Subset.rfl
     _ = finiteBernoulliProbability E p T * finiteBernoulliProbability E p U :=
         finiteBernoulliProbability_bkEvent_self p hT hU
+
+/-- **Inhomogeneous finite BK inequality.** Each coordinate may have its own density `q e`;
+the two-copy swap still preserves weight because it exchanges equal-density copies of the same
+coordinate. -/
+theorem finiteBernoulliProbabilityFamily_traceDisjointOccurrence_le_mul [DecidableEq ι]
+    {E : Finset ι} {q : ι → ℝ}
+    (hq0 : ∀ e ∈ E, 0 ≤ q e) (hq1 : ∀ e ∈ E, q e ≤ 1)
+    {T U : Set (Finset ι)} (hT : IsIncreasingTrace T) (hU : IsIncreasingTrace U) :
+    finiteBernoulliProbabilityFamily E q (TraceDisjointOccurrence T U) ≤
+      finiteBernoulliProbabilityFamily E q T * finiteBernoulliProbabilityFamily E q U :=
+  calc
+    finiteBernoulliProbabilityFamily E q (TraceDisjointOccurrence T U) =
+        finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+          (bkEvent (∅ : Finset ι) T U) := by
+      rw [bkEvent_empty, finiteBernoulliProbabilityFamily_disjSum_left]
+    _ ≤ finiteBernoulliProbabilityFamily (E.disjSum E) (doubledBernoulliDensity q)
+          (bkEvent E T U) :=
+      finiteBernoulliProbabilityFamily_bkEvent_empty_le hq0 hq1 T U E Finset.Subset.rfl
+    _ = finiteBernoulliProbabilityFamily E q T * finiteBernoulliProbabilityFamily E q U :=
+      finiteBernoulliProbabilityFamily_bkEvent_self q hT hU
 
 /-! ### Theorem (2.12)/(2.15): the BK inequality -/
 

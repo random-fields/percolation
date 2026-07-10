@@ -32,6 +32,7 @@ import Percolation.Critical.TorusGhostConditioning
 import Percolation.Critical.GhostDifferential
 import Percolation.Critical.GhostSqrt
 import Percolation.Critical.GhostRectangle
+import Percolation.Critical.GhostConclusion
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries

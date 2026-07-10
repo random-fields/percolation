@@ -83,6 +83,23 @@ noncomputable def cubicTorusEdgeFinset (d N : ℕ) (hN : 2 ≤ N) :
   letI : NeZero (2 * N) := ⟨by omega⟩
   exact Finset.univ
 
+noncomputable def cubicTorusVertexFinset (d N : ℕ) (hN : 2 ≤ N) :
+    Finset (CubicTorus d N) := by
+  letI : NeZero (2 * N) := ⟨by omega⟩
+  exact Finset.univ
+
+@[simp]
+theorem mem_cubicTorusEdgeFinset {d N : ℕ} (hN : 2 ≤ N)
+    (e : CubicTorusEdge d N) : e ∈ cubicTorusEdgeFinset d N hN := by
+  unfold cubicTorusEdgeFinset
+  simp
+
+@[simp]
+theorem mem_cubicTorusVertexFinset {d N : ℕ} (hN : 2 ≤ N)
+    (x : CubicTorus d N) : x ∈ cubicTorusVertexFinset d N hN := by
+  unfold cubicTorusVertexFinset
+  simp
+
 theorem dependsOn_torusConnectionEvent (d N : ℕ) (hN : 2 ≤ N)
     (x y : CubicTorus d N) :
     DependsOn (cubicTorusEdgeFinset d N hN) (torusConnectionEvent d N x y) := by

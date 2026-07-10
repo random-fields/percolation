@@ -448,15 +448,120 @@ theorem open_mem_radiusDeletedBoundaryEdges_iff_pivotalEdge
     exact pivotal_open_of_mem_event (isIncreasingEvent_radiusConnectionEvent d x n)
       hω ((mem_radiusPivotalDarts_iff hω a).mp ha).2
 
+/-- Every vertex before a pivotal dart on the canonical witness lies on the
+origin side of its deleted cut. -/
+theorem canonical_take_pivotalDart_support_subset_deletedReachable
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a : (cubicGraph d).Dart} (ha : a ∈ radiusPivotalDarts hω) :
+    let W := canonicalRadiusWitness hω
+    let i := W.walk.darts.idxOf a
+    ∀ z ∈ (W.walk.take i).support,
+      z ∈ radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω := by
+  classical
+  dsimp only
+  let W := canonicalRadiusWitness hω
+  let i := W.walk.darts.idxOf a
+  have haW := (mem_radiusPivotalDarts_iff hω a).mp ha |>.1
+  have hi : i < W.walk.darts.length := List.idxOf_lt_length_iff.2 haW
+  have hget : W.walk.darts[i] = a := List.getElem_idxOf hi
+  have hopen := walkIsOpen_diff_singleton_take_before_dart W.walk W.isPath W.isOpen hi
+  rw [hget] at hopen
+  apply walk_support_subset_radiusDeletedReachableVertices (W.walk.take i) hopen
+  intro f hf
+  apply Finset.mem_erase.mpr
+  have hfTake : (f : Sym2 (Cubic d)) ∈ W.walk.edges.take i := by
+    rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_take] at hf
+    exact hf
+  refine ⟨?_, W.edge_subset ((mem_walkEdgeFinset_iff W.walk f).mpr
+    (List.mem_of_mem_take hfTake))⟩
+  intro hfa
+  have hval : (f : Sym2 (Cubic d)) = a.edge := by
+    simpa [cubicEdgeOfDart] using congrArg Subtype.val hfa
+  apply dart_edge_not_mem_edges_take W.walk W.isPath.isTrail hi
+  simpa [hget] using hval ▸ hfTake
+
+/-- Every vertex strictly after a pivotal dart on the canonical witness lies
+outside its deleted reachable set. -/
+theorem canonical_drop_after_pivotalDart_support_disjoint_deletedReachable
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a : (cubicGraph d).Dart} (ha : a ∈ radiusPivotalDarts hω) :
+    let W := canonicalRadiusWitness hω
+    let i := W.walk.darts.idxOf a
+    ∀ z ∈ (W.walk.drop (i + 1)).support,
+      z ∉ radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω := by
+  classical
+  dsimp only
+  let W := canonicalRadiusWitness hω
+  let i := W.walk.darts.idxOf a
+  let e := cubicEdgeOfDart a
+  have haData := (mem_radiusPivotalDarts_iff hω a).mp ha
+  have hi : i < W.walk.darts.length := List.idxOf_lt_length_iff.2 haData.1
+  have hget : W.walk.darts[i] = a := List.getElem_idxOf hi
+  have htailOpen : walkIsOpen (ω \ {e}) (W.walk.drop (i + 1)) := by
+    have h := walkIsOpen_diff_singleton_drop_after_dart W.walk W.isPath W.isOpen hi
+    simpa [e, hget] using h
+  have htailSub : walkEdgeFinset (W.walk.drop (i + 1)) ⊆
+      (cubicMetricBallEdges d x n).erase e := by
+    intro f hf
+    apply Finset.mem_erase.mpr
+    have hfDrop : (f : Sym2 (Cubic d)) ∈ W.walk.edges.drop (i + 1) := by
+      rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_drop] at hf
+      exact hf
+    refine ⟨?_, W.edge_subset ((mem_walkEdgeFinset_iff W.walk f).mpr
+      (List.mem_of_mem_drop hfDrop))⟩
+    intro hfe
+    have hval : (f : Sym2 (Cubic d)) = a.edge := by
+      simpa [e, cubicEdgeOfDart] using congrArg Subtype.val hfe
+    apply dart_edge_not_mem_edges_drop_succ W.walk W.isPath.isTrail hi
+    simpa [hget] using hval ▸ hfDrop
+  intro z hz hzD
+  rcases (mem_radiusDeletedReachableVertices_iff.mp hzD).2 with
+    ⟨q, hqopen, hqsub⟩
+  let r := (W.walk.drop (i + 1)).dropUntil z hz
+  have hropen : walkIsOpen (ω \ {e}) r :=
+    walkIsOpen_of_isSubwalk htailOpen
+      ((W.walk.drop (i + 1)).isSubwalk_dropUntil hz)
+  have hrsub : walkEdgeFinset r ⊆ (cubicMetricBallEdges d x n).erase e := by
+    intro f hf
+    apply htailSub
+    rw [mem_walkEdgeFinset_iff] at hf ⊢
+    exact ((W.walk.drop (i + 1)).isSubwalk_dropUntil hz).edges_subset hf
+  have hclosed : ω \ {e} ∈ radiusConnectionEvent d x n :=
+    ⟨W.endpoint, W.sphere_mem, q.append r, walkIsOpen_append hqopen hropen, by
+      intro f hf
+      rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_append,
+        List.mem_append] at hf
+      rcases hf with hf | hf
+      · exact (Finset.mem_erase.mp (hqsub ((mem_walkEdgeFinset_iff q f).mpr hf))).2
+      · exact (Finset.mem_erase.mp (hrsub ((mem_walkEdgeFinset_iff r f).mpr hf))).2⟩
+  exact ((isIncreasingEvent_radiusConnectionEvent d x n).isPivotal_iff e ω).mp
+    haData.2 |>.2 hclosed
+
+/-- Radius-support edges incident to a prescribed finite vertex set. -/
+noncomputable def radiusIncidentEdgesOf
+    (d : ℕ) (x : Cubic d) (n : ℕ) (D : Finset (Cubic d)) :
+    Finset (CubicEdge d) := by
+  classical
+  exact (cubicMetricBallEdges d x n).filter fun f ↦
+    ∃ y ∈ D, y ∈ (f : Sym2 (Cubic d))
+
+@[simp]
+theorem mem_radiusIncidentEdgesOf_iff
+    {d n : ℕ} {x : Cubic d} {D : Finset (Cubic d)} {f : CubicEdge d} :
+    f ∈ radiusIncidentEdgesOf d x n D ↔
+      f ∈ cubicMetricBallEdges d x n ∧
+      ∃ y ∈ D, y ∈ (f : Sym2 (Cubic d)) := by
+  classical
+  simp [radiusIncidentEdgesOf]
+
 /-- Finite exploration support: all radius-support edges incident to the
 deleted reachable set. -/
 noncomputable def radiusDeletedIncidentEdges
     (d : ℕ) (x : Cubic d) (n : ℕ) (e : CubicEdge d)
-    (ω : EdgeConfiguration d) : Finset (CubicEdge d) := by
-  classical
-  exact (cubicMetricBallEdges d x n).filter fun f ↦
-    ∃ y ∈ radiusDeletedReachableVertices d x n e ω,
-      y ∈ (f : Sym2 (Cubic d))
+    (ω : EdgeConfiguration d) : Finset (CubicEdge d) :=
+  radiusIncidentEdgesOf d x n (radiusDeletedReachableVertices d x n e ω)
 
 @[simp]
 theorem mem_radiusDeletedIncidentEdges_iff
@@ -466,7 +571,6 @@ theorem mem_radiusDeletedIncidentEdges_iff
       f ∈ cubicMetricBallEdges d x n ∧
       ∃ y ∈ radiusDeletedReachableVertices d x n e ω,
         y ∈ (f : Sym2 (Cubic d)) := by
-  classical
   simp [radiusDeletedIncidentEdges]
 
 theorem radiusDeletedBoundaryEdges_subset_incidentEdges
@@ -489,6 +593,163 @@ theorem radiusDeletedBoundaryEdges_subset_incidentEdges
       rcases hf'.2 with h | h
       · exact ⟨u, h.1, by simp⟩
       · exact ⟨v, h.1, by simp⟩
+
+/-- A pivotal edge is part of the exposed incident support at `a` exactly
+when it occurs no later than `a` on the canonical pivotal chain. -/
+theorem pivotalDart_mem_deletedIncidentEdges_iff_idxOf_le
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a b : (cubicGraph d).Dart}
+    (ha : a ∈ radiusPivotalDarts hω) (hb : b ∈ radiusPivotalDarts hω) :
+    cubicEdgeOfDart b ∈
+        radiusDeletedIncidentEdges d x n (cubicEdgeOfDart a) ω ↔
+      (canonicalRadiusWitness hω).walk.darts.idxOf b ≤
+        (canonicalRadiusWitness hω).walk.darts.idxOf a := by
+  classical
+  let W := canonicalRadiusWitness hω
+  let D := radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω
+  let i := W.walk.darts.idxOf a
+  let j := W.walk.darts.idxOf b
+  have haW : a ∈ W.walk.darts := (mem_radiusPivotalDarts_iff hω a).mp ha |>.1
+  have hbW : b ∈ W.walk.darts := (mem_radiusPivotalDarts_iff hω b).mp hb |>.1
+  have hi : i < W.walk.darts.length := List.idxOf_lt_length_iff.2 haW
+  have hj : j < W.walk.darts.length := List.idxOf_lt_length_iff.2 hbW
+  have haGet : W.walk.darts[i] = a := List.getElem_idxOf hi
+  have hbGet : W.walk.darts[j] = b := List.getElem_idxOf hj
+  have hbE : cubicEdgeOfDart b ∈ cubicMetricBallEdges d x n := by
+    apply W.edge_subset
+    rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges]
+    exact List.mem_map.mpr ⟨b, hbW, by simp [cubicEdgeOfDart]⟩
+  change cubicEdgeOfDart b ∈
+      radiusDeletedIncidentEdges d x n (cubicEdgeOfDart a) ω ↔ j ≤ i
+  constructor
+  · intro hbInc
+    by_contra hji
+    have hij : i + 1 ≤ j := by omega
+    have hbNotTake : b ∉ W.walk.darts.take (i + 1) := by
+      rw [List.mem_take_iff_idxOf_lt hbW]
+      change ¬j < i + 1
+      omega
+    have hbDrop : b ∈ W.walk.darts.drop (i + 1) := by
+      have hbAll : b ∈ W.walk.darts.take (i + 1) ++ W.walk.darts.drop (i + 1) := by
+        simpa only [List.take_append_drop] using hbW
+      exact (List.mem_append.mp hbAll).resolve_left hbNotTake
+    have hbTail : b ∈ (W.walk.drop (i + 1)).darts := by
+      rwa [SimpleGraph.Walk.darts_drop]
+    have hbfstNot : b.toProd.1 ∉ D := by
+      apply canonical_drop_after_pivotalDart_support_disjoint_deletedReachable hω ha
+      exact (W.walk.drop (i + 1)).dart_fst_mem_support_of_mem_darts hbTail
+    have hbsndNot : b.toProd.2 ∉ D := by
+      apply canonical_drop_after_pivotalDart_support_disjoint_deletedReachable hω ha
+      exact (W.walk.drop (i + 1)).dart_snd_mem_support_of_mem_darts hbTail
+    rcases (mem_radiusDeletedIncidentEdges_iff.mp hbInc).2 with ⟨y, hyD, hyb⟩
+    have hy : y = b.toProd.1 ∨ y = b.toProd.2 := by
+      change y ∈ s(b.toProd.1, b.toProd.2) at hyb
+      exact Sym2.mem_iff.mp hyb
+    exact hy.elim (fun h ↦ hbfstNot (h ▸ hyD))
+      (fun h ↦ hbsndNot (h ▸ hyD))
+  · intro hji
+    rcases hji.lt_or_eq with hlt | heq
+    · have hbTakeDarts : b ∈ (W.walk.take i).darts := by
+        rw [SimpleGraph.Walk.darts_take]
+        rw [List.mem_take_iff_idxOf_lt hbW]
+        exact hlt
+      have hbfstD : b.toProd.1 ∈ D := by
+        apply canonical_take_pivotalDart_support_subset_deletedReachable hω ha
+        exact (W.walk.take i).dart_fst_mem_support_of_mem_darts hbTakeDarts
+      rw [mem_radiusDeletedIncidentEdges_iff]
+      refine ⟨hbE, b.toProd.1, hbfstD, ?_⟩
+      change b.toProd.1 ∈ s(b.toProd.1, b.toProd.2)
+      simp
+    · have hab : b = a := (List.idxOf_inj hbW).mp heq
+      rw [hab]
+      exact radiusDeletedBoundaryEdges_subset_incidentEdges
+        (cubicEdgeOfDart_mem_radiusDeletedBoundaryEdges hω ha)
+
+/-- Deleted clusters are nested in the canonical pivotal order. -/
+theorem radiusDeletedReachableVertices_subset_of_pivotalDart_idxOf_le
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a b : (cubicGraph d).Dart}
+    (ha : a ∈ radiusPivotalDarts hω) (hb : b ∈ radiusPivotalDarts hω)
+    (hba : (canonicalRadiusWitness hω).walk.darts.idxOf b ≤
+      (canonicalRadiusWitness hω).walk.darts.idxOf a) :
+    radiusDeletedReachableVertices d x n (cubicEdgeOfDart b) ω ⊆
+      radiusDeletedReachableVertices d x n (cubicEdgeOfDart a) ω := by
+  classical
+  let W := canonicalRadiusWitness hω
+  let i := W.walk.darts.idxOf b
+  let j := W.walk.darts.idxOf a
+  change i ≤ j at hba
+  rcases hba.lt_or_eq with hij | hij
+  · have haW : a ∈ W.walk.darts := (mem_radiusPivotalDarts_iff hω a).mp ha |>.1
+    have hbW : b ∈ W.walk.darts := (mem_radiusPivotalDarts_iff hω b).mp hb |>.1
+    have haNotTake : a ∉ W.walk.darts.take (i + 1) := by
+      rw [List.mem_take_iff_idxOf_lt haW]
+      change ¬j < i + 1
+      omega
+    have haDrop : a ∈ (W.walk.drop (i + 1)).darts := by
+      rw [SimpleGraph.Walk.darts_drop]
+      have haAll : a ∈ W.walk.darts.take (i + 1) ++ W.walk.darts.drop (i + 1) := by
+        simpa only [List.take_append_drop] using haW
+      exact (List.mem_append.mp haAll).resolve_left haNotTake
+    have hafstNot : a.toProd.1 ∉
+        radiusDeletedReachableVertices d x n (cubicEdgeOfDart b) ω := by
+      apply canonical_drop_after_pivotalDart_support_disjoint_deletedReachable hω hb
+      exact (W.walk.drop (i + 1)).dart_fst_mem_support_of_mem_darts haDrop
+    intro y hy
+    have hyData := mem_radiusDeletedReachableVertices_iff.mp hy
+    rcases hyData.2 with ⟨q, hqopen, hqsub⟩
+    have hqSupport : ∀ z ∈ q.support,
+        z ∈ radiusDeletedReachableVertices d x n (cubicEdgeOfDart b) ω :=
+      walk_support_subset_radiusDeletedReachableVertices q hqopen hqsub
+    have haNotQ : (cubicEdgeOfDart a : Sym2 (Cubic d)) ∉ q.edges := by
+      intro haQ
+      apply hafstNot
+      apply hqSupport a.toProd.1
+      apply q.mem_support_of_mem_edges haQ
+      change a.toProd.1 ∈ s(a.toProd.1, a.toProd.2)
+      simp
+    have hqopenA : walkIsOpen (ω \ {cubicEdgeOfDart a}) q := by
+      intro f hf
+      have hfω := hqopen f hf
+      refine ⟨hfω.1, ?_⟩
+      intro hfa
+      apply haNotQ
+      have hval : f = (cubicEdgeOfDart a : Sym2 (Cubic d)) := by
+        exact congrArg Subtype.val (by simpa using hfa)
+      exact hval ▸ hf
+    rw [mem_radiusDeletedReachableVertices_iff]
+    refine ⟨hyData.1, q, hqopenA, ?_⟩
+    intro f hf
+    apply Finset.mem_erase.mpr
+    have hfOld := hqsub hf
+    refine ⟨?_, (Finset.mem_erase.mp hfOld).2⟩
+    intro hfa
+    apply haNotQ
+    have hval : (f : Sym2 (Cubic d)) = (cubicEdgeOfDart a : Sym2 (Cubic d)) :=
+      congrArg Subtype.val hfa
+    exact hval ▸ (mem_walkEdgeFinset_iff q f).mp hf
+  · have hab : b = a := by
+      have hbW := (mem_radiusPivotalDarts_iff hω b).mp hb |>.1
+      exact (List.idxOf_inj hbW).mp hij
+    simp [hab]
+
+theorem radiusDeletedIncidentEdges_subset_of_pivotalDart_idxOf_le
+    {d n : ℕ} {x : Cubic d} {ω : EdgeConfiguration d}
+    (hω : ω ∈ radiusConnectionEvent d x n)
+    {a b : (cubicGraph d).Dart}
+    (ha : a ∈ radiusPivotalDarts hω) (hb : b ∈ radiusPivotalDarts hω)
+    (hba : (canonicalRadiusWitness hω).walk.darts.idxOf b ≤
+      (canonicalRadiusWitness hω).walk.darts.idxOf a) :
+    radiusDeletedIncidentEdges d x n (cubicEdgeOfDart b) ω ⊆
+      radiusDeletedIncidentEdges d x n (cubicEdgeOfDart a) ω := by
+  intro f hf
+  rw [mem_radiusDeletedIncidentEdges_iff] at hf ⊢
+  refine ⟨hf.1, ?_⟩
+  rcases hf.2 with ⟨y, hy, hyf⟩
+  exact ⟨y, radiusDeletedReachableVertices_subset_of_pivotalDart_idxOf_le
+    hω ha hb hba hy, hyf⟩
 
 /-- One deleted-open step from a reachable vertex stays in the deleted
 reachable set. -/

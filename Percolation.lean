@@ -38,6 +38,7 @@ import Percolation.Critical.Translation
 import Percolation.Critical.RadiusBlock
 import Percolation.Critical.RadiusDecay
 import Percolation.Critical.ClusterTail
+import Percolation.Critical.MenshikovBootstrap
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries

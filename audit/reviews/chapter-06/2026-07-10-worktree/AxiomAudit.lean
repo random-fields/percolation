@@ -1,0 +1,9 @@
+import Percolation.Critical.BoxRadiusRate
+
+#print axioms Percolation.boxRadiusTail_exponential_decay_of_susceptibility_lt_top
+#print axioms Percolation.mem_boxRadiusConnectionEvent_iff_exists_connection
+#print axioms Percolation.cubicL1Dist_le_card_mul_lInfDist
+#print axioms Percolation.boxRadiusTail_logRate_tendsto
+#print axioms Percolation.boxRadiusTail_twoSided_decay
+#print axioms Percolation.boxRadiusTail_add_le_polynomial_mul
+#print axioms Percolation.boxRadiusTail_mul_le_polynomial_mul_add

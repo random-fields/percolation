@@ -530,8 +530,7 @@ theorem cubicAnimalCount_mul_maximizingWeight_le_one {d n m b : ℕ}
   simpa [r] using cubicAnimalCount_mul_weight_le_one d n m b r
 
 /-- Assumption-free concrete specialization of the current coefficient-table large-deviation
-bound.  The sharper small-`x` exponent in Grimmett's displayed Theorem 4.20 is proved in the
-subsequent analytic layer. -/
+bound. -/
 theorem cubicAnimal_largeDeviation {d n : ℕ} {p x : ℝ}
     (hd : 0 < d) (hn : 2 ≤ n) (hp0 : 0 < p) (hp1 : p < 1) (hx : 0 < x) :
     ∑ z ∈ exceptionalAnimalPairs d n p x,
@@ -540,6 +539,29 @@ theorem cubicAnimal_largeDeviation {d n : ℕ} {p x : ℝ}
         Real.exp (-((n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) ^ 2 / 18)) := by
   apply latticeAnimal_largeDeviation (fun m b ↦ cubicAnimalCount d n m b)
     hd hn hp0 hp1 hx
+  intro m b hmb
+  have hm : 0 < m := by
+    have hmlo := (Finset.mem_Icc.mp (Finset.mem_product.mp hmb).1).1
+    omega
+  have hb : 0 < b := by
+    have hblo := (Finset.mem_Icc.mp (Finset.mem_product.mp hmb).2).1
+    omega
+  exact cubicAnimalCount_mul_maximizingWeight_le_one hm hb
+
+/-- **Grimmett, Theorem 4.20 (assumption-free concrete cubic-animal form).**
+
+For `n ≥ 2` and the explicit source-faithful range `0 < x ≤ 1/100`, this has exactly the book's
+prefactor and exponent.  Equation (4.25) is discharged by the concrete disjoint cluster-cylinder
+enumeration rather than retained as a parameter. -/
+theorem cubicAnimal_largeDeviation_sharp {d n : ℕ} {p x : ℝ}
+    (hd : 0 < d) (hn : 2 ≤ n) (hp0 : 0 < p) (hp1 : p < 1)
+    (hx0 : 0 < x) (hx : x ≤ 1 / 100) :
+    ∑ z ∈ exceptionalAnimalPairs d n p x,
+        (cubicAnimalCount d n z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+      (3 * d ^ 2 * n ^ 2 : ℕ) *
+        Real.exp (-((n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3)) := by
+  apply latticeAnimal_largeDeviation_sharp (fun m b ↦ cubicAnimalCount d n m b)
+    hd hn hp0 hp1 hx0 hx
   intro m b hmb
   have hm : 0 < m := by
     have hmlo := (Finset.mem_Icc.mp (Finset.mem_product.mp hmb).1).1

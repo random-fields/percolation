@@ -5,6 +5,7 @@ Authors: Yongxi Lin
 -/
 import Percolation.Critical.OpenClusterDensity
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.Convex.Deriv
 
 /-!
 # Lattice animals and large deviations
@@ -27,11 +28,13 @@ It gives the same exponential-in-`n` conclusion needed for differentiability, wi
 * `latticeAnimal_largeDeviation`: the coefficient-table form of Theorem 4.20.
 -/
 
-open scoped BigOperators
+open scoped BigOperators Topology
 
 namespace Percolation
 
 noncomputable section
+
+open Set
 
 /-- Binary relative entropy `D(r ‖ p)`. -/
 def binaryRelativeEntropy (r p : ℝ) : ℝ :=
@@ -172,6 +175,431 @@ theorem weightedTerm_le_exp_neg_entropy {a s r p : ℝ} (m b : ℕ)
 boundary bonds is maximized. This is the parameter `r` in Grimmett's equation (4.24). -/
 def animalOpenFraction (m b : ℕ) : ℝ :=
   (m : ℝ) / (m + b : ℕ)
+
+/-- Minus the logarithm, per occupied bond, of the likelihood ratio appearing in
+Grimmett's equation (4.28).  Here `z=b/m`; its unique minimum is at
+`z=(1-p)/p`. -/
+def animalLogPenalty (p z : ℝ) : ℝ :=
+  -Real.log (p * (1 + z)) - z * Real.log ((1 - p) * (1 + z) / z)
+
+theorem animalLogPenalty_hasDerivAt {p z : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hz : 0 < z) :
+    HasDerivAt (animalLogPenalty p) (-Real.log ((1 - p) * (1 + z) / z)) z := by
+  have hz1 : 1 + z ≠ 0 := by positivity
+  have hfirst : HasDerivAt (fun y : ℝ ↦ p * (1 + y)) p z := by
+    convert (hasDerivAt_const z p).mul ((hasDerivAt_const z 1).add (hasDerivAt_id z)) using 1 <;>
+      simp
+  have hratio : HasDerivAt (fun y : ℝ ↦ (1 - p) * (1 + y) / y)
+      (-(1 - p) / z ^ 2) z := by
+    convert (((hasDerivAt_const z (1 - p)).mul
+      ((hasDerivAt_const z 1).add (hasDerivAt_id z))).div (hasDerivAt_id z) hz.ne') using 1
+    all_goals simp only [Function.id_def, Pi.mul_apply, Pi.add_apply]
+    all_goals field_simp [hz.ne'] <;> ring
+  have hlogFirst : HasDerivAt (fun y : ℝ ↦ -Real.log (p * (1 + y)))
+      (-1 / (1 + z)) z := by
+    convert (hfirst.log (mul_ne_zero hp0.ne' hz1)).neg using 1
+    field_simp [hp0.ne', hz1]
+  have hlogRatio : HasDerivAt (fun y : ℝ ↦ Real.log ((1 - p) * (1 + y) / y))
+      (-1 / (z * (1 + z))) z := by
+    convert hratio.log (by positivity) using 1
+    field_simp [sub_ne_zero.mpr hp1.ne', hz.ne', hz1]
+  have hsecond := (hasDerivAt_id z).mul hlogRatio
+  convert hlogFirst.sub hsecond using 1
+  all_goals simp only [animalLogPenalty, Function.id_def, Pi.mul_apply]
+  all_goals field_simp [hz.ne', hz1] <;> ring
+
+theorem animalLogPenalty_deriv {p z : ℝ} (hp0 : 0 < p) (hp1 : p < 1) (hz : 0 < z) :
+    deriv (animalLogPenalty p) z = -Real.log ((1 - p) * (1 + z) / z) := by
+  exact (animalLogPenalty_hasDerivAt hp0 hp1 hz).deriv
+
+theorem animalLogPenaltySlope_hasDerivAt {p z : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hz : 0 < z) :
+    HasDerivAt (fun y : ℝ ↦ -Real.log ((1 - p) * (1 + y) / y))
+      (1 / (z * (1 + z))) z := by
+  have hz1 : 1 + z ≠ 0 := by positivity
+  have hratio : HasDerivAt (fun y : ℝ ↦ (1 - p) * (1 + y) / y)
+      (-(1 - p) / z ^ 2) z := by
+    convert (((hasDerivAt_const z (1 - p)).mul
+      ((hasDerivAt_const z 1).add (hasDerivAt_id z))).div (hasDerivAt_id z) hz.ne') using 1
+    all_goals simp only [Function.id_def, Pi.mul_apply, Pi.add_apply]
+    all_goals field_simp [hz.ne'] <;> ring
+  have hlog := (hratio.log (by positivity)).neg
+  convert hlog using 1
+  field_simp [hz.ne', hz1, sub_ne_zero.mpr hp1.ne']
+
+theorem animalLogPenalty_deriv_hasDerivAt {p z : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hz : 0 < z) :
+    HasDerivAt (deriv (animalLogPenalty p)) (1 / (z * (1 + z))) z := by
+  have hlog' := animalLogPenaltySlope_hasDerivAt hp0 hp1 hz
+  have heq : deriv (animalLogPenalty p) =ᶠ[𝓝 z]
+      (fun y : ℝ ↦ -Real.log ((1 - p) * (1 + y) / y)) := by
+    filter_upwards [eventually_gt_nhds hz] with y hy
+    exact animalLogPenalty_deriv hp0 hp1 hy
+  exact hlog'.congr_of_eventuallyEq heq
+
+theorem animalLogPenalty_at_mode {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) :
+    animalLogPenalty p ((1 - p) / p) = 0 := by
+  have hq : 0 < 1 - p := sub_pos.mpr hp1
+  have hfirst : p * (1 + (1 - p) / p) = 1 := by field_simp [hp0.ne'] <;> ring
+  have hsecond : (1 - p) * (1 + (1 - p) / p) / ((1 - p) / p) = 1 := by
+    field_simp [hp0.ne', hq.ne'] <;> ring
+  simp [animalLogPenalty, hfirst, hsecond]
+
+theorem animalLogPenalty_deriv_at_mode {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) :
+    deriv (animalLogPenalty p) ((1 - p) / p) = 0 := by
+  have hz : 0 < (1 - p) / p := div_pos (sub_pos.mpr hp1) hp0
+  rw [animalLogPenalty_deriv hp0 hp1 hz]
+  have h : (1 - p) * (1 + (1 - p) / p) / ((1 - p) / p) = 1 := by
+    field_simp [hp0.ne', sub_ne_zero.mpr hp1.ne'] <;> ring
+  simp [h]
+
+/-- Uniform curvature bound on the `x`-neighbourhood of the maximizing boundary-to-edge ratio.
+The explicit `1/100` is one source-faithful witness for Grimmett's unspecified constant `s`. -/
+theorem animalLogPenalty_curvature_lower {p x z : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hx : x ≤ 1 / 100)
+    (hzlo : (1 - p) / p * (1 - x * p) ≤ z)
+    (hzhi : z ≤ (1 - p) / p * (1 + x * p)) :
+    8 * p ^ 2 / (9 * (1 - p)) ≤ 1 / (z * (1 + z)) := by
+  have hq0 : 0 < 1 - p := sub_pos.mpr hp1
+  have hp_le : p ≤ 1 := hp1.le
+  have hxp : x * p ≤ 1 / 100 := by nlinarith
+  have hfac : 0 < 1 - x * p := by nlinarith
+  have hz0 : 0 < z := lt_of_lt_of_le (mul_pos (div_pos hq0 hp0) hfac) hzlo
+  have hz_upper : z ≤ 101 * (1 - p) / (100 * p) := by
+    calc
+      z ≤ (1 - p) / p * (1 + x * p) := hzhi
+      _ ≤ (1 - p) / p * (101 / 100) := by
+        gcongr
+        nlinarith
+      _ = 101 * (1 - p) / (100 * p) := by ring
+  have hz1_upper : 1 + z ≤ 101 / (100 * p) := by
+    calc
+      1 + z ≤ 1 + 101 * (1 - p) / (100 * p) := by linarith
+      _ ≤ 101 / (100 * p) := by
+        apply (le_div_iff₀ (by positivity : 0 < 100 * p)).2
+        field_simp [hp0.ne']
+        nlinarith
+  have hprod : z * (1 + z) ≤ 10201 * (1 - p) / (10000 * p ^ 2) := by
+    calc
+      z * (1 + z) ≤ (101 * (1 - p) / (100 * p)) * (101 / (100 * p)) := by
+        gcongr
+      _ = 10201 * (1 - p) / (10000 * p ^ 2) := by ring
+  have hprod' : z * (1 + z) ≤ 9 * (1 - p) / (8 * p ^ 2) := by
+    calc
+      z * (1 + z) ≤ 10201 * (1 - p) / (10000 * p ^ 2) := hprod
+      _ ≤ 9 * (1 - p) / (8 * p ^ 2) := by
+        apply (div_le_div_iff₀ (by positivity : 0 < 10000 * p ^ 2)
+          (by positivity : 0 < 8 * p ^ 2)).2
+        nlinarith
+  have hinv := one_div_le_one_div_of_le (by positivity : 0 < z * (1 + z)) hprod'
+  convert hinv using 1 <;> field_simp [hp0.ne', hq0.ne'] <;> ring
+
+/-- Strong-convexity form of the uniform Taylor estimate in the proof of Theorem 4.20. -/
+theorem animalLogPenalty_ge_quadratic {p x z : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hx0 : 0 ≤ x) (hx : x ≤ 1 / 100)
+    (hzlo : (1 - p) / p * (1 - x * p) ≤ z)
+    (hzhi : z ≤ (1 - p) / p * (1 + x * p)) :
+    4 * p ^ 2 / (9 * (1 - p)) * (z - (1 - p) / p) ^ 2 ≤ animalLogPenalty p z := by
+  let z₀ : ℝ := (1 - p) / p
+  let K : ℝ := 8 * p ^ 2 / (9 * (1 - p))
+  let S : Set ℝ := Icc (z₀ * (1 - x * p)) (z₀ * (1 + x * p))
+  let H : ℝ → ℝ := fun y ↦ animalLogPenalty p y - K / 2 * (y - z₀) ^ 2
+  let L : ℝ → ℝ := fun y ↦ -Real.log ((1 - p) * (1 + y) / y) - K * (y - z₀)
+  have hq0 : 0 < 1 - p := sub_pos.mpr hp1
+  have hxp : x * p ≤ 1 / 100 := by nlinarith [hp1.le]
+  have hfac : 0 < 1 - x * p := by nlinarith
+  have hz₀ : 0 < z₀ := div_pos hq0 hp0
+  have hSpos : ∀ y ∈ S, 0 < y := by
+    intro y hy
+    exact lt_of_lt_of_le (mul_pos hz₀ hfac) hy.1
+  have hHderiv : ∀ y ∈ S, HasDerivAt H (L y) y := by
+    intro y hy
+    have hy0 := hSpos y hy
+    have hquad := (((hasDerivAt_id y).sub_const z₀).pow 2).const_mul (K / 2)
+    convert (animalLogPenalty_hasDerivAt hp0 hp1 hy0).sub hquad using 1
+    all_goals simp only [H, L, Function.id_def]
+    all_goals ring
+  have hLderiv : ∀ y ∈ S,
+      HasDerivAt L (1 / (y * (1 + y)) - K) y := by
+    intro y hy
+    have hy0 := hSpos y hy
+    have hk : HasDerivAt (fun t : ℝ ↦ K * (t - z₀)) K y := by
+      convert ((hasDerivAt_id y).sub_const z₀).const_mul K using 1 <;> simp
+    simpa only [L] using (animalLogPenaltySlope_hasDerivAt hp0 hp1 hy0).sub hk
+  have hconvex : ConvexOn ℝ S H := by
+    have hSconvex : Convex ℝ S := by
+      dsimp only [S]
+      exact convex_Icc _ _
+    apply convexOn_of_hasDerivWithinAt2_nonneg hSconvex
+    · intro y hy
+      exact (hHderiv y hy).continuousAt.continuousWithinAt
+    · intro y hy
+      exact (hHderiv y (interior_subset hy)).hasDerivWithinAt
+    · intro y hy
+      exact (hLderiv y (interior_subset hy)).hasDerivWithinAt
+    · intro y hy
+      have hyS := interior_subset hy
+      exact sub_nonneg.mpr (animalLogPenalty_curvature_lower hp0 hp1 hx hyS.1 hyS.2)
+  have hz₀S : z₀ ∈ S := by
+    constructor <;> dsimp only [S] <;> nlinarith [mul_nonneg hx0 hp0.le]
+  have hzS : z ∈ S := ⟨hzlo, hzhi⟩
+  have hH₀ : H z₀ = 0 := by
+    dsimp only [H]
+    rw [animalLogPenalty_at_mode hp0 hp1]
+    ring
+  have hderivH₀ : HasDerivAt H 0 z₀ := by
+    convert hHderiv z₀ hz₀S using 1
+    dsimp only [L, z₀]
+    have h : (1 - p) * (1 + (1 - p) / p) / ((1 - p) / p) = 1 := by
+      field_simp [hp0.ne', sub_ne_zero.mpr hp1.ne'] <;> ring
+    simp [h]
+  have hmin : H z₀ ≤ H z := by
+    rcases lt_trichotomy z₀ z with hlt | heq | hgt
+    · have hslope := hconvex.le_slope_of_hasDerivAt hz₀S hzS hlt hderivH₀
+      rw [slope_def_field, hH₀] at hslope
+      rcases div_nonneg_iff.mp hslope with hslope | hslope
+      · rw [hH₀]
+        simpa using hslope.1
+      · exact (not_lt_of_ge hslope.2 (sub_pos.mpr hlt)).elim
+    · simpa [heq]
+    · have hslope := hconvex.slope_le_of_hasDerivAt hzS hz₀S hgt hderivH₀
+      rw [slope_def_field, hH₀, div_nonpos_iff] at hslope
+      rcases hslope with hslope | hslope
+      · linarith
+      · rw [hH₀]
+        linarith [hslope.1]
+  rw [hH₀] at hmin
+  dsimp only [H, K, z₀] at hmin ⊢
+  have hcoef : 4 * p ^ 2 / (9 * (1 - p)) =
+      (8 * p ^ 2 / (9 * (1 - p))) / 2 := by ring
+  rw [hcoef]
+  linarith
+
+theorem animalLogPenalty_convexOn_pos {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) :
+    ConvexOn ℝ (Ioi 0) (animalLogPenalty p) := by
+  let L : ℝ → ℝ := fun y ↦ -Real.log ((1 - p) * (1 + y) / y)
+  apply convexOn_of_hasDerivWithinAt2_nonneg (convex_Ioi 0)
+  · intro y hy
+    exact (animalLogPenalty_hasDerivAt hp0 hp1 hy).continuousAt.continuousWithinAt
+  · intro y hy
+    have hy' : 0 < y := interior_subset hy
+    exact (animalLogPenalty_hasDerivAt hp0 hp1 hy').hasDerivWithinAt
+  · intro y hy
+    have hy' : 0 < y := interior_subset hy
+    exact (animalLogPenaltySlope_hasDerivAt hp0 hp1 hy').hasDerivWithinAt
+  · intro y hy
+    have hy' : 0 < y := interior_subset hy
+    exact one_div_nonneg.mpr (mul_nonneg hy'.le (by linarith))
+
+theorem animalLogPenalty_anti_left_of_mode {p z y : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hz : 0 < z) (hzy : z ≤ y)
+    (hy : y ≤ (1 - p) / p) :
+    animalLogPenalty p y ≤ animalLogPenalty p z := by
+  rcases hzy.eq_or_lt with rfl | hzy
+  · rfl
+  have hy0 : 0 < y := hz.trans_le hzy.le
+  have hratio : 1 ≤ (1 - p) * (1 + y) / y := by
+    apply (le_div_iff₀ hy0).2
+    apply (le_div_iff₀ hp0).mp at hy
+    nlinarith
+  have hderiv : -Real.log ((1 - p) * (1 + y) / y) ≤ 0 :=
+    neg_nonpos.mpr (Real.log_nonneg hratio)
+  have hslope := (animalLogPenalty_convexOn_pos hp0 hp1).slope_le_of_hasDerivAt
+    hz hy0 hzy (animalLogPenalty_hasDerivAt hp0 hp1 hy0)
+  rw [slope_def_field] at hslope
+  have hslope0 : (animalLogPenalty p y - animalLogPenalty p z) / (y - z) ≤ 0 :=
+    hslope.trans hderiv
+  exact sub_nonpos.mp ((div_nonpos_iff.mp hslope0).resolve_left (fun h ↦
+    (not_le_of_gt (sub_pos.mpr hzy)) h.2) |>.1)
+
+theorem animalLogPenalty_mono_right_of_mode {p y z : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) (hy : (1 - p) / p ≤ y)
+    (hyz : y ≤ z) :
+    animalLogPenalty p y ≤ animalLogPenalty p z := by
+  have hy0 : 0 < y := (div_pos (sub_pos.mpr hp1) hp0).trans_le hy
+  have hz0 : 0 < z := hy0.trans_le hyz
+  rcases hyz.eq_or_lt with rfl | hyz
+  · rfl
+  have hratioPos : 0 < (1 - p) * (1 + y) / y := by positivity
+  have hratio : (1 - p) * (1 + y) / y ≤ 1 := by
+    apply (div_le_one hy0).2
+    apply (div_le_iff₀ hp0).mp at hy
+    nlinarith
+  have hderiv : 0 ≤ -Real.log ((1 - p) * (1 + y) / y) :=
+    neg_nonneg.mpr (Real.log_nonpos hratioPos.le hratio)
+  have hslope := (animalLogPenalty_convexOn_pos hp0 hp1).le_slope_of_hasDerivAt
+    hy0 hz0 hyz (animalLogPenalty_hasDerivAt hp0 hp1 hy0)
+  rw [slope_def_field] at hslope
+  have hslope0 : 0 ≤ (animalLogPenalty p z - animalLogPenalty p y) / (z - y) :=
+    hderiv.trans hslope
+  exact sub_nonneg.mp ((div_nonneg_iff.mp hslope0).resolve_right (fun h ↦
+    (not_le_of_gt (sub_pos.mpr hyz)) h.2) |>.1)
+
+theorem exp_neg_mul_animalLogPenalty {p : ℝ} (m b : ℕ)
+    (hp0 : 0 < p) (hp1 : p < 1) (hm : 0 < m) (hb : 0 < b) :
+    Real.exp (-(m : ℝ) * animalLogPenalty p ((b : ℝ) / m)) =
+      (p / animalOpenFraction m b) ^ m *
+        ((1 - p) / (1 - animalOpenFraction m b)) ^ b := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hbR : (0 : ℝ) < b := by exact_mod_cast hb
+  have hsR : (0 : ℝ) < m + b := by positivity
+  have hz : 0 < (b : ℝ) / m := div_pos hbR hmR
+  have hr0 : 0 < animalOpenFraction m b := by
+    exact div_pos hmR (by simpa using hsR)
+  have hr1 : animalOpenFraction m b < 1 := by
+    rw [animalOpenFraction, div_lt_one (by simpa using hsR)]
+    exact_mod_cast (show m < m + b by omega)
+  have hfirst : p * (1 + (b : ℝ) / m) = p / animalOpenFraction m b := by
+    simp only [animalOpenFraction, Nat.cast_add]
+    field_simp [hmR.ne', hsR.ne']
+  have hsecond : (1 - p) * (1 + (b : ℝ) / m) / ((b : ℝ) / m) =
+      (1 - p) / (1 - animalOpenFraction m b) := by
+    simp only [animalOpenFraction, Nat.cast_add]
+    field_simp [hmR.ne', hbR.ne', hsR.ne']
+    ring
+  rw [animalLogPenalty, hfirst, hsecond]
+  have hA : 0 < p / animalOpenFraction m b := div_pos hp0 hr0
+  have hB : 0 < (1 - p) / (1 - animalOpenFraction m b) :=
+    div_pos (sub_pos.mpr hp1) (sub_pos.mpr hr1)
+  have hexponent : -(m : ℝ) *
+      (-Real.log (p / animalOpenFraction m b) -
+        ((b : ℝ) / m) * Real.log ((1 - p) / (1 - animalOpenFraction m b))) =
+      (m : ℝ) * Real.log (p / animalOpenFraction m b) +
+        (b : ℝ) * Real.log ((1 - p) / (1 - animalOpenFraction m b)) := by
+    field_simp [hmR.ne']
+    ring
+  rw [hexponent,
+    Real.exp_add, Real.exp_nat_mul, Real.exp_nat_mul, Real.exp_log hA, Real.exp_log hB]
+
+/-- Sharp pointwise estimate from Grimmett's equations (4.26)–(4.30).  The restriction
+`x ≤ 1/100` is the explicit witness chosen above for the book's unspecified small constant. -/
+theorem animalWeight_le_exp_of_deviation_sharp {d n m b : ℕ} {p x a : ℝ}
+    (hd : 0 < d) (hn : 4 ≤ n)
+    (hmlo : n - 1 ≤ m) (hmhi : m ≤ d * n)
+    (hblo : 1 ≤ b) (hbhi : b ≤ 2 * d * n)
+    (hp0 : 0 < p) (hp1 : p < 1) (hx0 : 0 < x) (hx : x ≤ 1 / 100)
+    (hdev : (d : ℝ) * x * n < |(m : ℝ) / p - (b : ℝ) / (1 - p)|)
+    (href : a * animalOpenFraction m b ^ m * (1 - animalOpenFraction m b) ^ b ≤ 1) :
+    a * p ^ m * (1 - p) ^ b ≤
+      Real.exp (-((n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3)) := by
+  have hm : 0 < m := lt_of_lt_of_le (by omega : 0 < n - 1) hmlo
+  have hb : 0 < b := hblo
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hbR : (0 : ℝ) < b := by exact_mod_cast hb
+  let z : ℝ := (b : ℝ) / m
+  let z₀ : ℝ := (1 - p) / p
+  let zminus : ℝ := z₀ * (1 - x * p)
+  let zplus : ℝ := z₀ * (1 + x * p)
+  have hz : 0 < z := div_pos hbR hmR
+  have hz₀ : 0 < z₀ := div_pos (sub_pos.mpr hp1) hp0
+  have hxp : x * p ≤ 1 / 100 := by nlinarith [hp1.le]
+  have hzminus : 0 < zminus := by
+    change 0 < z₀ * (1 - x * p)
+    exact mul_pos hz₀ (by nlinarith)
+  have hmhiR : (m : ℝ) ≤ (d : ℝ) * n := by exact_mod_cast hmhi
+  have hscore : |(m : ℝ) / p - (b : ℝ) / (1 - p)| =
+      (m : ℝ) * |z₀ - z| / (1 - p) := by
+    have hraw : (m : ℝ) / p - (b : ℝ) / (1 - p) =
+        (m : ℝ) * (z₀ - z) / (1 - p) := by
+      dsimp only [z, z₀]
+      field_simp [hp0.ne', sub_ne_zero.mpr hp1.ne', hmR.ne']
+    rw [hraw, abs_div, abs_mul, abs_of_pos hmR, abs_of_pos (sub_pos.mpr hp1)]
+  have hfar : x * (1 - p) < |z₀ - z| := by
+    have hdn : (0 : ℝ) < (d : ℝ) * n := by positivity
+    have hmain : (m : ℝ) * (x * (1 - p)) < (m : ℝ) * |z₀ - z| := by
+      calc
+        (m : ℝ) * (x * (1 - p)) ≤
+            ((d : ℝ) * n) * (x * (1 - p)) := by gcongr
+        _ = ((d : ℝ) * x * n) * (1 - p) := by ring
+        _ < |(m : ℝ) / p - (b : ℝ) / (1 - p)| * (1 - p) := by
+          gcongr
+        _ = (m : ℝ) * |z₀ - z| := by
+          rw [hscore]
+          field_simp [sub_ne_zero.mpr hp1.ne']
+    nlinarith [hmain]
+  have hpenalty : 4 * x ^ 2 * p ^ 2 * (1 - p) / 9 ≤ animalLogPenalty p z := by
+    rcases lt_or_ge z z₀ with hleft | hright
+    · have hzm : z ≤ zminus := by
+        have hzminus_eq : zminus = z₀ - x * (1 - p) := by
+          dsimp only [zminus, z₀]
+          field_simp [hp0.ne']
+        rw [abs_of_pos (sub_pos.mpr hleft)] at hfar
+        rw [hzminus_eq]
+        nlinarith
+      have hboundary := animalLogPenalty_ge_quadratic hp0 hp1 hx0.le hx
+        (z := zminus) le_rfl (by
+          dsimp only [zminus, zplus]
+          gcongr
+          nlinarith)
+      have hquad : 4 * x ^ 2 * p ^ 2 * (1 - p) / 9 ≤
+          4 * p ^ 2 / (9 * (1 - p)) * (zminus - z₀) ^ 2 := by
+        dsimp only [zminus, z₀]
+        field_simp [sub_ne_zero.mpr hp1.ne']
+        ring_nf
+        exact le_rfl
+      exact hquad.trans (hboundary.trans
+        (animalLogPenalty_anti_left_of_mode hp0 hp1 hz hzm (by
+          dsimp only [zminus]
+          exact mul_le_of_le_one_right hz₀.le (by nlinarith [mul_pos hx0 hp0]))))
+    · have hzp : zplus ≤ z := by
+        have hzplus_eq : zplus = z₀ + x * (1 - p) := by
+          dsimp only [zplus, z₀]
+          field_simp [hp0.ne']
+        rw [abs_of_nonpos (sub_nonpos.mpr hright)] at hfar
+        rw [hzplus_eq]
+        nlinarith
+      have hboundary := animalLogPenalty_ge_quadratic hp0 hp1 hx0.le hx
+        (z := zplus) (by
+          dsimp only [zminus, zplus]
+          gcongr
+          nlinarith) le_rfl
+      have hquad : 4 * x ^ 2 * p ^ 2 * (1 - p) / 9 ≤
+          4 * p ^ 2 / (9 * (1 - p)) * (zplus - z₀) ^ 2 := by
+        dsimp only [zplus, z₀]
+        field_simp [sub_ne_zero.mpr hp1.ne']
+        ring_nf
+        exact le_rfl
+      exact hquad.trans (hboundary.trans
+        (animalLogPenalty_mono_right_of_mode hp0 hp1
+          (by
+            dsimp only [zplus]
+            exact le_mul_of_one_le_right hz₀.le (by nlinarith [mul_pos hx0 hp0])) hzp))
+  have hweight : a * p ^ m * (1 - p) ^ b ≤
+      Real.exp (-(m : ℝ) * animalLogPenalty p z) := by
+    have hsR : (0 : ℝ) < (m + b : ℕ) := by exact_mod_cast (show 0 < m + b by omega)
+    have hrop : 0 < animalOpenFraction m b := by
+      exact div_pos hmR hsR
+    have hrlt : animalOpenFraction m b < 1 := by
+      rw [animalOpenFraction, div_lt_one hsR]
+      exact_mod_cast (show m < m + b by omega)
+    have hrq : 0 < 1 - animalOpenFraction m b := sub_pos.mpr hrlt
+    have hratio0 : 0 ≤ (p / animalOpenFraction m b) ^ m *
+        ((1 - p) / (1 - animalOpenFraction m b)) ^ b :=
+      mul_nonneg (pow_nonneg (div_nonneg hp0.le hrop.le) _)
+        (pow_nonneg (div_nonneg (sub_nonneg.mpr hp1.le) hrq.le) _)
+    have hfactor : a * p ^ m * (1 - p) ^ b =
+        (a * animalOpenFraction m b ^ m * (1 - animalOpenFraction m b) ^ b) *
+          ((p / animalOpenFraction m b) ^ m *
+            ((1 - p) / (1 - animalOpenFraction m b)) ^ b) := by
+      have hr0 : animalOpenFraction m b ≠ 0 := by
+        exact hrop.ne'
+      have hr1 : 1 - animalOpenFraction m b ≠ 0 := by
+        exact hrq.ne'
+      rw [div_pow, div_pow]
+      field_simp [hr0, hr1]
+    rw [hfactor, exp_neg_mul_animalLogPenalty m b hp0 hp1 hm hb]
+    simpa using mul_le_mul_of_nonneg_right href hratio0
+  have hmge : (3 : ℝ) * n ≤ 4 * m := by exact_mod_cast (show 3 * n ≤ 4 * m by omega)
+  have hexp : (n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3 ≤
+      (m : ℝ) * animalLogPenalty p z := by
+    calc
+      (n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3 ≤
+          (m : ℝ) * (4 * x ^ 2 * p ^ 2 * (1 - p) / 9) := by
+        have hnonneg : 0 ≤ x ^ 2 * p ^ 2 * (1 - p) := by positivity
+        nlinarith
+      _ ≤ (m : ℝ) * animalLogPenalty p z :=
+        mul_le_mul_of_nonneg_left hpenalty hmR.le
+  exact hweight.trans (Real.exp_le_exp.mpr (by linarith))
 
 /-- Pointwise analytic core of Grimmett's lattice-animal large-deviation Theorem 4.20.
 
@@ -344,6 +772,107 @@ theorem latticeAnimal_largeDeviation {d n : ℕ} {p x : ℝ} (a : ℕ → ℕ �
     _ ≤ (3 * d ^ 2 * n ^ 2 : ℕ) * E := by
       apply mul_le_mul_of_nonneg_right _ (Real.exp_pos _).le
       exact_mod_cast hcard
+
+/-- **Grimmett, Theorem 4.20, with the source exponent.**
+
+For the explicit source-faithful witness `0 < x ≤ 1/100`, the exceptional animal weight has
+the displayed bound `3 d² n² exp (-n x² p² (1-p) / 3)`.  Unlike the earlier all-`x` Pinsker
+corollary, this is the small-deviation Taylor estimate actually used in §4.3. -/
+theorem latticeAnimal_largeDeviation_sharp {d n : ℕ} {p x : ℝ} (a : ℕ → ℕ → ℕ)
+    (hd : 0 < d) (hn : 2 ≤ n)
+    (hp0 : 0 < p) (hp1 : p < 1) (hx0 : 0 < x) (hx : x ≤ 1 / 100)
+    (href : ∀ m b, (m, b) ∈ animalParameterPairs d n →
+      (a m b : ℝ) * animalOpenFraction m b ^ m *
+          (1 - animalOpenFraction m b) ^ b ≤ 1) :
+    ∑ z ∈ exceptionalAnimalPairs d n p x,
+        (a z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+      (3 * d ^ 2 * n ^ 2 : ℕ) *
+        Real.exp (-((n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3)) := by
+  by_cases hn4 : 4 ≤ n
+  · let E := Real.exp (-((n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3))
+    have hpoint : ∀ z ∈ exceptionalAnimalPairs d n p x,
+        (a z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤ E := by
+      intro z hz
+      have hpair : z ∈ animalParameterPairs d n := (Finset.mem_filter.mp hz).1
+      have hdev := (Finset.mem_filter.mp hz).2
+      have hm := (Finset.mem_product.mp hpair).1
+      have hb := (Finset.mem_product.mp hpair).2
+      exact animalWeight_le_exp_of_deviation_sharp hd hn4
+        (Finset.mem_Icc.mp hm).1 (Finset.mem_Icc.mp hm).2
+        (Finset.mem_Icc.mp hb).1 (Finset.mem_Icc.mp hb).2
+        hp0 hp1 hx0 hx hdev (href z.1 z.2 hpair)
+    have hcard : (exceptionalAnimalPairs d n p x).card ≤ 3 * d ^ 2 * n ^ 2 := by
+      calc
+        (exceptionalAnimalPairs d n p x).card ≤ (animalParameterPairs d n).card := by
+          simpa [exceptionalAnimalPairs] using
+            Finset.card_filter_le (animalParameterPairs d n)
+              (fun z => (d : ℝ) * x * n <
+                |(z.1 : ℝ) / p - (z.2 : ℝ) / (1 - p)|)
+        _ ≤ 2 * d ^ 2 * n ^ 2 := animalParameterPairs_card_le hn
+        _ ≤ 3 * d ^ 2 * n ^ 2 := by nlinarith [Nat.zero_le (d ^ 2 * n ^ 2)]
+    calc
+      ∑ z ∈ exceptionalAnimalPairs d n p x,
+          (a z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+          ∑ _z ∈ exceptionalAnimalPairs d n p x, E := by
+        exact Finset.sum_le_sum fun z hz => hpoint z hz
+      _ = ((exceptionalAnimalPairs d n p x).card : ℝ) * E := by simp
+      _ ≤ (3 * d ^ 2 * n ^ 2 : ℕ) * E := by
+        apply mul_le_mul_of_nonneg_right _ (Real.exp_pos _).le
+        exact_mod_cast hcard
+  · have hn3 : n ≤ 3 := by omega
+    have hpointOne : ∀ z ∈ exceptionalAnimalPairs d n p x,
+        (a z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤ 1 := by
+      intro z hz
+      have hpair : z ∈ animalParameterPairs d n := (Finset.mem_filter.mp hz).1
+      have hdev := (Finset.mem_filter.mp hz).2
+      have hm := (Finset.mem_product.mp hpair).1
+      have hb := (Finset.mem_product.mp hpair).2
+      refine (animalWeight_le_exp_of_deviation hd hn
+        (Finset.mem_Icc.mp hm).1 (Finset.mem_Icc.mp hm).2
+        (Finset.mem_Icc.mp hb).1 (Finset.mem_Icc.mp hb).2
+        hp0 hp1 hx0 hdev (href z.1 z.2 hpair)).trans ?_
+      exact Real.exp_le_one_iff.mpr (neg_nonpos.mpr (by positivity))
+    have hsumCard :
+        ∑ z ∈ exceptionalAnimalPairs d n p x,
+            (a z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+          (2 * d ^ 2 * n ^ 2 : ℕ) := by
+      calc
+        ∑ z ∈ exceptionalAnimalPairs d n p x,
+            (a z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+            ∑ _z ∈ exceptionalAnimalPairs d n p x, (1 : ℝ) := by
+          exact Finset.sum_le_sum fun z hz => hpointOne z hz
+        _ = (exceptionalAnimalPairs d n p x).card := by simp
+        _ ≤ (animalParameterPairs d n).card := by
+          exact_mod_cast Finset.card_filter_le (animalParameterPairs d n)
+            (fun z => (d : ℝ) * x * n <
+              |(z.1 : ℝ) / p - (z.2 : ℝ) / (1 - p)|)
+        _ ≤ (2 * d ^ 2 * n ^ 2 : ℕ) := by exact_mod_cast animalParameterPairs_card_le hn
+    let A : ℝ := (n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3
+    have hxSq : x ^ 2 ≤ 1 / 10000 := by nlinarith [sq_nonneg (x - 1 / 100)]
+    have hpSq : p ^ 2 ≤ 1 := by nlinarith [sq_nonneg (p - 1)]
+    have hq : 1 - p ≤ 1 := by linarith
+    have hA : A ≤ 1 / 10000 := by
+      dsimp only [A]
+      calc
+        (n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3 ≤
+            3 * (1 / 10000) * 1 * 1 / 3 := by gcongr <;> exact_mod_cast hn3
+        _ = 1 / 10000 := by norm_num
+    have hExp : 1 - A ≤ Real.exp (-A) := by
+      linarith [Real.add_one_le_exp (-A)]
+    have hthree : (2 : ℝ) ≤ 3 * Real.exp (-A) := by nlinarith
+    have hB : 0 ≤ (d ^ 2 * n ^ 2 : ℕ) := by positivity
+    calc
+      ∑ z ∈ exceptionalAnimalPairs d n p x,
+          (a z.1 z.2 : ℝ) * p ^ z.1 * (1 - p) ^ z.2 ≤
+          (2 * d ^ 2 * n ^ 2 : ℕ) := hsumCard
+      _ = 2 * (d ^ 2 * n ^ 2 : ℕ) := by push_cast; ring
+      _ ≤ 3 * Real.exp (-A) * (d ^ 2 * n ^ 2 : ℕ) := by
+        exact mul_le_mul_of_nonneg_right hthree (by exact_mod_cast hB)
+      _ = (3 * d ^ 2 * n ^ 2 : ℕ) *
+          Real.exp (-((n : ℝ) * x ^ 2 * p ^ 2 * (1 - p) / 3)) := by
+        dsimp only [A]
+        push_cast
+        ring
 
 end
 

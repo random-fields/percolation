@@ -97,6 +97,19 @@ makes sense on all of `ℝ`. -/
 def finiteBernoulliExpectation (E : Finset ι) (p : ℝ) (X : Finset ι → ℝ) : ℝ :=
   ∑ s ∈ E.powerset, finiteBernoulliWeight E p s * X s
 
+/-- Fubini for two finite Bernoulli cubes. -/
+theorem finiteBernoulliExpectation_comm {κ : Type*}
+    (E : Finset ι) (F : Finset κ) (p q : ℝ) (X : Finset ι → Finset κ → ℝ) :
+    finiteBernoulliExpectation E p (fun s ↦ finiteBernoulliExpectation F q (X s)) =
+      finiteBernoulliExpectation F q (fun t ↦ finiteBernoulliExpectation E p (fun s ↦ X s t)) := by
+  simp only [finiteBernoulliExpectation, Finset.mul_sum, mul_assoc]
+  rw [Finset.sum_comm]
+  apply Finset.sum_congr rfl
+  intro t _ht
+  apply Finset.sum_congr rfl
+  intro s _hs
+  ring
+
 /-- Probability of a trace event on the finite cube `{0,1}^E`. -/
 noncomputable def finiteBernoulliProbability (E : Finset ι) (p : ℝ) (T : Set (Finset ι)) :
     ℝ :=
@@ -396,6 +409,37 @@ theorem DependsOn.finiteBernoulliProbability_eventTrace_congr {E F : Finset ι}
       finiteBernoulliProbability E (p : ℝ) (eventTrace A) := by
   rw [← hA.setBernoulli_real_eq_finiteBernoulliProbability p,
     ← (hA.mono hEF).setBernoulli_real_eq_finiteBernoulliProbability p]
+
+/-- A finite Bernoulli set hits a fixed subset `S ⊆ E` with probability
+`1 - (1-p)^|S|`. -/
+theorem finiteBernoulliProbability_hits_finset [DecidableEq ι]
+    {E S : Finset ι} (hSE : S ⊆ E) (p : I) :
+    finiteBernoulliProbability E p {t : Finset ι | ∃ x ∈ S, x ∈ t} =
+      1 - (1 - (p : ℝ)) ^ S.card := by
+  let A : Set (Set ι) := {t | ∃ x ∈ S, x ∈ t}
+  let B : Set (Set ι) := {t | Disjoint (S : Set ι) t}
+  have hAdep : DependsOn E A := by
+    intro ω η htrace
+    constructor
+    · rintro ⟨x, hxS, hxω⟩
+      exact ⟨x, hxS, htrace x (hSE hxS) |>.mp hxω⟩
+    · rintro ⟨x, hxS, hxη⟩
+      exact ⟨x, hxS, htrace x (hSE hxS) |>.mpr hxη⟩
+  have hBdep : DependsOn E B := by
+    intro ω η htrace
+    simp only [B, Set.disjoint_left]
+    constructor <;> intro h x hxS hx
+    · exact h hxS (htrace x (hSE hxS) |>.mpr hx)
+    · exact h hxS (htrace x (hSE hxS) |>.mp hx)
+  have htrace : eventTrace A = {t : Finset ι | ∃ x ∈ S, x ∈ t} := by
+    ext t
+    rfl
+  have hcomp : A = Bᶜ := by
+    ext t
+    simp [A, B, Set.disjoint_left]
+  rw [← htrace, ← hAdep.setBernoulli_real_eq_finiteBernoulliProbability p,
+    hcomp, measureReal_compl hBdep.measurableSet, probReal_univ,
+    setBernoulli_real_disjoint_finset_univ]
 
 /-! ### Cubic lattice specializations -/
 

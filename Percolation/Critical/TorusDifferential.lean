@@ -12,7 +12,9 @@ difference formula in `γ`.
 namespace Percolation
 
 open MeasureTheory ProbabilityTheory
-open scoped BigOperators unitInterval
+open scoped BigOperators unitInterval Topology
+
+open Set
 
 def torusHitEdgeTrace (d N : ℕ) (G : Finset (CubicTorus d N)) :
     Set (Finset (CubicTorusEdge d N)) :=
@@ -133,6 +135,130 @@ noncomputable def torusGhostThetaGammaDerivative (d N : ℕ) (hN : 2 ≤ N)
       (traceDifference v fun G ↦
         finiteBernoulliProbability (cubicTorusEdgeFinset d N hN) p
           (torusHitEdgeTrace d N G))
+
+theorem finiteBernoulliProbability_torusHitGreenTrace (d N : ℕ) (hN : 2 ≤ N)
+    (ω : Finset (CubicTorusEdge d N)) (γ : I) :
+    finiteBernoulliProbability (cubicTorusVertexFinset d N hN) γ
+        (torusHitGreenTrace d N ω) =
+      1 - (1 - (γ : ℝ)) ^
+        (cubicTorusOpenClusterFinset d N hN (ω : Set (CubicTorusEdge d N))).card := by
+  let S := cubicTorusOpenClusterFinset d N hN (ω : Set (CubicTorusEdge d N))
+  have hSV : S ⊆ cubicTorusVertexFinset d N hN := by
+    dsimp only [S, cubicTorusOpenClusterFinset]
+    exact restrictTo_subset _ _
+  have h := finiteBernoulliProbability_hits_finset hSV γ
+  have hevent : torusHitGreenTrace d N ω = {G : Finset (CubicTorus d N) |
+      ∃ y ∈ S, y ∈ G} := by
+    ext G
+    simp only [torusHitGreenTrace, Set.mem_setOf_eq, S]
+    constructor
+    · rintro ⟨y, hyG, hyC⟩
+      exact ⟨y, (mem_cubicTorusOpenClusterFinset hN).mpr hyC, hyG⟩
+    · rintro ⟨y, hyS, hyG⟩
+      exact ⟨y, hyG, (mem_cubicTorusOpenClusterFinset hN).mp hyS⟩
+  rw [hevent]
+  simpa only [S] using h
+
+/-- The finite-volume cluster expansion (5.61), with the finite origin cluster read directly
+from the edge configuration. -/
+noncomputable def torusGhostThetaByCluster (d N : ℕ) (hN : 2 ≤ N)
+    (p γ : ℝ) : ℝ :=
+  finiteBernoulliExpectation (cubicTorusEdgeFinset d N hN) p fun ω ↦
+    1 - (1 - γ) ^
+      (cubicTorusOpenClusterFinset d N hN (ω : Set (CubicTorusEdge d N))).card
+
+theorem torusGhostThetaPolynomial_eq_byCluster (d N : ℕ) (hN : 2 ≤ N)
+    (p : ℝ) (γ : I) :
+    torusGhostThetaPolynomial d N hN p γ = torusGhostThetaByCluster d N hN p γ := by
+  unfold torusGhostThetaPolynomial torusGhostThetaByCluster finiteBernoulliProbability
+  rw [finiteBernoulliExpectation_comm]
+  apply finiteBernoulliExpectation_congr
+  intro ω hω
+  change finiteBernoulliExpectation (cubicTorusVertexFinset d N hN) γ
+      (fun G ↦ (torusHitEdgeTrace d N G).indicator (fun _ ↦ (1 : ℝ)) ω) = _
+  rw [show finiteBernoulliExpectation (cubicTorusVertexFinset d N hN) γ
+      (fun G ↦ (torusHitEdgeTrace d N G).indicator (fun _ ↦ (1 : ℝ)) ω) =
+      finiteBernoulliProbability (cubicTorusVertexFinset d N hN) γ
+        (torusHitGreenTrace d N ω) by
+    unfold finiteBernoulliProbability
+    apply finiteBernoulliExpectation_congr
+    intro G _hG
+    rfl]
+  exact finiteBernoulliProbability_torusHitGreenTrace d N hN ω γ
+
+noncomputable def torusGhostThetaGammaDerivativeByCluster (d N : ℕ) (hN : 2 ≤ N)
+    (p γ : ℝ) : ℝ :=
+  finiteBernoulliExpectation (cubicTorusEdgeFinset d N hN) p fun ω ↦
+    let k := (cubicTorusOpenClusterFinset d N hN
+      (ω : Set (CubicTorusEdge d N))).card
+    (k : ℝ) * (1 - γ) ^ (k - 1)
+
+/-- Finite-volume green-free susceptibility from (5.60)–(5.63). -/
+noncomputable def torusGhostSusceptibilityPolynomial (d N : ℕ) (hN : 2 ≤ N)
+    (p γ : ℝ) : ℝ :=
+  finiteBernoulliExpectation (cubicTorusEdgeFinset d N hN) p fun ω ↦
+    let k := (cubicTorusOpenClusterFinset d N hN
+      (ω : Set (CubicTorusEdge d N))).card
+    (k : ℝ) * (1 - γ) ^ k
+
+theorem torusGhostThetaByCluster_hasDerivAt_gamma (d N : ℕ) (hN : 2 ≤ N)
+    (p γ : ℝ) :
+    HasDerivAt (torusGhostThetaByCluster d N hN p)
+      (torusGhostThetaGammaDerivativeByCluster d N hN p γ) γ := by
+  unfold torusGhostThetaByCluster torusGhostThetaGammaDerivativeByCluster
+  unfold finiteBernoulliExpectation
+  apply HasDerivAt.fun_sum
+  intro ω hω
+  let k := (cubicTorusOpenClusterFinset d N hN
+    (ω : Set (CubicTorusEdge d N))).card
+  have hpow := ((hasDerivAt_const γ 1).sub (hasDerivAt_id γ)).pow k
+  have hterm : HasDerivAt (fun y : ℝ ↦ 1 - (1 - y) ^ k)
+      ((k : ℝ) * (1 - γ) ^ (k - 1)) γ := by
+    convert (hasDerivAt_const γ 1).sub hpow using 1 <;> simp [k] <;> ring
+  simpa only [k] using hterm.const_mul
+    (finiteBernoulliWeight (cubicTorusEdgeFinset d N hN) p ω)
+
+theorem torusGhostThetaGammaDerivative_eq_byCluster (d N : ℕ) (hN : 2 ≤ N)
+    (p γ : I) (hγ0 : 0 < (γ : ℝ)) (hγ1 : (γ : ℝ) < 1) :
+    torusGhostThetaGammaDerivative d N hN p γ =
+      torusGhostThetaGammaDerivativeByCluster d N hN p γ := by
+  have heq : torusGhostThetaPolynomial d N hN p =ᶠ[𝓝 (γ : ℝ)]
+      torusGhostThetaByCluster d N hN p := by
+    filter_upwards [Ioo_mem_nhds hγ0 hγ1] with y hy
+    let yI : I := ⟨y, hy.1.le, hy.2.le⟩
+    exact torusGhostThetaPolynomial_eq_byCluster d N hN p yI
+  have hcluster := (torusGhostThetaByCluster_hasDerivAt_gamma d N hN p γ).congr_of_eventuallyEq
+    heq
+  have horiginal : HasDerivAt (torusGhostThetaPolynomial d N hN p)
+      (torusGhostThetaGammaDerivative d N hN p γ) γ := by
+    unfold torusGhostThetaPolynomial torusGhostThetaGammaDerivative
+    exact hasDerivAt_finiteBernoulliExpectation _ γ
+  exact horiginal.unique hcluster
+
+/-- Equation (5.63): `χ_N(p,γ)=(1-γ)∂_γ θ_N(p,γ)`. -/
+theorem torusGhostSusceptibility_eq_one_sub_mul_gammaDerivative
+    (d N : ℕ) (hN : 2 ≤ N) (p γ : I)
+    (hγ0 : 0 < (γ : ℝ)) (hγ1 : (γ : ℝ) < 1) :
+    torusGhostSusceptibilityPolynomial d N hN p γ =
+      (1 - (γ : ℝ)) * torusGhostThetaGammaDerivative d N hN p γ := by
+  rw [torusGhostThetaGammaDerivative_eq_byCluster d N hN p γ hγ0 hγ1]
+  unfold torusGhostSusceptibilityPolynomial torusGhostThetaGammaDerivativeByCluster
+  rw [← finiteBernoulliExpectation_const_mul]
+  apply finiteBernoulliExpectation_congr
+  intro ω hω
+  let k := (cubicTorusOpenClusterFinset d N hN
+    (ω : Set (CubicTorusEdge d N))).card
+  have hk : 0 < k := by
+    apply Finset.card_pos.mpr
+    exact ⟨cubicTorusOrigin d N,
+      (mem_cubicTorusOpenClusterFinset hN).mpr
+        (cubicTorusOrigin_mem_openCluster d N (ω : Set (CubicTorusEdge d N)))⟩
+  change (k : ℝ) * (1 - (γ : ℝ)) ^ k =
+    (1 - (γ : ℝ)) * ((k : ℝ) * (1 - (γ : ℝ)) ^ (k - 1))
+  have hpow : (1 - (γ : ℝ)) ^ k = (1 - (γ : ℝ)) ^ (k - 1) * (1 - γ) := by
+    conv_lhs => rw [show k = k - 1 + 1 by omega, pow_succ]
+  rw [hpow]
+  ring
 
 theorem torusGhostThetaPolynomial_hasDerivAt_p (d N : ℕ) (hN : 2 ≤ N)
     (p γ : ℝ) :

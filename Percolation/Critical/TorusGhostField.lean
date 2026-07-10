@@ -100,6 +100,18 @@ theorem mem_cubicTorusVertexFinset {d N : ℕ} (hN : 2 ≤ N)
   unfold cubicTorusVertexFinset
   simp
 
+/-- The origin cluster as an actual finite set in periodic volume. -/
+noncomputable def cubicTorusOpenClusterFinset (d N : ℕ) (hN : 2 ≤ N)
+    (ω : CubicTorusEdgeConfiguration d N) : Finset (CubicTorus d N) :=
+  restrictTo (cubicTorusVertexFinset d N hN) (cubicTorusOpenCluster d N ω)
+
+@[simp]
+theorem mem_cubicTorusOpenClusterFinset {d N : ℕ} (hN : 2 ≤ N)
+    {ω : CubicTorusEdgeConfiguration d N} {x : CubicTorus d N} :
+    x ∈ cubicTorusOpenClusterFinset d N hN ω ↔ x ∈ cubicTorusOpenCluster d N ω := by
+  rw [cubicTorusOpenClusterFinset, mem_restrictTo]
+  simp [mem_cubicTorusVertexFinset hN]
+
 theorem dependsOn_torusConnectionEvent (d N : ℕ) (hN : 2 ≤ N)
     (x y : CubicTorus d N) :
     DependsOn (cubicTorusEdgeFinset d N hN) (torusConnectionEvent d N x y) := by

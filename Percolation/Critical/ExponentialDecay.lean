@@ -273,6 +273,25 @@ theorem radiusTail_master_inequality_of_pivotal_bound
       rw [sub_eq_add_neg, Real.exp_add, Real.exp_log hβpos]
     _ = _ := rfl
 
+/-- **Grimmett, equation (5.22).** Integrated comparison of the radius tails
+at two densities, with Lemma 5.17 discharged internally. -/
+theorem radiusTail_master_inequality
+    {d n : ℕ} {α β : I} (hd : 0 < d)
+    (hα0 : 0 < (α : ℝ)) (hαβ : (α : ℝ) ≤ (β : ℝ))
+    (hβ1 : (β : ℝ) < 1) :
+    radiusTail d α n ≤ radiusTail d β n *
+      Real.exp (-(((β : ℝ) - (α : ℝ)) *
+        ((n : ℝ) / radiusTailPartialSum d β n - 1))) := by
+  apply radiusTail_master_inequality_of_pivotal_bound hα0 hαβ hβ1
+  · intro q hαq hqβ
+    apply radiusTail_pos_of_pos_density hd
+    exact hα0.trans_le hαq
+  · intro q hαq _hqβ
+    simpa [radiusTailPartialSum] using
+      conditionalExpectedPivotalCount_ge (d := d) (n := n) hd
+        (hα0.trans_le hαq)
+
 end Percolation
 
 #print axioms Percolation.conditionalExpectedPivotalCount_ge
+#print axioms Percolation.radiusTail_master_inequality

@@ -392,6 +392,21 @@ theorem cubicEmbed_adj {m d : ℕ} (hmd : m ≤ d) {x y : Cubic m}
   rw [cubicEmbed_stepFrom hmd]
   exact cubicGraph_adj_stepFrom _ _
 
+theorem cubicStepFrom_injective {d : ℕ} (x : Cubic d) :
+    Function.Injective (cubicStepFrom x : CubicDirection d → Cubic d) := by
+  rintro ⟨i, b⟩ ⟨j, c⟩ h
+  have hcoord := congrFun h i
+  have hij : i = j := by
+    by_contra hij
+    cases b <;> simp [cubicStepFrom, cubicDirectionIncrement, hij] at hcoord
+  subst j
+  have hinc : cubicDirectionIncrement (i, b) = cubicDirectionIncrement (i, c) := by
+    simpa [cubicStepFrom] using hcoord
+  have hbc : b = c := by
+    cases b <;> cases c <;> simp [cubicDirectionIncrement] at hinc ⊢
+  subst c
+  rfl
+
 /-- The graph homomorphism induced by the coordinate embedding of cubic lattices. -/
 def cubicEmbedHom {m d : ℕ} (hmd : m ≤ d) :
     (cubicGraph m) →g (cubicGraph d) where

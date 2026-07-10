@@ -19,6 +19,7 @@ import Percolation.Critical.Radius
 import Percolation.Critical.PivotalSausage
 import Percolation.Critical.ExponentialDecay
 import Percolation.Critical.LatticeAnimals
+import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ClusterDensityDerivative
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls

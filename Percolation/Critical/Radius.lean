@@ -430,6 +430,25 @@ theorem clusterSizeENNReal_eq_encard (d : ℕ) (ω : EdgeConfiguration d) :
       ∑' _ : cubicOpenCluster d ω, (1 : ℝ≥0∞)
   exact (tsum_subtype (cubicOpenCluster d ω) fun _ ↦ (1 : ℝ≥0∞)).symm
 
+/-- The extended cardinality of the origin cluster is a measurable random variable. -/
+theorem measurable_clusterSizeENNReal (d : ℕ) :
+    Measurable (clusterSizeENNReal d) := by
+  classical
+  unfold clusterSizeENNReal
+  apply Measurable.tsum
+  intro y
+  have hevent : {ω : EdgeConfiguration d | y ∈ cubicOpenCluster d ω} =
+      connectionEvent d cubicOrigin y := by
+    rfl
+  rw [show (fun ω : EdgeConfiguration d ↦
+      if y ∈ cubicOpenCluster d ω then (1 : ℝ≥0∞) else 0) =
+      (connectionEvent d cubicOrigin y).indicator (fun _ ↦ 1) by
+    funext ω
+    simp only [Set.indicator, connectionEvent, cubicOpenCluster, cubicOpenClusterFrom,
+      Set.mem_setOf_eq]
+    rfl]
+  exact measurable_const.indicator (measurableSet_connectionEvent d cubicOrigin y)
+
 theorem clusterSizeENNReal_eq_top_iff (d : ℕ) (ω : EdgeConfiguration d) :
     clusterSizeENNReal d ω = ⊤ ↔ hasInfiniteOpenCluster d ω := by
   rw [clusterSizeENNReal_eq_encard, ENat.toENNReal_eq_top, Set.encard_eq_top_iff]

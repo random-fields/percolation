@@ -14,7 +14,7 @@ permissions:
 jobs:
   trusted-comparator:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +35,10 @@ jobs:
           git -C "$RUNNER_TEMP/comparator" checkout "$COMPARATOR_REV"
           printf '%s\n' 'leanprover/lean4:v4.30.0' > "$RUNNER_TEMP/comparator/lean-toolchain"
           lake -d "$RUNNER_TEMP/comparator" build lean4export comparator
+
+      - name: Restore trusted Mathlib cache for the Comparator project
+        working-directory: audit/reviews/chapter-06/2026-07-10-c4286f9/comparator
+        run: lake exe cache get
 
       - name: Compare independently authored source statements with production solutions
         working-directory: audit/reviews/chapter-06/2026-07-10-c4286f9/comparator

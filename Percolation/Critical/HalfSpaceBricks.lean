@@ -1,3 +1,4 @@
+import Percolation.Bernoulli.FiniteEventContinuity
 import Percolation.Critical.DynamicRenormalization
 
 /-!
@@ -144,6 +145,50 @@ def halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
       brickSeedPlaneEvent y (brickVerticalIndex hd) m ∩
         connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y
 
+/-- A finite edge support deciding the good-brick event. -/
+noncomputable def halfSpaceBrickGoodSupport {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
+    Finset (CubicEdge d) := by
+  classical
+  exact halfSpaceBrickEdges d L H ∪
+    (Finset.univ : Finset (BrickFacetKind d)).biUnion fun kind ↦
+      (brickFacet hd L H kind).biUnion fun y ↦
+        brickSeedPlaneEdges y (brickVerticalIndex hd) m
+
+theorem dependsOn_halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
+    DependsOn (halfSpaceBrickGoodSupport hd m L H)
+      (halfSpaceBrickGoodEvent hd m L H) := by
+  classical
+  intro ω η hagree
+  have hagreeBrick : ∀ e ∈ halfSpaceBrickEdges d L H, (e ∈ ω ↔ e ∈ η) := by
+    intro e he
+    exact hagree e (Finset.mem_union_left _ he)
+  have hagreeSeed : ∀ (kind : BrickFacetKind d) (y : Cubic d),
+      y ∈ brickFacet hd L H kind →
+      ∀ e ∈ brickSeedPlaneEdges y (brickVerticalIndex hd) m, (e ∈ ω ↔ e ∈ η) := by
+    intro kind y hy e he
+    apply hagree e
+    apply Finset.mem_union_right
+    rw [Finset.mem_biUnion]
+    refine ⟨kind, Finset.mem_univ _, ?_⟩
+    rw [Finset.mem_biUnion]
+    exact ⟨y, hy, he⟩
+  simp only [halfSpaceBrickGoodEvent, Set.mem_iInter, Set.mem_iUnion, Set.mem_inter_iff]
+  constructor
+  · intro hω kind
+    obtain ⟨y, hy, hyseed, hyconn⟩ := hω kind
+    refine ⟨y, hy, ?_, ?_⟩
+    · intro e he
+      exact (hagreeSeed kind y hy e he).mp (hyseed he)
+    · exact (dependsOn_connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y
+          hagreeBrick).mp hyconn
+  · intro hη kind
+    obtain ⟨y, hy, hyseed, hyconn⟩ := hη kind
+    refine ⟨y, hy, ?_, ?_⟩
+    · intro e he
+      exact (hagreeSeed kind y hy e he).mpr (hyseed he)
+    · exact (dependsOn_connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y
+          hagreeBrick).mpr hyconn
+
 theorem measurableSet_halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
     MeasurableSet (halfSpaceBrickGoodEvent hd m L H) := by
   apply MeasurableSet.iInter
@@ -152,6 +197,28 @@ theorem measurableSet_halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : 
   intro y _hy
   exact (measurableSet_brickSeedPlaneEvent y (brickVerticalIndex hd) m).inter
     (dependsOn_connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y).measurableSet
+
+theorem continuous_halfSpaceBrickGoodProbability {d : ℕ}
+    (hd : 1 ≤ d) (m L H : ℕ) :
+    Continuous fun x : ℝ ↦
+      (bernoulliBondMeasure d (Set.projIcc 0 1 zero_le_one x)).real
+        (halfSpaceBrickGoodEvent hd m L H) :=
+  (dependsOn_halfSpaceBrickGoodEvent hd m L H).continuous_bernoulliBondMeasure_real
+
+theorem exists_lower_density_halfSpaceBrickGoodProbability_gt {d : ℕ}
+    (hd : 1 ≤ d) (m L H : ℕ) {p : I} (hp0 : 0 < (p : ℝ)) {a : ℝ}
+    (ha : a < (bernoulliBondMeasure d p).real (halfSpaceBrickGoodEvent hd m L H)) :
+    ∃ q : I, (q : ℝ) < (p : ℝ) ∧
+      a < (bernoulliBondMeasure d q).real (halfSpaceBrickGoodEvent hd m L H) := by
+  let f : ℝ → ℝ := fun x ↦
+    (bernoulliBondMeasure d (Set.projIcc 0 1 zero_le_one x)).real
+      (halfSpaceBrickGoodEvent hd m L H)
+  have hf : Continuous f := continuous_halfSpaceBrickGoodProbability hd m L H
+  have hfp : a < f (p : ℝ) := by
+    simpa [f, Set.projIcc_of_mem zero_le_one p.2] using ha
+  obtain ⟨q, hqp, hq⟩ := exists_unitInterval_lt_of_continuous_gt hf hp0 hfp
+  refine ⟨q, hqp, ?_⟩
+  simpa [f, Set.projIcc_of_mem zero_le_one q.2] using hq
 
 theorem isIncreasingEvent_halfSpaceBrickGoodEvent {d : ℕ}
     (hd : 1 ≤ d) (m L H : ℕ) :

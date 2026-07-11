@@ -382,9 +382,101 @@ theorem measurableSet_epsilonGoodBoxEvent
   (dependsOn_epsilonGoodBoxEvent d p ε x n).measurableSet
 
 /-- The static good-block site field `X_{ε,x}(n)`. -/
+def epsilonGoodBlockCenter {d : ℕ} (n : ℕ) (x : Cubic d) : Cubic d :=
+  cubicScale (n : ℤ) x
+
+/-- The static good-block site field `X_{ε,x}(n)`, indexed on the coarse lattice.  Scaling the
+box centers is essential: without it the claimed finite-range dependence would be false. -/
 def epsilonGoodBlockField
     (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (ω : EdgeConfiguration d) : Set (Cubic d) :=
-  {x | ω ∈ epsilonGoodBoxEvent d p ε x n}
+  {x | ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n}
+
+@[simp]
+theorem epsilonGoodBlockCenter_zero {d : ℕ} (x : Cubic d) :
+    epsilonGoodBlockCenter 0 x = cubicOrigin := by
+  funext i
+  simp [epsilonGoodBlockCenter, cubicScale, cubicOrigin]
+
+/-- Edge supports of coarse blocks whose indices are more than `3d` apart are disjoint.  The
+constant is deliberately the source's conservative `3d`; the coordinate estimate below is
+slightly stronger. -/
+theorem disjoint_cubicBoxEdges_epsilonGoodBlockCenter {d n : ℕ} (hn : 1 ≤ n)
+    {u v : Cubic d} (hfar : 3 * d < cubicL1Dist u v) :
+    Disjoint
+      (cubicBoxEdges d (epsilonGoodBlockCenter n u) n)
+      (cubicBoxEdges d (epsilonGoodBlockCenter n v) n) := by
+  classical
+  rw [Finset.disjoint_left]
+  intro e heu hev
+  let z : Cubic d := e.1.out.1
+  have hzu : z ∈ cubicMetricBox d (epsilonGoodBlockCenter n u) n :=
+    endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heu (by
+      change e.1.out.1 ∈ (e : Sym2 (Cubic d))
+      exact Sym2.out_fst_mem (e : Sym2 (Cubic d)))
+  have hzv : z ∈ cubicMetricBox d (epsilonGoodBlockCenter n v) n :=
+    endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges hev (by
+      change e.1.out.1 ∈ (e : Sym2 (Cubic d))
+      exact Sym2.out_fst_mem (e : Sym2 (Cubic d)))
+  have hcenter : cubicLInfDist (epsilonGoodBlockCenter n u)
+      (epsilonGoodBlockCenter n v) ≤ 2 * n := by
+    calc
+      cubicLInfDist (epsilonGoodBlockCenter n u) (epsilonGoodBlockCenter n v) ≤
+          cubicLInfDist (epsilonGoodBlockCenter n u) z +
+            cubicLInfDist z (epsilonGoodBlockCenter n v) :=
+        cubicLInfDist_triangle _ _ _
+      _ ≤ n + n := Nat.add_le_add
+        (mem_cubicMetricBox_iff_lInfDist_le.mp hzu)
+        (by rw [cubicLInfDist_comm]; exact mem_cubicMetricBox_iff_lInfDist_le.mp hzv)
+      _ = 2 * n := by omega
+  have hcoord : ∀ i : Fin d, (v i - u i).natAbs ≤ 2 := by
+    intro i
+    have hi := (cubicLInfDist_coord_le
+      (epsilonGoodBlockCenter n u) (epsilonGoodBlockCenter n v) i).trans hcenter
+    have heq :
+        (epsilonGoodBlockCenter n v i - epsilonGoodBlockCenter n u i).natAbs =
+          n * (v i - u i).natAbs := by
+      rw [show epsilonGoodBlockCenter n v i - epsilonGoodBlockCenter n u i =
+          (n : ℤ) * (v i - u i) by
+        simp [epsilonGoodBlockCenter, cubicScale]
+        ring, Int.natAbs_mul]
+      simp
+    have hmul : n * (v i - u i).natAbs ≤ n * 2 := by
+      rw [heq] at hi
+      simpa [mul_comm] using hi
+    exact Nat.le_of_mul_le_mul_left hmul hn
+  have hl1 : cubicL1Dist u v ≤ 2 * d := by
+    rw [cubicL1Dist]
+    calc
+      (∑ i : Fin d, (v i - u i).natAbs) ≤ ∑ _i : Fin d, 2 :=
+        Finset.sum_le_sum fun i _hi ↦ hcoord i
+      _ = 2 * d := by simp [mul_comm]
+  omega
+
+theorem measurable_epsilonGoodBlockField
+    (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) :
+    Measurable (epsilonGoodBlockField d p ε n) := by
+  change Measurable (MeasurableEquiv.setOf ∘
+    fun (ω : EdgeConfiguration d) (x : Cubic d) ↦
+      (ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n : Prop))
+  apply Measurable.comp (by fun_prop)
+  apply measurable_pi_lambda
+  intro x
+  apply measurable_to_prop
+  convert measurableSet_epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n using 1
+  ext ω
+  simp
+
+/-- Law of the coarse good-block field under Bernoulli bond percolation. -/
+noncomputable def epsilonGoodBlockLaw
+    (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) : Measure (Set (Cubic d)) :=
+  (bernoulliBondMeasure d p).map (epsilonGoodBlockField d p ε n)
+
+instance epsilonGoodBlockLaw_isProbabilityMeasure
+    (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) :
+    IsProbabilityMeasure (epsilonGoodBlockLaw d p ε n) := by
+  unfold epsilonGoodBlockLaw
+  exact Measure.isProbabilityMeasure_map
+    (measurable_epsilonGoodBlockField d p ε n).aemeasurable
 
 /-- There is a crossing component containing at least `q` vertices. -/
 def largeCrossingClusterEvent (d q n : ℕ) (x : Cubic d) : Set (EdgeConfiguration d) :=

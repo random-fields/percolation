@@ -81,7 +81,8 @@ individual theorem rows.
 |---|---:|---:|---:|---:|---:|---:|
 | Initial Chapter 11 crossing and region/site/static foundation | 0s | 2238s | 2238s | 0 | 692,564 | 692,564 |
 | Region root-independence, static finite support, exploration, and brick infrastructure | 2238s | 3666s | 1428s | 692,564 | 1,024,002 | 331,438 |
-| **Infrastructure subtotal** |  |  | **3666s** |  |  | **1,024,002** |
+| Finite-event continuity, coarse-block separation, and finite seed support | 3666s | 4416s | 750s | 1,024,002 | 1,178,200 | 154,198 |
+| **Infrastructure subtotal** |  |  | **4416s** |  |  | **1,178,200** |
 
 Documentation, Git operations, and final PR composition are excluded from theorem telemetry but
 will receive separate non-theorem rows in the frozen review run.

@@ -190,10 +190,23 @@ theorem cubicRegionGraph_connected_of_coordinateConvex {d : ℕ} {A : Set (Cubic
   let q := w.induce A hsupport
   exact ⟨by simpa [q] using q⟩
 
+theorem cubicRegionGraph_univ_connected (d : ℕ) :
+    (cubicRegionGraph d Set.univ).Connected :=
+  cubicRegionGraph_connected_of_coordinateConvex Set.univ_nonempty
+    (fun {_x} _hx {_y} _hy {z} _hz ↦ Set.mem_univ z)
+
 /-- The open cluster of `x` when all paths are constrained to the region `A`. -/
 def cubicOpenClusterWithinVertices
     (d : ℕ) (A : Set (Cubic d)) (ω : EdgeConfiguration d) (x : Cubic d) : Set (Cubic d) :=
   {y | y ∈ A ∧ ω ∈ connectionEventWithinVertices d A x y}
+
+@[simp]
+theorem cubicOpenClusterWithinVertices_univ
+    (d : ℕ) (ω : EdgeConfiguration d) (x : Cubic d) :
+    cubicOpenClusterWithinVertices d Set.univ ω x = cubicOpenClusterFrom d ω x := by
+  ext y
+  simp [cubicOpenClusterWithinVertices, cubicOpenClusterFrom,
+    connectionEventWithinVertices_univ, connectionEvent]
 
 theorem cubicOpenClusterWithinVertices_mono {d : ℕ} {A B : Set (Cubic d)}
     (hAB : A ⊆ B) (ω : EdgeConfiguration d) (x : Cubic d) :
@@ -397,6 +410,11 @@ noncomputable def regionThetaFrom
     (d : ℕ) (A : Set (Cubic d)) (p : I) (x : Cubic d) : ℝ :=
   (bernoulliBondMeasure d p).real
     {ω | (cubicOpenClusterWithinVertices d A ω x).Infinite}
+
+@[simp]
+theorem regionThetaFrom_univ (d : ℕ) (p : I) (x : Cubic d) :
+    regionThetaFrom d Set.univ p x = thetaFrom d p x := by
+  simp [regionThetaFrom, thetaFrom, hasInfiniteOpenClusterFrom]
 
 theorem connectionWithin_inter_infiniteCluster_subset
     (d : ℕ) (A : Set (Cubic d)) (x y : Cubic d) :
@@ -631,6 +649,29 @@ theorem regionHasInfiniteClusterProbability_pos_of_critical_lt
     rw [regionCriticalProbability]
     exact le_csSup (regionCriticalZeroSet_bddAbove d A) hmem
   exact (not_le_of_gt hp) hle
+
+theorem regionCriticalProbability_univ (d : ℕ) :
+    regionCriticalProbability d Set.univ = cubicCriticalProbability d := by
+  have hsets : (((fun p : I ↦ (p : ℝ)) ''
+      {p : I | regionHasInfiniteClusterProbability d Set.univ p = 0}) : Set ℝ) =
+      (((fun p : I ↦ (p : ℝ)) '' {p : I | theta d p = 0}) : Set ℝ) := by
+    ext r
+    constructor
+    · rintro ⟨q, hqzero, rfl⟩
+      refine ⟨q, ?_, rfl⟩
+      have hroot :=
+        (regionHasInfiniteClusterProbability_eq_zero_iff_regionThetaFrom_eq_zero_of_connected
+          (cubicRegionGraph_univ_connected d) q
+          (by simp : cubicOrigin ∈ (Set.univ : Set (Cubic d)))).mp hqzero
+      simpa using hroot
+    · rintro ⟨q, hqzero, rfl⟩
+      refine ⟨q, ?_, rfl⟩
+      apply
+        (regionHasInfiniteClusterProbability_eq_zero_iff_regionThetaFrom_eq_zero_of_connected
+          (cubicRegionGraph_univ_connected d) q
+          (by simp : cubicOrigin ∈ (Set.univ : Set (Cubic d)))).mpr
+      simpa using hqzero
+  rw [regionCriticalProbability, cubicCriticalProbability, hsets]
 
 /-! ### Site percolation on a graph -/
 
@@ -920,5 +961,38 @@ noncomputable def slabCriticalProbability (d k : ℕ) : ℝ :=
 /-- Half-space percolation probability. -/
 noncomputable def halfSpaceTheta (d : ℕ) (p : I) : ℝ :=
   regionTheta d (cubicHalfSpace d) p
+
+theorem cubicOrigin_mem_cubicHalfSpace (d : ℕ) : cubicOrigin ∈ cubicHalfSpace d := by
+  intro i _hi
+  simp [cubicOrigin]
+
+theorem cubicCriticalProbability_le_halfSpaceRegionCritical (d : ℕ) :
+    cubicCriticalProbability d ≤ regionCriticalProbability d (cubicHalfSpace d) := by
+  rw [← regionCriticalProbability_univ d]
+  exact regionCriticalProbability_anti (Set.subset_univ (cubicHalfSpace d))
+
+theorem regionHasInfiniteClusterProbability_eq_zero_iff_halfSpaceTheta_eq_zero
+    (d : ℕ) (p : I) :
+    regionHasInfiniteClusterProbability d (cubicHalfSpace d) p = 0 ↔
+      halfSpaceTheta d p = 0 := by
+  simpa [halfSpaceTheta, regionTheta] using
+    (regionHasInfiniteClusterProbability_eq_zero_iff_regionThetaFrom_eq_zero_of_connected
+      (cubicRegionGraph_cubicHalfSpace_connected d) p (cubicOrigin_mem_cubicHalfSpace d))
+
+theorem halfSpaceTheta_eq_zero_of_lt_critical {d : ℕ} {p : I}
+    (hp : (p : ℝ) < regionCriticalProbability d (cubicHalfSpace d)) :
+    halfSpaceTheta d p = 0 :=
+  (regionHasInfiniteClusterProbability_eq_zero_iff_halfSpaceTheta_eq_zero d p).mp
+    (regionHasInfiniteClusterProbability_eq_zero_of_lt_critical hp)
+
+theorem halfSpaceTheta_pos_of_critical_lt {d : ℕ} {p : I}
+    (hp : regionCriticalProbability d (cubicHalfSpace d) < (p : ℝ)) :
+    0 < halfSpaceTheta d p := by
+  have hglobal := regionHasInfiniteClusterProbability_pos_of_critical_lt hp
+  apply lt_of_le_of_ne measureReal_nonneg
+  intro hzero
+  have := (regionHasInfiniteClusterProbability_eq_zero_iff_halfSpaceTheta_eq_zero d p).mpr
+    hzero.symm
+  exact hglobal.ne this.symm
 
 end Percolation

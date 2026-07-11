@@ -1,3 +1,4 @@
+import Percolation.Bernoulli.FiniteEventContinuity
 import Percolation.Critical.StaticBlocks
 
 /-!
@@ -84,6 +85,53 @@ def IsSeededBoundaryPoint (d : ℕ) (i : Fin d) (m n : ℕ)
 def seededBoundaryPoints (d : ℕ) (i : Fin d) (m n : ℕ)
     (ω : EdgeConfiguration d) : Set (Cubic d) :=
   {y | IsSeededBoundaryPoint d i m n ω y}
+
+/-- A finite ambient set containing every seed center that can witness membership in `K(m,n)`. -/
+noncomputable def seededBoundaryPossibleCenters
+    (d : ℕ) (m n : ℕ) : Finset (Cubic d) :=
+  cubicMetricBox d cubicOrigin (n + m + 1)
+
+theorem seedCenter_mem_seededBoundaryPossibleCenters
+    {d m n : ℕ} {i : Fin d} {y c : Cubic d}
+    (hy : y ∈ seededBoundaryQuadrant d i n)
+    (hyc : cubicStepFrom y (i, true) ∈ cubicMetricBox d c m) :
+    c ∈ seededBoundaryPossibleCenters d m n := by
+  have hyface := (mem_seededBoundaryQuadrant_iff.mp hy).1
+  have hybox : y ∈ cubicMetricBox d cubicOrigin n := by
+    rw [mem_cubicMetricBox]
+    intro j
+    have hface := mem_cubicBoxFace.mp hyface
+    by_cases hji : j = i
+    · subst j
+      simp [cubicOrigin] at hface ⊢
+      omega
+    · have hj := hface.2 j hji
+      simp [cubicOrigin] at hj ⊢
+      omega
+  apply mem_cubicMetricBox_iff_lInfDist_le.mpr
+  calc
+    cubicLInfDist cubicOrigin c ≤
+        cubicLInfDist cubicOrigin y +
+          cubicLInfDist y (cubicStepFrom y (i, true)) +
+            cubicLInfDist (cubicStepFrom y (i, true)) c := by
+      have h₁ := cubicLInfDist_triangle cubicOrigin y c
+      have h₂ := cubicLInfDist_triangle y (cubicStepFrom y (i, true)) c
+      omega
+    _ ≤ n + 1 + m := by
+      exact Nat.add_le_add
+        (Nat.add_le_add
+          (mem_cubicMetricBox_iff_lInfDist_le.mp hybox)
+          (cubicLInfDist_stepFrom_le_one y (i, true)))
+        (by rw [cubicLInfDist_comm]; exact mem_cubicMetricBox_iff_lInfDist_le.mp hyc)
+    _ = n + m + 1 := by omega
+
+/-- Finite edge support deciding the seeded connection event. -/
+noncomputable def seedConnectionSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) : Finset (CubicEdge d) := by
+  classical
+  exact cubicBoxEdges d cubicOrigin n ∪
+    (seededBoundaryQuadrant d i n).image (fun y ↦ cubicStepEdge y (i, true)) ∪
+      (seededBoundaryPossibleCenters d m n).biUnion fun c ↦ cubicBoxEdges d c m
 
 /-- For a fixed boundary vertex, being a seeded target is measurable.  The possible seed
 centers form a countable (not definitionally finite) union; retaining that union is important
@@ -175,6 +223,62 @@ theorem measurableSet_seedConnectionEvent (d : ℕ) (i : Fin d) (m n : ℕ) :
     exact ⟨x, hx, y, hy, hxy⟩
   · rintro ⟨x, hx, y, hy, hxy⟩
     exact ⟨x, hx, y, hy, hxy⟩
+
+theorem dependsOn_seedConnectionEvent (d : ℕ) (i : Fin d) (m n : ℕ) :
+    DependsOn (seedConnectionSupport d i m n) (seedConnectionEvent d i m n) := by
+  classical
+  intro ω η hagree
+  have hagreeConnection : ∀ e ∈ cubicBoxEdges d cubicOrigin n, (e ∈ ω ↔ e ∈ η) := by
+    intro e he
+    apply hagree e
+    rw [seedConnectionSupport]
+    exact Finset.mem_union_left _ (Finset.mem_union_left _ he)
+  constructor
+  · rintro ⟨x, hx, y, ⟨hyQ, hyedge, c, hyc, hcLayer, hcSeed⟩, hxy⟩
+    have hedgeSupport : cubicStepEdge y (i, true) ∈ seedConnectionSupport d i m n := by
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_left
+      apply Finset.mem_union_right
+      exact Finset.mem_image.mpr ⟨y, hyQ, rfl⟩
+    have hcCenter : c ∈ seededBoundaryPossibleCenters d m n :=
+      seedCenter_mem_seededBoundaryPossibleCenters hyQ hyc
+    have hcSeed' : η ∈ cubicSeedEvent d c m := by
+      intro e he
+      apply (hagree e ?_).mp (hcSeed he)
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_right
+      rw [Finset.mem_biUnion]
+      exact ⟨c, hcCenter, he⟩
+    exact ⟨x, hx, y,
+      ⟨hyQ, (hagree _ hedgeSupport).mp hyedge, c, hyc, hcLayer, hcSeed'⟩,
+      (dependsOn_connectionEventIn d (cubicBoxEdges d cubicOrigin n) x y
+        hagreeConnection).mp hxy⟩
+  · rintro ⟨x, hx, y, ⟨hyQ, hyedge, c, hyc, hcLayer, hcSeed⟩, hxy⟩
+    have hedgeSupport : cubicStepEdge y (i, true) ∈ seedConnectionSupport d i m n := by
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_left
+      apply Finset.mem_union_right
+      exact Finset.mem_image.mpr ⟨y, hyQ, rfl⟩
+    have hcCenter : c ∈ seededBoundaryPossibleCenters d m n :=
+      seedCenter_mem_seededBoundaryPossibleCenters hyQ hyc
+    have hcSeed' : ω ∈ cubicSeedEvent d c m := by
+      intro e he
+      apply (hagree e ?_).mpr (hcSeed he)
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_right
+      rw [Finset.mem_biUnion]
+      exact ⟨c, hcCenter, he⟩
+    exact ⟨x, hx, y,
+      ⟨hyQ, (hagree _ hedgeSupport).mpr hyedge, c, hyc, hcLayer, hcSeed'⟩,
+      (dependsOn_connectionEventIn d (cubicBoxEdges d cubicOrigin n) x y
+        hagreeConnection).mpr hxy⟩
+
+theorem continuous_seedConnectionProbability
+    (d : ℕ) (i : Fin d) (m n : ℕ) :
+    Continuous fun x : ℝ ↦
+      (bernoulliBondMeasure d (Set.projIcc 0 1 zero_le_one x)).real
+        (seedConnectionEvent d i m n) :=
+  (dependsOn_seedConnectionEvent d i m n).continuous_bernoulliBondMeasure_real
 
 theorem isIncreasingEvent_seedConnectionEvent (d : ℕ) (i : Fin d) (m n : ℕ) :
     IsIncreasingEvent (seedConnectionEvent d i m n) := by

@@ -23,6 +23,7 @@ import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
 import Percolation.Critical.HalfSpaceCriticalAssembly
+import Percolation.Critical.SlabLimitAssembly
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -215,3 +216,4 @@ import Percolation.Critical.HalfSpaceCriticalAssembly
 #print axioms Percolation.epsilonDenseCrossingCluster_probability_tendsto_one_of_uniformFiniteSlab
 #print axioms Percolation.epsilonGoodBox_probability_tendsto_one_of_uniformFiniteSlab
 #print axioms Percolation.halfSpaceTheta_critical_eq_zero_of_reliableBricks
+#print axioms Percolation.slabCriticalProbability_tendsto_cubicCriticalProbability_of_approximation

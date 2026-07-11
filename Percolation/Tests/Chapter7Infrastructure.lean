@@ -23,6 +23,7 @@ import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
 import Percolation.Critical.HalfSpaceCriticalAssembly
+import Percolation.Critical.SlabLimitAssembly
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -695,5 +696,10 @@ example {d : ℕ} (hd : 2 ≤ d)
     (h52 : ReliableBricksForceHalfSpacePercolation d (by omega)) :
     halfSpaceTheta d (cubicCriticalProbabilityUnit d hd) = 0 :=
   halfSpaceTheta_critical_eq_zero_of_reliableBricks hd h36 h52
+
+example (d : ℕ) (happrox : SlabCriticalApproximation d) :
+    Filter.Tendsto (slabCriticalProbability d) Filter.atTop
+      (nhds (cubicCriticalProbability d)) :=
+  slabCriticalProbability_tendsto_cubicCriticalProbability_of_approximation d happrox
 
 end Percolation

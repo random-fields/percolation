@@ -91,6 +91,7 @@ import Percolation.Critical.StaticLogInset
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
+import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization
 import Percolation.Critical.ExplorationLaw

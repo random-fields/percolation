@@ -1,6 +1,7 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
+import Percolation.Planar.CrossingMenger
 import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
@@ -47,6 +48,16 @@ example : siteSquareRectangleCrossingEvent 0 0 =
 example (m n : ℕ) (hm : 1 ≤ m) :
     maxEdgeDisjointSquareRectangleCrossings m n (∅ : EdgeConfiguration 2) = 0 :=
   maxEdgeDisjointSquareRectangleCrossings_empty hm
+
+example (m n r : ℕ) (ω : EdgeConfiguration 2) :
+    ω ∈ interiorDepth r (squareRectangleCrossingEvent m n) ↔
+      HasEdgeDisjointSquareRectangleCrossings m n (r + 1) ω :=
+  mem_interiorDepth_squareRectangleCrossingEvent_iff m n r ω
+
+example {m n r : ℕ} (hm : 1 ≤ m) (ω : EdgeConfiguration 2) :
+    ω ∈ interiorDepth r (squareRectangleCrossingEvent m n) ↔
+      r + 1 ≤ maxEdgeDisjointSquareRectangleCrossings m n ω :=
+  mem_interiorDepth_squareRectangleCrossingEvent_iff_le_max hm ω
 
 example (d : ℕ) (F : Set (Cubic d)) (k : ℕ) :
     cubicDilatedThickening d F k = cubicDilatedMinkowskiSum d F k :=

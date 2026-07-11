@@ -81,6 +81,40 @@ theorem endpoint_mem_squareRectangle_of_edge_mem {m n : ℕ} {e : SquareEdge}
   · exact hend.1
   · exact hend.2
 
+theorem mem_cubicMetricBox_max_of_mem_squareRectangleVertices {m n : ℕ}
+    {x : SquareVertex} (hx : x ∈ squareRectangleVertices m n) :
+    x ∈ cubicMetricBox 2 cubicOrigin (max m n) := by
+  rw [mem_cubicMetricBox]
+  intro i
+  have hx' := mem_squareRectangleVertices_iff.mp hx
+  fin_cases i
+  · simp [cubicOrigin]
+    constructor <;> omega
+  · simp [cubicOrigin]
+    constructor <;> omega
+
+/-- If every vertex of a square-lattice walk lies in the rectangle, every traversed edge is
+one of the explicit internal rectangle edges. -/
+theorem walkEdgeFinset_subset_squareRectangleEdges_of_support {m n : ℕ}
+    {x y : SquareVertex} (w : squareGraph.Walk x y)
+    (hrect : ∀ z ∈ w.support, z ∈ squareRectangleVertices m n) :
+    walkEdgeFinset w ⊆ squareRectangleEdges m n := by
+  classical
+  have hbox : walkEdgeFinset w ⊆ cubicBoxEdges 2 cubicOrigin (max m n) :=
+    walkEdgeFinset_subset_cubicBoxEdges_of_support w fun z hz ↦
+      mem_cubicMetricBox_max_of_mem_squareRectangleVertices (hrect z hz)
+  intro e he
+  rw [squareRectangleEdges, Finset.mem_filter]
+  refine ⟨hbox he, ?_, ?_⟩
+  · apply hrect e.1.out.1
+    apply w.mem_support_of_mem_edges
+      ((mem_walkEdgeFinset_iff w e).mp he)
+    exact Sym2.out_fst_mem e.1
+  · apply hrect e.1.out.2
+    apply w.mem_support_of_mem_edges
+      ((mem_walkEdgeFinset_iff w e).mp he)
+    exact Sym2.out_snd_mem e.1
+
 /-- An open left-right crossing of `[0,m] × [-n,n]`. -/
 def squareRectangleCrossingEvent (m n : ℕ) : Set (EdgeConfiguration 2) :=
   ⋃ x ∈ squareRectangleLeft m n, ⋃ y ∈ squareRectangleRight m n,

@@ -1,6 +1,7 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
+import Percolation.Planar.CrossingMenger
 import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
@@ -20,6 +21,9 @@ import Percolation.Critical.StaticBlockTranslation
 #print axioms Percolation.HasMonotoneCoupling.stochasticallyDominates
 #print axioms Percolation.SiteExploration.reachable_between_of_mem_occupiedLimit
 #print axioms Percolation.dependsOn_siteSquareRectangleCrossingEvent
+#print axioms Percolation.hasEdgeDisjointSquareRectangleCrossings_iff_isEdgeReachableBetweenFinsets
+#print axioms Percolation.mem_interiorDepth_squareRectangleCrossingEvent_iff
+#print axioms Percolation.mem_interiorDepth_squareRectangleCrossingEvent_iff_le_max
 #print axioms Percolation.dependsOn_largeCrossingClusterEvent
 #print axioms Percolation.dependsOn_secondMacroscopicClusterEvent
 #print axioms Percolation.EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths

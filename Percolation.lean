@@ -81,6 +81,7 @@ import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls
 import Percolation.Planar.Crossings
+import Percolation.Planar.CrossingMenger
 import Percolation.RandomCluster.Basic
 import Percolation.Tests.Chapter7Infrastructure
 import Percolation.Tests.Chapter7AxiomAudit

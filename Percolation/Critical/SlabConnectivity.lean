@@ -699,4 +699,109 @@ theorem mem_upwardDistanceAtMost_allSlabCornersConnectedEvent_of_projected_chain
       (show 3 * K ≤ 4 * K by omega)
   simpa [K] using hchain
 
+/-! ### Exact witness-level reduction of Figure 7.14 -/
+
+/-- Concrete open-walk witness for one of the four corner-to-face events in (7.82). -/
+structure SlabCornerConnectionWitness
+    {d : ℕ} (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) (ω : EdgeConfiguration d) where
+  target : Cubic d
+  target_mem : target ∈ slabCornerTargetFace d hd m L k
+  walk : (cubicGraph d).Walk (slabCornerVertex d m k) target
+  isOpen : walkIsOpen ω walk
+  support_subset : ∀ z ∈ walk.support, z ∈ slabCornerBoxVertices d m L
+
+theorem mem_slabCornerConnectionEvent_iff_nonempty_witness
+    {d : ℕ} (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) (ω : EdgeConfiguration d) :
+    ω ∈ slabCornerConnectionEvent d hd m L k ↔
+      Nonempty (SlabCornerConnectionWitness hd m L k ω) := by
+  constructor
+  · intro hω
+    simp only [slabCornerConnectionEvent, Set.mem_iUnion] at hω
+    obtain ⟨y, hy, hconn⟩ := hω
+    obtain ⟨w, hwopen, hwbox⟩ := hconn
+    exact ⟨⟨y, hy, w, hwopen, hwbox⟩⟩
+  · rintro ⟨W⟩
+    exact Set.mem_iUnion.mpr ⟨W.target,
+      Set.mem_iUnion.mpr ⟨W.target_mem,
+        ⟨W.walk, W.isOpen, W.support_subset⟩⟩⟩
+
+/-- A simultaneous choice of the four open walks occurring in (7.82). -/
+abbrev SlabCornerConnectionWitnessFamily
+    {d : ℕ} (hd : 2 ≤ d) (m L : ℕ) (ω : EdgeConfiguration d) :=
+  (k : Fin 4) → SlabCornerConnectionWitness hd m L k ω
+
+/-- Membership in the four-event intersection supplies a concrete family of four walk
+witnesses.  This removes all event-level and choice bookkeeping from the planar step. -/
+theorem mem_allSlabCornerConnectionEvents_iff_nonempty_witnessFamily
+    {d : ℕ} (hd : 2 ≤ d) (m L : ℕ) (ω : EdgeConfiguration d) :
+    ω ∈ allSlabCornerConnectionEvents d hd m L ↔
+      Nonempty (SlabCornerConnectionWitnessFamily hd m L ω) := by
+  constructor
+  · intro hω
+    simp only [allSlabCornerConnectionEvents, Set.mem_iInter] at hω
+    let W : SlabCornerConnectionWitnessFamily hd m L ω := fun k ↦
+      Classical.choice ((mem_slabCornerConnectionEvent_iff_nonempty_witness
+        hd m L k ω).mp (hω k (Finset.mem_univ k)))
+    exact ⟨W⟩
+  · rintro ⟨W⟩
+    simp only [allSlabCornerConnectionEvents, Set.mem_iInter]
+    intro k _hk
+    exact (mem_slabCornerConnectionEvent_iff_nonempty_witness hd m L k ω).mpr ⟨W k⟩
+
+/-- The three exact projected-support intersections depicted in Figure 7.14. -/
+def SlabCornerConnectionWitnessFamily.HasProjectedChain
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd m L ω) : Prop :=
+  (∃ z, z ∈ (projectCubicWalkFirstTwo hd (W ⟨0, by decide⟩).walk).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd (W ⟨1, by decide⟩).walk).support) ∧
+  (∃ z, z ∈ (projectCubicWalkFirstTwo hd (W ⟨1, by decide⟩).walk).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd (W ⟨2, by decide⟩).walk).support) ∧
+  (∃ z, z ∈ (projectCubicWalkFirstTwo hd (W ⟨2, by decide⟩).walk).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd (W ⟨3, by decide⟩).walk).support)
+
+/-- Endpoint oracle: at zero planar scale all four projected walks have the same start, so the
+projected-chain conclusion is automatic. -/
+theorem SlabCornerConnectionWitnessFamily.hasProjectedChain_zero
+    {d L : ℕ} {hd : 2 ≤ d} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd 0 L ω) :
+    W.HasProjectedChain := by
+  let z : SquareVertex := fun _ ↦ 0
+  have hz (k : Fin 4) :
+      cubicFirstTwoProjection hd (slabCornerVertex d 0 k) = z := by
+    ext i
+    simp [z, cubicFirstTwoProjection, cubicRestrict, slabCornerVertex]
+  have hmem (k : Fin 4) :
+      z ∈ (projectCubicWalkFirstTwo hd (W k).walk).support := by
+    rw [← hz k]
+    exact (projectCubicWalkFirstTwo hd (W k).walk).start_mem_support
+  exact ⟨⟨z, hmem ⟨0, by decide⟩, hmem ⟨1, by decide⟩⟩,
+    ⟨z, hmem ⟨1, by decide⟩, hmem ⟨2, by decide⟩⟩,
+    ⟨z, hmem ⟨2, by decide⟩, hmem ⟨3, by decide⟩⟩⟩
+
+/-- Once the pure planar projected-chain fact is supplied for the extracted witnesses, the
+bounded transverse repair proves (7.83)'s deterministic inclusion with Grimmett's exact
+`4(d-2)L` budget. -/
+theorem SlabCornerConnectionWitnessFamily.mem_upwardDistanceAtMost_of_hasProjectedChain
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd m L ω)
+    (hchain : W.HasProjectedChain) :
+    ω ∈ upwardDistanceAtMost (4 * ((d - 2) * L))
+      (allSlabCornersConnectedEvent d m L) := by
+  rcases hchain with ⟨h01, h12, h23⟩
+  exact mem_upwardDistanceAtMost_allSlabCornersConnectedEvent_of_projected_chain
+    hd
+    (W ⟨0, by decide⟩).walk
+    (W ⟨1, by decide⟩).walk
+    (W ⟨2, by decide⟩).walk
+    (W ⟨3, by decide⟩).walk
+    (W ⟨0, by decide⟩).support_subset
+    (W ⟨1, by decide⟩).support_subset
+    (W ⟨2, by decide⟩).support_subset
+    (W ⟨3, by decide⟩).support_subset
+    h01 h12 h23 ω
+    (W ⟨0, by decide⟩).isOpen
+    (W ⟨1, by decide⟩).isOpen
+    (W ⟨2, by decide⟩).isOpen
+    (W ⟨3, by decide⟩).isOpen
+
 end Percolation

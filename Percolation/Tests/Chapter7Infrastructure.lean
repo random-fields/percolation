@@ -702,4 +702,9 @@ example (d : ℕ) (happrox : SlabCriticalApproximation d) :
       (nhds (cubicCriticalProbability d)) :=
   slabCriticalProbability_tendsto_cubicCriticalProbability_of_approximation d happrox
 
+example {d L : ℕ} {hd : 2 ≤ d} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd 0 L ω) :
+    W.HasProjectedChain :=
+  W.hasProjectedChain_zero
+
 end Percolation

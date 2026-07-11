@@ -46,6 +46,7 @@ import Percolation.Critical.BoxRadiusProperties
 import Percolation.Critical.TwoPoint
 import Percolation.Critical.TreeGraph
 import Percolation.Critical.ConnectivitySkeleton
+import Percolation.Critical.ConnectedKernel
 import Percolation.Critical.RadiusDecay
 import Percolation.Critical.ClusterTail
 import Percolation.Critical.MenshikovBootstrap

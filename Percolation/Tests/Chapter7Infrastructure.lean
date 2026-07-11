@@ -67,6 +67,14 @@ example {m n r : ℕ} (hm : 1 ≤ m) (ω : EdgeConfiguration 2) :
       r + 1 ≤ maxEdgeDisjointSquareRectangleCrossings m n ω :=
   mem_interiorDepth_squareRectangleCrossingEvent_iff_le_max hm ω
 
+example {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂) {r : ℕ} (hr : 1 ≤ r)
+    {m n : ℕ} (hm : 1 ≤ m) :
+    (bernoulliBondMeasure 2 p₂).real
+        {ω | maxEdgeDisjointSquareRectangleCrossings m n ω ≤ r} ≤
+      ((p₂ : ℝ) / ((p₂ : ℝ) - p₁)) ^ r *
+        (1 - (bernoulliBondMeasure 2 p₁).real (squareRectangleCrossingEvent m n)) :=
+  bernoulliBondMeasure_real_maxCrossings_le_le h12 hr hm
+
 example (d : ℕ) (F : Set (Cubic d)) (k : ℕ) :
     cubicDilatedThickening d F k = cubicDilatedMinkowskiSum d F k :=
   cubicDilatedThickening_eq_minkowskiSum d F k

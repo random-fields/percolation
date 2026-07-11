@@ -12,6 +12,7 @@ infrastructure.  It is the deterministic bridge used by Grimmett Lemma 11.22 and
 
 namespace Percolation
 
+open MeasureTheory ProbabilityTheory
 open scoped unitInterval
 
 /-- Vertices of the finite square-lattice rectangle, as a finite subtype. -/
@@ -526,5 +527,45 @@ theorem mem_interiorDepth_squareRectangleCrossingEvent_iff_le_max
       r + 1 ≤ maxEdgeDisjointSquareRectangleCrossings m n ω := by
   rw [mem_interiorDepth_squareRectangleCrossingEvent_iff,
     hasEdgeDisjointSquareRectangleCrossings_iff_le_max hm]
+
+/-- ACCFR sprinkling after the exact Menger identification.  This is the direct quantitative
+bridge used in Grimmett (2.47), Lemma 11.22, and equation (7.75). -/
+theorem one_sub_bernoulliBondMeasure_real_maxCrossings_ge_le
+    {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂) {r : ℕ} (hr : 1 ≤ r)
+    {m n : ℕ} (hm : 1 ≤ m) :
+    1 - (bernoulliBondMeasure 2 p₂).real
+        {ω | r + 1 ≤ maxEdgeDisjointSquareRectangleCrossings m n ω} ≤
+      ((p₂ : ℝ) / ((p₂ : ℝ) - p₁)) ^ r *
+        (1 - (bernoulliBondMeasure 2 p₁).real (squareRectangleCrossingEvent m n)) := by
+  have hset : interiorDepth r (squareRectangleCrossingEvent m n) =
+      {ω | r + 1 ≤ maxEdgeDisjointSquareRectangleCrossings m n ω} := by
+    ext ω
+    exact mem_interiorDepth_squareRectangleCrossingEvent_iff_le_max hm ω
+  rw [← hset]
+  exact (isIncreasingEvent_squareRectangleCrossingEvent m n).one_sub_bernoulliBondMeasure_real_interiorDepth_le
+      (measurableSet_squareRectangleCrossingEvent m n) h12 hr
+
+/-- Complement form of the sprinkling/Menger inequality: the chance of at most `r` crossings
+at the higher density is bounded by the lower-density crossing failure probability. -/
+theorem bernoulliBondMeasure_real_maxCrossings_le_le
+    {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂) {r : ℕ} (hr : 1 ≤ r)
+    {m n : ℕ} (hm : 1 ≤ m) :
+    (bernoulliBondMeasure 2 p₂).real
+        {ω | maxEdgeDisjointSquareRectangleCrossings m n ω ≤ r} ≤
+      ((p₂ : ℝ) / ((p₂ : ℝ) - p₁)) ^ r *
+        (1 - (bernoulliBondMeasure 2 p₁).real (squareRectangleCrossingEvent m n)) := by
+  let A : Set (EdgeConfiguration 2) :=
+    {ω | r + 1 ≤ maxEdgeDisjointSquareRectangleCrossings m n ω}
+  have hA : A = interiorDepth r (squareRectangleCrossingEvent m n) := by
+    ext ω
+    exact (mem_interiorDepth_squareRectangleCrossingEvent_iff_le_max hm ω).symm
+  have hAc : Aᶜ = {ω | maxEdgeDisjointSquareRectangleCrossings m n ω ≤ r} := by
+    ext ω
+    simp [A]
+  have hAm : MeasurableSet A := by
+    rw [hA]
+    exact measurableSet_interiorDepth (measurableSet_squareRectangleCrossingEvent m n) r
+  rw [← hAc, measureReal_compl hAm, probReal_univ]
+  exact one_sub_bernoulliBondMeasure_real_maxCrossings_ge_le h12 hr hm
 
 end Percolation

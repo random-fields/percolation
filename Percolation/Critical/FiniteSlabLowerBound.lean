@@ -590,4 +590,315 @@ theorem slabCornerAllConnectionLowerBound_le
     slabCornersConnected_probability_ge d hd h12 m L hθnonneg
       (regionThetaFrom_half_le_slabCornerConnectionEvent d hd p₁ m L)
 
+/-! ### Transported corner boxes for Figure 7.15 -/
+
+/-- Pullback of the four-corners-connected event along a cubic graph automorphism.  In the
+original configuration this is the event that the four transported corners are connected
+inside the transported corner box. -/
+def transportedSlabCornersConnectedEvent
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (m L : ℕ) :
+    Set (EdgeConfiguration d) :=
+  cubicGraphIsoConfigurationPullback F ⁻¹'
+    allSlabCornersConnectedEvent d m L
+
+theorem measurableSet_transportedSlabCornersConnectedEvent
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (m L : ℕ) :
+    MeasurableSet (transportedSlabCornersConnectedEvent F m L) :=
+  (measurableSet_allSlabCornersConnectedEvent d m L).preimage
+    (measurable_cubicGraphIsoConfigurationPullback F)
+
+theorem isIncreasingEvent_transportedSlabCornersConnectedEvent
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (m L : ℕ) :
+    IsIncreasingEvent (transportedSlabCornersConnectedEvent F m L) := by
+  intro ω η hωη hω
+  apply isIncreasingEvent_allSlabCornersConnectedEvent d m L
+    (show cubicGraphIsoConfigurationPullback F ω ⊆
+      cubicGraphIsoConfigurationPullback F η by
+        intro e he
+        exact hωη he)
+  exact hω
+
+theorem transportedSlabCornersConnectedEvent_probability
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (p : I) (m L : ℕ) :
+    (bernoulliBondMeasure d p).real
+        (transportedSlabCornersConnectedEvent F m L) =
+      (bernoulliBondMeasure d p).real
+        (allSlabCornersConnectedEvent d m L) := by
+  let T := cubicGraphIsoConfigurationPullback F
+  have hmap := congrArg
+    (fun μ : Measure (EdgeConfiguration d) ↦
+      μ.real (allSlabCornersConnectedEvent d m L))
+    (bernoulliBondMeasure_map_cubicGraphIsoConfigurationPullback p F)
+  change (Measure.map T (bernoulliBondMeasure d p)).real
+      (allSlabCornersConnectedEvent d m L) =
+    (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L) at hmap
+  rw [map_measureReal_apply (measurable_cubicGraphIsoConfigurationPullback F)
+    (measurableSet_allSlabCornersConnectedEvent d m L)] at hmap
+  exact hmap
+
+/-- A transported all-corners event supplies each concrete transported corner connection. -/
+theorem mem_connectionEventWithinVertices_of_mem_transportedSlabCornersConnectedEvent
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (m L : ℕ)
+    (k : Fin 4) {ω : EdgeConfiguration d}
+    (hω : ω ∈ transportedSlabCornersConnectedEvent F m L) :
+    ω ∈ connectionEventWithinVertices d
+      (cubicGraphIsoRegion F (slabCornerBoxVertices d m L : Set (Cubic d)))
+      (F (slabCornerVertex d m ⟨0, by decide⟩))
+      (F (slabCornerVertex d m k)) := by
+  have hbase : cubicGraphIsoConfigurationPullback F ω ∈
+      connectionEventWithinVertices d
+        (slabCornerBoxVertices d m L : Set (Cubic d))
+        (slabCornerVertex d m ⟨0, by decide⟩)
+        (slabCornerVertex d m k) := by
+    simp only [transportedSlabCornersConnectedEvent, Set.mem_preimage] at hω
+    simp only [allSlabCornersConnectedEvent, Set.mem_iInter] at hω
+    exact hω k (Finset.mem_univ k)
+  exact (cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_iff
+    F (slabCornerBoxVertices d m L : Set (Cubic d)) ω
+    (slabCornerVertex d m ⟨0, by decide⟩)
+    (slabCornerVertex d m k)).1 hbase
+
+/-- Translation placing the first square `U₁` in Figure 7.15. -/
+def figure715UpperSquareIso
+    (d a b : ℕ) : cubicGraph d ≃g cubicGraph d :=
+  cubicTranslationIso cubicOrigin
+    (slabCornerVertex d (b - a) ⟨3, by decide⟩)
+
+@[simp]
+theorem figure715UpperSquareIso_corner_zero
+    (d a b : ℕ) :
+    figure715UpperSquareIso d a b (slabCornerVertex d a ⟨0, by decide⟩) =
+      slabCornerVertex d (b - a) ⟨3, by decide⟩ := by
+  rw [figure715UpperSquareIso, cubicTranslationIso_apply]
+  have hzero : slabCornerVertex d a ⟨0, by decide⟩ = cubicOrigin := by
+    ext i
+    simp [slabCornerVertex, cubicOrigin]
+  rw [hzero, cubicTranslate_self]
+
+theorem figure715UpperSquareIso_corner_two
+    (d a b : ℕ) (hab : a ≤ b) :
+    figure715UpperSquareIso d a b (slabCornerVertex d a ⟨2, by decide⟩) =
+      fun i ↦ if i.val = 0 then (a : ℤ)
+        else if i.val = 1 then (b : ℤ) else 0 := by
+  ext i
+  simp only [figure715UpperSquareIso, cubicTranslationIso_apply, cubicTranslate,
+    cubicOrigin, slabCornerVertex]
+  by_cases hi0 : i.val = 0
+  · simp [hi0]
+  · by_cases hi1 : i.val = 1
+    · simp [hi1, Nat.cast_sub hab]
+    · simp [hi0, hi1]
+
+theorem cubicGraphIsoRegion_figure715UpperSquare_subset_finiteThickSlabS
+    (d : ℕ) (hd : 2 ≤ d) {a b n L : ℕ} (hab : a ≤ b) (hbn : b ≤ n) :
+    cubicGraphIsoRegion (figure715UpperSquareIso d a b)
+        (slabCornerBoxVertices d a L : Set (Cubic d)) ⊆
+      (finiteThickSlabSVertices d n L : Set (Cubic d)) := by
+  rintro x ⟨u, hu, rfl⟩
+  change figure715UpperSquareIso d a b u ∈ finiteThickSlabSVertices d n L
+  rw [mem_finiteThickSlabSVertices_iff]
+  have huBounds := mem_slabCornerBoxVertices_iff.mp hu
+  intro i
+  by_cases hi : i.val < 2
+  · interval_cases hval : i.val
+    · have hi0 : i = ⟨0, by omega⟩ := Fin.ext hval
+      rw [hi0]
+      have hu0 := huBounds ⟨0, by omega⟩
+      simp [figure715UpperSquareIso, cubicTranslate, slabCornerVertex,
+        cubicOrigin] at hu0 ⊢
+      apply Int.ofNat_le.mp
+      rw [Int.natCast_natAbs, abs_le]
+      constructor <;> omega
+    · have hi1 : i = ⟨1, hd⟩ := Fin.ext hval
+      rw [hi1]
+      have hu1 := huBounds ⟨1, hd⟩
+      simp [figure715UpperSquareIso, cubicTranslate, slabCornerVertex,
+        cubicOrigin, Nat.cast_sub hab] at hu1 ⊢
+      apply Int.ofNat_le.mp
+      rw [Int.natCast_natAbs, abs_le]
+      constructor <;> omega
+  · have hi2 : 2 ≤ i.val := by omega
+    have hui := huBounds i
+    have hi0 : i.val ≠ 0 := by omega
+    have hi1 : i.val ≠ 1 := by omega
+    simpa [hi, figure715UpperSquareIso, cubicTranslate, slabCornerVertex,
+      cubicOrigin, hi0, hi1] using hui
+
+theorem slabCornerBoxVertices_subset_finiteThickSlabS
+    (d : ℕ) {m n L : ℕ} (hmn : m ≤ n) :
+    (slabCornerBoxVertices d m L : Set (Cubic d)) ⊆
+      (finiteThickSlabSVertices d n L : Set (Cubic d)) := by
+  intro x hx
+  change x ∈ finiteThickSlabSVertices d n L
+  rw [mem_finiteThickSlabSVertices_iff]
+  have hxBounds := mem_slabCornerBoxVertices_iff.mp hx
+  intro i
+  by_cases hi : i.val < 2
+  · have hxi := if_pos hi ▸ hxBounds i
+    rw [if_pos hi]
+    apply Int.ofNat_le.mp
+    rw [Int.natCast_natAbs, abs_le]
+    constructor <;> omega
+  · simpa [hi] using hxBounds i
+
+/-- The transverse-zero planar vertex `(a,b,0,…,0)` in Figure 7.15. -/
+def figure715PlanarVertex (d a b : ℕ) : Cubic d :=
+  fun i ↦ if i.val = 0 then (a : ℤ)
+    else if i.val = 1 then (b : ℤ) else 0
+
+/-- The two all-corners events in Figure 7.15 force the normalized planar vertex to connect to
+the origin inside `S_n(L)`. -/
+theorem inter_figure715CornerEvents_subset_connectionS
+    (d : ℕ) (hd : 2 ≤ d) {a b n L : ℕ} (hab : a ≤ b) (hbn : b ≤ n) :
+    transportedSlabCornersConnectedEvent (figure715UpperSquareIso d a b) a L ∩
+        allSlabCornersConnectedEvent d (b - a) L ⊆
+      finiteThickSlabSConnectionEvent d n L cubicOrigin
+        (figure715PlanarVertex d a b) := by
+  rintro ω ⟨hupper, hlower⟩
+  have hupperConn :=
+    mem_connectionEventWithinVertices_of_mem_transportedSlabCornersConnectedEvent
+      (figure715UpperSquareIso d a b) a L ⟨2, by decide⟩ hupper
+  rw [figure715UpperSquareIso_corner_zero,
+    figure715UpperSquareIso_corner_two d a b hab] at hupperConn
+  change ω ∈ connectionEventWithinVertices d
+    (cubicGraphIsoRegion (figure715UpperSquareIso d a b)
+      (slabCornerBoxVertices d a L : Set (Cubic d)))
+    (slabCornerVertex d (b - a) ⟨3, by decide⟩)
+    (figure715PlanarVertex d a b) at hupperConn
+  have hlowerConn : ω ∈ connectionEventWithinVertices d
+      (slabCornerBoxVertices d (b - a) L : Set (Cubic d))
+      cubicOrigin (slabCornerVertex d (b - a) ⟨3, by decide⟩) := by
+    simp only [allSlabCornersConnectedEvent, Set.mem_iInter] at hlower
+    have h := hlower ⟨3, by decide⟩ (Finset.mem_univ _)
+    have hstart : slabCornerVertex d (b - a) ⟨0, by decide⟩ = cubicOrigin := by
+      ext i
+      simp [slabCornerVertex, cubicOrigin]
+    rw [hstart] at h
+    exact h
+  rcases hlowerConn with ⟨q, hqOpen, hqBox⟩
+  rcases hupperConn with ⟨r, hrOpen, hrBox⟩
+  refine ⟨q.append r, walkIsOpen_append hqOpen hrOpen, ?_⟩
+  intro x hx
+  rw [SimpleGraph.Walk.mem_support_append_iff] at hx
+  rcases hx with hxq | hxr
+  · exact slabCornerBoxVertices_subset_finiteThickSlabS d
+      ((Nat.sub_le b a).trans hbn) (hqBox x hxq)
+  · exact cubicGraphIsoRegion_figure715UpperSquare_subset_finiteThickSlabS
+      d hd hab hbn (hrBox x hxr)
+
+/-- Probability form of Figure 7.15 for a normalized transverse-zero vertex
+`0 ≤ a ≤ b ≤ n`. -/
+theorem sq_slabCornerLowerBound_le_figure715PlanarConnection
+    (d : ℕ) (hd : 2 ≤ d) (p : I) {a b n L : ℕ}
+    (hab : a ≤ b) (hbn : b ≤ n) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    δ ^ 2 ≤ (bernoulliBondMeasure d p).real
+      (finiteThickSlabSConnectionEvent d n L cubicOrigin
+        (figure715PlanarVertex d a b)) := by
+  let F := figure715UpperSquareIso d a b
+  let A := transportedSlabCornersConnectedEvent F a L
+  let B := allSlabCornersConnectedEvent d (b - a) L
+  have hA : δ ≤ (bernoulliBondMeasure d p).real A := by
+    rw [show (bernoulliBondMeasure d p).real A =
+        (bernoulliBondMeasure d p).real
+          (allSlabCornersConnectedEvent d a L) by
+      exact transportedSlabCornersConnectedEvent_probability F p a L]
+    exact hcorner a
+  have hB : δ ≤ (bernoulliBondMeasure d p).real B := hcorner (b - a)
+  calc
+    δ ^ 2 = δ * δ := by ring
+    _ ≤ (bernoulliBondMeasure d p).real A *
+        (bernoulliBondMeasure d p).real B :=
+      mul_le_mul hA hB hδ measureReal_nonneg
+    _ ≤ (bernoulliBondMeasure d p).real (A ∩ B) :=
+      bernoulliBondMeasure_real_fkg p
+        (isIncreasingEvent_transportedSlabCornersConnectedEvent F a L)
+        (isIncreasingEvent_allSlabCornersConnectedEvent d (b - a) L)
+        (measurableSet_transportedSlabCornersConnectedEvent F a L)
+        (measurableSet_allSlabCornersConnectedEvent d (b - a) L)
+    _ ≤ (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin
+          (figure715PlanarVertex d a b)) :=
+      measureReal_mono
+        (inter_figure715CornerEvents_subset_connectionS d hd hab hbn)
+        (measure_ne_top _ _)
+
+/-- Inequality (7.86) combined with Figure 7.15, for a normalized vertex whose first two
+coordinates are `0 ≤ a ≤ b`. -/
+theorem transverseCost_mul_sq_slabCornerLowerBound_le_normalizedConnectionS
+    (d : ℕ) (hd : 2 ≤ d) (p : I) {z : Cubic d} {a b n L : ℕ}
+    (hz : z ∈ slabCornerBoxVertices d n L)
+    (hz0 : z ⟨0, by omega⟩ = a) (hz1 : z ⟨1, hd⟩ = b)
+    (hab : a ≤ b) (hbn : b ≤ n) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    (p : ℝ) ^ ((d - 2) * L) * δ ^ 2 ≤
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin z) := by
+  let z' := figure715PlanarVertex d a b
+  have hz' : z' ∈ slabCornerBoxVertices d n L := by
+    rw [mem_slabCornerBoxVertices_iff]
+    intro i
+    by_cases hi0 : i.val = 0
+    · have hiEq : i = ⟨0, by omega⟩ := Fin.ext hi0
+      rw [hiEq]
+      simp [z', figure715PlanarVertex]
+      omega
+    · by_cases hi1 : i.val = 1
+      · have hiEq : i = ⟨1, hd⟩ := Fin.ext hi1
+        rw [hiEq]
+        simp [z', figure715PlanarVertex]
+        omega
+      · have hi2 : ¬ i.val < 2 := by omega
+        simp [z', figure715PlanarVertex, hi0, hi1, hi2]
+  have hagree : ∀ i : Fin d, i.val < 2 → z i = z' i := by
+    intro i hi
+    interval_cases hval : i.val
+    · have hiEq : i = ⟨0, by omega⟩ := Fin.ext hval
+      rw [hiEq, hz0]
+      simp [z', figure715PlanarVertex]
+    · have hiEq : i = ⟨1, hd⟩ := Fin.ext hval
+      rw [hiEq, hz1]
+      simp [z', figure715PlanarVertex]
+  obtain ⟨w, hwPath, hwLength, hwBox⟩ :=
+    exists_transverse_cubicPath_in_slabCorner hd hz hz' hagree
+  let W : Set (EdgeConfiguration d) := {ω | walkIsOpen ω w}
+  let B := finiteThickSlabSConnectionEvent d n L cubicOrigin z'
+  have hWprob : (p : ℝ) ^ ((d - 2) * L) ≤
+      (bernoulliBondMeasure d p).real W := by
+    rw [show (bernoulliBondMeasure d p).real W = (p : ℝ) ^ w.length by
+      exact bernoulliBondMeasure_real_walkIsOpen p w hwPath.isTrail]
+    exact pow_le_pow_of_le_one p.2.1 p.2.2 hwLength
+  have hBprob : δ ^ 2 ≤ (bernoulliBondMeasure d p).real B := by
+    simpa [B, z'] using
+      sq_slabCornerLowerBound_le_figure715PlanarConnection
+        d hd p hab hbn hδ hcorner
+  have hsub : W ∩ B ⊆ finiteThickSlabSConnectionEvent d n L cubicOrigin z := by
+    rintro ω ⟨hW, hB⟩
+    rcases hB with ⟨q, hqOpen, hqS⟩
+    refine ⟨q.append w.reverse, walkIsOpen_append hqOpen (walkIsOpen_reverse hW), ?_⟩
+    intro x hx
+    rw [SimpleGraph.Walk.mem_support_append_iff] at hx
+    rcases hx with hxq | hxw
+    · exact hqS x hxq
+    · apply slabCornerBoxVertices_subset_finiteThickSlabS d le_rfl
+      apply hwBox x
+      simpa using hxw
+  calc
+    (p : ℝ) ^ ((d - 2) * L) * δ ^ 2 ≤
+        (bernoulliBondMeasure d p).real W *
+          (bernoulliBondMeasure d p).real B :=
+      mul_le_mul hWprob hBprob (pow_nonneg hδ _) measureReal_nonneg
+    _ ≤ (bernoulliBondMeasure d p).real (W ∩ B) :=
+      bernoulliBondMeasure_real_fkg p
+        (by intro ω η hωη hω e he; exact hωη (hω e he))
+        (isIncreasingEvent_finiteThickSlabSConnectionEvent d n L cubicOrigin z')
+        (measurableSet_walkIsOpen w)
+        (measurableSet_finiteThickSlabSConnectionEvent d n L cubicOrigin z')
+    _ ≤ (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin z) :=
+      measureReal_mono hsub (measure_ne_top _ _)
+
 end Percolation

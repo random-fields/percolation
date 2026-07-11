@@ -758,4 +758,26 @@ example (d : ℕ) (hd : 2 ≤ d) (L : ℕ) {p₁ p₂ : I}
         (allSlabCornersConnectedEvent d m L) :=
   slabCornerAllConnectionLowerBound_le d hd L h12 m
 
+example (d : ℕ) (hd : 2 ≤ d) (p : I) {a b n L : ℕ}
+    (hab : a ≤ b) (hbn : b ≤ n) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    δ ^ 2 ≤ (bernoulliBondMeasure d p).real
+      (finiteThickSlabSConnectionEvent d n L cubicOrigin
+        (figure715PlanarVertex d a b)) :=
+  sq_slabCornerLowerBound_le_figure715PlanarConnection
+    d hd p hab hbn hδ hcorner
+
+example (d : ℕ) (hd : 2 ≤ d) (p : I) {z : Cubic d} {a b n L : ℕ}
+    (hz : z ∈ slabCornerBoxVertices d n L)
+    (hz0 : z ⟨0, by omega⟩ = a) (hz1 : z ⟨1, hd⟩ = b)
+    (hab : a ≤ b) (hbn : b ≤ n) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    (p : ℝ) ^ ((d - 2) * L) * δ ^ 2 ≤
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin z) :=
+  transverseCost_mul_sq_slabCornerLowerBound_le_normalizedConnectionS
+    d hd p hz hz0 hz1 hab hbn hδ hcorner
+
 end Percolation

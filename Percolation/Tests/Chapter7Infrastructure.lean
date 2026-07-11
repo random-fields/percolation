@@ -6,6 +6,7 @@ import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
+import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.StaticBlockAdjacency
@@ -224,5 +225,21 @@ example {V : Type*} [DecidableEq V] (e : ℕ ≃ V) (R : Finset V) (v : V)
     (hv : v ∈ R) :
     ∃ i : Fin (enumerationSupportLength e R), enumerationPrefixEmbedding e _ i = v :=
   support_subset_range_enumerationPrefixEmbedding e R hv
+
+example {Ω ι : Type*} [MeasurableSpace Ω] [DecidableEq ι]
+    (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (s : Finset ι) (hs : s.Nonempty) (X : ι → Ω → ℝ)
+    (hX : ∀ i ∈ s, MemLp (X i) 2 μ)
+    (N : ι → Finset ι) (D : ℕ)
+    (hNcard : ∀ i ∈ s, (N i).card ≤ D)
+    (hcovZero : ∀ i ∈ s, ∀ j ∈ s, j ∉ N i →
+      ProbabilityTheory.covariance (X i) (X j) μ = 0)
+    (hcovLe : ∀ i ∈ s, ∀ j ∈ s,
+      ProbabilityTheory.covariance (X i) (X j) μ ≤ 1) :
+    ProbabilityTheory.variance
+        (fun ω ↦ (∑ i ∈ s, X i ω) / (s.card : ℝ)) μ ≤
+      (D : ℝ) / s.card :=
+  variance_finset_average_le_of_finite_covariance_neighborhood
+    μ s hs X hX N D hNcard hcovZero hcovLe
 
 end Percolation

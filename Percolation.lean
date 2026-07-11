@@ -18,6 +18,7 @@ import Percolation.Bernoulli.StochasticDomination
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.FiniteEventContinuity
+import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.Basic
 import Percolation.Critical.VertexIndependence
 import Percolation.Critical.OpenClusterDensity

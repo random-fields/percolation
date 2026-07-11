@@ -89,6 +89,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | Neighboring good-block connection (7.59) | The canonical largest clusters of two nearest-neighbor good coarse boxes share a lattice vertex. | `finiteBoxGraphLargestComponents_inter_of_good_step`, `finiteBoxGraphLargestComponents_inter_of_mem_goodBoxEvents` | proved | A new first-level-hit theorem slices the crossing walk inside the overlap; the resulting adjacent-box component has diameter at least `n`, so goodness identifies it with the adjacent selected cluster. Both signs of every coordinate direction are covered. |
 | Good-block path lifting | Every coarse cubic walk supported on good blocks lifts to open-bond reachability between arbitrary vertices in its selected endpoint clusters. | `epsilonGoodBlockClusterVertices_reachable_of_good_walk` | proved | Iterates the literal common-vertex conclusion of 7.59; this is the deterministic site-crossing-to-bond-connectivity skeleton used later in 7.73–7.75. |
 | Good-block face-to-face lift | A good coarse walk gives an actual open bond connection from the negative face of its first box to the positive face of its last box in any coordinate. | `exists_cubicOpenGraph_reachable_between_faces_of_good_walk`, `exists_connectionEvent_between_faces_of_good_walk` | proved | Extracts face vertices from the crossing clauses of the endpoint good boxes and applies the path-lifting theorem. |
+| Finite-range variance/Chebyshev infrastructure | A finite average with at most `D` potentially nonzero covariance partners per site has variance at most `D/|B|`, with an explicit deviation-probability corollary. | `variance_finset_average_le_of_finite_covariance_neighborhood`, `measure_average_deviation_le_of_finite_covariance_neighborhood` | proved slice | This is the quantitative engine for the planned finite-cylinder proof of the supercritical box-density law; the percolation-specific approximation and translated-support count remain. |
 
 ## Adversarial checks already encoded
 
@@ -147,7 +148,8 @@ individual theorem rows.
 | Cubic first-level-hit geometry and neighboring good-block connection (7.59), including preceding checkpoint Git | 11585s | 11911s | 326s | 3,506,404 | 3,572,945 | 66,541 |
 | Good-block walk to open-bond reachability, including preceding checkpoint Git | 11911s | 12052s | 141s | 3,572,945 | 3,590,640 | 17,695 |
 | Good-block face-to-face bond lift, planar-prerequisite inspection, and preceding checkpoint Git | 12052s | 12193s | 141s | 3,590,640 | 3,638,262 | 47,622 |
-| **Measured subtotal** |  |  | **12193s** |  |  | **3,638,262** |
+| Finite-range variance/Chebyshev infrastructure, density-law audit, and preceding checkpoint Git | 12193s | 12401s | 208s | 3,638,262 | 3,698,430 | 60,168 |
+| **Measured subtotal** |  |  | **12401s** |  |  | **3,698,430** |
 
 The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
 7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one

@@ -45,9 +45,10 @@ jobs:
         run: |
           systemd-run \
             --property=RestrictAddressFamilies=~AF_UNIX \
-            --user --pty \
+            --user --pipe --wait --collect \
             -E PATH="$PATH" \
             -E COMPARATOR_LANDRUN="$COMPARATOR_LANDRUN" \
             -E COMPARATOR_LEAN4EXPORT="$COMPARATOR_LEAN4EXPORT" \
+            -E COMPARATOR_BIN="$COMPARATOR_BIN" \
             --working-directory "$(pwd)" \
             -- bash -c 'lake env "$COMPARATOR_BIN" config.json'

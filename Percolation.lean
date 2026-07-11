@@ -85,3 +85,4 @@ import Percolation.RandomCluster.Basic
 import Percolation.Tests.Chapter7Infrastructure
 import Percolation.Tests.Chapter7AxiomAudit
 import Percolation.Core.EdgeMenger
+import Percolation.Core.EdgeMengerToSet

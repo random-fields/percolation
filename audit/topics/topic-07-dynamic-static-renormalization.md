@@ -50,7 +50,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | (7.63), p. 179 | Stochastic domination is comparison of expectations of every bounded increasing measurable function. | `StochasticallyDominates`; `stochasticallyDominates_of_measureReal_le` | proved, including both event consequence and layer-cake converse for probability laws |
 | (7.64), p. 179 | Uniform one-step conditional lower bounds along an enumeration imply domination of iid sites. | `iidBoolEventMass_le_of_hasSequentialLowerBound`; `finiteSequentialLowerBound_stochasticallyDominates`; `finiteCylinder_measureReal_le_of_prefixSequential`; countable `sequentialLowerBound_stochasticallyDominates` target | finite ratio-free kernel, finite exact-expectation theorem, and countable finite-cylinder transfer proved; extension to every bounded increasing measurable observable remains |
 | (7.66)–(7.67), p. 179 | A `k`-dependent field with one-site density at least `δ` dominates iid density `π(δ)`. | `exists_lssDominationDensity` | target |
-| (7.69)–(7.75), pp. 180–181 | Exponentially likely order-`r^(d-1)` disjoint crossings; slice crossings, independent slice family, and ACCFR sprinkling. | `maxEdgeDisjointCrossings_probability_ge`; `maxEdgeDisjointSquareRectangleCrossings`; `EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths`; existing `interiorDepth` inequality | arbitrary finite edge Menger and bounded crossing count proved; probability estimates and the set-to-set adapter target |
+| (7.69)–(7.75), pp. 180–181 | Exponentially likely order-`r^(d-1)` disjoint crossings; slice crossings, independent slice family, and ACCFR sprinkling. | `maxEdgeDisjointCrossings_probability_ge`; `maxEdgeDisjointSquareRectangleCrossings`; `EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths`; `EdgeMenger.isEdgeReachableBetweenFinsets_iff_exists_pairwise_edgeDisjoint_walks`; existing `interiorDepth` inequality | arbitrary finite vertex and set-to-set edge Menger plus bounded crossing count proved; probability estimates and the rectangle/interior-depth adapter remain targets |
 | (7.70), p. 180 | High-density iid site percolation crosses a square with failure exponentially small in its scale. | `siteSquareRectangleCrossingEvent`; `siteSquareRectangleCrossingProbability`; exponential bound target | faithful finite site event/support/measurability/increasingness proved |
 | (7.76)–(7.80), pp. 181–182 | Finite thick slabs `S_n(L)`, `T_n(L)` and uniform positive pair-connection bounds. | `exists_uniform_slabConnection_lowerBound` and region definitions | target |
 | (7.82)–(7.88), pp. 182–185 | FKG corner connections and bounded finite-energy modifications establish (7.79)–(7.80). | slab-corner and modification helper targets | target |
@@ -79,6 +79,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | Two-arm event | Annular two-arm separation event and its self-endpoint check. | `twoArmSeparationEvent`, `measurableSet_twoArmSeparationEvent`, `twoArmSeparationEvent_self`, `scaledBoxRadius` | proved slice | The exponential estimate remains a target. |
 | Chapter 11 rectangle kernel | Finite left-right crossing event and bounded maximum of disjoint crossings. | `squareRectangleCrossingEvent`, `maxEdgeDisjointSquareRectangleCrossings`, `hasEdgeDisjointSquareRectangleCrossings_iff_le_max` | proved slice | The maximal-count interface is restricted to positive width; at width zero unlimited duplicate nil walks make an unrestricted maximum ill-posed. |
 | General finite edge Menger | `k`-edge reachability is equivalent to `k` pairwise edge-disjoint paths. | `EdgeMenger.IsUnitFlow`, `EdgeMenger.exists_residual_path_of_isEdgeReachable_succ`, `EdgeMenger.exists_unitFlow_of_isEdgeReachable`, `EdgeMenger.exists_pairwise_edgeDisjoint_paths_of_unitFlow`, `EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths` | proved slice | Constructive integral augmenting-flow proof; no max-flow axiom or external graph theorem. This is shared Chapter 11 infrastructure and is telemetered separately from Chapter 7. |
+| General finite terminal-set edge Menger | Survival of a connection from one source to a terminal set, or between two finite terminal sets, is equivalent to the corresponding arbitrary-cardinality family of pairwise edge-disjoint walks. | `EdgeMenger.IsEdgeReachableToFinset`, `EdgeMenger.isEdgeReachableToFinset_iff_exists_pairwise_edgeDisjoint_walks`, `EdgeMenger.IsEdgeReachableBetweenFinsets`, `EdgeMenger.isEdgeReachableBetweenFinsets_iff_exists_pairwise_edgeDisjoint_walks` | proved slice | Uses `k` private two-edge channels at each terminal so repeated endpoints and shared `A∩B` vertices do not create false capacity-one bottlenecks. |
 | Stochastic-order vocabulary | Expectation definition, event consequence, iid ordering, monotone-coupling bridge, finite-range dependence. | `StochasticallyDominates`, `StochasticallyDominates.measureReal_le`, `stochasticallyDominates_iff_measureReal_le`, `HasMonotoneCoupling`, `HasMonotoneCoupling.stochasticallyDominates`, `setBernoulli_stochasticallyDominates`, `KDependent`, `setBernoulli_kDependent` | proved slice | The iid theorem checks the direction of domination. The coupling theorem derives the exact expectation formulation from an almost-sure coordinatewise inclusion. LSS remains a target. |
 
 ## Adversarial checks already encoded
@@ -102,8 +103,8 @@ proof window; it does not mark any member of the group proved unless the status 
 - `squareCriticalProbability_eq_half`.
 - Exponential long-rectangle crossing estimate corresponding to 7.110.
 - High-density site rectangle estimate corresponding to 7.70.
-- The Chapter 11 Lemma 11.22 crossing adapter (arbitrary-cardinality finite edge Menger itself is
-  now proved).
+- The Chapter 11 Lemma 11.22 rectangle/interior-depth adapter (arbitrary-cardinality finite
+  vertex and terminal-set edge Menger are now proved).
 
 These remain explicit blockers; no Chapter 11 axiom or theorem parameter has been introduced.
 
@@ -125,11 +126,16 @@ individual theorem rows.
 | Countable finite-cylinder transfer and infinite-output theorem for Lemma 7.24 | 7804s | 8302s | 498s | 2,068,815 | 2,185,229 | 116,414 |
 | Measurable exploration pushforward law and prefix-to-`A∞` adapter | 8302s | 8547s | 245s | 2,185,229 | 2,232,227 | 46,998 |
 | Static finite-box translation equivariance and stationarity (7.60) | 8547s | 9204s | 657s | 2,232,227 | 2,646,980 | 414,753 |
-| **Infrastructure subtotal** |  |  | **9204s** |  |  | **2,646,980** |
+| Checkpoint wiring, audit documentation, tests, and Git (non-theorem) | 9204s | 9324s | 120s | 2,646,980 | 2,689,315 | 42,335 |
+| Arbitrary terminal-set edge Menger (Chapter 11 shared), tests, and audit integration | 9324s | 9941s | 617s | 2,689,315 | 2,966,533 | 277,218 |
+| **Measured subtotal** |  |  | **9941s** |  |  | **2,966,533** |
 
 The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
 7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one
 disjoint measured row; no reconstructed split is reported as measured telemetry.
+
+The terminal-set Menger window likewise includes its test/audit wiring because no intermediate
+tracker snapshot was taken. It is retained as one measured row rather than inventing a split.
 
 Documentation, Git operations, and final PR composition are excluded from theorem telemetry but
 will receive separate non-theorem rows in the frozen review run.

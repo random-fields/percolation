@@ -2,6 +2,7 @@ import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Core.EdgeMenger
+import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
@@ -22,6 +23,8 @@ import Percolation.Critical.StaticBlockTranslation
 #print axioms Percolation.dependsOn_largeCrossingClusterEvent
 #print axioms Percolation.dependsOn_secondMacroscopicClusterEvent
 #print axioms Percolation.EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths
+#print axioms Percolation.EdgeMenger.isEdgeReachableToFinset_iff_exists_pairwise_edgeDisjoint_walks
+#print axioms Percolation.EdgeMenger.isEdgeReachableBetweenFinsets_iff_exists_pairwise_edgeDisjoint_walks
 #print axioms Percolation.iidBoolEventMass_le_of_hasSequentialLowerBound
 #print axioms Percolation.finiteSequentialLowerBound_stochasticallyDominates
 #print axioms Percolation.finiteCylinder_measureReal_le_of_prefixSequential

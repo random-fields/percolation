@@ -2,6 +2,7 @@ import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Core.EdgeMenger
+import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
@@ -85,6 +86,21 @@ example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
         (∀ i, (P i).IsPath) ∧
           Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges :=
   EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths
+
+example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    (A B : Finset V) (k : ℕ) :
+    EdgeMenger.IsEdgeReachableBetweenFinsets G k A B ↔
+      ∃ P : Fin k → EdgeMenger.WalkBetweenFinsets G A B,
+        Pairwise fun i j ↦ (P i).walk.edges.Disjoint (P j).walk.edges :=
+  EdgeMenger.isEdgeReachableBetweenFinsets_iff_exists_pairwise_edgeDisjoint_walks
+
+/-- Shared terminals correctly permit arbitrarily many zero-edge walks; the terminal gadget
+must not introduce a spurious capacity-one bottleneck at that vertex. -/
+example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    (A B : Finset V) (v : V) (hvA : v ∈ A) (hvB : v ∈ B) (k : ℕ) :
+    EdgeMenger.IsEdgeReachableBetweenFinsets G k A B := by
+  intro s hs
+  exact ⟨v, hvA, v, hvB, .nil, by simp⟩
 
 /-- With no coordinates, the ratio-free prefix hypothesis is vacuous and the finite sequential
 criterion correctly compares every probability law with the unique iid law. -/

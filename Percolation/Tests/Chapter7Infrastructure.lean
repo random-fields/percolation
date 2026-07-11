@@ -900,4 +900,13 @@ example (i : Fin 3) (n : ℕ) :
       seededBoundaryQuadrant 3 i n :=
   boxSurfaceOrthant_allPositive_eq_seededBoundaryQuadrant i
 
+example (p : I) (hp : 0 < theta 3 p) (hp1 : (p : ℝ) < 1)
+    (i : Fin 3) (ell : ℕ) {epsilon : ℝ} (hepsilon : 0 < epsilon) :
+    ∃ m n : ℕ, m ≤ n ∧
+      1 - epsilon <
+        (bernoulliBondMeasure 3 p).real
+          (orthantBoundaryContactCardGeEvent 3 m n
+            (allPositiveBoxSurfaceOrthantIndex i) ell) :=
+  exists_allPositiveOrthantContactCardGe_probability_gt 3 (by omega) p hp hp1 i ell hepsilon
+
 end Percolation

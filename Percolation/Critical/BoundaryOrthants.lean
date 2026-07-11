@@ -1,5 +1,6 @@
 import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoxFaces
+import Percolation.Critical.TwoPoint
 
 /-!
 # Signed boundary orthants for Grimmett equation (7.14)
@@ -339,6 +340,285 @@ theorem orthantBoundaryContactProbability_eq_of_iso
   rw [map_measureReal_apply (measurable_cubicGraphIsoConfigurationPullback F)
     (measurableSet_orthantBoundaryContactCardLtEvent d m n a ell), hpre] at hmap
   exact hmap.symm
+
+/-! ### Concrete transitivity of signed orthants -/
+
+theorem cubicSignedCoordinate_mem_cubicMetricBox_origin
+    {d n : ℕ} (flip : Fin d → Bool) {x : Cubic d}
+    (hx : x ∈ cubicMetricBox d cubicOrigin n) :
+    cubicSignedCoordinateEquiv flip x ∈ cubicMetricBox d cubicOrigin n := by
+  rw [mem_cubicMetricBox] at hx ⊢
+  intro j
+  have hj := hx j
+  by_cases hf : flip j
+  · simp [cubicSignedCoordinateEquiv, cubicOrigin, hf] at hj ⊢
+    omega
+  · simpa [cubicSignedCoordinateEquiv, cubicOrigin, hf] using hj
+
+theorem cubicSignedCoordinate_lInfDist_origin
+    {d : ℕ} (flip : Fin d → Bool) (x : Cubic d) :
+    cubicLInfDist cubicOrigin (cubicSignedCoordinateEquiv flip x) =
+      cubicLInfDist cubicOrigin x := by
+  unfold cubicLInfDist
+  apply Finset.sup_congr rfl
+  intro j _hj
+  by_cases hf : flip j
+  · simp [cubicSignedCoordinateEquiv, cubicOrigin, hf, Int.natAbs_neg]
+  · simp [cubicSignedCoordinateEquiv, cubicOrigin, hf]
+
+theorem cubicSignedCoordinate_mem_cubicBoxSurface_origin
+    {d n : ℕ} (flip : Fin d → Bool) {x : Cubic d}
+    (hx : x ∈ cubicBoxSurface d cubicOrigin n) :
+    cubicSignedCoordinateEquiv flip x ∈ cubicBoxSurface d cubicOrigin n := by
+  rw [mem_cubicBoxSurface, cubicSignedCoordinate_lInfDist_origin]
+  exact mem_cubicBoxSurface.mp hx
+
+theorem cubicSignedCoordinate_image_cubicBoxEdges_eq
+    {d n : ℕ} (flip : Fin d → Bool) :
+    (cubicBoxEdges d cubicOrigin n).image (cubicSignedCoordinateIso flip).mapEdgeSet =
+      cubicBoxEdges d cubicOrigin n :=
+  cubicGraphIso_image_cubicBoxEdges_eq_self (cubicSignedCoordinateIso flip)
+    (fun _x hx => cubicSignedCoordinate_mem_cubicMetricBox_origin flip hx)
+
+theorem cubicCoordinatePermutation_mem_allPositiveOrthant
+    {d n : ℕ} (e : Fin d ≃ Fin d) (i : Fin d) {x : Cubic d}
+    (hx : x ∈ boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex i)) :
+    cubicCoordinatePermutationEquiv e x ∈
+      boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex (e i)) := by
+  obtain ⟨hxFace, hxNonneg⟩ := mem_boxSurfaceOrthant_iff.mp hx
+  apply mem_boxSurfaceOrthant_iff.mpr
+  refine ⟨cubicCoordinatePermutation_mem_boxFace e i true hxFace, ?_⟩
+  intro j hji
+  have hback : e.symm j ≠ i := by
+    intro h
+    apply hji
+    simpa using congrArg e h
+  simpa [allPositiveBoxSurfaceOrthantIndex, cubicCoordinatePermutationEquiv] using
+    hxNonneg (e.symm j) hback
+
+theorem cubicSignedCoordinate_mem_targetOrthant
+    {d n : ℕ} (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex a.normal)) :
+    cubicSignedCoordinateEquiv (fun j => !a.signs j) x ∈ boxSurfaceOrthant d n a := by
+  obtain ⟨hxFace, hxNonneg⟩ := mem_boxSurfaceOrthant_iff.mp hx
+  rw [mem_boxSurfaceOrthant_iff]
+  constructor
+  · rw [mem_cubicBoxFace] at hxFace ⊢
+    constructor
+    · by_cases hs : a.signs a.normal <;>
+        simp [allPositiveBoxSurfaceOrthantIndex, cubicSignedCoordinateEquiv, cubicOrigin, hs]
+          at hxFace ⊢ <;> omega
+    · intro j hji
+      have hj := hxFace.2 j hji
+      by_cases hs : a.signs j <;>
+        simp [cubicSignedCoordinateEquiv, cubicOrigin, hs] at hj ⊢ <;> omega
+  · intro j hji
+    have hj := hxNonneg j hji
+    by_cases hs : a.signs j <;>
+      simp [cubicSignedCoordinateEquiv, hs] at hj ⊢ <;> omega
+
+theorem cubicSignedCoordinate_mem_allPositiveOrthant_of_mem_target
+    {d n : ℕ} (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ boxSurfaceOrthant d n a) :
+    cubicSignedCoordinateEquiv (fun j => !a.signs j) x ∈
+      boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex a.normal) := by
+  have hforward := cubicSignedCoordinate_mem_targetOrthant a
+    (x := cubicSignedCoordinateEquiv (fun j => !a.signs j) x)
+  have hself : cubicSignedCoordinateEquiv (fun j => !a.signs j)
+      (cubicSignedCoordinateEquiv (fun j => !a.signs j) x) = x :=
+    cubicSignedCoordinateEquiv_apply_self _ x
+  rw [hself] at hforward
+  exact hforward.mp hx
+
+/-- The concrete cubic automorphism carrying the reference all-positive orthant on face `i` to
+the signed orthant `a`. -/
+def referenceToBoxSurfaceOrthantIso {d : ℕ} (i : Fin d)
+    (a : BoxSurfaceOrthantIndex d) : cubicGraph d ≃g cubicGraph d :=
+  (cubicCoordinatePermutationIso (Equiv.swap i a.normal)).trans
+    (cubicSignedCoordinateIso fun j => !a.signs j)
+
+theorem referenceToBoxSurfaceOrthantIso_mem_box
+    {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ cubicMetricBox d cubicOrigin n) :
+    referenceToBoxSurfaceOrthantIso i a x ∈ cubicMetricBox d cubicOrigin n := by
+  exact cubicSignedCoordinate_mem_cubicMetricBox_origin _
+    (cubicCoordinatePermutation_mem_cubicMetricBox_origin (Equiv.swap i a.normal) hx)
+
+theorem referenceToBoxSurfaceOrthantIso_symm_mem_box
+    {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ cubicMetricBox d cubicOrigin n) :
+    (referenceToBoxSurfaceOrthantIso i a).symm x ∈ cubicMetricBox d cubicOrigin n := by
+  change cubicCoordinatePermutationEquiv (Equiv.swap i a.normal).symm
+      (cubicSignedCoordinateEquiv (fun j => !a.signs j) x) ∈
+        cubicMetricBox d cubicOrigin n
+  exact cubicCoordinatePermutation_mem_cubicMetricBox_origin _
+    (cubicSignedCoordinate_mem_cubicMetricBox_origin _ hx)
+
+theorem cubicCoordinatePermutation_mem_cubicBoxSurface_origin
+    {d n : ℕ} (e : Fin d ≃ Fin d) {x : Cubic d}
+    (hx : x ∈ cubicBoxSurface d cubicOrigin n) :
+    cubicCoordinatePermutationEquiv e x ∈ cubicBoxSurface d cubicOrigin n := by
+  rw [mem_cubicBoxSurface] at hx ⊢
+  unfold cubicLInfDist
+  simpa [cubicCoordinatePermutationEquiv] using
+    (Finset.sup_equiv e.symm (fun j : Fin d => (x j - cubicOrigin j).natAbs))
+
+theorem referenceToBoxSurfaceOrthantIso_mem_surface
+    {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ cubicBoxSurface d cubicOrigin n) :
+    referenceToBoxSurfaceOrthantIso i a x ∈ cubicBoxSurface d cubicOrigin n := by
+  have hperm : cubicCoordinatePermutationEquiv (Equiv.swap i a.normal) x ∈
+      cubicBoxSurface d cubicOrigin n :=
+    cubicCoordinatePermutation_mem_cubicBoxSurface_origin _ hx
+  exact cubicSignedCoordinate_mem_cubicBoxSurface_origin _ hperm
+
+theorem referenceToBoxSurfaceOrthantIso_symm_mem_surface
+    {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ cubicBoxSurface d cubicOrigin n) :
+    (referenceToBoxSurfaceOrthantIso i a).symm x ∈
+      cubicBoxSurface d cubicOrigin n := by
+  change cubicCoordinatePermutationEquiv (Equiv.swap i a.normal).symm
+      (cubicSignedCoordinateEquiv (fun j => !a.signs j) x) ∈
+        cubicBoxSurface d cubicOrigin n
+  exact cubicCoordinatePermutation_mem_cubicBoxSurface_origin _
+    (cubicSignedCoordinate_mem_cubicBoxSurface_origin _ hx)
+
+theorem referenceToBoxSurfaceOrthantIso_mem_orthant
+    {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex i)) :
+    referenceToBoxSurfaceOrthantIso i a x ∈ boxSurfaceOrthant d n a := by
+  apply cubicSignedCoordinate_mem_targetOrthant a
+  simpa using cubicCoordinatePermutation_mem_allPositiveOrthant
+    (Equiv.swap i a.normal) i hx
+
+theorem referenceToBoxSurfaceOrthantIso_symm_mem_orthant
+    {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
+    (hx : x ∈ boxSurfaceOrthant d n a) :
+    (referenceToBoxSurfaceOrthantIso i a).symm x ∈
+      boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex i) := by
+  change cubicCoordinatePermutationEquiv (Equiv.swap i a.normal).symm
+      (cubicSignedCoordinateEquiv (fun j => !a.signs j) x) ∈
+        boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex i)
+  have hsigned := cubicSignedCoordinate_mem_allPositiveOrthant_of_mem_target a hx
+  have hperm := cubicCoordinatePermutation_mem_allPositiveOrthant
+    (Equiv.swap i a.normal).symm a.normal hsigned
+  simpa using hperm
+
+theorem referenceToBoxSurfaceOrthantIso_image_cubicBoxEdges_eq
+    {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) :
+    (cubicBoxEdges d cubicOrigin n).image
+        (referenceToBoxSurfaceOrthantIso i a).mapEdgeSet =
+      cubicBoxEdges d cubicOrigin n :=
+  cubicGraphIso_image_cubicBoxEdges_eq_self (referenceToBoxSurfaceOrthantIso i a)
+    (fun _x hx => referenceToBoxSurfaceOrthantIso_mem_box i a hx)
+
+/-- Every signed orthant has the same contact-count law as the all-positive reference orthant. -/
+theorem orthantBoundaryContactProbability_eq_reference
+    {d m n ell : ℕ} (p : I) (i : Fin d) (a : BoxSurfaceOrthantIndex d) :
+    (bernoulliBondMeasure d p).real
+        (orthantBoundaryContactCardLtEvent d m n a ell) =
+      (bernoulliBondMeasure d p).real
+        (orthantBoundaryContactCardLtEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell) := by
+  symm
+  apply orthantBoundaryContactProbability_eq_of_iso p
+    (referenceToBoxSurfaceOrthantIso i a)
+  · exact fun x hx => referenceToBoxSurfaceOrthantIso_mem_box i a hx
+  · exact fun x hx => referenceToBoxSurfaceOrthantIso_symm_mem_box i a hx
+  · exact fun x hx => referenceToBoxSurfaceOrthantIso_mem_surface i a hx
+  · exact fun x hx => referenceToBoxSurfaceOrthantIso_symm_mem_surface i a hx
+  · exact fun x hx => referenceToBoxSurfaceOrthantIso_mem_orthant i a hx
+  · exact fun x hx => referenceToBoxSurfaceOrthantIso_symm_mem_orthant i a hx
+  · exact referenceToBoxSurfaceOrthantIso_image_cubicBoxEdges_eq i a
+
+/-- Equation (7.14) with all symmetry factors identified. -/
+theorem orthantContactLt_probability_pow_le_fullContactLt
+    {d m n ell : ℕ} (hd : 0 < d) (p : I) (i : Fin d) :
+    ((bernoulliBondMeasure d p).real
+        (orthantBoundaryContactCardLtEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell)) ^ (d * 2 ^ d) ≤
+      (bernoulliBondMeasure d p).real
+        (boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell)) := by
+  have h := prod_orthantContactLt_probability_le_fullContactLt hd p
+    (d := d) (m := m) (n := n) (ell := ell)
+  calc
+    ((bernoulliBondMeasure d p).real
+        (orthantBoundaryContactCardLtEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell)) ^ (d * 2 ^ d) =
+      ∏ a : BoxSurfaceOrthantIndex d,
+        (bernoulliBondMeasure d p).real
+          (orthantBoundaryContactCardLtEvent d m n a ell) := by
+        rw [← card_boxSurfaceOrthantIndex]
+        simp_rw [orthantBoundaryContactProbability_eq_reference p i]
+        simp
+    _ ≤ (bernoulliBondMeasure d p).real
+        (boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell)) := h
+
+/-- The complementary large-contact event in one signed orthant. -/
+def orthantBoundaryContactCardGeEvent
+    (d m n : ℕ) (a : BoxSurfaceOrthantIndex d) (ell : ℕ) :
+    Set (EdgeConfiguration d) :=
+  {omega | ell ≤ (orthantBoundaryContacts d m n a omega).card}
+
+theorem orthantBoundaryContactCardGeEvent_eq_compl
+    (d m n : ℕ) (a : BoxSurfaceOrthantIndex d) (ell : ℕ) :
+    orthantBoundaryContactCardGeEvent d m n a ell =
+      (orthantBoundaryContactCardLtEvent d m n a ell)ᶜ := by
+  ext omega
+  simp [orthantBoundaryContactCardGeEvent, orthantBoundaryContactCardLtEvent]
+
+theorem measurableSet_orthantBoundaryContactCardGeEvent
+    (d m n : ℕ) (a : BoxSurfaceOrthantIndex d) (ell : ℕ) :
+    MeasurableSet (orthantBoundaryContactCardGeEvent d m n a ell) := by
+  rw [orthantBoundaryContactCardGeEvent_eq_compl]
+  exact (measurableSet_orthantBoundaryContactCardLtEvent d m n a ell).compl
+
+/-- The selected positive boundary quadrant contains any prescribed number of contacts with
+arbitrarily high probability.  In dimension three this is the 24th-root consequence of (7.14). -/
+theorem exists_allPositiveOrthantContactCardGe_probability_gt
+    (d : ℕ) [NeZero d] (hd : 0 < d) (p : I) (htheta : 0 < theta d p)
+    (hp1 : (p : ℝ) < 1) (i : Fin d) (ell : ℕ)
+    {epsilon : ℝ} (hepsilon : 0 < epsilon) :
+    ∃ m n : ℕ, m ≤ n ∧
+      1 - epsilon <
+        (bernoulliBondMeasure d p).real
+          (orthantBoundaryContactCardGeEvent d m n
+            (allPositiveBoxSurfaceOrthantIndex i) ell) := by
+  let Q : ℕ := d * 2 ^ d
+  have hQ : Q ≠ 0 := by simp [Q, hd]
+  have hepsilonPow : 0 < epsilon ^ Q := pow_pos hepsilon Q
+  obtain ⟨m, n, hmn, hfullGood⟩ :=
+    exists_boundaryContactCardGe_probability_gt d p htheta hp1 (Q * ell) hepsilonPow
+  let mu := bernoulliBondMeasure d p
+  have hfullCompl :
+      mu.real (boundaryContactCardLtEvent d m n (Q * ell)) +
+          mu.real (boundaryContactCardGeEvent d m n (Q * ell)) = 1 := by
+    have h := probReal_add_probReal_compl
+      (μ := mu) (measurableSet_boundaryContactCardLtEvent d m n (Q * ell))
+    rwa [← boundaryContactCardGeEvent_eq_compl] at h
+  have hfullBad :
+      mu.real (boundaryContactCardLtEvent d m n (Q * ell)) < epsilon ^ Q := by
+    linarith
+  have hpow := orthantContactLt_probability_pow_le_fullContactLt
+    (d := d) (m := m) (n := n) (ell := ell) hd p i
+  have hrefPow :
+      (mu.real (orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell)) ^ Q < epsilon ^ Q := by
+    exact hpow.trans_lt (by simpa [Q] using hfullBad)
+  have hrefBad :
+      mu.real (orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell) < epsilon :=
+    (pow_lt_pow_iff_left₀ measureReal_nonneg (le_of_lt hepsilon) hQ).mp hrefPow
+  have hrefCompl :
+      mu.real (orthantBoundaryContactCardLtEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell) +
+        mu.real (orthantBoundaryContactCardGeEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell) = 1 := by
+    have h := probReal_add_probReal_compl
+      (μ := mu) (measurableSet_orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell)
+    rwa [← orthantBoundaryContactCardGeEvent_eq_compl] at h
+  exact ⟨m, n, hmn, by linarith⟩
 
 /-- If every signed orthant has fewer than `ell` contacts, the whole surface has fewer than
 `(d*2^d)*ell` contacts. -/

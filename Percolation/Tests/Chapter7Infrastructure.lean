@@ -792,4 +792,13 @@ example (d : ℕ) (hd : 2 ≤ d) (p : I) {n L : ℕ} {x y : Cubic d}
   slabCornerLowerBound_four_mul_transverse_le_connectionS
     d hd p hx hy hδ hcorner
 
+example (d : ℕ) (hd : 2 ≤ d) (L : ℕ) {p₁ p₂ : I}
+    (h12 : (p₁ : ℝ) < p₂) {n : ℕ} {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabSVertices d n L)
+    (hy : y ∈ finiteThickSlabSVertices d n L) :
+    finiteThickSlabSConnectionLowerBound d L p₁ p₂ ≤
+      (bernoulliBondMeasure d p₂).real
+        (finiteThickSlabSConnectionEvent d n L x y) :=
+  finiteThickSlabSConnectionLowerBound_le d hd L h12 hx hy
+
 end Percolation

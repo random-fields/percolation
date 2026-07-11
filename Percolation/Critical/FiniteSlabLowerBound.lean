@@ -1199,4 +1199,36 @@ theorem slabCornerLowerBound_four_mul_transverse_le_connectionS
   exact transverseCost_mul_sq_slabCornerLowerBound_le_connectionS_origin
     d hd p hz hδ hcorner
 
+/-- Explicit uniform constant in (7.79), obtained from the (7.83) corner constant. -/
+noncomputable def finiteThickSlabSConnectionLowerBound
+    (d L : ℕ) (p₁ p₂ : I) : ℝ :=
+  ((p₂ : ℝ) ^ ((d - 2) * L) *
+    (slabCornerAllConnectionLowerBound d L p₁ p₂) ^ 2) ^ 2
+
+theorem finiteThickSlabSConnectionLowerBound_pos
+    (d L : ℕ) {p₁ p₂ : I}
+    (hcrit : regionCriticalProbability d (cubicQuarterSlab d L) < (p₁ : ℝ))
+    (h12 : (p₁ : ℝ) < p₂) :
+    0 < finiteThickSlabSConnectionLowerBound d L p₁ p₂ := by
+  have hp₂ : 0 < (p₂ : ℝ) := lt_of_le_of_lt p₁.2.1 h12
+  have hcorner := slabCornerAllConnectionLowerBound_pos d L hcrit h12
+  exact pow_pos (mul_pos (pow_pos hp₂ _) (pow_pos hcorner _)) _
+
+/-- Exact (7.79) package under the source's intermediate choice (7.81). -/
+theorem finiteThickSlabSConnectionLowerBound_le
+    (d : ℕ) (hd : 2 ≤ d) (L : ℕ) {p₁ p₂ : I}
+    (h12 : (p₁ : ℝ) < p₂) {n : ℕ} {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabSVertices d n L)
+    (hy : y ∈ finiteThickSlabSVertices d n L) :
+    finiteThickSlabSConnectionLowerBound d L p₁ p₂ ≤
+      (bernoulliBondMeasure d p₂).real
+        (finiteThickSlabSConnectionEvent d n L x y) := by
+  have hcornerNonneg : 0 ≤ slabCornerAllConnectionLowerBound d L p₁ p₂ := by
+    exact mul_nonneg (pow_nonneg (div_nonneg (sub_nonneg.mpr h12.le)
+      (sub_nonneg.mpr p₁.2.2)) _) (pow_nonneg (div_nonneg measureReal_nonneg (by norm_num)) _)
+  simpa [finiteThickSlabSConnectionLowerBound] using
+    slabCornerLowerBound_four_mul_transverse_le_connectionS
+      d hd p₂ hx hy hcornerNonneg
+        (fun m ↦ slabCornerAllConnectionLowerBound_le d hd L h12 m)
+
 end Percolation

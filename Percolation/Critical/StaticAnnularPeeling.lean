@@ -1273,4 +1273,72 @@ theorem exists_scaledTwoArmSeparation_probability_le_exp_of_uniformFiniteSlab
   rw [hcastSub]
   nlinarith
 
+/-! ### Coalescence consequence -/
+
+/-- The polynomial pair-count correction is negligible compared with any positive linear
+annular decay rate. -/
+theorem tendsto_cubicMetricBox_card_sq_mul_exp_neg_nat
+    (d : ℕ) {ξ : ℝ} (hξ : 0 < ξ) :
+    Filter.Tendsto
+      (fun n : ℕ ↦ ((cubicMetricBox d cubicOrigin n).card : ℝ) ^ 2 *
+        Real.exp (-ξ * n))
+      Filter.atTop (nhds 0) := by
+  have hbase : Filter.Tendsto
+      (fun n : ℕ ↦ (n : ℝ) ^ (2 * d) * Real.exp (-ξ * n))
+      Filter.atTop (nhds 0) :=
+    (Real.summable_pow_mul_exp_neg_nat_mul (2 * d) hξ).tendsto_atTop_zero
+  have hscaled : Filter.Tendsto
+      (fun n : ℕ ↦ (3 : ℝ) ^ (2 * d) *
+        ((n : ℝ) ^ (2 * d) * Real.exp (-ξ * n)))
+      Filter.atTop (nhds 0) := by
+    simpa using (tendsto_const_nhds (x := (3 : ℝ) ^ (2 * d))).mul hbase
+  apply squeeze_zero'
+    (Filter.Eventually.of_forall fun n ↦ mul_nonneg (by positivity) (Real.exp_pos _).le)
+    (Filter.eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩) hscaled
+  rw [cubicMetricBox_card]
+  have hn0 : (0 : ℝ) ≤ n := by positivity
+  have hlin : (2 * n + 1 : ℝ) ≤ 3 * n := by exact_mod_cast (show 2 * n + 1 ≤ 3 * n by omega)
+  have hpow : (2 * n + 1 : ℝ) ^ (2 * d) ≤ (3 * n : ℝ) ^ (2 * d) := by
+    exact pow_le_pow_left₀ (by positivity) hlin (2 * d)
+  calc
+    ((((2 * n + 1) ^ d : ℕ) : ℝ) ^ 2) * Real.exp (-ξ * n) =
+        (2 * n + 1 : ℝ) ^ (2 * d) * Real.exp (-ξ * n) := by
+      norm_num [← pow_mul, Nat.mul_comm, mul_comm]
+    _ ≤ (3 * n : ℝ) ^ (2 * d) * Real.exp (-ξ * n) :=
+      mul_le_mul_of_nonneg_right hpow (Real.exp_pos _).le
+    _ = (3 : ℝ) ^ (2 * d) *
+        ((n : ℝ) ^ (2 * d) * Real.exp (-ξ * n)) := by
+      rw [mul_pow]
+      ring
+
+/-- Lemma 7.89 implies that all infinite-cluster vertices in `B(n)` coalesce inside `B(2n)`
+with probability tending to one.  This is the concrete bridge consumed by the existing
+probability assembly for Lemma 7.97. -/
+theorem infiniteClusterCoalescenceEvent_probability_tendsto_one_of_uniformFiniteSlab
+    {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (infiniteClusterCoalescenceEvent d n (2 * n)))
+      Filter.atTop (nhds 1) := by
+  obtain ⟨ξ, hξ0, hξ⟩ :=
+    exists_twoArmSeparation_probability_le_exp_of_uniformFiniteSlab
+      hd p hp0 hp1 hδ0 hδ1 hslab
+  apply infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
+    p id (fun n ↦ 2 * n) (fun n ↦ Real.exp (-ξ * n))
+  · intro n
+    dsimp
+    omega
+  · intro n x hx y hy
+    by_cases hn : n = 0
+    · subst n
+      simpa using (measureReal_le_one (μ := bernoulliBondMeasure d p)
+        (s := twoArmSeparationEvent d 0 0 x y))
+    · have hnpos : 0 < n := Nat.pos_of_ne_zero hn
+      have hbound := hξ n (2 * n) (by omega) x y
+      have hsub : 2 * n - n = n := by omega
+      simpa [hsub] using hbound
+  · exact tendsto_cubicMetricBox_card_sq_mul_exp_neg_nat d hξ0
+
 end Percolation

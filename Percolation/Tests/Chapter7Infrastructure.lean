@@ -536,6 +536,23 @@ example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
   exists_scaledTwoArmSeparation_probability_le_exp_of_uniformFiniteSlab
     hd p hp0 hp1 hδ0 hδ1 hslab
 
+example (d : ℕ) {ξ : ℝ} (hξ : 0 < ξ) :
+    Filter.Tendsto
+      (fun n : ℕ ↦ ((cubicMetricBox d cubicOrigin n).card : ℝ) ^ 2 *
+        Real.exp (-ξ * n))
+      Filter.atTop (nhds 0) :=
+  tendsto_cubicMetricBox_card_sq_mul_exp_neg_nat d hξ
+
+example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    (hp1 : (p : ℝ) < 1) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (infiniteClusterCoalescenceEvent d n (2 * n)))
+      Filter.atTop (nhds 1) :=
+  infiniteClusterCoalescenceEvent_probability_tendsto_one_of_uniformFiniteSlab
+    hd p hp0 hp1 hδ0 hδ1 hslab
+
 example {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
     (E : Set Ω) (A : ℕ → Set Ω) (q : ℝ) (hq : 0 ≤ q) (K : ℕ)
     (hEA : E ⊆ A K)

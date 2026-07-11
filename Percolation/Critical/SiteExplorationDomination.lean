@@ -1,4 +1,4 @@
-import Percolation.Bernoulli.StochasticDomination
+import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.DynamicRenormalization
 
 /-!
@@ -43,6 +43,18 @@ theorem infinite_siteSet_probability_pos_of_dominates
   have hpos := siteExploration_infinite_probability_pos_of_dominates G μ p hp hdom
   exact hpos.trans_le <| measureReal_mono fun η hη ↦
     Set.Infinite.of_hasInfiniteSiteCluster hη
+
+/-- The positive-probability conclusion of Lemma 7.24 once the exploration output law's finite
+prefix histories have been verified.  Unlike the older full-domination adapter above, this
+theorem needs only the finite ratio-free sequential inequalities and proves probability one. -/
+theorem infinite_siteSet_probability_pos_of_prefixSequential
+    {V : Type*} [Countable V] [DecidableEq V] (e : ℕ ≃ V)
+    (μ : Measure (Set V)) [IsProbabilityMeasure μ] (p : I) (hp : 0 < (p : ℝ))
+    (hseq : ∀ n,
+      HasFiniteSequentialLowerBound (enumerationPrefixLaw e n μ) (p : ℝ)) :
+    0 < μ.real {η : Set V | η.Infinite} := by
+  rw [infinite_siteSet_probability_eq_one_of_prefixSequential e μ p hp hseq]
+  norm_num
 
 /-- A history-wise ratio-free success estimate automatically gives the usual conditional ratio
 on every positive-mass history. -/

@@ -15,6 +15,7 @@ import Percolation.Bernoulli.Russo
 import Percolation.Bernoulli.Sprinkling
 import Percolation.Bernoulli.StochasticDomination
 import Percolation.Bernoulli.SequentialDomination
+import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.FiniteEventContinuity
 import Percolation.Critical.Basic
 import Percolation.Critical.VertexIndependence

@@ -3,6 +3,7 @@ import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Core.EdgeMenger
 import Percolation.Bernoulli.SequentialDomination
+import Percolation.Bernoulli.SequentialDominationCountable
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -21,3 +22,6 @@ import Percolation.Bernoulli.SequentialDomination
 #print axioms Percolation.EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths
 #print axioms Percolation.iidBoolEventMass_le_of_hasSequentialLowerBound
 #print axioms Percolation.finiteSequentialLowerBound_stochasticallyDominates
+#print axioms Percolation.finiteCylinder_measureReal_le_of_prefixSequential
+#print axioms Percolation.infinite_siteSet_probability_eq_one_of_prefixSequential
+#print axioms Percolation.infinite_siteSet_probability_pos_of_prefixSequential

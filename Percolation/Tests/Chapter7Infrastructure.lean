@@ -3,6 +3,7 @@ import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Core.EdgeMenger
 import Percolation.Bernoulli.SequentialDomination
+import Percolation.Bernoulli.SequentialDominationCountable
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -78,5 +79,10 @@ example (μ : Measure (Set (Fin 0))) [IsProbabilityMeasure μ] (p : I) :
   apply finiteSequentialLowerBound_stochasticallyDominates μ p
   intro i hi
   omega
+
+example {V : Type*} [DecidableEq V] (e : ℕ ≃ V) (R : Finset V) (v : V)
+    (hv : v ∈ R) :
+    ∃ i : Fin (enumerationSupportLength e R), enumerationPrefixEmbedding e _ i = v :=
+  support_subset_range_enumerationPrefixEmbedding e R hv
 
 end Percolation

@@ -702,4 +702,45 @@ theorem bernoulliBondMeasure_prod_le_real_biInter_fkg' {d : ℕ} {κ : Type*} (p
       (bernoulliBondMeasure d p).real (⋂ i ∈ J, A i) := by
   simpa [bernoulliBondMeasure] using setBernoulli_prod_le_real_biInter_fkg' p hAinc hAm
 
+/-- Iterated decreasing-event FKG on the cubic lattice. -/
+theorem bernoulliBondMeasure_prod_le_real_biInter_fkg_of_decreasing
+    {d : ℕ} {κ : Type*} (p : I) {J : Finset κ}
+    {A : κ → Set (EdgeConfiguration d)}
+    (hAdec : ∀ i ∈ J, IsDecreasingEvent (A i))
+    (hAm : ∀ i ∈ J, MeasurableSet (A i)) :
+    ∏ i ∈ J, (bernoulliBondMeasure d p).real (A i) ≤
+      (bernoulliBondMeasure d p).real (⋂ i ∈ J, A i) := by
+  classical
+  induction J using Finset.induction_on with
+  | empty =>
+      simp only [Finset.prod_empty]
+      have hset : (⋂ i ∈ (∅ : Finset κ), A i) = Set.univ := by simp
+      rw [hset]
+      change 1 ≤ setBer((Set.univ : Set (CubicEdge d)), p).real Set.univ
+      rw [probReal_univ]
+  | @insert a J ha ih =>
+      have hrestDec : IsDecreasingEvent (⋂ i ∈ J, A i) :=
+        by
+          intro ω η hωη hη
+          simp only [Set.mem_iInter] at hη ⊢
+          intro i hi
+          exact hAdec i (Finset.mem_insert_of_mem hi) hωη (hη i hi)
+      have hstep := bernoulliBondMeasure_real_fkg_of_decreasing p
+        (hAdec a (Finset.mem_insert_self a J)) hrestDec
+        (hAm a (Finset.mem_insert_self a J))
+        (Finset.measurableSet_biInter J fun i hi ↦ hAm i (Finset.mem_insert_of_mem hi))
+      rw [Finset.prod_insert ha]
+      have hrest := ih
+        (fun i hi ↦ hAdec i (Finset.mem_insert_of_mem hi))
+        (fun i hi ↦ hAm i (Finset.mem_insert_of_mem hi))
+      calc
+        (bernoulliBondMeasure d p).real (A a) *
+            ∏ i ∈ J, (bernoulliBondMeasure d p).real (A i) ≤
+          (bernoulliBondMeasure d p).real (A a) *
+            (bernoulliBondMeasure d p).real (⋂ i ∈ J, A i) :=
+          mul_le_mul_of_nonneg_left hrest measureReal_nonneg
+        _ ≤ (bernoulliBondMeasure d p).real (A a ∩ ⋂ i ∈ J, A i) := hstep
+        _ = (bernoulliBondMeasure d p).real (⋂ i ∈ insert a J, A i) := by
+          rw [Finset.set_biInter_insert]
+
 end Percolation

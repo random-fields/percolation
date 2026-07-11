@@ -39,6 +39,13 @@ theorem cubicGraphIsoRegion_symm {d : ℕ} (F : cubicGraph d ≃g cubicGraph d)
   · intro hx
     exact ⟨F x, ⟨x, hx, rfl⟩, by simp⟩
 
+@[simp]
+theorem cubicGraphIsoRegion_univ {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) :
+    cubicGraphIsoRegion F (Set.univ : Set (Cubic d)) = Set.univ := by
+  apply Set.eq_univ_of_forall
+  intro x
+  exact ⟨F.symm x, Set.mem_univ _, by simp⟩
+
 private theorem hasOpenPathOfLengthAtLeastWithinVertices_graphIso
     {d n : ℕ} {A : Set (Cubic d)} {ω : EdgeConfiguration d}
     (F : cubicGraph d ≃g cubicGraph d) (x : Cubic d)
@@ -77,6 +84,26 @@ theorem hasOpenPathOfLengthAtLeastWithinVertices_graphIso_iff
       (A := cubicGraphIsoRegion F A)
       (ω := cubicGraphIsoConfigurationPullback F ω) F.symm (F x) h'
     simpa using hback
+
+theorem cubicGraphIsoConfigurationPullback_clusterWithin_infinite_iff
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (A : Set (Cubic d))
+    (ω : EdgeConfiguration d) (x : Cubic d) :
+    (cubicOpenClusterWithinVertices d A
+        (cubicGraphIsoConfigurationPullback F ω) x).Infinite ↔
+      (cubicOpenClusterWithinVertices d (cubicGraphIsoRegion F A) ω (F x)).Infinite := by
+  rw [cubicOpenClusterWithinVertices_infinite_iff_arbitrarilyLong,
+    cubicOpenClusterWithinVertices_infinite_iff_arbitrarilyLong]
+  exact forall_congr' fun n ↦
+    hasOpenPathOfLengthAtLeastWithinVertices_graphIso_iff F A ω x
+
+theorem cubicGraphIsoConfigurationPullback_hasInfiniteOpenClusterFrom_iff
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d)
+    (ω : EdgeConfiguration d) (x : Cubic d) :
+    hasInfiniteOpenClusterFrom d (cubicGraphIsoConfigurationPullback F ω) x ↔
+      hasInfiniteOpenClusterFrom d ω (F x) := by
+  simpa [hasInfiniteOpenClusterFrom, cubicOpenClusterWithinVertices_univ] using
+    (cubicGraphIsoConfigurationPullback_clusterWithin_infinite_iff
+      F (Set.univ : Set (Cubic d)) ω x)
 
 private theorem hasInfiniteOpenClusterInVertices_graphIso
     {d : ℕ} {A : Set (Cubic d)} {ω : EdgeConfiguration d}

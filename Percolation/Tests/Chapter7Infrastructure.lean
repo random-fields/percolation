@@ -312,4 +312,18 @@ example {d n N q : ℕ} (hq : 1 ≤ q) (hnN : n ≤ N) {ω : EdgeConfiguration d
   mem_largeCrossingClusterEvent_of_dense_of_coalescence_of_allFaces
     hq hnN hdense hcoalesce hfaces
 
+example {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (allInnerInfiniteClusterFacesEvent d n (2 * n)))
+      Filter.atTop (nhds 1) :=
+  allInnerInfiniteClusterFacesEvent_probability_tendsto_one hd p hp
+
+example {d n N : ℕ} (p : I) (e : Fin d ≃ Fin d) (i : Fin d) (positive : Bool) :
+    (bernoulliBondMeasure d p).real
+        (innerInfiniteClusterReachesFaceEvent d n N i positive) =
+      (bernoulliBondMeasure d p).real
+        (innerInfiniteClusterReachesFaceEvent d n N (e i) positive) :=
+  innerInfiniteClusterReachesFaceProbability_permutation p e i positive
+
 end Percolation

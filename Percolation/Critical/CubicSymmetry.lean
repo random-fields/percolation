@@ -1,4 +1,5 @@
 import Percolation.Critical.BoxRadius
+import Percolation.Critical.FiniteCylinderTranslation
 
 /-!
 # Coordinate symmetries of the cubic lattice
@@ -163,5 +164,106 @@ theorem walkIsOpen_map_cubicGraphIso {d : ℕ} (F : cubicGraph d ≃g cubicGraph
   obtain ⟨f, hf, rfl⟩ := List.mem_map.mp he
   let ef : CubicEdge d := ⟨f, w.edges_subset_edgeSet hf⟩
   exact hw ef.1 hf
+
+private theorem cubicGraphIsoConfigurationPullback_mem_connectionEventIn_of_map
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (E : Finset (CubicEdge d))
+    (ω : EdgeConfiguration d) (x y : Cubic d) :
+    cubicGraphIsoConfigurationPullback F ω ∈ connectionEventIn d E x y →
+      ω ∈ connectionEventIn d (E.image F.mapEdgeSet) (F x) (F y) := by
+  rintro ⟨w, hwOpen, hwE⟩
+  refine ⟨w.map F.toHom, walkIsOpen_map_cubicGraphIso F w hwOpen, ?_⟩
+  intro e he
+  rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_map] at he
+  obtain ⟨f, hf, hef⟩ := List.mem_map.mp he
+  let fEdge : CubicEdge d := ⟨f, w.edges_subset_edgeSet hf⟩
+  have hfE : fEdge ∈ E := hwE ((mem_walkEdgeFinset_iff w fEdge).mpr hf)
+  apply Finset.mem_image.mpr
+  refine ⟨fEdge, hfE, ?_⟩
+  apply Subtype.ext
+  exact hef
+
+/-- A truncated connection transports through a cubic graph automorphism, with its finite edge
+support mapped by the induced edge equivalence. -/
+theorem cubicGraphIsoConfigurationPullback_mem_connectionEventIn_iff
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (E : Finset (CubicEdge d))
+    (ω : EdgeConfiguration d) (x y : Cubic d) :
+    cubicGraphIsoConfigurationPullback F ω ∈ connectionEventIn d E x y ↔
+      ω ∈ connectionEventIn d (E.image F.mapEdgeSet) (F x) (F y) := by
+  constructor
+  · exact cubicGraphIsoConfigurationPullback_mem_connectionEventIn_of_map F E ω x y
+  · intro h
+    have h' : cubicGraphIsoConfigurationPullback F.symm
+        (cubicGraphIsoConfigurationPullback F ω) ∈
+          connectionEventIn d (E.image F.mapEdgeSet) (F x) (F y) := by
+      simpa using h
+    have hback := cubicGraphIsoConfigurationPullback_mem_connectionEventIn_of_map
+      F.symm (E.image F.mapEdgeSet) (cubicGraphIsoConfigurationPullback F ω)
+      (F x) (F y) h'
+    have hmap : F.symm.mapEdgeSet = F.mapEdgeSet.symm := by
+      ext e
+      rfl
+    have himage : (E.image F.mapEdgeSet).image F.symm.mapEdgeSet = E := by
+      rw [hmap, Finset.image_image]
+      simpa using Finset.image_id E
+    simpa [himage] using hback
+
+/-- Any origin-fixing box-preserving cubic automorphism maps the finite internal edge support of
+that box onto itself. -/
+theorem cubicGraphIso_image_cubicBoxEdges_eq_self
+    {d n : ℕ} (F : cubicGraph d ≃g cubicGraph d)
+    (hbox : ∀ z ∈ cubicMetricBox d cubicOrigin n,
+      F z ∈ cubicMetricBox d cubicOrigin n) :
+    (cubicBoxEdges d cubicOrigin n).image F.mapEdgeSet =
+      cubicBoxEdges d cubicOrigin n := by
+  classical
+  apply Finset.eq_of_subset_of_card_le
+  · intro e he
+    rw [Finset.mem_image] at he
+    obtain ⟨f, hf, rfl⟩ := he
+    apply mem_cubicBoxEdges_of_endpoints
+    intro z hz
+    change z ∈ Sym2.map F (f : Sym2 (Cubic d)) at hz
+    rw [Sym2.mem_map] at hz
+    obtain ⟨w, hw, rfl⟩ := hz
+    exact hbox w (endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges hf hw)
+  · rw [Finset.card_image_of_injective _ F.mapEdgeSet.injective]
+
+theorem cubicCoordinatePermutation_mem_cubicMetricBox_origin
+    {d n : ℕ} (e : Fin d ≃ Fin d) {z : Cubic d}
+    (hz : z ∈ cubicMetricBox d cubicOrigin n) :
+    cubicCoordinatePermutationEquiv e z ∈ cubicMetricBox d cubicOrigin n := by
+  rw [mem_cubicMetricBox] at hz ⊢
+  intro j
+  simpa [cubicCoordinatePermutationEquiv, cubicOrigin] using hz (e.symm j)
+
+theorem cubicCoordinatePermutation_image_cubicBoxEdges_eq
+    {d n : ℕ} (e : Fin d ≃ Fin d) :
+    (cubicBoxEdges d cubicOrigin n).image
+        (cubicCoordinatePermutationIso e).mapEdgeSet =
+      cubicBoxEdges d cubicOrigin n :=
+  cubicGraphIso_image_cubicBoxEdges_eq_self (cubicCoordinatePermutationIso e)
+    (fun _z hz ↦ cubicCoordinatePermutation_mem_cubicMetricBox_origin e hz)
+
+theorem cubicCoordinateReflection_mem_cubicMetricBox_origin
+    {d n : ℕ} (i : Fin d) {z : Cubic d}
+    (hz : z ∈ cubicMetricBox d cubicOrigin n) :
+    cubicCoordinateReflectionEquiv i z ∈ cubicMetricBox d cubicOrigin n := by
+  rw [mem_cubicMetricBox] at hz ⊢
+  intro j
+  by_cases hji : j = i
+  · subst j
+    have hi := hz i
+    simp [cubicOrigin] at hi
+    simp [cubicCoordinateReflectionEquiv, cubicOrigin]
+    constructor <;> omega
+  · simpa [cubicCoordinateReflectionEquiv, cubicOrigin, hji] using hz j
+
+theorem cubicCoordinateReflection_image_cubicBoxEdges_eq
+    {d n : ℕ} (i : Fin d) :
+    (cubicBoxEdges d cubicOrigin n).image
+        (cubicCoordinateReflectionIso i).mapEdgeSet =
+      cubicBoxEdges d cubicOrigin n :=
+  cubicGraphIso_image_cubicBoxEdges_eq_self (cubicCoordinateReflectionIso i)
+    (fun _z hz ↦ cubicCoordinateReflection_mem_cubicMetricBox_origin i hz)
 
 end Percolation

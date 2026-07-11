@@ -780,4 +780,16 @@ example (d : ℕ) (hd : 2 ≤ d) (p : I) {z : Cubic d} {a b n L : ℕ}
   transverseCost_mul_sq_slabCornerLowerBound_le_normalizedConnectionS
     d hd p hz hz0 hz1 hab hbn hδ hcorner
 
+example (d : ℕ) (hd : 2 ≤ d) (p : I) {n L : ℕ} {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabSVertices d n L)
+    (hy : y ∈ finiteThickSlabSVertices d n L)
+    {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    ((p : ℝ) ^ ((d - 2) * L) * δ ^ 2) ^ 2 ≤
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L x y) :=
+  slabCornerLowerBound_four_mul_transverse_le_connectionS
+    d hd p hx hy hδ hcorner
+
 end Percolation

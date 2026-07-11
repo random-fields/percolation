@@ -901,4 +901,302 @@ theorem transverseCost_mul_sq_slabCornerLowerBound_le_normalizedConnectionS
         (finiteThickSlabSConnectionEvent d n L cubicOrigin z) :=
       measureReal_mono hsub (measure_ne_top _ _)
 
+/-! ### Signed-coordinate normalization for the full statement (7.84) -/
+
+theorem cubicFirstTwoSwapIso_mem_finiteThickSlabS_iff
+    (d : ℕ) (hd : 2 ≤ d) (n L : ℕ) (x : Cubic d) :
+    cubicFirstTwoSwapIso d hd x ∈ finiteThickSlabSVertices d n L ↔
+      x ∈ finiteThickSlabSVertices d n L := by
+  rw [mem_finiteThickSlabSVertices_iff, mem_finiteThickSlabSVertices_iff]
+  constructor <;> intro h i
+  · by_cases hi : i.val < 2
+    · interval_cases hval : i.val
+      · have hi0 : i = ⟨0, by omega⟩ := Fin.ext hval
+        rw [hi0]
+        simpa using h ⟨1, hd⟩
+      · have hi1 : i = ⟨1, hd⟩ := Fin.ext hval
+        rw [hi1]
+        simpa using h ⟨0, by omega⟩
+    · have hi2 : 2 ≤ i.val := by omega
+      simpa [hi, cubicFirstTwoSwapIso_apply_of_two_le d hd x i hi2] using h i
+  · by_cases hi : i.val < 2
+    · interval_cases hval : i.val
+      · have hi0 : i = ⟨0, by omega⟩ := Fin.ext hval
+        rw [hi0]
+        simpa using h ⟨1, hd⟩
+      · have hi1 : i = ⟨1, hd⟩ := Fin.ext hval
+        rw [hi1]
+        simpa using h ⟨0, by omega⟩
+    · have hi2 : 2 ≤ i.val := by omega
+      simpa [hi, cubicFirstTwoSwapIso_apply_of_two_le d hd x i hi2] using h i
+
+theorem cubicGraphIsoRegion_firstTwoSwap_finiteThickSlabS
+    (d : ℕ) (hd : 2 ≤ d) (n L : ℕ) :
+    cubicGraphIsoRegion (cubicFirstTwoSwapIso d hd)
+        (finiteThickSlabSVertices d n L : Set (Cubic d)) =
+      (finiteThickSlabSVertices d n L : Set (Cubic d)) := by
+  apply Set.Subset.antisymm
+  · rintro _ ⟨x, hx, rfl⟩
+    exact (cubicFirstTwoSwapIso_mem_finiteThickSlabS_iff d hd n L x).2 hx
+  · intro x hx
+    refine ⟨cubicFirstTwoSwapIso d hd x, ?_, ?_⟩
+    · exact (cubicFirstTwoSwapIso_mem_finiteThickSlabS_iff d hd n L x).2 hx
+    · exact cubicFirstTwoSwapIso_involutive d hd x
+
+theorem cubicCoordinateReflectionIso_mem_finiteThickSlabS_iff
+    (d n L : ℕ) (j : Fin d) (hj : j.val < 2) (x : Cubic d) :
+    cubicCoordinateReflectionIso j x ∈ finiteThickSlabSVertices d n L ↔
+      x ∈ finiteThickSlabSVertices d n L := by
+  rw [mem_finiteThickSlabSVertices_iff, mem_finiteThickSlabSVertices_iff]
+  constructor <;> intro h i
+  · by_cases hij : i = j
+    · subst i
+      simpa [cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv, hj]
+        using h j
+    · by_cases hi : i.val < 2
+      · simpa [cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv,
+          hij, hi] using h i
+      · simpa [cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv,
+          hij, hi] using h i
+  · by_cases hij : i = j
+    · subst i
+      simpa [cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv, hj]
+        using h j
+    · by_cases hi : i.val < 2
+      · simpa [cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv,
+          hij, hi] using h i
+      · simpa [cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv,
+          hij, hi] using h i
+
+theorem cubicGraphIsoRegion_coordinateReflection_finiteThickSlabS
+    (d n L : ℕ) (j : Fin d) (hj : j.val < 2) :
+    cubicGraphIsoRegion (cubicCoordinateReflectionIso j)
+        (finiteThickSlabSVertices d n L : Set (Cubic d)) =
+      (finiteThickSlabSVertices d n L : Set (Cubic d)) := by
+  apply Set.Subset.antisymm
+  · rintro _ ⟨x, hx, rfl⟩
+    exact (cubicCoordinateReflectionIso_mem_finiteThickSlabS_iff
+      d n L j hj x).2 hx
+  · intro x hx
+    refine ⟨cubicCoordinateReflectionIso j x, ?_, ?_⟩
+    · exact (cubicCoordinateReflectionIso_mem_finiteThickSlabS_iff
+        d n L j hj x).2 hx
+    · exact cubicCoordinateReflectionEquiv_apply_self j x
+
+theorem finiteThickSlabSConnectionEvent_probability_swap
+    (d : ℕ) (hd : 2 ≤ d) (p : I) (n L : ℕ) (x : Cubic d) :
+    (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin x) =
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin
+          (cubicFirstTwoSwapIso d hd x)) := by
+  unfold finiteThickSlabSConnectionEvent
+  simpa [cubicGraphIsoRegion_firstTwoSwap_finiteThickSlabS,
+    cubicFirstTwoSwapIso_origin] using
+    bernoulliBondMeasure_real_connectionEventWithinVertices_graphIso
+      (cubicFirstTwoSwapIso d hd)
+      (finiteThickSlabSVertices d n L : Set (Cubic d)) p cubicOrigin x
+
+theorem finiteThickSlabSConnectionEvent_probability_reflection
+    (d : ℕ) (p : I) (n L : ℕ) (j : Fin d) (hj : j.val < 2)
+    (x : Cubic d) :
+    (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin x) =
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin
+          (cubicCoordinateReflectionIso j x)) := by
+  unfold finiteThickSlabSConnectionEvent
+  have horigin : cubicCoordinateReflectionIso j cubicOrigin = cubicOrigin := by
+    ext i
+    simp [cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv, cubicOrigin]
+  have h := bernoulliBondMeasure_real_connectionEventWithinVertices_graphIso
+    (cubicCoordinateReflectionIso j)
+    (finiteThickSlabSVertices d n L : Set (Cubic d)) p cubicOrigin x
+  rw [cubicGraphIsoRegion_coordinateReflection_finiteThickSlabS d n L j hj,
+    horigin] at h
+  exact h
+
+/-- The `(7.84)` lower bound for points whose first two coordinates are nonnegative; coordinate
+exchange removes the ordering assumption from Figure 7.15. -/
+theorem transverseCost_mul_sq_slabCornerLowerBound_le_nonnegativeConnectionS
+    (d : ℕ) (hd : 2 ≤ d) (p : I) {z : Cubic d} {n L : ℕ}
+    (hzS : z ∈ finiteThickSlabSVertices d n L)
+    (hz0 : 0 ≤ z ⟨0, by omega⟩) (hz1 : 0 ≤ z ⟨1, hd⟩)
+    {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    (p : ℝ) ^ ((d - 2) * L) * δ ^ 2 ≤
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin z) := by
+  let a := (z ⟨0, by omega⟩).toNat
+  let b := (z ⟨1, hd⟩).toNat
+  have haCast : (a : ℤ) = z ⟨0, by omega⟩ := by
+    simp [a, Int.toNat_of_nonneg hz0]
+  have hbCast : (b : ℤ) = z ⟨1, hd⟩ := by
+    simp [b, Int.toNat_of_nonneg hz1]
+  have hzBounds := mem_finiteThickSlabSVertices_iff.mp hzS
+  have han : a ≤ n := by
+    change (z ⟨0, by omega⟩).toNat ≤ n
+    rw [← Int.natAbs_of_nonneg hz0]
+    exact hzBounds ⟨0, by omega⟩
+  have hbn : b ≤ n := by
+    change (z ⟨1, hd⟩).toNat ≤ n
+    rw [← Int.natAbs_of_nonneg hz1]
+    exact hzBounds ⟨1, hd⟩
+  have hzBox : z ∈ slabCornerBoxVertices d n L := by
+    rw [mem_slabCornerBoxVertices_iff]
+    intro i
+    by_cases hi : i.val < 2
+    · interval_cases hval : i.val
+      · have hiEq : i = ⟨0, by omega⟩ := Fin.ext hval
+        rw [hiEq]
+        exact ⟨hz0, haCast ▸ (by exact_mod_cast han)⟩
+      · have hiEq : i = ⟨1, hd⟩ := Fin.ext hval
+        rw [hiEq]
+        exact ⟨hz1, hbCast ▸ (by exact_mod_cast hbn)⟩
+    · simpa [hi] using hzBounds i
+  by_cases hab : a ≤ b
+  · exact transverseCost_mul_sq_slabCornerLowerBound_le_normalizedConnectionS
+      d hd p hzBox haCast.symm hbCast.symm hab hbn hδ hcorner
+  · have hba : b ≤ a := le_of_not_ge hab
+    let z' := cubicFirstTwoSwapIso d hd z
+    have hz'Box : z' ∈ slabCornerBoxVertices d n L :=
+      (cubicFirstTwoSwapIso_mem_slabCornerBoxVertices_iff d hd n L z).2 hzBox
+    have hbound :=
+      transverseCost_mul_sq_slabCornerLowerBound_le_normalizedConnectionS
+        d hd p hz'Box (by simpa [z'] using hbCast.symm)
+          (by simpa [z'] using haCast.symm) hba han hδ hcorner
+    rw [finiteThickSlabSConnectionEvent_probability_swap d hd p n L z]
+    exact hbound
+
+/-- Equation (7.84): the uniform origin-connection lower bound in `S_n(L)`, derived from a
+uniform all-corners lower bound.  Reflections discharge every sign case omitted in the source. -/
+theorem transverseCost_mul_sq_slabCornerLowerBound_le_connectionS_origin
+    (d : ℕ) (hd : 2 ≤ d) (p : I) {z : Cubic d} {n L : ℕ}
+    (hzS : z ∈ finiteThickSlabSVertices d n L)
+    {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    (p : ℝ) ^ ((d - 2) * L) * δ ^ 2 ≤
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin z) := by
+  let i0 : Fin d := ⟨0, by omega⟩
+  let i1 : Fin d := ⟨1, hd⟩
+  by_cases hz0 : 0 ≤ z i0
+  · by_cases hz1 : 0 ≤ z i1
+    · exact transverseCost_mul_sq_slabCornerLowerBound_le_nonnegativeConnectionS
+        d hd p hzS hz0 hz1 hδ hcorner
+    · let z' := cubicCoordinateReflectionIso i1 z
+      have hz'S : z' ∈ finiteThickSlabSVertices d n L :=
+        (cubicCoordinateReflectionIso_mem_finiteThickSlabS_iff
+          d n L i1 (by simp [i1]) z).2 hzS
+      have hz'0 : 0 ≤ z' i0 := by
+        simpa [z', i0, i1, cubicCoordinateReflectionIso,
+          cubicCoordinateReflectionEquiv] using hz0
+      have hz'1 : 0 ≤ z' i1 := by
+        simp [z', cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv]
+        omega
+      have hbound :=
+        transverseCost_mul_sq_slabCornerLowerBound_le_nonnegativeConnectionS
+          d hd p hz'S hz'0 hz'1 hδ hcorner
+      rw [finiteThickSlabSConnectionEvent_probability_reflection
+        d p n L i1 (by simp [i1]) z]
+      exact hbound
+  · by_cases hz1 : 0 ≤ z i1
+    · let z' := cubicCoordinateReflectionIso i0 z
+      have hz'S : z' ∈ finiteThickSlabSVertices d n L :=
+        (cubicCoordinateReflectionIso_mem_finiteThickSlabS_iff
+          d n L i0 (by simp [i0]) z).2 hzS
+      have hz'0 : 0 ≤ z' i0 := by
+        simp [z', cubicCoordinateReflectionIso, cubicCoordinateReflectionEquiv]
+        omega
+      have hz'1 : 0 ≤ z' i1 := by
+        simpa [z', i0, i1, cubicCoordinateReflectionIso,
+          cubicCoordinateReflectionEquiv] using hz1
+      have hbound :=
+        transverseCost_mul_sq_slabCornerLowerBound_le_nonnegativeConnectionS
+          d hd p hz'S hz'0 hz'1 hδ hcorner
+      rw [finiteThickSlabSConnectionEvent_probability_reflection
+        d p n L i0 (by simp [i0]) z]
+      exact hbound
+    · let z0 := cubicCoordinateReflectionIso i0 z
+      let z' := cubicCoordinateReflectionIso i1 z0
+      have hz0S : z0 ∈ finiteThickSlabSVertices d n L :=
+        (cubicCoordinateReflectionIso_mem_finiteThickSlabS_iff
+          d n L i0 (by simp [i0]) z).2 hzS
+      have hz'S : z' ∈ finiteThickSlabSVertices d n L :=
+        (cubicCoordinateReflectionIso_mem_finiteThickSlabS_iff
+          d n L i1 (by simp [i1]) z0).2 hz0S
+      have hz'0 : 0 ≤ z' i0 := by
+        have hneg : 0 ≤ -z i0 := neg_nonneg.mpr (le_of_not_ge hz0)
+        simpa [z', z0, i0, i1, cubicCoordinateReflectionIso,
+          cubicCoordinateReflectionEquiv] using hneg
+      have hz'1 : 0 ≤ z' i1 := by
+        have hneg : 0 ≤ -z i1 := neg_nonneg.mpr (le_of_not_ge hz1)
+        simpa [z', z0, i0, i1, cubicCoordinateReflectionIso,
+          cubicCoordinateReflectionEquiv] using hneg
+      have hbound :=
+        transverseCost_mul_sq_slabCornerLowerBound_le_nonnegativeConnectionS
+          d hd p hz'S hz'0 hz'1 hδ hcorner
+      rw [finiteThickSlabSConnectionEvent_probability_reflection
+        d p n L i0 (by simp [i0]) z]
+      rw [finiteThickSlabSConnectionEvent_probability_reflection
+        d p n L i1 (by simp [i1]) z0]
+      exact hbound
+
+/-- FKG converts a uniform origin-connection bound into a uniform pair-connection bound in the
+same finite region, the final step from (7.84) to (7.79). -/
+theorem sq_rootConnectionLowerBound_le_finiteThickSlabSConnection
+    (d : ℕ) (p : I) {n L : ℕ} {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabSVertices d n L)
+    (hy : y ∈ finiteThickSlabSVertices d n L)
+    {ε : ℝ} (hε : 0 ≤ ε)
+    (hroot : ∀ z ∈ finiteThickSlabSVertices d n L,
+      ε ≤ (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L cubicOrigin z)) :
+    ε ^ 2 ≤ (bernoulliBondMeasure d p).real
+      (finiteThickSlabSConnectionEvent d n L x y) := by
+  let A := finiteThickSlabSConnectionEvent d n L cubicOrigin x
+  let B := finiteThickSlabSConnectionEvent d n L cubicOrigin y
+  have hsub : A ∩ B ⊆ finiteThickSlabSConnectionEvent d n L x y := by
+    rintro ω ⟨⟨q, hqOpen, hqS⟩, ⟨r, hrOpen, hrS⟩⟩
+    refine ⟨q.reverse.append r,
+      walkIsOpen_append (walkIsOpen_reverse hqOpen) hrOpen, ?_⟩
+    intro z hz
+    rw [SimpleGraph.Walk.mem_support_append_iff] at hz
+    rcases hz with hzq | hzr
+    · exact hqS z (by simpa using hzq)
+    · exact hrS z hzr
+  calc
+    ε ^ 2 = ε * ε := by ring
+    _ ≤ (bernoulliBondMeasure d p).real A *
+        (bernoulliBondMeasure d p).real B :=
+      mul_le_mul (hroot x hx) (hroot y hy) hε measureReal_nonneg
+    _ ≤ (bernoulliBondMeasure d p).real (A ∩ B) :=
+      bernoulliBondMeasure_real_fkg p
+        (isIncreasingEvent_finiteThickSlabSConnectionEvent d n L cubicOrigin x)
+        (isIncreasingEvent_finiteThickSlabSConnectionEvent d n L cubicOrigin y)
+        (measurableSet_finiteThickSlabSConnectionEvent d n L cubicOrigin x)
+        (measurableSet_finiteThickSlabSConnectionEvent d n L cubicOrigin y)
+    _ ≤ (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L x y) :=
+      measureReal_mono hsub (measure_ne_top _ _)
+
+/-- Equation (7.79), quantitatively derived from a uniform (7.83) corner-box bound. -/
+theorem slabCornerLowerBound_four_mul_transverse_le_connectionS
+    (d : ℕ) (hd : 2 ≤ d) (p : I) {n L : ℕ} {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabSVertices d n L)
+    (hy : y ∈ finiteThickSlabSVertices d n L)
+    {δ : ℝ} (hδ : 0 ≤ δ)
+    (hcorner : ∀ m, δ ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornersConnectedEvent d m L)) :
+    ((p : ℝ) ^ ((d - 2) * L) * δ ^ 2) ^ 2 ≤
+      (bernoulliBondMeasure d p).real
+        (finiteThickSlabSConnectionEvent d n L x y) := by
+  apply sq_rootConnectionLowerBound_le_finiteThickSlabSConnection
+    d p hx hy (mul_nonneg (pow_nonneg p.2.1 _) (pow_nonneg hδ _))
+  intro z hz
+  exact transverseCost_mul_sq_slabCornerLowerBound_le_connectionS_origin
+    d hd p hz hδ hcorner
+
 end Percolation

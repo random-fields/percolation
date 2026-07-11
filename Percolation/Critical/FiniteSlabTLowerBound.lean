@@ -1009,4 +1009,21 @@ theorem exists_uniformFiniteSlabConnectionLowerBound_of_critical_lt
   exact exists_uniformFiniteSlabConnectionLowerBound_of_quarterSlabCritical_lt
     d hd L hcrit h1p
 
+theorem exists_unit_uniformFiniteSlabConnectionLowerBound_of_critical_lt
+    (d : ℕ) (hd : 3 ≤ d) (L : ℕ) (p : I)
+    (hp : regionCriticalProbability d (cubicQuarterSlab d L) < (p : ℝ)) :
+    ∃ delta : ℝ, 0 < delta ∧ delta ≤ 1 ∧
+      UniformFiniteSlabConnectionLowerBound d p L delta := by
+  obtain ⟨delta, hdelta, hslab⟩ :=
+    exists_uniformFiniteSlabConnectionLowerBound_of_critical_lt d hd L p hp
+  have horigin : cubicOrigin ∈ finiteThickSlabSVertices d 1 L := by
+    rw [mem_finiteThickSlabSVertices_iff]
+    intro i
+    by_cases hi : i.val < 2
+    · simp [hi, cubicOrigin]
+    · simp [hi, cubicOrigin]
+  have hdeltaOne := hslab.1 1 le_rfl cubicOrigin horigin cubicOrigin horigin
+  rw [finiteThickSlabSConnectionEvent_self horigin, probReal_univ] at hdeltaOne
+  exact ⟨delta, hdelta, hdeltaOne, hslab⟩
+
 end Percolation

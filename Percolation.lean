@@ -93,6 +93,7 @@ import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.FiniteSlabTLowerBound
+import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

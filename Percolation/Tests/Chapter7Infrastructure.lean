@@ -21,6 +21,7 @@ import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.FiniteSlabTLowerBound
+import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -833,5 +834,15 @@ example (d : ℕ) (hd : 3 ≤ d) (L : ℕ) (p : I)
     ∃ delta : ℝ, 0 < delta ∧
       UniformFiniteSlabConnectionLowerBound d p L delta :=
   exists_uniformFiniteSlabConnectionLowerBound_of_critical_lt d hd L p hp
+
+example {d L : ℕ} (hd : 3 ≤ d) (p : I) (hp1 : (p : ℝ) < 1)
+    (hcrit : regionCriticalProbability d (cubicQuarterSlab d L) < (p : ℝ))
+    {epsilon : ℝ} (hepsilon0 : 0 < epsilon) (hepsilon1 : epsilon < 1) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (epsilonGoodBoxEvent d p epsilon cubicOrigin n))
+      Filter.atTop (nhds 1) :=
+  epsilonGoodBox_probability_tendsto_one_of_quarterSlabCritical_lt
+    hd p hp1 hcrit hepsilon0 hepsilon1
 
 end Percolation

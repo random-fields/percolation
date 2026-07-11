@@ -857,4 +857,18 @@ example (p : I) :
 example : Function.Injective (separatedAxisEdge (d := 3) (by omega)) :=
   separatedAxisEdge_injective (by omega)
 
+example (E : Finset (CubicEdge 3)) (omega : EdgeConfiguration 3) :
+    hasInfiniteOpenClusterInVertices 3 Set.univ (spliceOn E ∅ omega) ↔
+      hasInfiniteOpenClusterInVertices 3 Set.univ omega :=
+  isInvariantUnderFiniteClosing_hasInfiniteOpenClusterInVertices_univ 3 E omega
+
+example (p : I) :
+    regionHasInfiniteClusterProbability 3 Set.univ p = 0 ∨
+      regionHasInfiniteClusterProbability 3 Set.univ p = 1 :=
+  regionHasInfiniteClusterProbability_univ_eq_zero_or_one 3 p
+
+example (p : I) (hp : 0 < theta 3 p) :
+    regionHasInfiniteClusterProbability 3 Set.univ p = 1 :=
+  regionHasInfiniteClusterProbability_univ_eq_one_of_theta_pos 3 p hp
+
 end Percolation

@@ -945,4 +945,68 @@ theorem finiteThickSlabTConnectionLowerBound_le
   · exact (min_le_right _ _).trans
       (pow_d_mul_three_L_le_connectionT_of_n_lt_L p₂ (by omega) hx hy)
 
+/-! ### The joint finite-slab package -/
+
+/-- One constant serving both conclusions (7.79) and (7.80). -/
+noncomputable def finiteThickSlabConnectionLowerBound
+    (d L : ℕ) (p₁ p₂ : I) : ℝ :=
+  min (finiteThickSlabSConnectionLowerBound d L p₁ p₂)
+    (finiteThickSlabTConnectionLowerBound d L p₁ p₂)
+
+theorem finiteThickSlabConnectionLowerBound_pos
+    (d L : ℕ) {p₁ p₂ : I}
+    (hcrit : regionCriticalProbability d (cubicQuarterSlab d L) < (p₁ : ℝ))
+    (h12 : (p₁ : ℝ) < p₂) :
+    0 < finiteThickSlabConnectionLowerBound d L p₁ p₂ :=
+  lt_min (finiteThickSlabSConnectionLowerBound_pos d L hcrit h12)
+    (finiteThickSlabTConnectionLowerBound_pos d L hcrit h12)
+
+/-- Lemma 7.78 after the intermediate quarter-slab choice (7.81) has been made. -/
+theorem uniformFiniteSlabConnectionLowerBound_of_quarterSlabCritical_lt
+    (d : ℕ) (hd : 3 ≤ d) (L : ℕ) {p₁ p₂ : I}
+    (h12 : (p₁ : ℝ) < p₂) :
+    UniformFiniteSlabConnectionLowerBound d p₂ L
+      (finiteThickSlabConnectionLowerBound d L p₁ p₂) := by
+  constructor
+  · intro n _hn x hx y hy
+    exact (min_le_left _ _).trans
+      (finiteThickSlabSConnectionLowerBound_le d (by omega) L h12 hx hy)
+  · intro n _hn x hx y hy
+    exact (min_le_right _ _).trans
+      (finiteThickSlabTConnectionLowerBound_le d hd L h12 hx hy)
+
+/-- Existential form of Lemma 7.78 conditional only on a strict quarter-slab critical-point
+comparison.  Theorem 7.2 supplies that comparison in the final source-facing theorem. -/
+theorem exists_uniformFiniteSlabConnectionLowerBound_of_quarterSlabCritical_lt
+    (d : ℕ) (hd : 3 ≤ d) (L : ℕ) {p₁ p₂ : I}
+    (hcrit : regionCriticalProbability d (cubicQuarterSlab d L) < (p₁ : ℝ))
+    (h12 : (p₁ : ℝ) < p₂) :
+    ∃ delta : ℝ, 0 < delta ∧
+      UniformFiniteSlabConnectionLowerBound d p₂ L delta := by
+  exact ⟨finiteThickSlabConnectionLowerBound d L p₁ p₂,
+    finiteThickSlabConnectionLowerBound_pos d L hcrit h12,
+    uniformFiniteSlabConnectionLowerBound_of_quarterSlabCritical_lt d hd L h12⟩
+
+/-- The exact Lemma 7.78 conclusion once the chosen quarter slab is supercritical at `p`.
+The auxiliary density in (7.81) is selected internally as the midpoint. -/
+theorem exists_uniformFiniteSlabConnectionLowerBound_of_critical_lt
+    (d : ℕ) (hd : 3 ≤ d) (L : ℕ) (p : I)
+    (hp : regionCriticalProbability d (cubicQuarterSlab d L) < (p : ℝ)) :
+    ∃ delta : ℝ, 0 < delta ∧
+      UniformFiniteSlabConnectionLowerBound d p L delta := by
+  let q := regionCriticalProbability d (cubicQuarterSlab d L)
+  let p₁ : I := ⟨(q + (p : ℝ)) / 2, by
+    constructor
+    · exact div_nonneg (add_nonneg (regionCriticalProbability_nonneg d _) p.2.1) zero_le_two
+    · have hq1 := regionCriticalProbability_le_one d (cubicQuarterSlab d L)
+      linarith [p.2.2]⟩
+  have hcrit : q < (p₁ : ℝ) := by
+    change q < (q + (p : ℝ)) / 2
+    linarith
+  have h1p : (p₁ : ℝ) < p := by
+    change (q + (p : ℝ)) / 2 < (p : ℝ)
+    linarith
+  exact exists_uniformFiniteSlabConnectionLowerBound_of_quarterSlabCritical_lt
+    d hd L hcrit h1p
+
 end Percolation

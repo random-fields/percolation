@@ -828,4 +828,10 @@ example (d : ℕ) (hd : 3 ≤ d) (L : ℕ) {p₁ p₂ : I}
         (finiteThickSlabTConnectionEvent d n L x y) :=
   finiteThickSlabTConnectionLowerBound_le d hd L h12 hx hy
 
+example (d : ℕ) (hd : 3 ≤ d) (L : ℕ) (p : I)
+    (hp : regionCriticalProbability d (cubicQuarterSlab d L) < (p : ℝ)) :
+    ∃ delta : ℝ, 0 < delta ∧
+      UniformFiniteSlabConnectionLowerBound d p L delta :=
+  exists_uniformFiniteSlabConnectionLowerBound_of_critical_lt d hd L p hp
+
 end Percolation

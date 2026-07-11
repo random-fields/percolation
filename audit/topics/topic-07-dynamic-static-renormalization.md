@@ -50,7 +50,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | (7.63), p. 179 | Stochastic domination is comparison of expectations of every bounded increasing measurable function. | `StochasticallyDominates`; `stochasticallyDominates_of_measureReal_le` | proved, including both event consequence and layer-cake converse for probability laws |
 | (7.64), p. 179 | Uniform one-step conditional lower bounds along an enumeration imply domination of iid sites. | `sequentialLowerBound_stochasticallyDominates` | target; finite-prefix and countable-extension proof window |
 | (7.66)–(7.67), p. 179 | A `k`-dependent field with one-site density at least `δ` dominates iid density `π(δ)`. | `exists_lssDominationDensity` | target |
-| (7.69)–(7.75), pp. 180–181 | Exponentially likely order-`r^(d-1)` disjoint crossings; slice crossings, independent slice family, and ACCFR sprinkling. | `maxEdgeDisjointCrossings_probability_ge`; `maxEdgeDisjointSquareRectangleCrossings`; existing `interiorDepth` inequality | bounded crossing count proved; estimates/general Menger target |
+| (7.69)–(7.75), pp. 180–181 | Exponentially likely order-`r^(d-1)` disjoint crossings; slice crossings, independent slice family, and ACCFR sprinkling. | `maxEdgeDisjointCrossings_probability_ge`; `maxEdgeDisjointSquareRectangleCrossings`; `EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths`; existing `interiorDepth` inequality | arbitrary finite edge Menger and bounded crossing count proved; probability estimates and the set-to-set adapter target |
 | (7.70), p. 180 | High-density iid site percolation crosses a square with failure exponentially small in its scale. | `siteSquareRectangleCrossingEvent`; `siteSquareRectangleCrossingProbability`; exponential bound target | faithful finite site event/support/measurability/increasingness proved |
 | (7.76)–(7.80), pp. 181–182 | Finite thick slabs `S_n(L)`, `T_n(L)` and uniform positive pair-connection bounds. | `exists_uniform_slabConnection_lowerBound` and region definitions | target |
 | (7.82)–(7.88), pp. 182–185 | FKG corner connections and bounded finite-energy modifications establish (7.79)–(7.80). | slab-corner and modification helper targets | target |
@@ -78,7 +78,8 @@ proof window; it does not mark any member of the group proved unless the status 
 | Static finite bad events | Finite-cylinder definitions and basic endpoint checks for large crossing and second macroscopic components. | `largeCrossingClusterEvent`, `dependsOn_largeCrossingClusterEvent`, `measurableSet_largeCrossingClusterEvent`, `secondMacroscopicClusterEvent`, `dependsOn_secondMacroscopicClusterEvent`, `measurableSet_secondMacroscopicClusterEvent`, `secondMacroscopicClusterEvent_eq_empty_of_two_mul_lt` | proved slice | All probability estimates remain targets. |
 | Two-arm event | Annular two-arm separation event and its self-endpoint check. | `twoArmSeparationEvent`, `measurableSet_twoArmSeparationEvent`, `twoArmSeparationEvent_self`, `scaledBoxRadius` | proved slice | The exponential estimate remains a target. |
 | Chapter 11 rectangle kernel | Finite left-right crossing event and bounded maximum of disjoint crossings. | `squareRectangleCrossingEvent`, `maxEdgeDisjointSquareRectangleCrossings`, `hasEdgeDisjointSquareRectangleCrossings_iff_le_max` | proved slice | The maximal-count interface is restricted to positive width; at width zero unlimited duplicate nil walks make an unrestricted maximum ill-posed. |
-| Stochastic-order vocabulary | Expectation definition, event consequence, iid ordering, finite-range dependence. | `StochasticallyDominates`, `StochasticallyDominates.measureReal_le`, `setBernoulli_stochasticallyDominates`, `KDependent`, `setBernoulli_kDependent` | proved slice | The iid theorem checks the direction of domination. LSS remains a target. |
+| General finite edge Menger | `k`-edge reachability is equivalent to `k` pairwise edge-disjoint paths. | `EdgeMenger.IsUnitFlow`, `EdgeMenger.exists_residual_path_of_isEdgeReachable_succ`, `EdgeMenger.exists_unitFlow_of_isEdgeReachable`, `EdgeMenger.exists_pairwise_edgeDisjoint_paths_of_unitFlow`, `EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths` | proved slice | Constructive integral augmenting-flow proof; no max-flow axiom or external graph theorem. This is shared Chapter 11 infrastructure and is telemetered separately from Chapter 7. |
+| Stochastic-order vocabulary | Expectation definition, event consequence, iid ordering, monotone-coupling bridge, finite-range dependence. | `StochasticallyDominates`, `StochasticallyDominates.measureReal_le`, `stochasticallyDominates_iff_measureReal_le`, `HasMonotoneCoupling`, `HasMonotoneCoupling.stochasticallyDominates`, `setBernoulli_stochasticallyDominates`, `KDependent`, `setBernoulli_kDependent` | proved slice | The iid theorem checks the direction of domination. The coupling theorem derives the exact expectation formulation from an almost-sure coordinatewise inclusion. LSS remains a target. |
 
 ## Adversarial checks already encoded
 
@@ -101,7 +102,8 @@ proof window; it does not mark any member of the group proved unless the status 
 - `squareCriticalProbability_eq_half`.
 - Exponential long-rectangle crossing estimate corresponding to 7.110.
 - High-density site rectangle estimate corresponding to 7.70.
-- Arbitrary-cardinality finite edge Menger and the Chapter 11 Lemma 11.22 adapter.
+- The Chapter 11 Lemma 11.22 crossing adapter (arbitrary-cardinality finite edge Menger itself is
+  now proved).
 
 These remain explicit blockers; no Chapter 11 axiom or theorem parameter has been introduced.
 
@@ -118,7 +120,12 @@ individual theorem rows.
 | Finite-event continuity, coarse-block separation, and finite seed support | 3666s | 4416s | 750s | 1,024,002 | 1,178,200 | 154,198 |
 | Independent review remediation, faithful brick geometry, and checkpoint verification | 4416s | 5517s | 1101s | 1,178,200 | 1,413,658 | 235,458 |
 | Direct source inventory, finite static events, rooted exploration limit, stochastic-order layer cake, and site crossings | 5517s | 6466s | 949s | 1,413,658 | 1,733,685 | 320,027 |
-| **Infrastructure subtotal** |  |  | **6466s** |  |  | **1,733,685** |
+| General finite edge Menger (Chapter 11 shared prerequisite) and monotone-coupling bridge | 6466s | 7052s | 586s | 1,733,685 | 1,856,480 | 122,795 |
+| **Infrastructure subtotal** |  |  | **7052s** |  |  | **1,856,480** |
+
+The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
+7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one
+disjoint measured row; no reconstructed split is reported as measured telemetry.
 
 Documentation, Git operations, and final PR composition are excluded from theorem telemetry but
 will receive separate non-theorem rows in the frozen review run.

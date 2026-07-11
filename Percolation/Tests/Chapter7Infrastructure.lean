@@ -1,6 +1,7 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
+import Percolation.Core.EdgeMenger
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -60,5 +61,13 @@ example {ι : Type*} [Countable ι] {p q : I} (hpq : p ≤ q) :
     StochasticallyDominates setBer((Set.univ : Set ι), q)
       setBer((Set.univ : Set ι), p) :=
   setBernoulli_stochasticallyDominates hpq
+
+example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    (u v : V) (k : ℕ) :
+    G.IsEdgeReachable k u v ↔
+      ∃ P : Fin k → G.Walk u v,
+        (∀ i, (P i).IsPath) ∧
+          Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges :=
+  EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths
 
 end Percolation

@@ -707,6 +707,14 @@ example {d L : ℕ} {hd : 2 ≤ d} {ω : EdgeConfiguration d}
     W.HasProjectedChain :=
   W.hasProjectedChain_zero
 
+example {d m L : ℕ} {hd : 2 ≤ d} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd m L ω) :
+    W.HasProjectedChain :=
+  W.hasProjectedChain
+
+example : SlabCornerProjectedChainGeometry :=
+  slabCornerProjectedChainGeometry
+
 example (G : SlabCornerProjectedChainGeometry)
     (d : ℕ) (hd : 2 ≤ d) {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂)
     (m L : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
@@ -717,5 +725,14 @@ example (G : SlabCornerProjectedChainGeometry)
         (allSlabCornersConnectedEvent d m L) :=
   slabCornersConnected_probability_ge_of_projectedChainGeometry
     G d hd h12 m L hδ hprob
+
+example (d : ℕ) (hd : 2 ≤ d) {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂)
+    (m L : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hprob : ∀ k : Fin 4, δ ≤ (bernoulliBondMeasure d p₁).real
+      (slabCornerConnectionEvent d hd m L k)) :
+    (((p₂ : ℝ) - p₁) / (1 - (p₁ : ℝ))) ^ (4 * ((d - 2) * L)) * δ ^ 4 ≤
+      (bernoulliBondMeasure d p₂).real
+        (allSlabCornersConnectedEvent d m L) :=
+  slabCornersConnected_probability_ge d hd h12 m L hδ hprob
 
 end Percolation

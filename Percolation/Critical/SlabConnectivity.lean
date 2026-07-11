@@ -1,6 +1,6 @@
 import Percolation.Critical.Regions
 import Percolation.Bernoulli.UpwardDistance
-import Percolation.Planar.Projection
+import Percolation.Planar.AlternatingPaths
 
 /-!
 # Finite thick-slab connection regions
@@ -710,6 +710,230 @@ structure SlabCornerConnectionWitness
   isOpen : walkIsOpen ω walk
   support_subset : ∀ z ∈ walk.support, z ∈ slabCornerBoxVertices d m L
 
+/-- A simultaneous choice of the four open walks occurring in (7.82). -/
+abbrev SlabCornerConnectionWitnessFamily
+    {d : ℕ} (hd : 2 ≤ d) (m L : ℕ) (ω : EdgeConfiguration d) :=
+  (k : Fin 4) → SlabCornerConnectionWitness hd m L k ω
+
+theorem SlabCornerConnectionWitness.projected_support_box
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {k : Fin 4} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitness hd m L k ω) :
+    ∀ z ∈ (projectCubicWalkFirstTwo hd W.walk).support,
+      0 ≤ z 0 ∧ z 0 ≤ m ∧ 0 ≤ z 1 ∧ z 1 ≤ m := by
+  intro z hz
+  rw [mem_projectCubicWalkFirstTwo_support_iff] at hz
+  rcases hz with ⟨x, hx, rfl⟩
+  have hbox := mem_slabCornerBoxVertices_iff.mp (W.support_subset x hx)
+  have h0 := hbox (Fin.castLE hd (0 : Fin 2))
+  have h1 := hbox (Fin.castLE hd (1 : Fin 2))
+  simpa [cubicFirstTwoProjection, cubicRestrict] using
+    And.intro h0.1 (And.intro h0.2 (And.intro h1.1 h1.2))
+
+theorem SlabCornerConnectionWitness.target_mem_box
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {k : Fin 4} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitness hd m L k ω) :
+    W.target ∈ slabCornerBoxVertices d m L :=
+  slabCornerTargetFace_subset d hd m L k W.target_mem
+
+theorem SlabCornerConnectionWitness.target_zero_coord
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitness hd m L ⟨0, by decide⟩ ω) :
+    W.target ⟨0, by omega⟩ = m := by
+  have h := (Finset.mem_filter.mp W.target_mem).2
+  simpa [slabCornerTargetFace] using h
+
+theorem SlabCornerConnectionWitness.target_one_coord
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitness hd m L ⟨1, by decide⟩ ω) :
+    W.target ⟨1, hd⟩ = m := by
+  have h := (Finset.mem_filter.mp W.target_mem).2
+  simpa [slabCornerTargetFace] using h
+
+theorem SlabCornerConnectionWitness.target_two_coord
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitness hd m L ⟨2, by decide⟩ ω) :
+    W.target ⟨0, by omega⟩ = 0 := by
+  have h := (Finset.mem_filter.mp W.target_mem).2
+  simpa [slabCornerTargetFace] using h
+
+theorem SlabCornerConnectionWitness.target_three_coord
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitness hd m L ⟨3, by decide⟩ ω) :
+    W.target ⟨1, hd⟩ = 0 := by
+  have h := (Finset.mem_filter.mp W.target_mem).2
+  simpa [slabCornerTargetFace] using h
+
+theorem SlabCornerConnectionWitnessFamily.projected_inter_zero_one
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd m L ω) :
+    ∃ z, z ∈ (projectCubicWalkFirstTwo hd (W ⟨0, by decide⟩).walk).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd (W ⟨1, by decide⟩).walk).support := by
+  let W0 := W ⟨0, by decide⟩
+  let W1 := W ⟨1, by decide⟩
+  let a := (W0.target (Fin.castLE hd (1 : Fin 2))).toNat
+  let b := (W1.target (Fin.castLE hd (0 : Fin 2))).toNat
+  have hW0box := mem_slabCornerBoxVertices_iff.mp W0.target_mem_box
+  have hW1box := mem_slabCornerBoxVertices_iff.mp W1.target_mem_box
+  have haBounds := hW0box (Fin.castLE hd (1 : Fin 2))
+  have hbBounds := hW1box (Fin.castLE hd (0 : Fin 2))
+  have haCast : (a : ℤ) = W0.target (Fin.castLE hd (1 : Fin 2)) := by
+    simp [a, Int.toNat_of_nonneg haBounds.1]
+  have hbCast : (b : ℤ) = W1.target (Fin.castLE hd (0 : Fin 2)) := by
+    simp [b, Int.toNat_of_nonneg hbBounds.1]
+  have haZ : (a : ℤ) ≤ m := haCast.trans_le haBounds.2
+  have hbZ : (b : ℤ) ≤ m := hbCast.trans_le hbBounds.2
+  have ha : a ≤ m := by exact_mod_cast haZ
+  have hb : b ≤ m := by exact_mod_cast hbZ
+  have hs0 : cubicFirstTwoProjection hd (slabCornerVertex d m ⟨0, by decide⟩) =
+      squareVertex 0 0 := by
+    ext i
+    fin_cases i <;>
+      simp [cubicFirstTwoProjection, cubicRestrict, slabCornerVertex, squareVertex]
+  have he0 : cubicFirstTwoProjection hd W0.target =
+      squareVertex (m : ℤ) (a : ℤ) := by
+    ext i
+    fin_cases i
+    · simpa [W0, cubicFirstTwoProjection, cubicRestrict, squareVertex] using
+        W0.target_zero_coord
+    · simpa [cubicFirstTwoProjection, cubicRestrict, squareVertex] using haCast.symm
+  have hs1 : cubicFirstTwoProjection hd (slabCornerVertex d m ⟨1, by decide⟩) =
+      squareVertex (m : ℤ) 0 := by
+    ext i
+    fin_cases i <;>
+      simp [cubicFirstTwoProjection, cubicRestrict, slabCornerVertex, squareVertex]
+  have he1 : cubicFirstTwoProjection hd W1.target =
+      squareVertex (b : ℤ) (m : ℤ) := by
+    ext i
+    fin_cases i
+    · simpa [cubicFirstTwoProjection, cubicRestrict, squareVertex] using hbCast.symm
+    · simpa [W1, cubicFirstTwoProjection, cubicRestrict, squareVertex] using
+        W1.target_one_coord
+  let p0 := (projectCubicWalkFirstTwo hd W0.walk).copy hs0 he0
+  let p1 := (projectCubicWalkFirstTwo hd W1.walk).copy hs1 he1
+  have hp0 : ∀ z ∈ p0.support,
+      0 ≤ z 0 ∧ z 0 ≤ m ∧ 0 ≤ z 1 ∧ z 1 ≤ m := by
+    simpa [p0] using W0.projected_support_box
+  have hp1 : ∀ z ∈ p1.support,
+      0 ≤ z 0 ∧ z 0 ≤ m ∧ 0 ≤ z 1 ∧ z 1 ≤ m := by
+    simpa [p1] using W1.projected_support_box
+  have h := squareWalk_support_inter_of_bottomLeft_right_and_bottomRight_top
+    ha hb p0 p1 hp0 hp1
+  simpa [W0, W1, p0, p1] using h
+
+theorem SlabCornerConnectionWitnessFamily.projected_inter_one_two
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd m L ω) :
+    ∃ z, z ∈ (projectCubicWalkFirstTwo hd (W ⟨1, by decide⟩).walk).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd (W ⟨2, by decide⟩).walk).support := by
+  let W1 := W ⟨1, by decide⟩
+  let W2 := W ⟨2, by decide⟩
+  let a := (W1.target (Fin.castLE hd (0 : Fin 2))).toNat
+  let b := (W2.target (Fin.castLE hd (1 : Fin 2))).toNat
+  have hW1box := mem_slabCornerBoxVertices_iff.mp W1.target_mem_box
+  have hW2box := mem_slabCornerBoxVertices_iff.mp W2.target_mem_box
+  have haBounds := hW1box (Fin.castLE hd (0 : Fin 2))
+  have hbBounds := hW2box (Fin.castLE hd (1 : Fin 2))
+  have haCast : (a : ℤ) = W1.target (Fin.castLE hd (0 : Fin 2)) := by
+    simp [a, Int.toNat_of_nonneg haBounds.1]
+  have hbCast : (b : ℤ) = W2.target (Fin.castLE hd (1 : Fin 2)) := by
+    simp [b, Int.toNat_of_nonneg hbBounds.1]
+  have haZ : (a : ℤ) ≤ m := haCast.trans_le haBounds.2
+  have hbZ : (b : ℤ) ≤ m := hbCast.trans_le hbBounds.2
+  have ha : a ≤ m := by exact_mod_cast haZ
+  have hb : b ≤ m := by exact_mod_cast hbZ
+  have hs1 : cubicFirstTwoProjection hd (slabCornerVertex d m ⟨1, by decide⟩) =
+      squareVertex (m : ℤ) 0 := by
+    ext i
+    fin_cases i <;>
+      simp [cubicFirstTwoProjection, cubicRestrict, slabCornerVertex, squareVertex]
+  have he1 : cubicFirstTwoProjection hd W1.target =
+      squareVertex (a : ℤ) (m : ℤ) := by
+    ext i
+    fin_cases i
+    · simpa [cubicFirstTwoProjection, cubicRestrict, squareVertex] using haCast.symm
+    · simpa [W1, cubicFirstTwoProjection, cubicRestrict, squareVertex] using
+        W1.target_one_coord
+  have hs2 : cubicFirstTwoProjection hd (slabCornerVertex d m ⟨2, by decide⟩) =
+      squareVertex (m : ℤ) (m : ℤ) := by
+    ext i
+    fin_cases i <;>
+      simp [cubicFirstTwoProjection, cubicRestrict, slabCornerVertex, squareVertex]
+  have he2 : cubicFirstTwoProjection hd W2.target =
+      squareVertex 0 (b : ℤ) := by
+    ext i
+    fin_cases i
+    · simpa [W2, cubicFirstTwoProjection, cubicRestrict, squareVertex] using
+        W2.target_two_coord
+    · simpa [cubicFirstTwoProjection, cubicRestrict, squareVertex] using hbCast.symm
+  let p1 := (projectCubicWalkFirstTwo hd W1.walk).copy hs1 he1
+  let p2 := (projectCubicWalkFirstTwo hd W2.walk).copy hs2 he2
+  have hp1 : ∀ z ∈ p1.support,
+      0 ≤ z 0 ∧ z 0 ≤ m ∧ 0 ≤ z 1 ∧ z 1 ≤ m := by
+    simpa [p1] using W1.projected_support_box
+  have hp2 : ∀ z ∈ p2.support,
+      0 ≤ z 0 ∧ z 0 ≤ m ∧ 0 ≤ z 1 ∧ z 1 ≤ m := by
+    simpa [p2] using W2.projected_support_box
+  have h := squareWalk_support_inter_of_bottomRight_top_and_topRight_left
+    ha hb p1 p2 hp1 hp2
+  simpa [W1, W2, p1, p2] using h
+
+theorem SlabCornerConnectionWitnessFamily.projected_inter_two_three
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd m L ω) :
+    ∃ z, z ∈ (projectCubicWalkFirstTwo hd (W ⟨2, by decide⟩).walk).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd (W ⟨3, by decide⟩).walk).support := by
+  let W2 := W ⟨2, by decide⟩
+  let W3 := W ⟨3, by decide⟩
+  let a := (W2.target (Fin.castLE hd (1 : Fin 2))).toNat
+  let b := (W3.target (Fin.castLE hd (0 : Fin 2))).toNat
+  have hW2box := mem_slabCornerBoxVertices_iff.mp W2.target_mem_box
+  have hW3box := mem_slabCornerBoxVertices_iff.mp W3.target_mem_box
+  have haBounds := hW2box (Fin.castLE hd (1 : Fin 2))
+  have hbBounds := hW3box (Fin.castLE hd (0 : Fin 2))
+  have haCast : (a : ℤ) = W2.target (Fin.castLE hd (1 : Fin 2)) := by
+    simp [a, Int.toNat_of_nonneg haBounds.1]
+  have hbCast : (b : ℤ) = W3.target (Fin.castLE hd (0 : Fin 2)) := by
+    simp [b, Int.toNat_of_nonneg hbBounds.1]
+  have haZ : (a : ℤ) ≤ m := haCast.trans_le haBounds.2
+  have hbZ : (b : ℤ) ≤ m := hbCast.trans_le hbBounds.2
+  have ha : a ≤ m := by exact_mod_cast haZ
+  have hb : b ≤ m := by exact_mod_cast hbZ
+  have hs2 : cubicFirstTwoProjection hd (slabCornerVertex d m ⟨2, by decide⟩) =
+      squareVertex (m : ℤ) (m : ℤ) := by
+    ext i
+    fin_cases i <;>
+      simp [cubicFirstTwoProjection, cubicRestrict, slabCornerVertex, squareVertex]
+  have he2 : cubicFirstTwoProjection hd W2.target =
+      squareVertex 0 (a : ℤ) := by
+    ext i
+    fin_cases i
+    · simpa [W2, cubicFirstTwoProjection, cubicRestrict, squareVertex] using
+        W2.target_two_coord
+    · simpa [cubicFirstTwoProjection, cubicRestrict, squareVertex] using haCast.symm
+  have hs3 : cubicFirstTwoProjection hd (slabCornerVertex d m ⟨3, by decide⟩) =
+      squareVertex 0 (m : ℤ) := by
+    ext i
+    fin_cases i <;>
+      simp [cubicFirstTwoProjection, cubicRestrict, slabCornerVertex, squareVertex]
+  have he3 : cubicFirstTwoProjection hd W3.target =
+      squareVertex (b : ℤ) 0 := by
+    ext i
+    fin_cases i
+    · simpa [cubicFirstTwoProjection, cubicRestrict, squareVertex] using hbCast.symm
+    · simpa [W3, cubicFirstTwoProjection, cubicRestrict, squareVertex] using
+        W3.target_three_coord
+  let p2 := (projectCubicWalkFirstTwo hd W2.walk).copy hs2 he2
+  let p3 := (projectCubicWalkFirstTwo hd W3.walk).copy hs3 he3
+  have hp2 : ∀ z ∈ p2.support,
+      0 ≤ z 0 ∧ z 0 ≤ m ∧ 0 ≤ z 1 ∧ z 1 ≤ m := by
+    simpa [p2] using W2.projected_support_box
+  have hp3 : ∀ z ∈ p3.support,
+      0 ≤ z 0 ∧ z 0 ≤ m ∧ 0 ≤ z 1 ∧ z 1 ≤ m := by
+    simpa [p3] using W3.projected_support_box
+  have h := squareWalk_support_inter_of_topRight_left_and_topLeft_bottom
+    ha hb p2 p3 hp2 hp3
+  simpa [W2, W3, p2, p3] using h
+
 theorem mem_slabCornerConnectionEvent_iff_nonempty_witness
     {d : ℕ} (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) (ω : EdgeConfiguration d) :
     ω ∈ slabCornerConnectionEvent d hd m L k ↔
@@ -724,11 +948,6 @@ theorem mem_slabCornerConnectionEvent_iff_nonempty_witness
     exact Set.mem_iUnion.mpr ⟨W.target,
       Set.mem_iUnion.mpr ⟨W.target_mem,
         ⟨W.walk, W.isOpen, W.support_subset⟩⟩⟩
-
-/-- A simultaneous choice of the four open walks occurring in (7.82). -/
-abbrev SlabCornerConnectionWitnessFamily
-    {d : ℕ} (hd : 2 ≤ d) (m L : ℕ) (ω : EdgeConfiguration d) :=
-  (k : Fin 4) → SlabCornerConnectionWitness hd m L k ω
 
 /-- Membership in the four-event intersection supplies a concrete family of four walk
 witnesses.  This removes all event-level and choice bookkeeping from the planar step. -/
@@ -778,6 +997,15 @@ theorem SlabCornerConnectionWitnessFamily.hasProjectedChain_zero
     ⟨z, hmem ⟨1, by decide⟩, hmem ⟨2, by decide⟩⟩,
     ⟨z, hmem ⟨2, by decide⟩, hmem ⟨3, by decide⟩⟩⟩
 
+/-- The three projected intersections in Figure 7.14, proved by the discrete mod-two planar
+crossing theorem. -/
+theorem SlabCornerConnectionWitnessFamily.hasProjectedChain
+    {d : ℕ} {hd : 2 ≤ d} {m L : ℕ} {ω : EdgeConfiguration d}
+    (W : SlabCornerConnectionWitnessFamily hd m L ω) :
+    W.HasProjectedChain :=
+  ⟨W.projected_inter_zero_one, W.projected_inter_one_two,
+    W.projected_inter_two_three⟩
+
 /-- Once the pure planar projected-chain fact is supplied for the extracted witnesses, the
 bounded transverse repair proves (7.83)'s deterministic inclusion with Grimmett's exact
 `4(d-2)L` budget. -/
@@ -812,6 +1040,11 @@ def SlabCornerProjectedChainGeometry : Prop :=
     (W : SlabCornerConnectionWitnessFamily hd m L ω),
     W.HasProjectedChain
 
+/-- The source's Figure 7.14 assertion, with no geometric axiom or theorem parameter. -/
+theorem slabCornerProjectedChainGeometry : SlabCornerProjectedChainGeometry := by
+  intro d hd m L ω W
+  exact W.hasProjectedChain
+
 /-- The pure projected-chain geometry gives the exact configuration-dependent bounded repair
 inclusion used by (7.83). -/
 theorem allSlabCornerConnectionEvents_subset_upwardDistanceAtMost_of_projectedChainGeometry
@@ -840,5 +1073,27 @@ theorem slabCornersConnected_probability_ge_of_projectedChainGeometry
     d hd h12 m L (4 * ((d - 2) * L)) hδ hprob
       (allSlabCornerConnectionEvents_subset_upwardDistanceAtMost_of_projectedChainGeometry
         G d hd m L)
+
+/-- Unconditional deterministic inclusion in (7.83), after discharging Figure 7.14. -/
+theorem allSlabCornerConnectionEvents_subset_upwardDistanceAtMost
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) :
+    allSlabCornerConnectionEvents d hd m L ⊆
+      upwardDistanceAtMost (4 * ((d - 2) * L))
+        (allSlabCornersConnectedEvent d m L) :=
+  allSlabCornerConnectionEvents_subset_upwardDistanceAtMost_of_projectedChainGeometry
+    slabCornerProjectedChainGeometry d hd m L
+
+/-- Equation (7.83), now unconditional: all discrete planar, finite-energy, FKG, and exact repair
+constant obligations are discharged. -/
+theorem slabCornersConnected_probability_ge
+    (d : ℕ) (hd : 2 ≤ d) {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂)
+    (m L : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hprob : ∀ k : Fin 4, δ ≤ (bernoulliBondMeasure d p₁).real
+      (slabCornerConnectionEvent d hd m L k)) :
+    (((p₂ : ℝ) - p₁) / (1 - (p₁ : ℝ))) ^ (4 * ((d - 2) * L)) * δ ^ 4 ≤
+      (bernoulliBondMeasure d p₂).real
+        (allSlabCornersConnectedEvent d m L) :=
+  slabCornersConnected_probability_ge_of_projectedChainGeometry
+    slabCornerProjectedChainGeometry d hd h12 m L hδ hprob
 
 end Percolation

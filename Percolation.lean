@@ -100,6 +100,7 @@ import Percolation.Critical.HalfSpaceCriticalAssembly
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Basic
 import Percolation.Planar.Projection
+import Percolation.Planar.AlternatingPaths
 import Percolation.Planar.Peierls
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger

@@ -24,6 +24,7 @@ import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.InfiniteClusterZeroOne
+import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -870,5 +871,10 @@ example (p : I) :
 example (p : I) (hp : 0 < theta 3 p) :
     regionHasInfiniteClusterProbability 3 Set.univ p = 1 :=
   regionHasInfiniteClusterProbability_univ_eq_one_of_theta_pos 3 p hp
+
+example (omega : EdgeConfiguration 3) (m n : ℕ) (hmn : m ≤ n)
+    (homega : omega ∈ centralBoxMeetsInfiniteClusterEvent 3 m) :
+    1 ≤ (boxBoundaryContacts 3 m n omega).card :=
+  centralBoxMeetsInfiniteClusterEvent_subset_one_le_contactCard hmn homega
 
 end Percolation

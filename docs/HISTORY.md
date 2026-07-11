@@ -886,6 +886,16 @@ Dated milestones and anti-library notes.
     audits use only `propext`, `Classical.choice`, and `Quot.sound`, and the full measured ledger is
     in `audit/topics/topic-05-exponential-decay.md`.
 
+79. **Grimmett Chapter 6 exponential decay and analyticity (2026-07-10).** Added the complete
+    declared Chapter 6 scope: coordinate-box geometry and decay rate; Theorems 6.1, 6.10, 6.14,
+    6.44, corrected 6.75, 6.78, and 6.108; Propositions 6.47 and 6.49; finite correction of Lemma
+    6.87, Lemmas 6.89 and 6.102; tree-graph/skeleton moment estimates (6.93)–(6.97); exact finite
+    cluster-size rates; and genuine complex animal-series proofs of analyticity for `κ` and `χ`.
+    The literal all-`n≥1` reading after 6.75 and the infinite-terminal reading of 6.87 are false
+    and are preserved as rejected anti-targets with proved corrected theorems. The automated review
+    records application tests, counterexamples, a 39-declaration axiom audit, a failed first pass
+    and repair rerun, and the unavailable local Comparator prerequisite. Standard axioms only.
+
 ## Axiom Ledger
 
 Empty.

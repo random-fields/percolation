@@ -17,7 +17,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |
 | P9 | Ch. 4 | Number of open clusters per vertex | Critical | **4.20 and 4.31 proved unconditionally**: concrete rooted animals discharge (4.25), `cubicAnimal_largeDeviation_sharp_one_le` has the source prefactor/exponent for every `n≥1`, and `concreteClusterDensitySeries_contDiffOn_unitInterval` proves `C¹` on `[0,1]`; Theorem 4.2 remains conditional on the multiparameter box-ergodic/boundary inputs and its `L¹` conclusion remains a target |
 | P10 | Ch. 5 | Menshikov/Aizenman-Barsky subcritical threshold methods | Critical | **proved for the selected complete chapter scope**: both independent proofs of 5.2, 5.3–5.8, full sausage/renewal chain 5.12–5.24, ghost equations 5.42–5.53, and Appendix I limits 5.64–5.66; see `audit/topics/topic-05-exponential-decay.md` |
-| P11 | Ch. 6 | Systematic subcritical phase estimates | Critical | absent/deep |
+| P11 | Ch. 6 | Systematic subcritical phase estimates | Critical | **proved for the declared complete chapter scope**: 6.1/6.10/6.14, two-point and correlation-length results, tree-graph moments, corrected 6.75, exact-size rate 6.78, and genuine complex-series analyticity 6.108; false literal readings of 6.75 and 6.87 are rejected with proved corrected forms; see `audit/topics/topic-06-exponential-decay-analyticity.md` |
 | P12 | Ch. 7 | Supercritical renormalization and slab criteria | Critical | absent/deep |
 | P13 | Ch. 8 | Burton-Keane uniqueness of the infinite cluster | Critical | absent/deep |
 | P14 | Ch. 9 | Scaling theory and critical exponents, informal interface | Critical | external/interface first |

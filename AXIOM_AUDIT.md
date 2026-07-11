@@ -14,3 +14,7 @@ No project axioms are currently present.
 | declaration | file | source | status |
 |---|---|---|---|
 | none | n/a | n/a | n/a |
+
+Chapter 6's frozen automated-review audit prints 41 headline and supporting declarations; every
+one has exactly `[propext, Classical.choice, Quot.sound]`. See
+`audit/reviews/chapter-06/2026-07-10-c4286f9/axioms.md`.

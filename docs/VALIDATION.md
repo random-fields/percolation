@@ -28,6 +28,10 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   (`radiusTail_exponential_decay_of_lt_critical`), including the full pivotal-sausage,
   renewal, master-inequality, and inverse-square-root bootstrap chain; independently,
   Aizenman–Barsky's ghost-field route proves finite susceptibility below `p_c`.
+- **[done]** Chapter 6 systematic subcritical estimates: coordinate-box and two-point exponential
+  rates, correlation length, tree-graph moment bounds, corrected exponential cluster-size tail,
+  exact cluster-size decay rate, and analytic `κ`/`χ` below `p_c`. False printed endpoint/infinite-
+  set readings are explicit rejected anti-targets rather than silently strengthened theorems.
 - **[target]** Burton-Keane uniqueness of the infinite cluster under standard hypotheses.
 - **[target]** Planar duality for bond percolation on the square lattice.
 - **[target]** `p_c = 1/2` for bond percolation on `Z^2`.

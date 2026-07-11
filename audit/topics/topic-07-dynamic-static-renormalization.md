@@ -29,6 +29,37 @@ all prerequisite estimates are proved.
 | Lemma 7.97 | A large box contains a dense crossing cluster with probability tending to one. | `largeCrossingCluster_probability_tendsto_one` | density law, 7.89 | target | Must not use the unresolved pointwise ergodic adapter. | — | — |
 | Lemma 7.104 | A second macroscopic cluster has the stated polynomial-times-exponential upper bound. | `secondMacroscopicCluster_probability_le` | 7.78, strip peeling | target | Deterministic impossibility for `m>2n` is proved. | — | — |
 
+## Numbered supporting-result inventory
+
+The rows below were checked directly against the repository copy of the second edition, rather
+than inferred from declaration names.  A grouped row means that the source equations form one
+proof window; it does not mark any member of the group proved unless the status says so.
+
+| Source, page | Source role or statement | Lean disposition | Status / fidelity note |
+|---|---|---|---|
+| (7.3)–(7.4), p. 148 | `p_c(2kF+B(k)) ≤ p_c+η`; specializing `F=ℤ²×{0}` identifies the thickening with a translated slab. | `regionCriticalProbability_thickening_le_add`; `cubicDilatedThickening_eq_minkowskiSum`; slab identification target | geometric Minkowski identity proved; critical inequality and exact slab identity target |
+| (7.5)–(7.8), p. 150 | Distinguished face/quadrant, layered region `T(m,n)`, seeds, and random target `K(m,n)`. | `seededBoundaryQuadrant`; `seededBoundaryLayerRegion`; `cubicSeedEvent`; `seededBoundaryPoints` | proved definitions; `K(m,n)=∅` for `n<2m` proved for the necessary `d≥2` |
+| (7.10)–(7.16), pp. 150–152 | Seeded boundary connection tends above `1-η`; proof via many boundary contacts, FKG symmetry, and closed exiting edges. | `seedConnectionEvent`; `seedConnection_probability_gt`; boundary-contact helper targets | event/support/measurability proved; estimates target |
+| (7.18)–(7.23), pp. 152–154 | Parameter choices and exit set `U(K)`; a near-certain boundary connection forces many available exit edges. | threshold/exit-set and `sprinkledRestart_inter_history_gt` helper targets | target |
+| (7.25), p. 155 | Every next queried site succeeds conditionally with probability at least `γ>p_c^site(F)`. | ratio-free finite-history hypothesis for `siteExploration_infinite_probability_pos` | target; null histories will not be divided by zero |
+| (7.26)–(7.34), pp. 155–160 | Dynamic-block parameters, monotone revealed thresholds, conditional block success, and the `p+η` bound on every revealed edge. | `BoundaryThresholdProfile`; `GrimmettMarstrandBlock`; fresh-support/steering theorems | threshold vocabulary proved; block geometry and estimates target |
+| (7.37)–(7.51), pp. 165–169 | Half-space zero-one step, top/side contact counts, disjoint seeds, and FKG distribution over all twelve subfacets. | `exists_halfSpaceBrick_good_probability_gt` helper suite | faithful finite good-brick event proved; probability/zero-one arguments target |
+| (7.53)–(7.56), pp. 169–174 | If brick goodness exceeds `1-ν`, at most 125 fresh good bricks per tube give step probability at least `π^125`. | `halfSpaceTheta_pos_of_goodBrick_probability_gt`; rotated-placement/overlap targets | placement vocabulary proved; explicit 125-brick stacking target |
+| (7.57)–(7.60), pp. 177–178 | Coarse boxes are centered at `nx`; good-block indicators are stationary and `3d`-dependent. | `epsilonGoodBlockCenter`; `epsilonGoodBlockField`; `epsilonGoodBlockLaw_kDependent`; translation-stationarity target | center and actual `3d` dependence proved for `n≥1`; stationarity and selected-cluster transport target |
+| (7.62), pp. 178–179 | Above `p_c`, `P_p(B(n) is ε-good)→1`. | `epsilonGoodBox_probability_tendsto_one` | target |
+| (7.63), p. 179 | Stochastic domination is comparison of expectations of every bounded increasing measurable function. | `StochasticallyDominates`; `stochasticallyDominates_of_measureReal_le` | proved, including both event consequence and layer-cake converse for probability laws |
+| (7.64), p. 179 | Uniform one-step conditional lower bounds along an enumeration imply domination of iid sites. | `sequentialLowerBound_stochasticallyDominates` | target; finite-prefix and countable-extension proof window |
+| (7.66)–(7.67), p. 179 | A `k`-dependent field with one-site density at least `δ` dominates iid density `π(δ)`. | `exists_lssDominationDensity` | target |
+| (7.69)–(7.75), pp. 180–181 | Exponentially likely order-`r^(d-1)` disjoint crossings; slice crossings, independent slice family, and ACCFR sprinkling. | `maxEdgeDisjointCrossings_probability_ge`; `maxEdgeDisjointSquareRectangleCrossings`; existing `interiorDepth` inequality | bounded crossing count proved; estimates/general Menger target |
+| (7.70), p. 180 | High-density iid site percolation crosses a square with failure exponentially small in its scale. | `siteSquareRectangleCrossingEvent`; `siteSquareRectangleCrossingProbability`; exponential bound target | faithful finite site event/support/measurability/increasingness proved |
+| (7.76)–(7.80), pp. 181–182 | Finite thick slabs `S_n(L)`, `T_n(L)` and uniform positive pair-connection bounds. | `exists_uniform_slabConnection_lowerBound` and region definitions | target |
+| (7.82)–(7.88), pp. 182–185 | FKG corner connections and bounded finite-energy modifications establish (7.79)–(7.80). | slab-corner and modification helper targets | target |
+| (7.90)–(7.96), pp. 186–188 | Annular peeling: each layer coalesces two arms with a uniform positive conditional chance. | `twoArmSeparation_probability_le_exp` helpers | event/measurability/self endpoint proved; peeling estimates target |
+| (7.98)–(7.103), pp. 188–189 | A dense interior set of infinite-arm vertices coalesces into an all-direction crossing cluster. | `largeCrossingCluster_probability_tendsto_one`; density law | finite large-cluster event proved; probability and density law target |
+| (7.105)–(7.109), pp. 190–191 | Coordinate strip peeling bounds a second diameter-`m` cluster by a geometric factor. | `secondMacroscopicCluster_probability_le` helpers | finite event/measurability and impossible endpoint proved; estimate target |
+| (7.110)–(7.113), pp. 191–193 | Supercritical planar long-rectangle crossing estimate and the four boundary-tube consequence. | `squareRectangleCrossingEvent`; exponential rectangle theorem target | bond event/support/measurability proved; exponential estimate target |
+| (7.114)–(7.122), pp. 193–195 | LSS dilution: choose `α,ρ`, partition nearby revealed zeros/ones, inductively retain conditional density `α`, then dominate iid `αρ`. | scalar parameter, dilution law, and induction targets under `exists_lssDominationDensity` | target |
+
 ## Proved infrastructure correspondence
 
 | Source location | Informal role | Lean declarations | Status | Review note |
@@ -44,7 +75,8 @@ all prerequisite estimates are proved.
 | Half-space bricks | Dimension-uniform facets, facet-parallel seed planes, and the finite good-brick event. | `halfSpaceBrick`, `BrickFacetKind`, `brickFacetSeedNormal`, `brickFacetSeedCenters`, `brickSeedConnectionEvent`, `halfSpaceBrickGoodEvent` | proved slice | Target seeds lie wholly in their subfacet; paths join the central and target seed vertex sets using no underside edge. `brickFacetKind_card` gives four top and eight side subfacets in dimension three. |
 | Static boxes | Finite components, diameters, crossing predicates, and a canonical largest-component selector. | `finiteBoxOpenGraph`, `boxComponentDiameter`, `boxComponentIsCrossing`, `boxLargestCluster`, `boxComponentKey_injective` | proved slice | The tie-break key uses coordinates relative to the center. The theorem transporting the selected component under translations is still open. |
 | Static finite support | Good-box predicate depends only on internal box edges. | `finiteBoxOpenGraph_eq_of_agree`, `FiniteBoxGraph.IsEpsilonGood`, `dependsOn_epsilonGoodBoxEvent`, `measurableSet_epsilonGoodBoxEvent` | proved slice | Graph-parametric factoring resolves dependent-component transport correctly. |
-| Two-arm and second-cluster events | Definitions and basic endpoint checks for the annular/static bad events. | `twoArmSeparationEvent`, `twoArmSeparationEvent_self`, `secondMacroscopicClusterEvent_eq_empty_of_two_mul_lt`, `scaledBoxRadius` | proved slice | Finite-support/measurability theorems for the large-crossing and second-cluster events, and all probability estimates, remain targets. |
+| Static finite bad events | Finite-cylinder definitions and basic endpoint checks for large crossing and second macroscopic components. | `largeCrossingClusterEvent`, `dependsOn_largeCrossingClusterEvent`, `measurableSet_largeCrossingClusterEvent`, `secondMacroscopicClusterEvent`, `dependsOn_secondMacroscopicClusterEvent`, `measurableSet_secondMacroscopicClusterEvent`, `secondMacroscopicClusterEvent_eq_empty_of_two_mul_lt` | proved slice | All probability estimates remain targets. |
+| Two-arm event | Annular two-arm separation event and its self-endpoint check. | `twoArmSeparationEvent`, `measurableSet_twoArmSeparationEvent`, `twoArmSeparationEvent_self`, `scaledBoxRadius` | proved slice | The exponential estimate remains a target. |
 | Chapter 11 rectangle kernel | Finite left-right crossing event and bounded maximum of disjoint crossings. | `squareRectangleCrossingEvent`, `maxEdgeDisjointSquareRectangleCrossings`, `hasEdgeDisjointSquareRectangleCrossings_iff_le_max` | proved slice | The maximal-count interface is restricted to positive width; at width zero unlimited duplicate nil walks make an unrestricted maximum ill-posed. |
 | Stochastic-order vocabulary | Expectation definition, event consequence, iid ordering, finite-range dependence. | `StochasticallyDominates`, `StochasticallyDominates.measureReal_le`, `setBernoulli_stochasticallyDominates`, `KDependent`, `setBernoulli_kDependent` | proved slice | The iid theorem checks the direction of domination. LSS remains a target. |
 
@@ -61,6 +93,8 @@ all prerequisite estimates are proved.
 - `siteTheta G 0 = 0`; the proof detects the junk closed-root value that raw reachability would
   otherwise introduce.
 - `cubicSlab 2 k = Set.univ`.
+- In dimension at least two, `K(m,n)=∅` when `n<2m`:
+  `seededBoundaryPoints_eq_empty_of_lt_two_mul`.
 
 ## Focused Chapter 11 prerequisites still open
 
@@ -83,7 +117,8 @@ individual theorem rows.
 | Region root-independence, static finite support, exploration, and brick infrastructure | 2238s | 3666s | 1428s | 692,564 | 1,024,002 | 331,438 |
 | Finite-event continuity, coarse-block separation, and finite seed support | 3666s | 4416s | 750s | 1,024,002 | 1,178,200 | 154,198 |
 | Independent review remediation, faithful brick geometry, and checkpoint verification | 4416s | 5517s | 1101s | 1,178,200 | 1,413,658 | 235,458 |
-| **Infrastructure subtotal** |  |  | **5517s** |  |  | **1,413,658** |
+| Direct source inventory, finite static events, rooted exploration limit, stochastic-order layer cake, and site crossings | 5517s | 6466s | 949s | 1,413,658 | 1,733,685 | 320,027 |
+| **Infrastructure subtotal** |  |  | **6466s** |  |  | **1,733,685** |
 
 Documentation, Git operations, and final PR composition are excluded from theorem telemetry but
 will receive separate non-theorem rows in the frozen review run.

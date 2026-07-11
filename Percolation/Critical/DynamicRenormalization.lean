@@ -230,6 +230,86 @@ theorem step_eq_self_of_frontier_eq_empty (E : SiteExploration V) (answer : V �
   unfold step
   rw [(nextVertex_eq_none_iff s).mpr hs]
 
+/-! ### The limiting explored set and rooted connectivity -/
+
+/-- The increasing union `A∞` of all accepted sites. -/
+def occupiedLimit (E : SiteExploration V) (answer : V → Bool) : Set V :=
+  {v | ∃ n, v ∈ (E.stateAfter answer n).occupied}
+
+/-- The increasing union of all rejected sites. -/
+def rejectedLimit (E : SiteExploration V) (answer : V → Bool) : Set V :=
+  {v | ∃ n, v ∈ (E.stateAfter answer n).rejected}
+
+theorem occupied_subset_occupiedLimit (E : SiteExploration V) (answer : V → Bool)
+    (n : ℕ) :
+    ((E.stateAfter answer n).occupied : Set V) ⊆ E.occupiedLimit answer := by
+  intro v hv
+  exact ⟨n, hv⟩
+
+theorem rejected_subset_rejectedLimit (E : SiteExploration V) (answer : V → Bool)
+    (n : ℕ) :
+    ((E.stateAfter answer n).rejected : Set V) ⊆ E.rejectedLimit answer := by
+  intro v hv
+  exact ⟨n, hv⟩
+
+/-- State invariant used to retain the source's rooted conclusion: every occupied site is
+reachable from `root`, and every frontier site has an already occupied neighbor. -/
+def RootedAt (E : SiteExploration V) (root : V) (s : SiteExplorationState V) : Prop :=
+  root ∈ s.occupied ∧
+    (∀ v ∈ s.occupied, E.graph.Reachable root v) ∧
+    ∀ v ∈ s.frontier, ∃ u ∈ s.occupied, E.graph.Adj u v
+
+theorem step_rootedAt (E : SiteExploration V) (answer : V → Bool) (root : V)
+    {s : SiteExplorationState V} (hs : E.RootedAt root s) :
+    E.RootedAt root (E.step answer s) := by
+  classical
+  unfold RootedAt at hs ⊢
+  unfold step
+  split
+  · exact hs
+  next v hnext =>
+    have hvfront : v ∈ s.frontier := mem_frontier_of_nextVertex_eq_some hnext
+    obtain ⟨u, huocc, huv⟩ := hs.2.2 v hvfront
+    split
+    · refine ⟨Finset.mem_insert_of_mem hs.1, ?_, ?_⟩
+      · intro z hz
+        rw [Finset.mem_insert] at hz
+        rcases hz with rfl | hz
+        · exact (hs.2.1 u huocc).trans (SimpleGraph.Adj.reachable huv)
+        · exact hs.2.1 z hz
+      · intro z hz
+        have hz' := Finset.mem_sdiff.mp hz
+        rw [Finset.mem_union] at hz'
+        rcases hz'.1 with hzold | hznew
+        · obtain ⟨w, hwocc, hwz⟩ := hs.2.2 z (Finset.mem_of_mem_erase hzold)
+          exact ⟨w, Finset.mem_insert_of_mem hwocc, hwz⟩
+        · exact ⟨v, by simp, (E.mem_neighbors).mp hznew⟩
+    · refine ⟨hs.1, hs.2.1, ?_⟩
+      intro z hz
+      exact hs.2.2 z (Finset.mem_of_mem_erase hz)
+
+theorem stateAfter_rootedAt (E : SiteExploration V) (answer : V → Bool) (root : V)
+    (hinitial : E.RootedAt root E.initial) (n : ℕ) :
+    E.RootedAt root (E.stateAfter answer n) := by
+  induction n with
+  | zero => exact hinitial
+  | succ n ih => exact E.step_rootedAt answer root ih
+
+/-- Every site in the limiting explored set remains connected to the fixed initial root. -/
+theorem reachable_of_mem_occupiedLimit (E : SiteExploration V) (answer : V → Bool)
+    (root : V) (hinitial : E.RootedAt root E.initial)
+    {v : V} (hv : v ∈ E.occupiedLimit answer) : E.graph.Reachable root v := by
+  obtain ⟨n, hvn⟩ := hv
+  exact (E.stateAfter_rootedAt answer root hinitial n).2.1 v hvn
+
+/-- Any two accepted sites in `A∞` are joined through the fixed root. -/
+theorem reachable_between_of_mem_occupiedLimit (E : SiteExploration V)
+    (answer : V → Bool) (root : V) (hinitial : E.RootedAt root E.initial)
+    {u v : V} (hu : u ∈ E.occupiedLimit answer) (hv : v ∈ E.occupiedLimit answer) :
+    E.graph.Reachable u v :=
+  (E.reachable_of_mem_occupiedLimit answer root hinitial hu).symm.trans
+    (E.reachable_of_mem_occupiedLimit answer root hinitial hv)
+
 end SiteExploration
 
 end Percolation

@@ -1,5 +1,6 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
+import Percolation.Planar.Crossings
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -9,3 +10,8 @@ import Percolation.Critical.SiteExplorationDomination
 #print axioms Percolation.continuous_seedConnectionProbability
 #print axioms Percolation.cubicDilatedThickening_eq_minkowskiSum
 #print axioms Percolation.siteExploration_infinite_probability_pos_of_dominates
+#print axioms Percolation.stochasticallyDominates_iff_measureReal_le
+#print axioms Percolation.SiteExploration.reachable_between_of_mem_occupiedLimit
+#print axioms Percolation.dependsOn_siteSquareRectangleCrossingEvent
+#print axioms Percolation.dependsOn_largeCrossingClusterEvent
+#print axioms Percolation.dependsOn_secondMacroscopicClusterEvent

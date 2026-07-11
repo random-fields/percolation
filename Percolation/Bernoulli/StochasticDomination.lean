@@ -1,6 +1,7 @@
 import Percolation.Bernoulli.Coupling
 import Percolation.Bernoulli.FKGInfinite
 import Mathlib.Combinatorics.SimpleGraph.Diam
+import Mathlib.MeasureTheory.Integral.Layercake
 
 /-!
 # Stochastic domination and finite-range dependence
@@ -66,6 +67,125 @@ theorem StochasticallyDominates.measureReal_le {ι : Type*}
   rw [integral_indicator_const (1 : ℝ) hAm, integral_indicator_const (1 : ℝ) hAm,
     smul_eq_mul, smul_eq_mul, mul_one, mul_one] at hle
   exact hle
+
+/-- For probability laws, comparison of all measurable increasing events implies Grimmett's
+expectation formulation of stochastic domination.  The proof uses the layer-cake formula on a
+bounded increasing observable. -/
+theorem stochasticallyDominates_of_measureReal_le {ι : Type*}
+    (μ ν : Measure (Set ι)) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (h : ∀ A : Set (Set ι), MeasurableSet A → IsIncreasingEvent A →
+      ν.real A ≤ μ.real A) :
+    StochasticallyDominates μ ν := by
+  intro f hf hinc hbdd
+  obtain ⟨C, hC⟩ := hbdd
+  have hC0 : 0 ≤ C := (abs_nonneg (f ∅)).trans (hC ∅)
+  let g : Set ι → ℝ := fun ω ↦ f ω + C
+  have hg0 : ∀ ω, 0 ≤ g ω := by
+    intro ω
+    have hfLower := (abs_le.mp (hC ω)).1
+    dsimp [g]
+    linarith
+  have hgUpper : ∀ ω, g ω ≤ 2 * C := by
+    intro ω
+    have hfUpper := (abs_le.mp (hC ω)).2
+    dsimp [g]
+    linarith
+  have hgm : Measurable g := hf.add_const C
+  have hgb : ∀ ω, |g ω| ≤ 2 * C := by
+    intro ω
+    rw [abs_of_nonneg (hg0 ω)]
+    exact hgUpper ω
+  have hfIntμ : Integrable f μ := integrable_of_bounded_measurable hf hC
+  have hfIntν : Integrable f ν := integrable_of_bounded_measurable hf hC
+  have hgIntμ : Integrable g μ := integrable_of_bounded_measurable hgm hgb
+  have hgIntν : Integrable g ν := integrable_of_bounded_measurable hgm hgb
+  let tailμ : ℝ → ℝ := fun t ↦ μ.real {ω : Set ι | t < g ω}
+  let tailν : ℝ → ℝ := fun t ↦ ν.real {ω : Set ι | t < g ω}
+  have htailμ_antitone : Antitone tailμ := by
+    intro s t hst
+    apply measureReal_mono _ (measure_ne_top μ _)
+    intro ω hω
+    exact lt_of_le_of_lt hst hω
+  have htailν_antitone : Antitone tailν := by
+    intro s t hst
+    apply measureReal_mono _ (measure_ne_top ν _)
+    intro ω hω
+    exact lt_of_le_of_lt hst hω
+  have htailμ_meas : Measurable tailμ := htailμ_antitone.measurable
+  have htailν_meas : Measurable tailν := htailν_antitone.measurable
+  have htailμ_int : Integrable tailμ (volume.restrict (Set.Ioi 0)) := by
+    let b : ℝ → ℝ := Set.Ioc 0 (2 * C) |>.indicator fun _ ↦ 1
+    have hbInt : Integrable b volume := by
+      change Integrable ((Set.Ioc 0 (2 * C)).indicator (fun _ ↦ (1 : ℝ))) volume
+      exact (integrableOn_const (μ := volume) (s := Set.Ioc 0 (2 * C))
+        (C := (1 : ℝ)) measure_Ioc_lt_top.ne).integrable_indicator measurableSet_Ioc
+    apply Integrable.mono' (hbInt.mono_measure Measure.restrict_le_self)
+      htailμ_meas.aestronglyMeasurable
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    have ht0 : 0 < t := ht
+    by_cases htC : t ≤ 2 * C
+    · have htail_le : tailμ t ≤ 1 := by
+        exact (measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ
+      rw [show b t = 1 by simp [b, ht0, htC], Real.norm_eq_abs,
+        abs_of_nonneg measureReal_nonneg]
+      exact htail_le
+    · have hempty : {ω : Set ι | t < g ω} = ∅ := by
+        ext ω
+        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+        exact fun hω ↦ (not_le_of_gt hω) (hgUpper ω |>.trans (le_of_not_ge htC))
+      simp [tailμ, hempty, b, ht0, htC]
+  have htailν_int : Integrable tailν (volume.restrict (Set.Ioi 0)) := by
+    let b : ℝ → ℝ := Set.Ioc 0 (2 * C) |>.indicator fun _ ↦ 1
+    have hbInt : Integrable b volume := by
+      change Integrable ((Set.Ioc 0 (2 * C)).indicator (fun _ ↦ (1 : ℝ))) volume
+      exact (integrableOn_const (μ := volume) (s := Set.Ioc 0 (2 * C))
+        (C := (1 : ℝ)) measure_Ioc_lt_top.ne).integrable_indicator measurableSet_Ioc
+    apply Integrable.mono' (hbInt.mono_measure Measure.restrict_le_self)
+      htailν_meas.aestronglyMeasurable
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    have ht0 : 0 < t := ht
+    by_cases htC : t ≤ 2 * C
+    · have htail_le : tailν t ≤ 1 := by
+        exact (measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ
+      rw [show b t = 1 by simp [b, ht0, htC], Real.norm_eq_abs,
+        abs_of_nonneg measureReal_nonneg]
+      exact htail_le
+    · have hempty : {ω : Set ι | t < g ω} = ∅ := by
+        ext ω
+        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+        exact fun hω ↦ (not_le_of_gt hω) (hgUpper ω |>.trans (le_of_not_ge htC))
+      simp [tailν, hempty, b, ht0, htC]
+  have htail : ∀ t, tailν t ≤ tailμ t := by
+    intro t
+    apply h
+    · change MeasurableSet (g ⁻¹' Set.Ioi t)
+      exact hgm measurableSet_Ioi
+    · intro A B hAB hA
+      change t < g A at hA
+      change t < g B
+      dsimp [g] at hA ⊢
+      exact hA.trans_le (by simpa [add_comm] using add_le_add_right (hinc hAB) C)
+  have hg_le : ∫ ω, g ω ∂ν ≤ ∫ ω, g ω ∂μ := by
+    rw [hgIntν.integral_eq_integral_meas_lt (Filter.Eventually.of_forall hg0),
+      hgIntμ.integral_eq_integral_meas_lt (Filter.Eventually.of_forall hg0)]
+    exact integral_mono htailν_int htailμ_int htail
+  rw [show (∫ ω, g ω ∂ν) = (∫ ω, f ω ∂ν) + C by
+      simp only [g, integral_add hfIntν (integrable_const C), integral_const,
+        probReal_univ, one_smul],
+    show (∫ ω, g ω ∂μ) = (∫ ω, f ω ∂μ) + C by
+      simp only [g, integral_add hfIntμ (integrable_const C), integral_const,
+        probReal_univ, one_smul]] at hg_le
+  linarith
+
+theorem stochasticallyDominates_iff_measureReal_le {ι : Type*}
+    (μ ν : Measure (Set ι)) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    StochasticallyDominates μ ν ↔
+      ∀ A : Set (Set ι), MeasurableSet A → IsIncreasingEvent A →
+        ν.real A ≤ μ.real A := by
+  constructor
+  · intro h A hAm hAi
+    exact h.measureReal_le hAm hAi
+  · exact stochasticallyDominates_of_measureReal_le μ ν
 
 /-- The sigma-algebra generated by site coordinates in `S`. -/
 @[reducible] def siteCoordinateMeasurableSpace

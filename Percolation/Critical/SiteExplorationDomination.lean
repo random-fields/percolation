@@ -30,6 +30,20 @@ theorem siteExploration_infinite_probability_pos_of_dominates
   exact (siteTheta_pos_of_criticalProbability_lt hp).trans_le (by
     simpa [siteTheta] using hle)
 
+/-- Under a probability law dominated from below by supercritical iid sites, the sampled site
+set itself is infinite with positive probability.  Applied to the pushforward law of `A∞`, this
+is the probability conclusion needed by Lemma 7.24; constructing and dominating that
+pushforward law remains a separate theorem. -/
+theorem infinite_siteSet_probability_pos_of_dominates
+    {V : Type*} [Countable V] (G : SimpleGraph V)
+    (μ : Measure (Set V)) [IsProbabilityMeasure μ] (p : I)
+    (hp : siteCriticalProbability G < (p : ℝ))
+    (hdom : StochasticallyDominates μ setBer((Set.univ : Set V), p)) :
+    0 < μ.real {η : Set V | η.Infinite} := by
+  have hpos := siteExploration_infinite_probability_pos_of_dominates G μ p hp hdom
+  exact hpos.trans_le <| measureReal_mono fun η hη ↦
+    Set.Infinite.of_hasInfiniteSiteCluster hη
+
 /-- A history-wise ratio-free success estimate automatically gives the usual conditional ratio
 on every positive-mass history. -/
 theorem historySuccessLowerBound_conditional_of_pos {Ω : Type*} [MeasurableSpace Ω]

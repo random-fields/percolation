@@ -86,6 +86,64 @@ def seededBoundaryPoints (d : ℕ) (i : Fin d) (m n : ℕ)
     (ω : EdgeConfiguration d) : Set (Cubic d) :=
   {y | IsSeededBoundaryPoint d i m n ω y}
 
+/-- The target set `K(m,n)` is empty when the boundary face is too narrow to contain a
+codimension-one seed.  The dimension hypothesis is necessary: in dimension one there is no
+transverse coordinate that forces the width bound. -/
+theorem seededBoundaryPoints_eq_empty_of_lt_two_mul {d m n : ℕ} (hd : 2 ≤ d)
+    (i : Fin d) (ω : EdgeConfiguration d) (hn : n < 2 * m) :
+    seededBoundaryPoints d i m n ω = ∅ := by
+  classical
+  ext y
+  simp only [seededBoundaryPoints, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+  rintro ⟨hyQ, _hyedge, c, _hyc, hcLayer, _hcSeed⟩
+  let j : Fin d := if hi : i.val = 0 then ⟨1, by omega⟩ else ⟨0, by omega⟩
+  have hji : j ≠ i := by
+    by_cases hi : i.val = 0
+    · intro h
+      have hval := congrArg Fin.val h
+      simp [j, hi] at hval
+    · intro h
+      have hval := congrArg Fin.val h
+      simp [j, hi] at hval
+      exact hi hval.symm
+  let zminus : Cubic d := Function.update c j (c j - (m : ℤ))
+  let zplus : Cubic d := Function.update c j (c j + (m : ℤ))
+  have hzminus : zminus ∈ cubicMetricBox d c m := by
+    rw [mem_cubicMetricBox]
+    intro k
+    by_cases hkj : k = j
+    · subst k
+      simp [zminus]
+      omega
+    · simpa [zminus, hkj]
+  have hzplus : zplus ∈ cubicMetricBox d c m := by
+    rw [mem_cubicMetricBox]
+    intro k
+    by_cases hkj : k = j
+    · subst k
+      simp [zplus]
+      omega
+    · simpa [zplus, hkj]
+  obtain ⟨rminus, _hrminus1, _hrminus2, yminus, hyminusQ, hzminusEq⟩ :=
+    hcLayer zminus hzminus
+  obtain ⟨rplus, _hrplus1, _hrplus2, yplus, hyplusQ, hzplusEq⟩ :=
+    hcLayer zplus hzplus
+  have hzminusj : c j - (m : ℤ) = yminus j := by
+    have h := congrFun hzminusEq j
+    rw [cubicTranslateAlongCoordinate_of_ne yminus hji rminus] at h
+    simpa [zminus] using h
+  have hzplusj : c j + (m : ℤ) = yplus j := by
+    have h := congrFun hzplusEq j
+    rw [cubicTranslateAlongCoordinate_of_ne yplus hji rplus] at h
+    simpa [zplus] using h
+  have hyminus_nonneg : 0 ≤ yminus j :=
+    (mem_seededBoundaryQuadrant_iff.mp hyminusQ).2 j hji
+  have hyplus_le : yplus j ≤ (n : ℤ) := by
+    have hface := mem_cubicBoxFace.mp (mem_seededBoundaryQuadrant_iff.mp hyplusQ).1
+    have hj := (hface.2 j hji).2
+    simpa [cubicOrigin] using hj
+  omega
+
 /-- A finite ambient set containing every seed center that can witness membership in `K(m,n)`. -/
 noncomputable def seededBoundaryPossibleCenters
     (d : ℕ) (m n : ℕ) : Finset (Cubic d) :=

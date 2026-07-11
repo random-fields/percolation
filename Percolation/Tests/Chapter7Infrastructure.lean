@@ -34,6 +34,10 @@ example (d m n : ℕ) (x : Cubic d) (h : 2 * n < m) :
 example (n : ℕ) : squareRectangleCrossingEvent 0 n = Set.univ :=
   squareRectangleCrossingEvent_zero_left n
 
+example : siteSquareRectangleCrossingEvent 0 0 =
+    {η : Set SquareVertex | squareVertex 0 0 ∈ η} :=
+  siteSquareRectangleCrossingEvent_zero
+
 example (m n : ℕ) (hm : 1 ≤ m) :
     maxEdgeDisjointSquareRectangleCrossings m n (∅ : EdgeConfiguration 2) = 0 :=
   maxEdgeDisjointSquareRectangleCrossings_empty hm
@@ -45,6 +49,10 @@ example (d : ℕ) (F : Set (Cubic d)) (k : ℕ) :
 example (d : ℕ) (p : I) (ε : ℝ) {n : ℕ} (hn : 1 ≤ n) :
     KDependent (cubicGraph d) (3 * d) (epsilonGoodBlockLaw d p ε n) :=
   epsilonGoodBlockLaw_kDependent d p ε hn
+
+example {d m n : ℕ} (hd : 2 ≤ d) (i : Fin d) (ω : EdgeConfiguration d)
+    (hn : n < 2 * m) : seededBoundaryPoints d i m n ω = ∅ :=
+  seededBoundaryPoints_eq_empty_of_lt_two_mul hd i ω hn
 
 /-- Reversing the density order would fail the iid stochastic-order oracle: the proved direction
 is that the law at the larger density dominates the law at the smaller density. -/

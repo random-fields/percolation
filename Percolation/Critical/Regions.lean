@@ -695,6 +695,34 @@ This witness formulation makes measurability transparent on countable graphs. -/
 def siteConnectionEvent {V : Type*} (G : SimpleGraph V) (x y : V) : Set (Set V) :=
   {η | ∃ w : G.Walk x y, ∀ z ∈ w.support, z ∈ η}
 
+/-- A site-open connection constrained to a finite vertex set. -/
+def siteConnectionEventIn {V : Type*} (G : SimpleGraph V) (R : Finset V)
+    (x y : V) : Set (Set V) :=
+  {η | ∃ w : G.Walk x y,
+    (∀ z ∈ w.support, z ∈ R) ∧ ∀ z ∈ w.support, z ∈ η}
+
+theorem dependsOn_siteConnectionEventIn {V : Type*} [DecidableEq V]
+    (G : SimpleGraph V) (R : Finset V) (x y : V) :
+    DependsOn R (siteConnectionEventIn G R x y) := by
+  intro η ξ hagree
+  constructor
+  · rintro ⟨w, hwR, hwη⟩
+    exact ⟨w, hwR, fun z hz ↦ (hagree z (hwR z hz)).mp (hwη z hz)⟩
+  · rintro ⟨w, hwR, hwξ⟩
+    exact ⟨w, hwR, fun z hz ↦ (hagree z (hwR z hz)).mpr (hwξ z hz)⟩
+
+theorem measurableSet_siteConnectionEventIn {V : Type*} [DecidableEq V]
+    (G : SimpleGraph V) (R : Finset V) (x y : V) :
+    MeasurableSet (siteConnectionEventIn G R x y) :=
+  (dependsOn_siteConnectionEventIn G R x y).measurableSet
+
+theorem isIncreasingEvent_siteConnectionEventIn {V : Type*} (G : SimpleGraph V)
+    (R : Finset V) (x y : V) :
+    IsIncreasingEvent (siteConnectionEventIn G R x y) := by
+  intro η ξ hηξ
+  rintro ⟨w, hwR, hwη⟩
+  exact ⟨w, hwR, fun z hz ↦ hηξ (hwη z hz)⟩
+
 /-- The site-open cluster of a vertex. -/
 def siteOpenCluster {V : Type*} (G : SimpleGraph V) (η : Set V) (x : V) : Set V :=
   {y | η ∈ siteConnectionEvent G x y}
@@ -742,6 +770,12 @@ theorem siteOpenCluster_eq_reachable {V : Type*} (G : SimpleGraph V) (η : Set V
           · exact ih (siteOpenGraph_adj.mp hab).2.2 z hz
     exact hz'eq' ▸ hopenSupport w hx z' hz'
 
+theorem siteOpenCluster_subset {V : Type*} (G : SimpleGraph V) (η : Set V) (x : V) :
+    siteOpenCluster G η x ⊆ η := by
+  intro y hy
+  obtain ⟨w, hw⟩ := hy
+  exact hw y (by simp)
+
 theorem measurableSet_siteConnectionEvent {V : Type*} [Countable V]
     (G : SimpleGraph V) (x y : V) : MeasurableSet (siteConnectionEvent G x y) := by
   classical
@@ -770,6 +804,11 @@ theorem measurableSet_siteConnectionEvent {V : Type*} [Countable V]
 /-- A site configuration has an infinite open component. -/
 def hasInfiniteSiteCluster {V : Type*} (G : SimpleGraph V) (η : Set V) : Prop :=
   ∃ x, (siteOpenCluster G η x).Infinite
+
+theorem Set.Infinite.of_hasInfiniteSiteCluster {V : Type*} {G : SimpleGraph V}
+    {η : Set V} (hη : hasInfiniteSiteCluster G η) : η.Infinite := by
+  obtain ⟨x, hx⟩ := hη
+  exact hx.mono (siteOpenCluster_subset G η x)
 
 theorem measurableSet_hasInfiniteSiteCluster {V : Type*} [Countable V]
     (G : SimpleGraph V) : MeasurableSet {η : Set V | hasInfiniteSiteCluster G η} := by

@@ -552,25 +552,74 @@ theorem epsilonGoodBlockLaw_kDependent
     (siteCoordinateMeasurableSpace_le (Cubic d) A)
     (siteCoordinateMeasurableSpace_le (Cubic d) B) hcomap
 
+/-- Graph-parametric predicate that some crossing component contains at least `q` vertices. -/
+def FiniteBoxGraph.HasLargeCrossing {d : ℕ} {x : Cubic d} {n : ℕ}
+    (q : ℕ) (G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}) : Prop :=
+  ∃ C : G.ConnectedComponent,
+    finiteBoxGraphComponentIsCrossing C ∧ q ≤ finiteBoxGraphComponentCard C
+
+/-- Graph-parametric predicate that a crossing component and a distinct component of diameter
+at least `m` coexist. -/
+def FiniteBoxGraph.HasSecondMacroscopic {d : ℕ} {x : Cubic d} {n : ℕ}
+    (m : ℕ) (G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}) : Prop :=
+  ∃ C D : G.ConnectedComponent,
+    C ≠ D ∧ finiteBoxGraphComponentIsCrossing C ∧
+      m ≤ finiteBoxGraphComponentDiameter D
+
 /-- There is a crossing component containing at least `q` vertices. -/
 def largeCrossingClusterEvent (d q n : ℕ) (x : Cubic d) : Set (EdgeConfiguration d) :=
-  {ω | ∃ C : (finiteBoxOpenGraph d ω x n).ConnectedComponent,
-    boxComponentIsCrossing C ∧ q ≤ boxComponentCard C}
+  {ω | FiniteBoxGraph.HasLargeCrossing q (finiteBoxOpenGraph d ω x n)}
 
 /-- The box contains a crossing component and a distinct component of diameter at least `m`.
 This is Grimmett's event `T_{m,n}` before Lemma 7.104. -/
 def secondMacroscopicClusterEvent (d m n : ℕ) (x : Cubic d) : Set (EdgeConfiguration d) :=
-  {ω | ∃ C D : (finiteBoxOpenGraph d ω x n).ConnectedComponent,
-    C ≠ D ∧ boxComponentIsCrossing C ∧ m ≤ boxComponentDiameter D}
+  {ω | FiniteBoxGraph.HasSecondMacroscopic m (finiteBoxOpenGraph d ω x n)}
+
+theorem dependsOn_largeCrossingClusterEvent (d q n : ℕ) (x : Cubic d) :
+    DependsOn (cubicBoxEdges d x n) (largeCrossingClusterEvent d q n x) := by
+  intro ω η hagree
+  change FiniteBoxGraph.HasLargeCrossing q (finiteBoxOpenGraph d ω x n) ↔
+    FiniteBoxGraph.HasLargeCrossing q (finiteBoxOpenGraph d η x n)
+  rw [finiteBoxOpenGraph_eq_of_agree hagree]
+
+theorem measurableSet_largeCrossingClusterEvent (d q n : ℕ) (x : Cubic d) :
+    MeasurableSet (largeCrossingClusterEvent d q n x) :=
+  (dependsOn_largeCrossingClusterEvent d q n x).measurableSet
+
+theorem dependsOn_secondMacroscopicClusterEvent (d m n : ℕ) (x : Cubic d) :
+    DependsOn (cubicBoxEdges d x n) (secondMacroscopicClusterEvent d m n x) := by
+  intro ω η hagree
+  change FiniteBoxGraph.HasSecondMacroscopic m (finiteBoxOpenGraph d ω x n) ↔
+    FiniteBoxGraph.HasSecondMacroscopic m (finiteBoxOpenGraph d η x n)
+  rw [finiteBoxOpenGraph_eq_of_agree hagree]
+
+theorem measurableSet_secondMacroscopicClusterEvent (d m n : ℕ) (x : Cubic d) :
+    MeasurableSet (secondMacroscopicClusterEvent d m n x) :=
+  (dependsOn_secondMacroscopicClusterEvent d m n x).measurableSet
 
 @[simp]
 theorem secondMacroscopicClusterEvent_eq_empty_of_two_mul_lt {d m n : ℕ}
     (x : Cubic d) (hm : 2 * n < m) :
     secondMacroscopicClusterEvent d m n x = ∅ := by
+  classical
   ext ω
-  simp only [secondMacroscopicClusterEvent, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+  simp only [secondMacroscopicClusterEvent, FiniteBoxGraph.HasSecondMacroscopic,
+    Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
   rintro ⟨C, D, _hne, _hcross, hmD⟩
-  exact (not_le_of_gt hm) (hmD.trans (boxComponentDiameter_le_two_mul D))
+  have hD : finiteBoxGraphComponentDiameter D ≤ 2 * n := by
+    rw [finiteBoxGraphComponentDiameter]
+    apply Finset.sup_le
+    intro u hu
+    apply Finset.sup_le
+    intro v hv
+    obtain ⟨huBox, _⟩ := (Finset.mem_filter.mp hu).2
+    obtain ⟨hvBox, _⟩ := (Finset.mem_filter.mp hv).2
+    exact (cubicLInfDist_triangle u x v).trans <| by
+      rw [cubicLInfDist_comm u x]
+      simpa [two_mul] using Nat.add_le_add
+        (mem_cubicMetricBox_iff_lInfDist_le.mp huBox)
+        (mem_cubicMetricBox_iff_lInfDist_le.mp hvBox)
+  exact (not_le_of_gt hm) (hmD.trans hD)
 
 /-! ### Two-arm separation events -/
 

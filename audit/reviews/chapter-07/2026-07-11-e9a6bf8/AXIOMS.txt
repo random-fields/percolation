@@ -37,3 +37,13 @@ Additional output after correcting the good-brick event:
 'Percolation.siteExploration_infinite_probability_pos_of_dominates' depends on axioms: [propext, Classical.choice, Quot.sound]
 
 Post-review result: PASS. The full repository build also passed (8,559 jobs).
+
+Second checkpoint additions (full build: 8,560 jobs):
+
+'Percolation.stochasticallyDominates_iff_measureReal_le' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.SiteExploration.reachable_between_of_mem_occupiedLimit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.dependsOn_siteSquareRectangleCrossingEvent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.dependsOn_largeCrossingClusterEvent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.dependsOn_secondMacroscopicClusterEvent' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+Second checkpoint result: PASS; no nonstandard transitive axiom.

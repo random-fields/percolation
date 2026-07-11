@@ -1,5 +1,6 @@
 import Percolation.Bernoulli.DisjointConnections
 import Percolation.Critical.BoxRadius
+import Percolation.Critical.Regions
 
 /-!
 # Finite square-lattice crossing events
@@ -115,6 +116,91 @@ theorem dependsOn_squareRectangleCrossingEvent (m n : ℕ) :
     obtain ⟨x, hx, y, hy, hxy⟩ := hη
     exact ⟨x, hx, y, hy,
       (dependsOn_connectionEventIn 2 (squareRectangleEdges m n) x y hagree).mpr hxy⟩
+
+/-! ### Site crossings -/
+
+/-- An open-site left-right crossing of `[0,m] × [-n,n]`. -/
+def siteSquareRectangleCrossingEvent (m n : ℕ) : Set (Set SquareVertex) :=
+  ⋃ x ∈ squareRectangleLeft m n, ⋃ y ∈ squareRectangleRight m n,
+    siteConnectionEventIn squareGraph (squareRectangleVertices m n) x y
+
+theorem dependsOn_siteSquareRectangleCrossingEvent (m n : ℕ) :
+    DependsOn (squareRectangleVertices m n) (siteSquareRectangleCrossingEvent m n) := by
+  intro η ξ hagree
+  simp only [siteSquareRectangleCrossingEvent, Set.mem_iUnion]
+  constructor
+  · rintro ⟨x, hx, y, hy, hxy⟩
+    exact ⟨x, hx, y, hy,
+      (dependsOn_siteConnectionEventIn squareGraph (squareRectangleVertices m n) x y
+        hagree).mp hxy⟩
+  · rintro ⟨x, hx, y, hy, hxy⟩
+    exact ⟨x, hx, y, hy,
+      (dependsOn_siteConnectionEventIn squareGraph (squareRectangleVertices m n) x y
+        hagree).mpr hxy⟩
+
+theorem measurableSet_siteSquareRectangleCrossingEvent (m n : ℕ) :
+    MeasurableSet (siteSquareRectangleCrossingEvent m n) :=
+  (dependsOn_siteSquareRectangleCrossingEvent m n).measurableSet
+
+theorem isIncreasingEvent_siteSquareRectangleCrossingEvent (m n : ℕ) :
+    IsIncreasingEvent (siteSquareRectangleCrossingEvent m n) := by
+  intro η ξ hηξ
+  simp only [siteSquareRectangleCrossingEvent, Set.mem_iUnion]
+  rintro ⟨x, hx, y, hy, hxy⟩
+  exact ⟨x, hx, y, hy,
+    isIncreasingEvent_siteConnectionEventIn squareGraph (squareRectangleVertices m n) x y
+      hηξ hxy⟩
+
+/-- At width zero, a site crossing exists exactly when some vertex of the common side is open.
+Unlike the bond event, the site event is therefore not the whole configuration space. -/
+theorem siteSquareRectangleCrossingEvent_zero_left (n : ℕ) :
+    siteSquareRectangleCrossingEvent 0 n =
+      ⋃ x ∈ squareRectangleLeft 0 n, {η : Set SquareVertex | x ∈ η} := by
+  ext η
+  simp only [siteSquareRectangleCrossingEvent, Set.mem_iUnion, Set.mem_setOf_eq]
+  constructor
+  · rintro ⟨x, hx, y, _hy, w, _hwR, hwη⟩
+    exact ⟨x, hx, hwη x (by simp)⟩
+  · rintro ⟨x, hx, hxη⟩
+    have hxR : x ∈ squareRectangleRight 0 n := by
+      rw [mem_squareRectangleRight_iff]
+      have hx' := mem_squareRectangleLeft_iff.mp hx
+      exact ⟨by simpa using hx'.1, hx'.2.1, hx'.2.2⟩
+    refine ⟨x, hx, x, hxR, SimpleGraph.Walk.nil, ?_, ?_⟩
+    · intro z hz
+      simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hz
+      subst z
+      exact (Finset.mem_filter.mp hx).1
+    · intro z hz
+      simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hz
+      subst z
+      exact hxη
+
+@[simp]
+theorem siteSquareRectangleCrossingEvent_zero :
+    siteSquareRectangleCrossingEvent 0 0 =
+      {η : Set SquareVertex | squareVertex 0 0 ∈ η} := by
+  rw [siteSquareRectangleCrossingEvent_zero_left]
+  ext η
+  simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+  constructor
+  · rintro ⟨x, hx, hxη⟩
+    have hx0 : x = squareVertex 0 0 := by
+      funext i
+      fin_cases i
+      · simpa [squareVertex] using (mem_squareRectangleLeft_iff.mp hx).1
+      · have hx' := mem_squareRectangleLeft_iff.mp hx
+        simp [squareVertex] at hx' ⊢
+        omega
+    simpa [hx0] using hxη
+  · intro hη
+    refine ⟨squareVertex 0 0, ?_, hη⟩
+    simp [cubicOrigin]
+
+/-- Crossing probability for iid site percolation, used in equation (7.70). -/
+noncomputable def siteSquareRectangleCrossingProbability (p : I) (m n : ℕ) : ℝ :=
+  setBer((Set.univ : Set SquareVertex), p).real
+    (siteSquareRectangleCrossingEvent m n)
 
 @[simp]
 theorem squareRectangleCrossingEvent_zero_left (n : ℕ) :

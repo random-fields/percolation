@@ -19,6 +19,7 @@ import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.BoundaryContacts
+import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -296,3 +297,8 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.pairwiseDisjoint_boundaryContactsDieNextEvent
 #print axioms Percolation.smallNonemptyBoundaryContact_probability_tendsto_zero
 #print axioms Percolation.exists_boundaryContactCardGe_probability_gt
+#print axioms Percolation.cubicBoxSurface_subset_iUnion_boxSurfaceOrthant
+#print axioms Percolation.boxBoundaryContacts_card_le_sum_orthantBoundaryContacts
+#print axioms Percolation.isDecreasingEvent_orthantBoundaryContactCardLtEvent
+#print axioms Percolation.orthantBoundaryContactProbability_eq_of_iso
+#print axioms Percolation.prod_orthantContactLt_probability_le_fullContactLt

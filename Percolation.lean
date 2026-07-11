@@ -97,6 +97,7 @@ import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.BoundaryContacts
+import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

@@ -25,6 +25,7 @@ import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.BoundaryContacts
+import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -890,5 +891,13 @@ example (p : I) (hp : 0 < theta 3 p) (hp1 : (p : ℝ) < 1)
       1 - epsilon <
         (bernoulliBondMeasure 3 p).real (boundaryContactCardGeEvent 3 m n ell) :=
   exists_boundaryContactCardGe_probability_gt 3 p hp hp1 ell hepsilon
+
+example : Fintype.card (BoxSurfaceOrthantIndex 3) = 24 := by
+  simpa using card_boxSurfaceOrthantIndex 3
+
+example (i : Fin 3) (n : ℕ) :
+    boxSurfaceOrthant 3 n (allPositiveBoxSurfaceOrthantIndex i) =
+      seededBoundaryQuadrant 3 i n :=
+  boxSurfaceOrthant_allPositive_eq_seededBoundaryQuadrant i
 
 end Percolation

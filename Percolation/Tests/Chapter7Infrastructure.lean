@@ -877,4 +877,18 @@ example (omega : EdgeConfiguration 3) (m n : ℕ) (hmn : m ≤ n)
     1 ≤ (boxBoundaryContacts 3 m n omega).card :=
   centralBoxMeetsInfiniteClusterEvent_subset_one_le_contactCard hmn homega
 
+example (n ell : ℕ) (S : Finset (Cubic 3)) (hS : S.card < ell) :
+    (boxBoundaryExitEdges 3 n S).card ≤ (ell - 1) * 6 := by
+  calc
+    (boxBoundaryExitEdges 3 n S).card ≤ S.card * (2 * 3) :=
+      boxBoundaryExitEdges_card_le 3 n S
+    _ ≤ (ell - 1) * 6 := by omega
+
+example (p : I) (hp : 0 < theta 3 p) (hp1 : (p : ℝ) < 1)
+    (ell : ℕ) {epsilon : ℝ} (hepsilon : 0 < epsilon) :
+    ∃ m n : ℕ, m ≤ n ∧
+      1 - epsilon <
+        (bernoulliBondMeasure 3 p).real (boundaryContactCardGeEvent 3 m n ell) :=
+  exists_boundaryContactCardGe_probability_gt 3 p hp hp1 ell hepsilon
+
 end Percolation

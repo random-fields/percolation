@@ -84,6 +84,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | General finite edge Menger | `k`-edge reachability is equivalent to `k` pairwise edge-disjoint paths. | `EdgeMenger.IsUnitFlow`, `EdgeMenger.exists_residual_path_of_isEdgeReachable_succ`, `EdgeMenger.exists_unitFlow_of_isEdgeReachable`, `EdgeMenger.exists_pairwise_edgeDisjoint_paths_of_unitFlow`, `EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths` | proved slice | Constructive integral augmenting-flow proof; no max-flow axiom or external graph theorem. This is shared Chapter 11 infrastructure and is telemetered separately from Chapter 7. |
 | General finite terminal-set edge Menger | Survival of a connection from one source to a terminal set, or between two finite terminal sets, is equivalent to the corresponding arbitrary-cardinality family of pairwise edge-disjoint walks. | `EdgeMenger.IsEdgeReachableToFinset`, `EdgeMenger.isEdgeReachableToFinset_iff_exists_pairwise_edgeDisjoint_walks`, `EdgeMenger.IsEdgeReachableBetweenFinsets`, `EdgeMenger.isEdgeReachableBetweenFinsets_iff_exists_pairwise_edgeDisjoint_walks` | proved slice | Uses `k` private two-edge channels at each terminal so repeated endpoints and shared `A∩B` vertices do not create false capacity-one bottlenecks. |
 | Stochastic-order vocabulary | Expectation definition, event consequence, iid ordering, monotone-coupling bridge, finite-range dependence. | `StochasticallyDominates`, `StochasticallyDominates.measureReal_le`, `stochasticallyDominates_iff_measureReal_le`, `HasMonotoneCoupling`, `HasMonotoneCoupling.stochasticallyDominates`, `setBernoulli_stochasticallyDominates`, `KDependent`, `setBernoulli_kDependent` | proved slice | The iid theorem checks the direction of domination. The coupling theorem derives the exact expectation formulation from an almost-sure coordinatewise inclusion. LSS remains a target. |
+| Induced-region cubic symmetry | Vertex-constrained paths, infinite region components, their probability, and the induced critical value are invariant under every cubic graph automorphism. | `hasOpenPathOfLengthAtLeastWithinVertices_graphIso_iff`, `cubicGraphIsoConfigurationPullback_hasInfiniteOpenClusterInVertices_iff`, `regionHasInfiniteClusterProbability_graphIso`, `regionCriticalProbability_graphIso` | proved slice | Coordinate-permutation and single-coordinate-reflection corollaries are exposed explicitly for slab, brick, and face reductions. |
 
 ## Adversarial checks already encoded
 
@@ -136,7 +137,9 @@ individual theorem rows.
 | Slab inclusion and critical-probability order infrastructure | 10730s | 10801s | 71s | 3,167,982 | 3,183,734 | 15,752 |
 | ACCFR sprinkling composed with rectangle Menger | 10801s | 10891s | 90s | 3,183,734 | 3,207,402 | 23,668 |
 | Induced-region path, infinite-event, probability, and critical-value translation invariance | 10891s | 11231s | 340s | 3,207,402 | 3,359,970 | 152,568 |
-| **Measured subtotal** |  |  | **11231s** |  |  | **3,359,970** |
+| Region-translation checkpoint documentation and Git (non-theorem) | 11231s | 11257s | 26s | 3,359,970 | 3,369,461 | 9,491 |
+| Induced-region cubic-automorphism invariance | 11257s | 11378s | 121s | 3,369,461 | 3,407,022 | 37,561 |
+| **Measured subtotal** |  |  | **11378s** |  |  | **3,407,022** |
 
 The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
 7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one

@@ -9,6 +9,7 @@ import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.RegionTranslation
+import Percolation.Critical.RegionSymmetry
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -84,6 +85,23 @@ example (d : ℕ) (A : Set (Cubic d)) (x y : Cubic d) :
     regionCriticalProbability d (cubicTranslateRegion x y A) =
       regionCriticalProbability d A :=
   regionCriticalProbability_translate A x y
+
+example {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (A : Set (Cubic d)) :
+    regionCriticalProbability d (cubicGraphIsoRegion F A) =
+      regionCriticalProbability d A :=
+  regionCriticalProbability_graphIso F A
+
+example {d : ℕ} (e : Fin d ≃ Fin d) (A : Set (Cubic d)) :
+    regionCriticalProbability d
+        (cubicGraphIsoRegion (cubicCoordinatePermutationIso e) A) =
+      regionCriticalProbability d A :=
+  regionCriticalProbability_coordinatePermutation e A
+
+example {d : ℕ} (i : Fin d) (A : Set (Cubic d)) :
+    regionCriticalProbability d
+        (cubicGraphIsoRegion (cubicCoordinateReflectionIso i) A) =
+      regionCriticalProbability d A :=
+  regionCriticalProbability_coordinateReflection i A
 
 example (d : ℕ) (p : I) (ε : ℝ) {n : ℕ} (hn : 1 ≤ n) :
     KDependent (cubicGraph d) (3 * d) (epsilonGoodBlockLaw d p ε n) :=

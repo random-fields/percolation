@@ -95,6 +95,7 @@ import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.HalfSpaceBricks
+import Percolation.Critical.HalfSpaceCriticalAssembly
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Basic
 import Percolation.Planar.Projection

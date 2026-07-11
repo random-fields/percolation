@@ -22,6 +22,7 @@ import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
+import Percolation.Critical.HalfSpaceCriticalAssembly
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -688,5 +689,11 @@ example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
       Filter.atTop (nhds 1) :=
   epsilonGoodBox_probability_tendsto_one_of_uniformFiniteSlab
     hd p hp0 hp1 hθ hδ0 hδ1 hslab hε0 hε1
+
+example {d : ℕ} (hd : 2 ≤ d)
+    (h36 : CriticalHalfSpaceReliableBricks d hd)
+    (h52 : ReliableBricksForceHalfSpacePercolation d (by omega)) :
+    halfSpaceTheta d (cubicCriticalProbabilityUnit d hd) = 0 :=
+  halfSpaceTheta_critical_eq_zero_of_reliableBricks hd h36 h52
 
 end Percolation

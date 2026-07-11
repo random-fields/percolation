@@ -45,7 +45,7 @@ formalization window has yet completed; it is not an estimate.
 | Lemma 6.89 | 135–136 | Three-point connectivity is bounded by a sum of three two-point products | `Percolation.threePointConnectivity_le_tsum_prod` | proved in `ℝ≥0∞`; includes deterministic first-hit tripod extraction and iterated BK | jointly measured | jointly measured |
 | (6.93)–(6.97) | 136–138 | Skeleton tree-graph bound, skeleton count, moment bound, and exponential-moment bound | `Percolation.multiPointConnectivity_le_skeleton_sum`, `Percolation.cubicConnectivitySkeleton_card_eq`, `Percolation.connectivitySkeletonCount_eq_doubleFactorial`, `Percolation.clusterSizeMoment_le`, `Percolation.clusterSize_expMoment_le` | proved; the moment theorem uses the actual `ℝ≥0∞` cluster-size integral, and (6.97) evaluates the exact half-binomial skeleton generating function | jointly measured | jointly measured |
 | Lemma 6.102 | 139–141 | Normalized exact cluster-size probabilities satisfy the animal-concatenation inequality | `Percolation.CubicBondAnimal.finiteClusterSizeProbability_normalized_supermultiplicative` | proved with the exact factor `p(1-p)⁻²`; the `1/n` normalization is discharged by an explicit equivalence between rooted animals and an anchored translation class with a selected root | 63m50s | 798,069 |
-| Theorem 6.108 | 142–145 | `κ` and `χ` are analytic on `[0,p_c)` | missing | target must bundle analytic series with equality to the probabilistic functions |  |  |
+| Theorem 6.108 | 142–145 | `κ` and `χ` are analytic on `[0,p_c)` | `Percolation.concreteClusterDensitySeries_analyticOnNhd_belowCritical`, `Percolation.concreteSusceptibilitySeries_analyticOnNhd_belowCritical`, `Percolation.clusterDensity_and_susceptibility_analytic_belowCritical` | proved by genuine complex animal series; the endpoint uses an explicit complex disk, interior neighborhoods use Theorem 6.78 at the same density, and restriction lemmas identify the series with `openClustersPerVertex` and `susceptibility.toReal` on physical subcritical parameters | 21m14s | 278,299 |
 
 ## Shared infrastructure telemetry
 
@@ -60,6 +60,7 @@ formalization window has yet completed; it is not an estimate.
 | (6.97), Theorem 6.75, and (6.77) infrastructure | exact half-multichoose skeleton generating function, ENNReal exponential moment, at-least tail and strict-tail shift, series Markov inequality, optimized source constant, and corrected eventual exponential theorem | 42m48s | 883,194 |
 | Lemma 6.102 and anchored-animal infrastructure | lexicographic anchoring, injective animal concatenation, exact occupied-edge and closed-boundary counts, rerooting equivalence, rooted/anchored mass identity, and normalized probability inequality | 63m50s | 798,069 |
 | Theorem 6.78 and exact/tail-rate infrastructure | positive exact-size masses, corrected logarithmic Fekete sequence, exact finite-index prefactor, geometric first-moment tail majorant, finite-tail event/series identification, tail-rate squeeze, and comparison with box-radius decay | 30m17s | 270,822 |
+| Theorem 6.108 and complex animal-series infrastructure | complex density and susceptibility levels, endpoint animal-count majorants, interior complex/physical weight comparison, locally uniform summability from the exact-size decay rate, restriction to real parameters, probabilistic identification, full build, and axiom audits | 21m14s | 278,299 |
 
 The initial window included the first 6.1 scaffold before an internal counter snapshot was taken.
 It is charged once to shared infrastructure and is not duplicated in the theorem row.  The 6.1
@@ -110,3 +111,9 @@ The exact-size-rate window runs from `(22454s, 5121559)` through `(24271s, 53923
 the positive-mass base animal, the corrected subadditive logarithmic sequence, the exact-size
 Fekete limit and (6.80), positivity below criticality, the finite-tail geometric majorant and
 measure-theoretic series identity, (6.82), (6.83), local builds, and axiom audits.
+
+The analyticity window runs from `(24271s, 5392381)` through `(25545s, 5670680)`. It includes
+the complex animal terms and both series, the independent small-density complex disk, the
+interior majorant which spends half of the exact-size decay exponent, locally uniform complex
+differentiability, restriction to real parameters, identification with the probabilistic
+cluster density and susceptibility, a repository-wide build, and headline axiom audits.

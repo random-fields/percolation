@@ -26,6 +26,7 @@ import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoundaryOrthants
+import Percolation.Critical.SeedAmplification
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -908,5 +909,16 @@ example (p : I) (hp : 0 < theta 3 p) (hp1 : (p : ℝ) < 1)
           (orthantBoundaryContactCardGeEvent 3 m n
             (allPositiveBoxSurfaceOrthantIndex i) ell) :=
   exists_allPositiveOrthantContactCardGe_probability_gt 3 (by omega) p hp hp1 i ell hepsilon
+
+example (i : Fin 3) {m n : ℕ} {y : Cubic 3}
+    (hmn : 2 * m ≤ n) (hy : y ∈ seededBoundaryQuadrant 3 i n) :
+    cubicStepFrom y (i, true) ∈
+      cubicMetricBox 3 (canonicalBoundarySeedCenter i m n y) m :=
+  cubicStepFrom_mem_canonicalBoundarySeedBox i hmn hy
+
+example (i : Fin 3) {m n : ℕ} {y : Cubic 3}
+    (hmn : 2 * m ≤ n) (hy : y ∈ seededBoundaryQuadrant 3 i n) :
+    SeedBoxWithinBoundaryLayer 3 i m n (canonicalBoundarySeedCenter i m n y) :=
+  canonicalBoundarySeedBoxWithinBoundaryLayer i hmn hy
 
 end Percolation

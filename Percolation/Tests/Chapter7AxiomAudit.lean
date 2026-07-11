@@ -20,6 +20,7 @@ import Percolation.Critical.StaticRenormalizationFromSlab
 import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoundaryOrthants
+import Percolation.Critical.SeedAmplification
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -307,3 +308,6 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.orthantContactLt_probability_pow_le_fullContactLt
 #print axioms Percolation.exists_allPositiveOrthantContactCardGe_probability_gt
 #print axioms Percolation.exists_eventually_allPositiveOrthantContactCardGe_probability_gt
+#print axioms Percolation.cubicStepFrom_mem_canonicalBoundarySeedBox
+#print axioms Percolation.canonicalBoundarySeedBoxWithinBoundaryLayer
+#print axioms Percolation.isSeededBoundaryPoint_of_canonicalSeed

@@ -413,22 +413,36 @@ theorem cubicSignedCoordinate_mem_targetOrthant
       by_cases hs : a.signs j <;>
         simp [cubicSignedCoordinateEquiv, cubicOrigin, hs] at hj ⊢ <;> omega
   · intro j hji
-    have hj := hxNonneg j hji
-    by_cases hs : a.signs j <;>
-      simp [cubicSignedCoordinateEquiv, hs] at hj ⊢ <;> omega
+    have hj : 0 ≤ x j := by
+      simpa [allPositiveBoxSurfaceOrthantIndex] using hxNonneg j hji
+    by_cases hs : a.signs j
+    · simpa [cubicSignedCoordinateEquiv, hs] using hj
+    · simpa [cubicSignedCoordinateEquiv, hs] using neg_nonpos.mpr hj
 
 theorem cubicSignedCoordinate_mem_allPositiveOrthant_of_mem_target
     {d n : ℕ} (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
     (hx : x ∈ boxSurfaceOrthant d n a) :
     cubicSignedCoordinateEquiv (fun j => !a.signs j) x ∈
       boxSurfaceOrthant d n (allPositiveBoxSurfaceOrthantIndex a.normal) := by
-  have hforward := cubicSignedCoordinate_mem_targetOrthant a
-    (x := cubicSignedCoordinateEquiv (fun j => !a.signs j) x)
-  have hself : cubicSignedCoordinateEquiv (fun j => !a.signs j)
-      (cubicSignedCoordinateEquiv (fun j => !a.signs j) x) = x :=
-    cubicSignedCoordinateEquiv_apply_self _ x
-  rw [hself] at hforward
-  exact hforward.mp hx
+  obtain ⟨hxFace, hxSigned⟩ := mem_boxSurfaceOrthant_iff.mp hx
+  rw [mem_boxSurfaceOrthant_iff]
+  constructor
+  · rw [mem_cubicBoxFace] at hxFace ⊢
+    constructor
+    · by_cases hs : a.signs a.normal <;>
+        simp [allPositiveBoxSurfaceOrthantIndex, cubicSignedCoordinateEquiv, cubicOrigin, hs]
+          at hxFace ⊢ <;> omega
+    · intro j hji
+      have hj := hxFace.2 j hji
+      by_cases hs : a.signs j <;>
+        simp [cubicSignedCoordinateEquiv, cubicOrigin, hs] at hj ⊢ <;> omega
+  · intro j hji
+    have hj := hxSigned j hji
+    by_cases hs : a.signs j
+    · simpa [allPositiveBoxSurfaceOrthantIndex, cubicSignedCoordinateEquiv, hs] using hj
+    · have hj' : x j ≤ 0 := by simpa [hs] using hj
+      simpa [allPositiveBoxSurfaceOrthantIndex, cubicSignedCoordinateEquiv, hs] using
+        neg_nonneg.mpr hj'
 
 /-- The concrete cubic automorphism carrying the reference all-positive orthant on face `i` to
 the signed orthant `a`. -/
@@ -459,9 +473,19 @@ theorem cubicCoordinatePermutation_mem_cubicBoxSurface_origin
     (hx : x ∈ cubicBoxSurface d cubicOrigin n) :
     cubicCoordinatePermutationEquiv e x ∈ cubicBoxSurface d cubicOrigin n := by
   rw [mem_cubicBoxSurface] at hx ⊢
-  unfold cubicLInfDist
-  simpa [cubicCoordinatePermutationEquiv] using
-    (Finset.sup_equiv e.symm (fun j : Fin d => (x j - cubicOrigin j).natAbs))
+  unfold cubicLInfDist at hx ⊢
+  calc
+    Finset.univ.sup
+        (fun j => ((cubicCoordinatePermutationEquiv e) x j - cubicOrigin j).natAbs) =
+      Finset.univ.sup (fun j => (x (e.symm j) - cubicOrigin (e.symm j)).natAbs) := by
+        simp [cubicCoordinatePermutationEquiv, cubicOrigin]
+    _ = (Finset.univ.image e.symm).sup
+        (fun j => (x j - cubicOrigin j).natAbs) := by
+      rw [Finset.sup_image]
+      rfl
+    _ = Finset.univ.sup (fun j => (x j - cubicOrigin j).natAbs) := by
+      rw [Finset.image_univ_equiv]
+    _ = n := hx
 
 theorem referenceToBoxSurfaceOrthantIso_mem_surface
     {d n : ℕ} (i : Fin d) (a : BoxSurfaceOrthantIndex d) {x : Cubic d}
@@ -531,6 +555,53 @@ theorem orthantBoundaryContactProbability_eq_reference
   · exact fun x hx => referenceToBoxSurfaceOrthantIso_symm_mem_orthant i a hx
   · exact referenceToBoxSurfaceOrthantIso_image_cubicBoxEdges_eq i a
 
+/-- If every signed orthant has fewer than `ell` contacts, the whole surface has fewer than
+`(d*2^d)*ell` contacts. -/
+theorem iInter_orthantContactLt_subset_fullContactLt
+    {d m n ell : ℕ} (hd : 0 < d) :
+    (⋂ a : BoxSurfaceOrthantIndex d,
+        orthantBoundaryContactCardLtEvent d m n a ell) ⊆
+      boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell) := by
+  intro omega homega
+  letI : Nonempty (BoxSurfaceOrthantIndex d) :=
+    ⟨⟨⟨0, hd⟩, fun _ => true⟩⟩
+  have ha : ∀ a : BoxSurfaceOrthantIndex d,
+      (orthantBoundaryContacts d m n a omega).card < ell := by
+    intro a
+    exact Set.mem_iInter.mp homega a
+  change (boxBoundaryContacts d m n omega).card < (d * 2 ^ d) * ell
+  refine (boxBoundaryContacts_card_le_sum_orthantBoundaryContacts hd omega).trans_lt ?_
+  calc
+    ∑ a : BoxSurfaceOrthantIndex d,
+        (orthantBoundaryContacts d m n a omega).card <
+      ∑ _a : BoxSurfaceOrthantIndex d, ell := by
+        exact Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty (fun a _ha => ha a)
+    _ = (d * 2 ^ d) * ell := by
+      simp [card_boxSurfaceOrthantIndex]
+
+/-- Iterated decreasing FKG for all signed boundary orthants. -/
+theorem prod_orthantContactLt_probability_le_fullContactLt
+    {d m n ell : ℕ} (hd : 0 < d) (p : I) :
+    (∏ a : BoxSurfaceOrthantIndex d,
+        (bernoulliBondMeasure d p).real
+          (orthantBoundaryContactCardLtEvent d m n a ell)) ≤
+      (bernoulliBondMeasure d p).real
+        (boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell)) := by
+  calc
+    (∏ a : BoxSurfaceOrthantIndex d,
+        (bernoulliBondMeasure d p).real
+          (orthantBoundaryContactCardLtEvent d m n a ell)) ≤
+      (bernoulliBondMeasure d p).real
+        (⋂ a : BoxSurfaceOrthantIndex d,
+          orthantBoundaryContactCardLtEvent d m n a ell) := by
+        simpa using bernoulliBondMeasure_prod_le_real_biInter_fkg_of_decreasing
+          p (J := Finset.univ)
+          (fun a _ha => isDecreasingEvent_orthantBoundaryContactCardLtEvent d m n a ell)
+          (fun a _ha => measurableSet_orthantBoundaryContactCardLtEvent d m n a ell)
+    _ ≤ (bernoulliBondMeasure d p).real
+        (boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell)) :=
+      measureReal_mono (iInter_orthantContactLt_subset_fullContactLt hd) (measure_ne_top _ _)
+
 /-- Equation (7.14) with all symmetry factors identified. -/
 theorem orthantContactLt_probability_pow_le_fullContactLt
     {d m n ell : ℕ} (hd : 0 < d) (p : I) (i : Fin d) :
@@ -585,7 +656,8 @@ theorem exists_allPositiveOrthantContactCardGe_probability_gt
           (orthantBoundaryContactCardGeEvent d m n
             (allPositiveBoxSurfaceOrthantIndex i) ell) := by
   let Q : ℕ := d * 2 ^ d
-  have hQ : Q ≠ 0 := by simp [Q, hd]
+  have hQ : Q ≠ 0 := by
+    exact Nat.mul_ne_zero (Nat.ne_of_gt hd) (pow_ne_zero _ (by omega))
   have hepsilonPow : 0 < epsilon ^ Q := pow_pos hepsilon Q
   obtain ⟨m, n, hmn, hfullGood⟩ :=
     exists_boundaryContactCardGe_probability_gt d p htheta hp1 (Q * ell) hepsilonPow
@@ -634,7 +706,8 @@ theorem exists_eventually_allPositiveOrthantContactCardGe_probability_gt
             (orthantBoundaryContactCardGeEvent d m n
               (allPositiveBoxSurfaceOrthantIndex i) ell) := by
   let Q : ℕ := d * 2 ^ d
-  have hQ : Q ≠ 0 := by simp [Q, hd]
+  have hQ : Q ≠ 0 := by
+    exact Nat.mul_ne_zero (Nat.ne_of_gt hd) (pow_ne_zero _ (by omega))
   have hepsilonPow : 0 < epsilon ^ Q := pow_pos hepsilon Q
   obtain ⟨m, hm⟩ := exists_centralBoxMeetsInfiniteCluster_probability_gt
     d p htheta (half_pos hepsilonPow)
@@ -645,7 +718,9 @@ theorem exists_eventually_allPositiveOrthantContactCardGe_probability_gt
           (smallNonemptyBoundaryContactEvent d m n (Q * ell)) < epsilon ^ Q / 2 :=
     hsmallT.eventually (Iio_mem_nhds (half_pos hepsilonPow))
   refine ⟨m, ?_⟩
-  filter_upwards [eventually_ge_atTop m, hsmallEventually] with n hmn hsmall
+  have hmnEventually : ∀ᶠ n : ℕ in Filter.atTop, m ≤ n :=
+    Filter.Ici_mem_atTop m
+  filter_upwards [hmnEventually, hsmallEventually] with n hmn hsmall
   let mu := bernoulliBondMeasure d p
   have hempty := emptyBoundaryContact_probability_le_one_sub_central d p hmn
   have hbadUnion := boundaryContactCardLt_probability_le_empty_add_small
@@ -674,52 +749,5 @@ theorem exists_eventually_allPositiveOrthantContactCardGe_probability_gt
         (allPositiveBoxSurfaceOrthantIndex i) ell)
     rwa [← orthantBoundaryContactCardGeEvent_eq_compl] at h
   exact ⟨hmn, by linarith⟩
-
-/-- If every signed orthant has fewer than `ell` contacts, the whole surface has fewer than
-`(d*2^d)*ell` contacts. -/
-theorem iInter_orthantContactLt_subset_fullContactLt
-    {d m n ell : ℕ} (hd : 0 < d) :
-    (⋂ a : BoxSurfaceOrthantIndex d,
-        orthantBoundaryContactCardLtEvent d m n a ell) ⊆
-      boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell) := by
-  intro omega homega
-  letI : Nonempty (BoxSurfaceOrthantIndex d) :=
-    ⟨⟨⟨0, hd⟩, fun _ => true⟩⟩
-  have ha : ∀ a : BoxSurfaceOrthantIndex d,
-      (orthantBoundaryContacts d m n a omega).card < ell := by
-    intro a
-    exact Set.mem_iInter.mp homega a
-  change (boxBoundaryContacts d m n omega).card < (d * 2 ^ d) * ell
-  refine (boxBoundaryContacts_card_le_sum_orthantBoundaryContacts hd omega).trans_lt ?_
-  calc
-    ∑ a : BoxSurfaceOrthantIndex d,
-        (orthantBoundaryContacts d m n a omega).card <
-      ∑ _a : BoxSurfaceOrthantIndex d, ell := by
-        exact Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty (fun a _ha => ha a)
-    _ = (d * 2 ^ d) * ell := by
-      simp [card_boxSurfaceOrthantIndex]
-
-/-- Iterated decreasing FKG for all signed boundary orthants. -/
-theorem prod_orthantContactLt_probability_le_fullContactLt
-    {d m n ell : ℕ} (hd : 0 < d) (p : I) :
-    (∏ a : BoxSurfaceOrthantIndex d,
-        (bernoulliBondMeasure d p).real
-          (orthantBoundaryContactCardLtEvent d m n a ell)) ≤
-      (bernoulliBondMeasure d p).real
-        (boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell)) := by
-  calc
-    (∏ a : BoxSurfaceOrthantIndex d,
-        (bernoulliBondMeasure d p).real
-          (orthantBoundaryContactCardLtEvent d m n a ell)) ≤
-      (bernoulliBondMeasure d p).real
-        (⋂ a : BoxSurfaceOrthantIndex d,
-          orthantBoundaryContactCardLtEvent d m n a ell) := by
-        simpa using bernoulliBondMeasure_prod_le_real_biInter_fkg_of_decreasing
-          p (J := Finset.univ)
-          (fun a _ha => isDecreasingEvent_orthantBoundaryContactCardLtEvent d m n a ell)
-          (fun a _ha => measurableSet_orthantBoundaryContactCardLtEvent d m n a ell)
-    _ ≤ (bernoulliBondMeasure d p).real
-        (boundaryContactCardLtEvent d m n ((d * 2 ^ d) * ell)) :=
-      measureReal_mono (iInter_orthantContactLt_subset_fullContactLt hd) (measure_ne_top _ _)
 
 end Percolation

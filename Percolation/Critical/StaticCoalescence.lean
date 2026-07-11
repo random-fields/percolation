@@ -88,6 +88,22 @@ theorem exists_open_walk_to_cubicBoxSurface_in_box_of_mem
     exact hkdist
   · exact walkEdgeFinset_subset_cubicBoxEdges_of_support q hqSupport
 
+/-- A connection to a farther box surface contains a first-hit connection to every intermediate
+surface. -/
+theorem connectionToBoxSurfaceEvent_mono_radius
+    {d r R : ℕ} {ω : EdgeConfiguration d} {x : Cubic d}
+    (hx : x ∈ cubicMetricBox d cubicOrigin r) (hrR : r ≤ R)
+    (hω : ω ∈ connectionToBoxSurfaceEvent d R x) :
+    ω ∈ connectionToBoxSurfaceEvent d r x := by
+  simp only [connectionToBoxSurfaceEvent, Set.mem_iUnion] at hω ⊢
+  obtain ⟨y, hySurface, w, hwopen, _hwEdges⟩ := hω
+  have hyFar : r ≤ cubicLInfDist cubicOrigin y := by
+    rw [(mem_cubicBoxSurface.mp hySurface)]
+    exact hrR
+  obtain ⟨z, hzSurface, hzConn⟩ :=
+    exists_open_walk_to_cubicBoxSurface_in_box_of_mem hx w hwopen hyFar
+  exact ⟨z, hzSurface, hzConn⟩
+
 /-- An infinite-cluster vertex inside a finite coordinate box has an open connection, using
 only internal box edges, to that box's surface. -/
 theorem hasInfiniteOpenClusterFrom_mem_connectionToBoxSurfaceEvent
@@ -294,6 +310,105 @@ theorem infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
 
 /-! ### Ratio-free peeling recursion for Lemma 7.89 -/
 
+/-- Internal coordinate-box edge supports grow with the radius. -/
+theorem cubicBoxEdges_mono_radius {d r R : ℕ} (hrR : r ≤ R) :
+    cubicBoxEdges d cubicOrigin r ⊆ cubicBoxEdges d cubicOrigin R := by
+  classical
+  intro e he
+  simp only [cubicBoxEdges, Finset.mem_biUnion, Finset.mem_image, Finset.mem_filter,
+    Finset.mem_univ, true_and] at he ⊢
+  obtain ⟨x, hx, a, hxa, rfl⟩ := he
+  have hxR : x ∈ cubicMetricBox d cubicOrigin R :=
+    mem_cubicMetricBox_iff_lInfDist_le.mpr
+      ((mem_cubicMetricBox_iff_lInfDist_le.mp hx).trans hrR)
+  have hxaR : cubicStepFrom x a ∈ cubicMetricBox d cubicOrigin R :=
+    mem_cubicMetricBox_iff_lInfDist_le.mpr
+      ((mem_cubicMetricBox_iff_lInfDist_le.mp hxa).trans hrR)
+  exact ⟨x, hxR, a, hxaR, rfl⟩
+
+/-- Radius of the `k`th peeled box in (7.90)--(7.91). -/
+def annularPeelingRadius (n M k : ℕ) : ℕ := n + k * M
+
+/-- Proof-safe finite event `A_k(x,y)` from (7.91): both vertices reach the `k`th surface, but
+they are not connected using the internal edges of the whole current box.  This strengthens the
+source's one-layer-below event and makes the two finite frontiers literally disjoint. -/
+def annularPeelingSeparationEvent
+    (d n M k : ℕ) (x y : Cubic d) : Set (EdgeConfiguration d) :=
+  if x ∈ cubicMetricBox d cubicOrigin n ∧ y ∈ cubicMetricBox d cubicOrigin n then
+    connectionToBoxSurfaceEvent d (annularPeelingRadius n M k) x ∩
+      connectionToBoxSurfaceEvent d (annularPeelingRadius n M k) y ∩
+        (connectionEventIn d
+          (cubicBoxEdges d cubicOrigin (annularPeelingRadius n M k)) x y)ᶜ
+  else ∅
+
+theorem measurableSet_annularPeelingSeparationEvent
+    (d n M k : ℕ) (x y : Cubic d) :
+    MeasurableSet (annularPeelingSeparationEvent d n M k x y) := by
+  unfold annularPeelingSeparationEvent
+  split_ifs
+  · exact ((measurableSet_connectionToBoxSurfaceEvent d _ x).inter
+      (measurableSet_connectionToBoxSurfaceEvent d _ y)).inter
+        (dependsOn_connectionEventIn d _ x y).measurableSet.compl
+  · exact MeasurableSet.empty
+
+/-- The annular peeling events decrease with the number of exposed shells. -/
+theorem annularPeelingSeparationEvent_anti
+    {d n M k l : ℕ} {x y : Cubic d} (hkl : k ≤ l) :
+    annularPeelingSeparationEvent d n M l x y ⊆
+      annularPeelingSeparationEvent d n M k x y := by
+  intro ω hω
+  unfold annularPeelingSeparationEvent at hω ⊢
+  by_cases hxy : x ∈ cubicMetricBox d cubicOrigin n ∧
+      y ∈ cubicMetricBox d cubicOrigin n
+  · rw [if_pos hxy] at hω ⊢
+    simp only [Set.mem_inter_iff, Set.mem_compl_iff] at hω ⊢
+    have hRadius : annularPeelingRadius n M k ≤ annularPeelingRadius n M l := by
+      simp [annularPeelingRadius]
+      exact Nat.mul_le_mul_right M hkl
+    have hxSmall : x ∈ cubicMetricBox d cubicOrigin (annularPeelingRadius n M k) :=
+      mem_cubicMetricBox_iff_lInfDist_le.mpr <|
+        (mem_cubicMetricBox_iff_lInfDist_le.mp hxy.1).trans (by simp [annularPeelingRadius])
+    have hySmall : y ∈ cubicMetricBox d cubicOrigin (annularPeelingRadius n M k) :=
+      mem_cubicMetricBox_iff_lInfDist_le.mpr <|
+        (mem_cubicMetricBox_iff_lInfDist_le.mp hxy.2).trans (by simp [annularPeelingRadius])
+    refine ⟨⟨connectionToBoxSurfaceEvent_mono_radius hxSmall hRadius hω.1.1,
+      connectionToBoxSurfaceEvent_mono_radius hySmall hRadius hω.1.2⟩, ?_⟩
+    intro hconn
+    apply hω.2
+    exact connectionEventIn_mono
+      (cubicBoxEdges_mono_radius hRadius) x y hconn
+  · rw [if_neg hxy] at hω
+    exact hω.elim
+
+/-- The terminal two-arm event is contained in every peeled event whose radius has not passed
+the terminal box. -/
+theorem twoArmSeparationEvent_subset_annularPeelingSeparationEvent
+    {d n N M K : ℕ} {x y : Cubic d}
+    (hR : annularPeelingRadius n M K ≤ N) :
+    twoArmSeparationEvent d n N x y ⊆
+      annularPeelingSeparationEvent d n M K x y := by
+  intro ω hω
+  unfold twoArmSeparationEvent at hω
+  unfold annularPeelingSeparationEvent
+  by_cases hxy : x ∈ cubicMetricBox d cubicOrigin n ∧
+      y ∈ cubicMetricBox d cubicOrigin n
+  · rw [if_pos hxy] at hω ⊢
+    simp only [Set.mem_inter_iff, Set.mem_compl_iff] at hω ⊢
+    have hxR : x ∈ cubicMetricBox d cubicOrigin (annularPeelingRadius n M K) :=
+      mem_cubicMetricBox_iff_lInfDist_le.mpr <|
+        (mem_cubicMetricBox_iff_lInfDist_le.mp hxy.1).trans (by simp [annularPeelingRadius])
+    have hyR : y ∈ cubicMetricBox d cubicOrigin (annularPeelingRadius n M K) :=
+      mem_cubicMetricBox_iff_lInfDist_le.mpr <|
+        (mem_cubicMetricBox_iff_lInfDist_le.mp hxy.2).trans (by simp [annularPeelingRadius])
+    refine ⟨⟨connectionToBoxSurfaceEvent_mono_radius hxR hR hω.1.1,
+      connectionToBoxSurfaceEvent_mono_radius hyR hR hω.1.2⟩, ?_⟩
+    intro hconn
+    apply hω.2
+    exact connectionEventIn_mono
+      (cubicBoxEdges_mono_radius hR) x y hconn
+  · rw [if_neg hxy] at hω
+    exact hω.elim
+
 /-- Iterating a ratio-free one-step estimate.  This is the safe form of multiplying the
 conditional probabilities in (7.93): it remains meaningful even when an earlier peeling event
 has probability zero. -/
@@ -337,5 +452,26 @@ theorem measureReal_event_le_pow_of_peeling
     μ.real E ≤ q ^ K :=
   (measureReal_mono hEA (measure_ne_top _ _)).trans
     (measureReal_peeling_le_pow μ A q hq hstep K)
+
+/-- Concrete annular application of the ratio-free peeling recursion. -/
+theorem twoArmSeparation_probability_le_pow_of_annular_block_step
+    {d n N M : ℕ} (p : I) {x y : Cubic d} {q : ℝ}
+    (hnN : n ≤ N) (hq : 0 ≤ q)
+    (hstep : ∀ k,
+      (bernoulliBondMeasure d p).real
+          (annularPeelingSeparationEvent d n M (k + 1) x y) ≤
+        q * (bernoulliBondMeasure d p).real
+          (annularPeelingSeparationEvent d n M k x y)) :
+    (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) ≤
+      q ^ ((N - n) / M) := by
+  apply measureReal_event_le_pow_of_peeling (bernoulliBondMeasure d p)
+    (twoArmSeparationEvent d n N x y)
+    (fun k ↦ annularPeelingSeparationEvent d n M k x y)
+    q hq ((N - n) / M)
+  · apply twoArmSeparationEvent_subset_annularPeelingSeparationEvent
+    simp only [annularPeelingRadius]
+    have hmul := Nat.div_mul_le_self (N - n) M
+    omega
+  · exact hstep
 
 end Percolation

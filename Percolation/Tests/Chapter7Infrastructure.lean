@@ -20,6 +20,7 @@ import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.StaticSecondCluster
+import Percolation.Critical.StaticAnnularPeeling
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -459,6 +460,81 @@ example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
       Filter.atTop (nhds 1) :=
   infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
     p r R q hrR hpair hdecay
+
+example {d n N M : ℕ} (p : I) {x y : Cubic d} {q : ℝ}
+    (hnN : n ≤ N) (hq : 0 ≤ q)
+    (hstep : ∀ k,
+      (bernoulliBondMeasure d p).real
+          (annularPeelingSeparationEvent d n M (k + 1) x y) ≤
+        q * (bernoulliBondMeasure d p).real
+          (annularPeelingSeparationEvent d n M k x y)) :
+    (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) ≤
+      q ^ ((N - n) / M) :=
+  twoArmSeparation_probability_le_pow_of_annular_block_step p hnN hq hstep
+
+example {d r L : ℕ} (hd : 2 ≤ d) (j : Fin d) :
+    ∃ i : Fin d, ∃ positive : Bool,
+      boxShellChainCorner d (boxShellOuterRadius r L) j.castSucc ∈
+          boxShellSliceVertices d r L i positive ∧
+        boxShellChainCorner d (boxShellOuterRadius r L) j.succ ∈
+          boxShellSliceVertices d r L i positive :=
+  exists_boxShellSlice_pair_chainCorners hd j
+
+example {d r L : ℕ} (hd : 2 ≤ d) (p : I) {δ : ℝ} (hδ0 : 0 ≤ δ)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ)
+    {iu iv : Fin d} {su sv : Bool} {u v : Cubic d}
+    (hu : u ∈ cubicBoxSurface d cubicOrigin r)
+    (hv : v ∈ cubicBoxSurface d cubicOrigin r)
+    (huface : if su then u iu = r else u iu = -(r : ℤ))
+    (hvface : if sv then v iv = r else v iv = -(r : ℤ)) :
+    (p : ℝ) ^ 2 * δ ^ (d + 2) ≤ (bernoulliBondMeasure d p).real
+      (boxShellBridgeEvent hd r L iu su u iv sv v) :=
+  boxShellBridge_probability_ge_of_uniformFiniteSlab
+    hd p hδ0 hslab hu hv huface hvface
+
+example {d n k L : ℕ} (hd : 2 ≤ d) (p : I) {δ : ℝ} (hδ0 : 0 ≤ δ)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ)
+    (x y : Cubic d) :
+    (bernoulliBondMeasure d p).real
+        (annularPeelingSeparationEvent d n (L + 1) (k + 1) x y) ≤
+      (1 - (p : ℝ) ^ 2 * δ ^ (d + 2)) *
+        (bernoulliBondMeasure d p).real
+          (annularPeelingSeparationEvent d n (L + 1) k x y) :=
+  annularPeeling_probability_block_step_of_uniformFiniteSlab hd p hδ0 hslab x y
+
+example {d n N : ℕ} (p : I) {x y : Cubic d} (hnN : n < N) :
+    (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) ≤
+      1 - (1 - (p : ℝ)) ^ (2 * d) :=
+  twoArmSeparation_probability_le_one_sub_isolation p hnN
+
+example {d n N L : ℕ} (hd : 2 ≤ d) (p : I) {δ : ℝ} (hδ0 : 0 ≤ δ)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ)
+    (hnN : n ≤ N) (x y : Cubic d) :
+    (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) ≤
+      (1 - (p : ℝ) ^ 2 * δ ^ (d + 2)) ^ ((N - n) / (L + 1)) :=
+  twoArmSeparation_probability_le_pow_of_uniformFiniteSlab
+    hd p hδ0 hslab hnN x y
+
+example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    (hp1 : (p : ℝ) < 1) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ) :
+    ∃ ξ : ℝ, 0 < ξ ∧ ∀ n N : ℕ, n < N → ∀ x y : Cubic d,
+      (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) ≤
+        Real.exp (-ξ * ((N - n : ℕ) : ℝ)) :=
+  exists_twoArmSeparation_probability_le_exp_of_uniformFiniteSlab
+    hd p hp0 hp1 hδ0 hδ1 hslab
+
+example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    (hp1 : (p : ℝ) < 1) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ) :
+    ∃ ξ : ℝ, 0 < ξ ∧ ∀ n : ℕ, 1 ≤ n → ∀ a : ℝ, 1 < a →
+      ∀ x ∈ cubicMetricBox d cubicOrigin n,
+      ∀ y ∈ cubicMetricBox d cubicOrigin n,
+        (bernoulliBondMeasure d p).real
+            (twoArmSeparationEvent d n (scaledBoxRadius a n) x y) ≤
+          Real.exp (-(n : ℝ) * (a - 1) * ξ) :=
+  exists_scaledTwoArmSeparation_probability_le_exp_of_uniformFiniteSlab
+    hd p hp0 hp1 hδ0 hδ1 hslab
 
 example {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
     (E : Set Ω) (A : ℕ → Set Ω) (q : ℝ) (hq : 0 ≤ q) (K : ℕ)

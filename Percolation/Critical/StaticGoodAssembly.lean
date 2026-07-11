@@ -133,4 +133,50 @@ theorem one_sub_bernoulliBondMeasure_real_epsilonGoodBoxEvent_le
       p ε x n m q hmn hqBox hqDensity)
     (measure_ne_top _ _)).trans (measureReal_union_le _ _)
 
+/-- Analytic final step of Theorem 7.61.  Once a suitably large crossing cluster occurs with
+probability tending to one and a competing diameter-`m(n)` cluster occurs with probability
+tending to zero, the deterministic good-box assembly upgrades these estimates to the full
+`ε`-good event. -/
+theorem epsilonGoodBox_probability_tendsto_one_of_largeCrossing_of_second
+    {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (m q : ℕ → ℕ)
+    (hconstraints : ∀ᶠ n in Filter.atTop,
+      m n ≤ n ∧ (2 * m n + 1) ^ d < q n ∧
+        (1 - ε) * theta d p * (cubicMetricBox d x n).card ≤ q n)
+    (hlarge : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (largeCrossingClusterEvent d (q n) n x))
+      Filter.atTop (nhds 1))
+    (hsecond : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (secondMacroscopicClusterEvent d (m n) n x))
+      Filter.atTop (nhds 0)) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (epsilonGoodBoxEvent d p ε x n))
+      Filter.atTop (nhds 1) := by
+  let μ := bernoulliBondMeasure d p
+  let G : ℕ → Set (EdgeConfiguration d) := fun n ↦ epsilonGoodBoxEvent d p ε x n
+  let L : ℕ → Set (EdgeConfiguration d) := fun n ↦ largeCrossingClusterEvent d (q n) n x
+  let S : ℕ → Set (EdgeConfiguration d) := fun n ↦
+    secondMacroscopicClusterEvent d (m n) n x
+  have hlargeFail : Filter.Tendsto (fun n ↦ 1 - μ.real (L n))
+      Filter.atTop (nhds 0) := by
+    simpa [μ, L] using (tendsto_const_nhds (x := (1 : ℝ))).sub hlarge
+  have hrhs : Filter.Tendsto (fun n ↦ 1 - μ.real (L n) + μ.real (S n))
+      Filter.atTop (nhds 0) := by
+    simpa [μ, S] using hlargeFail.add hsecond
+  have hbad : Filter.Tendsto (fun n ↦ 1 - μ.real (G n))
+      Filter.atTop (nhds 0) := by
+    apply squeeze_zero'
+      (Filter.Eventually.of_forall fun n ↦ sub_nonneg.mpr measureReal_le_one)
+      (hconstraints.mono fun n hn ↦ ?_) hrhs
+    simpa [μ, G, L, S] using
+      one_sub_bernoulliBondMeasure_real_epsilonGoodBoxEvent_le
+        p ε x n (m n) (q n) hn.1 hn.2.1 hn.2.2
+  have hEq : (fun n ↦ μ.real (G n)) = fun n ↦ 1 - (1 - μ.real (G n)) := by
+    funext n
+    ring
+  rw [hEq]
+  simpa [μ, G] using (tendsto_const_nhds (x := (1 : ℝ))).sub hbad
+
 end Percolation

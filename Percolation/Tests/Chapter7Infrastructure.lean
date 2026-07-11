@@ -586,6 +586,22 @@ example {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (n m q : ℕ)
   epsilonGoodBoxEvent_compl_subset_largeCrossing_compl_union_secondMacroscopic
     p ε x n m q hmn hqBox hqDensity
 
+example {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (m q : ℕ → ℕ)
+    (hconstraints : ∀ᶠ n in Filter.atTop,
+      m n ≤ n ∧ (2 * m n + 1) ^ d < q n ∧
+        (1 - ε) * theta d p * (cubicMetricBox d x n).card ≤ q n)
+    (hlarge : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (largeCrossingClusterEvent d (q n) n x)) Filter.atTop (nhds 1))
+    (hsecond : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (secondMacroscopicClusterEvent d (m n) n x)) Filter.atTop (nhds 0)) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (epsilonGoodBoxEvent d p ε x n)) Filter.atTop (nhds 1) :=
+  epsilonGoodBox_probability_tendsto_one_of_largeCrossing_of_second
+    p ε x m q hconstraints hlarge hsecond
+
 example {d n N q : ℕ} (hq : 1 ≤ q) (hnN : n ≤ N) {ω : EdgeConfiguration d}
     (hdense : q ≤ (infiniteClusterVerticesIn d
       (cubicMetricBox d cubicOrigin n) ω).card)

@@ -87,6 +87,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | Induced-region cubic symmetry | Vertex-constrained paths, infinite region components, their probability, and the induced critical value are invariant under every cubic graph automorphism. | `hasOpenPathOfLengthAtLeastWithinVertices_graphIso_iff`, `cubicGraphIsoConfigurationPullback_hasInfiniteOpenClusterInVertices_iff`, `regionHasInfiniteClusterProbability_graphIso`, `regionCriticalProbability_graphIso` | proved slice | Coordinate-permutation and single-coordinate-reflection corollaries are exposed explicitly for slab, brick, and face reductions. |
 | Site-percolation graph-isomorphism invariance | Site connections and infinite clusters transport exactly through graph isomorphisms, preserving both `siteTheta` and the critical site density. | `siteGraphIsoConfigurationPullback_mem_siteConnectionEvent_iff`, `siteGraphIsoConfigurationPullback_hasInfiniteSiteCluster_iff`, `siteTheta_graphIso`, `siteCriticalProbability_graphIso` | proved slice | This closes the graph-independent symmetry adapter used by rotated brick explorations and auxiliary site fields. |
 | Neighboring good-block connection (7.59) | The canonical largest clusters of two nearest-neighbor good coarse boxes share a lattice vertex. | `finiteBoxGraphLargestComponents_inter_of_good_step`, `finiteBoxGraphLargestComponents_inter_of_mem_goodBoxEvents` | proved | A new first-level-hit theorem slices the crossing walk inside the overlap; the resulting adjacent-box component has diameter at least `n`, so goodness identifies it with the adjacent selected cluster. Both signs of every coordinate direction are covered. |
+| Good-block path lifting | Every coarse cubic walk supported on good blocks lifts to open-bond reachability between arbitrary vertices in its selected endpoint clusters. | `epsilonGoodBlockClusterVertices_reachable_of_good_walk` | proved | Iterates the literal common-vertex conclusion of 7.59; this is the deterministic site-crossing-to-bond-connectivity skeleton used later in 7.73–7.75. |
 
 ## Adversarial checks already encoded
 
@@ -143,7 +144,8 @@ individual theorem rows.
 | Induced-region cubic-automorphism invariance | 11257s | 11378s | 121s | 3,369,461 | 3,407,022 | 37,561 |
 | Site-percolation graph-isomorphism invariance and preceding checkpoint Git | 11378s | 11585s | 207s | 3,407,022 | 3,506,404 | 99,382 |
 | Cubic first-level-hit geometry and neighboring good-block connection (7.59), including preceding checkpoint Git | 11585s | 11911s | 326s | 3,506,404 | 3,572,945 | 66,541 |
-| **Measured subtotal** |  |  | **11911s** |  |  | **3,572,945** |
+| Good-block walk to open-bond reachability, including preceding checkpoint Git | 11911s | 12052s | 141s | 3,572,945 | 3,590,640 | 17,695 |
+| **Measured subtotal** |  |  | **12052s** |  |  | **3,590,640** |
 
 The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
 7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one

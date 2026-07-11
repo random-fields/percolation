@@ -9,6 +9,7 @@ import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.StaticBlockAdjacency
+import Percolation.Critical.StaticBlockPath
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
@@ -151,6 +152,16 @@ example {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d)
           (finiteBoxOpenGraph d ω
             (epsilonGoodBlockCenter n (cubicStepFrom x a)) n)) :=
   finiteBoxGraphLargestComponents_inter_of_mem_goodBoxEvents p ε ω x a hx hy
+
+example {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d)
+    {x y : Cubic d} (w : (cubicGraph d).Walk x y)
+    (hgood : ∀ z ∈ w.support,
+      ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n z) n)
+    {u v : Cubic d}
+    (hu : u ∈ epsilonGoodBlockClusterVertices d ω n x)
+    (hv : v ∈ epsilonGoodBlockClusterVertices d ω n y) :
+    (cubicOpenGraph d ω).Reachable u v :=
+  epsilonGoodBlockClusterVertices_reachable_of_good_walk p ε ω w hgood hu hv
 
 example (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (x y : Cubic d) :
   (bernoulliBondMeasure d p).real (epsilonGoodBoxEvent d p ε x n) =

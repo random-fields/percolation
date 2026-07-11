@@ -9,6 +9,7 @@ import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.StaticBlockAdjacency
+import Percolation.Critical.StaticBlockPath
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
@@ -61,3 +62,5 @@ import Percolation.Critical.SiteSymmetry
 #print axioms Percolation.exists_cubicWalk_prefix_to_level_of_le_end
 #print axioms Percolation.finiteBoxGraphLargestComponents_inter_of_good_step
 #print axioms Percolation.finiteBoxGraphLargestComponents_inter_of_mem_goodBoxEvents
+#print axioms Percolation.finiteBoxGraphComponentVertices_reachable_cubicOpenGraph
+#print axioms Percolation.epsilonGoodBlockClusterVertices_reachable_of_good_walk

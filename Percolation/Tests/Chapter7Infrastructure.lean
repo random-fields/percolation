@@ -569,6 +569,16 @@ example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
   infiniteClusterCoalescenceEvent_probability_tendsto_one_of_uniformFiniteSlab
     hd p hp0 hp1 hδ0 hδ1 hslab
 
+example {d L : ℕ} (hd : 1 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (secondMacroscopicClusterEvent d n n cubicOrigin))
+      Filter.atTop (nhds 0) :=
+  secondMacroscopicCluster_probability_tendsto_zero_of_uniformFiniteSlab
+    hd p hp0 hδ0 hδ1 hslab
+
 example {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
     (E : Set Ω) (A : ℕ → Set Ω) (q : ℝ) (hq : 0 ≤ q) (K : ℕ)
     (hEA : E ⊆ A K)

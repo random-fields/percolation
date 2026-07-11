@@ -1341,4 +1341,38 @@ theorem infiniteClusterCoalescenceEvent_probability_tendsto_one_of_uniformFinite
       simpa [hsub] using hbound
   · exact tendsto_cubicMetricBox_card_sq_mul_exp_neg_nat d hξ0
 
+/-- Lemma 7.104 at the macroscopic choice `m=n`: the probability of a competing component
+vanishes.  This is the second probabilistic input to the final Theorem 7.61 assembly. -/
+theorem secondMacroscopicCluster_probability_tendsto_zero_of_uniformFiniteSlab
+    {d L : ℕ} (hd : 1 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (secondMacroscopicClusterEvent d n n cubicOrigin))
+      Filter.atTop (nhds 0) := by
+  obtain ⟨μ, hμ0, hμ⟩ :=
+    exists_secondMacroscopicCluster_probability_le_exp_of_uniformFiniteSlab
+      hd p hp0 hδ0 hδ1 hslab
+  have hdecay : Filter.Tendsto
+      (fun n : ℕ ↦ d * ((cubicMetricBox d cubicOrigin n).card : ℝ) ^ 2 *
+        Real.exp (-μ * n)) Filter.atTop (nhds 0) := by
+    simpa [mul_assoc] using
+      (tendsto_const_nhds (x := (d : ℝ))).mul
+        (tendsto_cubicMetricBox_card_sq_mul_exp_neg_nat d hμ0)
+  apply squeeze_zero'
+    (Filter.Eventually.of_forall fun n ↦ measureReal_nonneg)
+    (Filter.eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩) hdecay
+  have hbound := hμ n n hn hn
+  calc
+    (bernoulliBondMeasure d p).real
+        (secondMacroscopicClusterEvent d n n cubicOrigin) ≤
+        d * (2 * n + 1 : ℝ) ^ (2 * d) * Real.exp (-μ * n) := hbound
+    _ = d * ((cubicMetricBox d cubicOrigin n).card : ℝ) ^ 2 *
+        Real.exp (-μ * n) := by
+      rw [cubicMetricBox_card]
+      push_cast
+      rw [show 2 * d = d + d by omega, pow_add]
+      ring
+
 end Percolation

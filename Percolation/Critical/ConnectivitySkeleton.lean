@@ -166,6 +166,12 @@ theorem cubicConnectivitySkeleton_card_eq (n : ℕ) (hn : 3 ≤ n) :
         rw [ih (n + 3) (by omega) (by omega),
           connectivitySkeletonCount_succ (n := n + 3) (by omega), mul_comm]
 
+/-- Instance-independent form of `cubicConnectivitySkeleton_card_eq`. -/
+theorem cubicConnectivitySkeleton_natCard_eq (n : ℕ) (hn : 3 ≤ n) :
+    Nat.card (CubicConnectivitySkeleton n) = connectivitySkeletonCount n := by
+  rw [Nat.card_eq_fintype_card]
+  exact cubicConnectivitySkeleton_card_eq n hn
+
 /-! ### Realizations by edge-disjoint walks -/
 
 /-- A realization assigns lattice vertices to a skeleton and an edge-disjoint walk to every

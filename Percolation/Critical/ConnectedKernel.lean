@@ -58,6 +58,15 @@ def piSplitAt [DecidableEq V] (c : V) : (V → α) ≃ α × ({v : V // v ≠ c}
     (piSplitAt c).symm q v = q.2 v := by
   simp [piSplitAt, Equiv.piCongrLeft, Equiv.piCongrLeft', v.2]
 
+theorem piSplitAt_symm_apply_of_ne [DecidableEq V] (c : V)
+    (q : α × ({v : V // v ≠ c} → α)) (v : V) (hv : v ≠ c) :
+    (piSplitAt c).symm q v = q.2 ⟨v, hv⟩ := by
+  simpa using piSplitAt_symm_apply_ne c q ⟨v, hv⟩
+
+theorem tsum_pi_eq_tsum_split [DecidableEq V] (c : V) (f : (V → α) → ℝ≥0∞) :
+    ∑' ψ, f ψ = ∑' q : α × ({v : V // v ≠ c} → α), f ((piSplitAt c).symm q) := by
+  exact (Equiv.tsum_eq (piSplitAt c).symm f).symm
+
 /-- Edge indices not incident to a chosen vertex. -/
 def RemainingEdge [Fintype E] (ends : E → V × V) (c : V) :=
   {e : E // (ends e).1 ≠ c ∧ (ends e).2 ≠ c}
@@ -146,6 +155,678 @@ theorem network_product_le_incident_mul_remaining
       · exact Finset.prod_subtype
           (Finset.univ.filter (fun e ↦ (ends e).1 ≠ c ∧ (ends e).2 ≠ c))
           (by simp) (fun e ↦ K (ψ (ends e).1) (ψ (ends e).2))
+
+/-- Removing a non-root vertex bounds the partition function by one row-sum factor times the
+partition function of the induced network. -/
+theorem connectedKernelPartition_le_mul_remaining_of_ne
+    [Fintype V] [DecidableEq V] [Fintype E] [DecidableEq E]
+    (ends : E → V × V) (K : α → α → ℝ≥0∞) (C : ℝ≥0∞)
+    (hEnds : ∀ e, (ends e).1 ≠ (ends e).2)
+    (hKsymm : ∀ a b, K a b = K b a) (hKle : ∀ a b, K a b ≤ 1)
+    (hrow : ∀ a, ∑' b, K a b ≤ C)
+    (root c u : V) (hcroot : c ≠ root) (e₀ : E)
+    (he₀ : ends e₀ = (c, u) ∨ ends e₀ = (u, c)) (a : α) :
+    connectedKernelPartition ends K root a ≤
+      C * connectedKernelPartition (remainingEnds ends c) K
+        ⟨root, hcroot.symm⟩ a := by
+  classical
+  let root' : {v : V // v ≠ c} := ⟨root, hcroot.symm⟩
+  have hu : u ≠ c := by
+    rcases he₀ with he₀ | he₀
+    · simpa [he₀] using (hEnds e₀).symm
+    · simpa [he₀] using hEnds e₀
+  let u' : {v : V // v ≠ c} := ⟨u, hu⟩
+  let B : (V → α) → ℝ≥0∞ := fun ψ ↦
+    if ψ root = a then
+      K (ψ c) (ψ u) * ∏ e : RemainingEdge ends c,
+        K (ψ (ends e.1).1) (ψ (ends e.1).2)
+    else 0
+  have hpoint : ∀ ψ : V → α,
+      (if ψ root = a then ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) else 0) ≤ B ψ := by
+    intro ψ
+    by_cases hψ : ψ root = a
+    · simp only [hψ, if_true, B]
+      exact network_product_le_incident_mul_remaining ends K hKsymm hKle c u e₀ he₀ ψ
+    · simp [B, hψ]
+  have hrow' : ∀ x, ∑' b, K b x ≤ C := by
+    intro x
+    calc
+      ∑' b, K b x = ∑' b, K x b := tsum_congr fun b ↦ hKsymm b x
+      _ ≤ C := hrow x
+  calc
+    connectedKernelPartition ends K root a ≤ ∑' ψ : V → α, B ψ := by
+      unfold connectedKernelPartition
+      exact ENNReal.tsum_le_tsum hpoint
+    _ = ∑' q : α × ({v : V // v ≠ c} → α), B ((piSplitAt c).symm q) :=
+      tsum_pi_eq_tsum_split c B
+    _ = ∑' φ : {v : V // v ≠ c} → α, ∑' b : α,
+        if φ root' = a then
+          K b (φ u') * ∏ e : RemainingEdge ends c,
+            K (φ (remainingEnds ends c e).1) (φ (remainingEnds ends c e).2)
+        else 0 := by
+      rw [ENNReal.tsum_prod', ENNReal.tsum_comm]
+      apply tsum_congr
+      intro φ
+      apply tsum_congr
+      intro b
+      unfold B
+      rw [piSplitAt_symm_apply_self c (b, φ),
+        piSplitAt_symm_apply_of_ne c (b, φ) root hcroot.symm,
+        piSplitAt_symm_apply_of_ne c (b, φ) u hu]
+      simp only [Prod.fst, Prod.snd]
+      change (if φ root' = a then
+          K b (φ u') * ∏ e : RemainingEdge ends c,
+            K ((piSplitAt c).symm (b, φ) (ends e.1).1)
+              ((piSplitAt c).symm (b, φ) (ends e.1).2)
+        else 0) = _
+      congr 1
+      congr 1
+      apply Finset.prod_congr rfl
+      intro e _he
+      rw [piSplitAt_symm_apply_of_ne c (b, φ) (ends e.1).1 e.2.1,
+        piSplitAt_symm_apply_of_ne c (b, φ) (ends e.1).2 e.2.2]
+      rfl
+    _ ≤ ∑' φ : {v : V // v ≠ c} → α,
+        if φ root' = a then
+          C * ∏ e : RemainingEdge ends c,
+            K (φ (remainingEnds ends c e).1) (φ (remainingEnds ends c e).2)
+        else 0 := by
+      apply ENNReal.tsum_le_tsum
+      intro φ
+      by_cases hφ : φ root' = a
+      · simp only [hφ, if_true, ENNReal.tsum_mul_right]
+        exact mul_le_mul_right' (hrow' (φ u')) _
+      · simp [hφ]
+    _ = C * connectedKernelPartition (remainingEnds ends c) K root' a := by
+      calc
+        (∑' φ : {v : V // v ≠ c} → α,
+            if φ root' = a then C * ∏ e : RemainingEdge ends c,
+              K (φ (remainingEnds ends c e).1) (φ (remainingEnds ends c e).2)
+            else 0) =
+            ∑' φ : {v : V // v ≠ c} → α, C *
+              (if φ root' = a then ∏ e : RemainingEdge ends c,
+                K (φ (remainingEnds ends c e).1) (φ (remainingEnds ends c e).2)
+              else 0) := by
+          apply tsum_congr
+          intro φ
+          by_cases hφ : φ root' = a <;> simp [hφ]
+        _ = C * ∑' φ : {v : V // v ≠ c} → α,
+              (if φ root' = a then ∏ e : RemainingEdge ends c,
+                K (φ (remainingEnds ends c e).1) (φ (remainingEnds ends c e).2)
+              else 0) := ENNReal.tsum_mul_left
+        _ = C * connectedKernelPartition (remainingEnds ends c) K root' a := by
+          rfl
+
+/-- Disintegrate a pinned partition function by the value at its root. -/
+theorem tsum_rootWeight_mul_networkProduct
+    [Fintype V] [DecidableEq V] [Fintype E]
+    (ends : E → V × V) (K : α → α → ℝ≥0∞) (root : V) (W : α → ℝ≥0∞) :
+    (∑' ψ : V → α, W (ψ root) *
+      ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2)) =
+      ∑' b : α, W b * connectedKernelPartition ends K root b := by
+  classical
+  unfold connectedKernelPartition
+  calc
+    (∑' ψ : V → α, W (ψ root) *
+        ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2)) =
+      ∑' ψ : V → α, ∑' b : α,
+        W b * (if ψ root = b then
+          ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) else 0) := by
+      apply tsum_congr
+      intro ψ
+      calc
+        W (ψ root) * ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) =
+            ∑' b : α, if b = ψ root then
+              W b * ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) else 0 := by
+          rw [tsum_ite_eq]
+        _ = ∑' b : α, W b * (if ψ root = b then
+              ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) else 0) := by
+          apply tsum_congr
+          intro b
+          by_cases hb : b = ψ root
+          · subst b
+            simp
+          · have hrev : ψ root ≠ b := fun h ↦ hb h.symm
+            simp [hb, hrev]
+    _ = ∑' b : α, ∑' ψ : V → α,
+        W b * (if ψ root = b then
+          ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) else 0) :=
+      ENNReal.tsum_comm
+    _ = ∑' b : α, W b * ∑' ψ : V → α,
+        (if ψ root = b then
+          ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) else 0) := by
+      apply tsum_congr
+      intro b
+      exact ENNReal.tsum_mul_left
+
+/-- Removing the pinned root also costs one row-sum factor: disintegrate the remaining network
+by the value at the chosen neighbour. -/
+theorem connectedKernelPartition_le_mul_of_root
+    [Fintype V] [DecidableEq V] [Fintype E] [DecidableEq E]
+    (ends : E → V × V) (K : α → α → ℝ≥0∞) (C D : ℝ≥0∞)
+    (hEnds : ∀ e, (ends e).1 ≠ (ends e).2)
+    (hKsymm : ∀ a b, K a b = K b a) (hKle : ∀ a b, K a b ≤ 1)
+    (hrow : ∀ a, ∑' b, K a b ≤ C)
+    (c u : V) (e₀ : E) (he₀ : ends e₀ = (c, u) ∨ ends e₀ = (u, c))
+    (hremaining : ∀ b, connectedKernelPartition (remainingEnds ends c) K
+      (⟨u, by
+        rcases he₀ with he₀ | he₀
+        · simpa [he₀] using (hEnds e₀).symm
+        · simpa [he₀] using hEnds e₀⟩ : {v : V // v ≠ c}) b ≤ D)
+    (a : α) : connectedKernelPartition ends K c a ≤ C * D := by
+  classical
+  have hu : u ≠ c := by
+    rcases he₀ with he₀ | he₀
+    · simpa [he₀] using (hEnds e₀).symm
+    · simpa [he₀] using hEnds e₀
+  let u' : {v : V // v ≠ c} := ⟨u, hu⟩
+  let B : (V → α) → ℝ≥0∞ := fun ψ ↦
+    if ψ c = a then
+      K (ψ c) (ψ u) * ∏ e : RemainingEdge ends c,
+        K (ψ (ends e.1).1) (ψ (ends e.1).2)
+    else 0
+  have hpoint : ∀ ψ : V → α,
+      (if ψ c = a then ∏ e : E, K (ψ (ends e).1) (ψ (ends e).2) else 0) ≤ B ψ := by
+    intro ψ
+    by_cases hψ : ψ c = a
+    · simp only [hψ, if_true, B]
+      simpa [hψ] using
+        network_product_le_incident_mul_remaining ends K hKsymm hKle c u e₀ he₀ ψ
+    · simp [B, hψ]
+  calc
+    connectedKernelPartition ends K c a ≤ ∑' ψ : V → α, B ψ := by
+      unfold connectedKernelPartition
+      exact ENNReal.tsum_le_tsum hpoint
+    _ = ∑' q : α × ({v : V // v ≠ c} → α), B ((piSplitAt c).symm q) :=
+      tsum_pi_eq_tsum_split c B
+    _ = ∑' b : α, if b = a then
+        (∑' φ : {v : V // v ≠ c} → α,
+          K a (φ u') * ∏ e : RemainingEdge ends c,
+            K (φ (remainingEnds ends c e).1) (φ (remainingEnds ends c e).2))
+        else 0 := by
+      rw [ENNReal.tsum_prod']
+      apply tsum_congr
+      intro b
+      -- Only the value `b = a` at the deleted root contributes.
+      by_cases hba : b = a
+      · subst b
+        simp only [B, piSplitAt_symm_apply_self, if_true]
+        apply tsum_congr
+        intro φ
+        rw [piSplitAt_symm_apply_of_ne c (a, φ) u hu]
+        change K a (φ u') * (∏ e : RemainingEdge ends c,
+          K ((piSplitAt c).symm (a, φ) (ends e.1).1)
+            ((piSplitAt c).symm (a, φ) (ends e.1).2)) = _
+        congr 1
+        apply Finset.prod_congr rfl
+        intro e _he
+        rw [piSplitAt_symm_apply_of_ne c (a, φ) (ends e.1).1 e.2.1,
+          piSplitAt_symm_apply_of_ne c (a, φ) (ends e.1).2 e.2.2]
+        rfl
+      · have hz : ∀ φ : {v : V // v ≠ c} → α,
+            B ((piSplitAt c).symm (b, φ)) = 0 := by
+          intro φ
+          simp [B, hba]
+        rw [if_neg hba]
+        exact ENNReal.tsum_eq_zero.mpr hz
+    _ = ∑' φ : {v : V // v ≠ c} → α,
+        K a (φ u') * ∏ e : RemainingEdge ends c,
+          K (φ (remainingEnds ends c e).1) (φ (remainingEnds ends c e).2) := by
+      rw [tsum_ite_eq]
+    _ = ∑' b : α, K a b *
+        connectedKernelPartition (remainingEnds ends c) K u' b :=
+      tsum_rootWeight_mul_networkProduct (remainingEnds ends c) K u' (K a)
+    _ ≤ ∑' b : α, K a b * D := by
+      apply ENNReal.tsum_le_tsum
+      intro b
+      exact mul_le_mul_left' (hremaining b) _
+    _ = (∑' b : α, K a b) * D := ENNReal.tsum_mul_right
+    _ ≤ C * D := mul_le_mul_right' (hrow a) D
+
+/-- A connected finite network has at most one kernel row-sum factor for each unpinned vertex.
+This is the abstract summation step used in Grimmett (6.94). -/
+theorem connectedKernelPartition_le_pow_card_sub_one
+    [Fintype V] [DecidableEq V] [Fintype E] [DecidableEq E]
+    (ends : E → V × V) (hEnds : ∀ e, (ends e).1 ≠ (ends e).2)
+    (hconn : (finiteNetworkGraph ends).Connected)
+    (K : α → α → ℝ≥0∞) (C : ℝ≥0∞)
+    (hKsymm : ∀ a b, K a b = K b a) (hKle : ∀ a b, K a b ≤ 1)
+    (hrow : ∀ a, ∑' b, K a b ≤ C) (root : V) (a : α) :
+    connectedKernelPartition ends K root a ≤ C ^ (Fintype.card V - 1) := by
+  classical
+  induction hm : Fintype.card V using Nat.strong_induction_on generalizing V E root a with
+  | h m ih =>
+      by_cases hm1 : m ≤ 1
+      · have hcard1 : Fintype.card V = 1 := by
+          have hpos := Fintype.card_pos_iff.mpr hconn.nonempty
+          omega
+        letI : Subsingleton V := ⟨Fintype.card_le_one_iff.mp (by rw [hm]; omega)⟩
+        letI : Unique V := ⟨⟨root⟩, fun v ↦ Subsingleton.elim v root⟩
+        letI : IsEmpty E := ⟨fun e ↦ hEnds e (Subsingleton.elim _ _)⟩
+        have hsum : connectedKernelPartition ends K root a = 1 := by
+          unfold connectedKernelPartition
+          let F : (V → α) → ℝ≥0∞ := fun ψ ↦ if ψ root = a then 1 else 0
+          simp only [Fintype.prod_empty]
+          change (∑' ψ : V → α, F ψ) = 1
+          calc
+            (∑' ψ : V → α, F ψ) = ∑' b : α, F ((Equiv.funUnique V α).symm b) := by
+              exact ((Equiv.funUnique V α).symm.tsum_eq F).symm
+            _ = ∑' b : α, if b = a then 1 else 0 := by
+              apply tsum_congr
+              intro b
+              simp [F, Equiv.funUnique]
+            _ = 1 := by rw [tsum_ite_eq]
+        rw [hsum]
+        simp [hm1]
+      · have hmgt : 1 < m := by omega
+        letI : Nontrivial V := Fintype.one_lt_card_iff_nontrivial.mp (hm ▸ hmgt)
+        obtain ⟨c, hcconn⟩ :=
+          hconn.exists_connected_induce_compl_singleton_of_finite_nontrivial
+        have hcdeg : 0 < (finiteNetworkGraph ends).degree c :=
+          hconn.preconnected.degree_pos_of_nontrivial c
+        obtain ⟨u, hcu⟩ :=
+          SimpleGraph.degree_pos_iff_nonempty.mp hcdeg
+        obtain ⟨hcu_ne, e₀, he₀⟩ := hcu
+        let V' := {v : V // v ≠ c}
+        let E' := RemainingEdge ends c
+        let ends' : E' → V' × V' := remainingEnds ends c
+        have hconn' : (finiteNetworkGraph ends').Connected := by
+          rw [show finiteNetworkGraph ends' =
+              (finiteNetworkGraph ends).induce {c}ᶜ by
+            simpa [ends', V', E'] using finiteNetworkGraph_remainingEnds ends c]
+          exact hcconn
+        have hEnds' : ∀ e, (ends' e).1 ≠ (ends' e).2 := by
+          intro e heq
+          apply hEnds e.1
+          exact congrArg Subtype.val heq
+        have hcard' : Fintype.card V' = m - 1 := by
+          dsimp [V']
+          rw [Fintype.card_subtype_compl]
+          simp [hm]
+        have hlt : Fintype.card V' < m := by omega
+        have hIH : ∀ (r : V') (b : α),
+            connectedKernelPartition ends' K r b ≤ C ^ (Fintype.card V' - 1) := by
+          intro r b
+          exact ih (Fintype.card V') hlt ends' hEnds' hconn' r b rfl
+        by_cases hcroot : c = root
+        · subst c
+          calc
+            connectedKernelPartition ends K root a ≤
+                C * C ^ (Fintype.card V' - 1) := by
+              apply connectedKernelPartition_le_mul_of_root ends K C
+                (C ^ (Fintype.card V' - 1)) hEnds hKsymm hKle hrow root u e₀ he₀
+              intro b
+              exact hIH ⟨u, hcu_ne.symm⟩ b
+            _ = C ^ (m - 1) := by
+              have hexp : m - 1 = (Fintype.card V' - 1) + 1 := by omega
+              rw [hexp, pow_succ]
+              ac_rfl
+        · let root' : V' := ⟨root, Ne.symm hcroot⟩
+          calc
+            connectedKernelPartition ends K root a ≤
+                C * connectedKernelPartition ends' K root' a := by
+              simpa [ends', V', E', root'] using
+                connectedKernelPartition_le_mul_remaining_of_ne ends K C hEnds
+                  hKsymm hKle hrow root c u hcroot e₀ he₀ a
+            _ ≤ C * C ^ (Fintype.card V' - 1) :=
+              mul_le_mul_left' (hIH root' a) C
+            _ = C ^ (m - 1) := by
+              have hexp : m - 1 = (Fintype.card V' - 1) + 1 := by omega
+              rw [hexp, pow_succ]
+              ac_rfl
+
+#print axioms connectedKernelPartition_le_pow_card_sub_one
+
+/-! ### Application to decoded connectivity skeletons -/
+
+@[reducible] private def connectedKernelSkeletonFintype :
+    (n : ℕ) → Fintype (CubicConnectivitySkeleton n)
+  | 0 | 1 | 2 => inferInstance
+  | 3 => inferInstance
+  | n + 4 =>
+      letI := connectedKernelSkeletonFintype (n + 3)
+      inferInstance
+
+attribute [local instance] connectedKernelSkeletonFintype
+
+@[reducible] private def connectedKernelSkeletonVertexFintype :
+    {n : ℕ} → (s : CubicConnectivitySkeleton n) → Fintype s.Vertex
+  | 0, s | 1, s | 2, s => nomatch s
+  | 3, _ => inferInstance
+  | _n + 4, s =>
+      letI := connectedKernelSkeletonVertexFintype s.1
+      inferInstance
+
+@[reducible] private def connectedKernelSkeletonVertexDecidableEq :
+    {n : ℕ} → (s : CubicConnectivitySkeleton n) → DecidableEq s.Vertex
+  | 0, s | 1, s | 2, s => nomatch s
+  | 3, _ => inferInstance
+  | _n + 4, s =>
+      letI := connectedKernelSkeletonVertexDecidableEq s.1
+      inferInstance
+
+attribute [local instance] connectedKernelSkeletonVertexFintype
+attribute [local instance] connectedKernelSkeletonVertexDecidableEq
+
+/-- The endpoints of every decoded skeleton edge are distinct. -/
+theorem cubicConnectivitySkeleton_edge_ne (k : ℕ)
+    (s : CubicConnectivitySkeleton (k + 3))
+    (e : Fin (CubicConnectivitySkeleton.edgeCount (k + 3))) :
+    (s.edge e).1 ≠ (s.edge e).2 := by
+  induction k with
+  | zero =>
+      fin_cases e <;> simp [CubicConnectivitySkeleton.edge]
+  | succ k ih =>
+      let E := CubicConnectivitySkeleton.edgeCount (k + 3)
+      by_cases he : e.1 < E
+      · let j : Fin E := ⟨e.1, he⟩
+        by_cases hj : j = s.2
+        · simp [CubicConnectivitySkeleton.edge, E, he, j, hj]
+        · intro hEq
+          apply ih s.1 j
+          have hEq' := hEq
+          simp [CubicConnectivitySkeleton.edge, E, he, j, hj] at hEq'
+          exact Sum.inl.inj hEq'
+      · by_cases heE : e.1 = E
+        · simp [CubicConnectivitySkeleton.edge, E, he, heE]
+        · have heLast : e.1 = E + 1 := by
+            have hCount : CubicConnectivitySkeleton.edgeCount (k + 1 + 3) = E + 2 := by
+              simp [CubicConnectivitySkeleton.edgeCount, E]
+              omega
+            have heBound : e.1 < E + 2 := by simpa only [hCount] using e.2
+            omega
+          intro hEq
+          let f : s.1.Vertex ⊕ Fin 2 → Fin 2
+            | Sum.inl _ => 0
+            | Sum.inr i => i
+          have hf := congrArg f hEq
+          simpa [CubicConnectivitySkeleton.edge, E, he, heE, heLast, f] using hf
+
+/-- Every decoded edge is an edge of its generated finite network graph. -/
+theorem cubicConnectivitySkeleton_edge_adj (k : ℕ)
+    (s : CubicConnectivitySkeleton (k + 3))
+    (e : Fin (CubicConnectivitySkeleton.edgeCount (k + 3))) :
+    (finiteNetworkGraph s.edge).Adj (s.edge e).1 (s.edge e).2 :=
+  ⟨cubicConnectivitySkeleton_edge_ne k s e, e, Or.inl rfl⟩
+
+/-- Reachability between old vertices survives subdivision of one skeleton edge. -/
+theorem cubicConnectivitySkeleton_reachable_inl_insert (k : ℕ)
+    (s : CubicConnectivitySkeleton (k + 3))
+    (chosen : Fin (CubicConnectivitySkeleton.edgeCount (k + 3)))
+    {a b : s.Vertex}
+    (h : (finiteNetworkGraph s.edge).Reachable a b) :
+    (finiteNetworkGraph (fun e : Fin (CubicConnectivitySkeleton.edgeCount (k + 1 + 3)) ↦
+      CubicConnectivitySkeleton.edge
+        ((s, chosen) : CubicConnectivitySkeleton (k + 1 + 3)) e)).Reachable
+      (Sum.inl a : s.Vertex ⊕ Fin 2) (Sum.inl b : s.Vertex ⊕ Fin 2) := by
+  classical
+  let s' : CubicConnectivitySkeleton (k + 1 + 3) := (s, chosen)
+  let E := CubicConnectivitySkeleton.edgeCount (k + 3)
+  have liftOriented : ∀ {x y : s.Vertex}
+      (j : Fin (CubicConnectivitySkeleton.edgeCount (k + 3))), s.edge j = (x, y) →
+      (finiteNetworkGraph s'.edge).Reachable (Sum.inl x) (Sum.inl y) := by
+    intro x y j hj
+    by_cases hje : j = chosen
+    · subst j
+      have h₁ := cubicConnectivitySkeleton_edge_adj (k + 1) s'
+          ⟨chosen.1, by
+            have hc := chosen.2
+            simp [CubicConnectivitySkeleton.edgeCount] at hc ⊢
+            omega⟩
+      have h₂ := cubicConnectivitySkeleton_edge_adj (k + 1) s'
+          ⟨E, by simp [CubicConnectivitySkeleton.edgeCount, E]; omega⟩
+      have h₁' : (finiteNetworkGraph s'.edge).Adj
+            (Sum.inl (s.edge chosen).1) (Sum.inr (0 : Fin 2)) := by
+          simpa [s', E, CubicConnectivitySkeleton.edge] using h₁
+      have h₂' : (finiteNetworkGraph s'.edge).Adj
+            (Sum.inr (0 : Fin 2)) (Sum.inl (s.edge chosen).2) := by
+          simpa [s', E, CubicConnectivitySkeleton.edge] using h₂
+      rw [Prod.mk.injEq] at hj
+      rcases hj with ⟨rfl, rfl⟩
+      exact h₁'.reachable.trans h₂'.reachable
+    · have hnew := cubicConnectivitySkeleton_edge_adj (k + 1) s'
+        ⟨j.1, by
+          have hjlt := j.2
+          simp [CubicConnectivitySkeleton.edgeCount] at hjlt ⊢
+          omega⟩
+      have hnew' : (finiteNetworkGraph s'.edge).Adj
+          (Sum.inl (s.edge j).1) (Sum.inl (s.edge j).2) := by
+        simpa [s', E, CubicConnectivitySkeleton.edge, j.2, hje] using hnew
+      rw [Prod.mk.injEq] at hj
+      rcases hj with ⟨rfl, rfl⟩
+      exact hnew'.reachable
+  have liftAdj : ∀ {x y : s.Vertex}, (finiteNetworkGraph s.edge).Adj x y →
+      (finiteNetworkGraph s'.edge).Reachable (Sum.inl x) (Sum.inl y) := by
+    intro x y hxy
+    obtain ⟨_hxyne, j, hj | hj⟩ := hxy
+    · exact liftOriented j hj
+    · exact (liftOriented j hj).symm
+  obtain ⟨w⟩ := h
+  induction w with
+  | nil => exact SimpleGraph.Walk.nil.reachable
+  | cons hadj tail ih => exact (liftAdj hadj).trans ih
+
+/-- The abstract network generated by a decoded connectivity skeleton is connected. -/
+theorem cubicConnectivitySkeleton_connected (k : ℕ)
+    (s : CubicConnectivitySkeleton (k + 3)) :
+    (finiteNetworkGraph s.edge).Connected := by
+  induction k with
+  | zero =>
+      constructor
+      intro u v
+      fin_cases u <;> fin_cases v
+      all_goals first
+        | exact SimpleGraph.Walk.nil.reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 0).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 1).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 2).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 0).reachable.symm
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 1).reachable.symm
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 2).reachable.symm
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 0).reachable.symm.trans
+            (cubicConnectivitySkeleton_edge_adj 0 s 1).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 0).reachable.symm.trans
+            (cubicConnectivitySkeleton_edge_adj 0 s 2).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 1).reachable.symm.trans
+            (cubicConnectivitySkeleton_edge_adj 0 s 0).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 1).reachable.symm.trans
+            (cubicConnectivitySkeleton_edge_adj 0 s 2).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 2).reachable.symm.trans
+            (cubicConnectivitySkeleton_edge_adj 0 s 0).reachable
+        | exact (cubicConnectivitySkeleton_edge_adj 0 s 2).reachable.symm.trans
+            (cubicConnectivitySkeleton_edge_adj 0 s 1).reachable
+  | succ k ih =>
+      let E := CubicConnectivitySkeleton.edgeCount (k + 3)
+      have hfirst := cubicConnectivitySkeleton_edge_adj (k + 1) s
+        ⟨s.2.1, by
+          have hs := s.2.2
+          simp [CubicConnectivitySkeleton.edgeCount] at hs ⊢
+          omega⟩
+      have hfirst' : (finiteNetworkGraph s.edge).Adj
+          (Sum.inl (s.1.edge s.2).1) (Sum.inr (0 : Fin 2)) := by
+        simpa [E, CubicConnectivitySkeleton.edge] using hfirst
+      have hleaf := cubicConnectivitySkeleton_edge_adj (k + 1) s
+        ⟨E + 1, by simp [CubicConnectivitySkeleton.edgeCount, E]; omega⟩
+      have hleaf' : (finiteNetworkGraph s.edge).Adj
+          (Sum.inr (0 : Fin 2)) (Sum.inr (1 : Fin 2)) := by
+        simpa [E, CubicConnectivitySkeleton.edge] using hleaf
+      constructor
+      intro u v
+      rcases u with u | u <;> rcases v with v | v
+      · exact cubicConnectivitySkeleton_reachable_inl_insert k s.1 s.2 (ih s.1 u v)
+      · fin_cases v
+        · exact (cubicConnectivitySkeleton_reachable_inl_insert k s.1 s.2
+            (ih s.1 u (s.1.edge s.2).1)).trans hfirst'.reachable
+        · exact (cubicConnectivitySkeleton_reachable_inl_insert k s.1 s.2
+            (ih s.1 u (s.1.edge s.2).1)).trans
+            (hfirst'.reachable.trans hleaf'.reachable)
+      · fin_cases u
+        · exact ((cubicConnectivitySkeleton_reachable_inl_insert k s.1 s.2
+            (ih s.1 v (s.1.edge s.2).1)).trans hfirst'.reachable).symm
+        · exact ((cubicConnectivitySkeleton_reachable_inl_insert k s.1 s.2
+            (ih s.1 v (s.1.edge s.2).1)).trans
+            (hfirst'.reachable.trans hleaf'.reachable)).symm
+      · fin_cases u <;> fin_cases v
+        · exact SimpleGraph.Walk.nil.reachable
+        · exact hleaf'.reachable
+        · exact hleaf'.reachable.symm
+        · exact SimpleGraph.Walk.nil.reachable
+
+/-- A skeleton with `k+3` exterior vertices has `2(k+3)-2` total vertices. -/
+theorem cubicConnectivitySkeleton_card_vertex (k : ℕ)
+    (s : CubicConnectivitySkeleton (k + 3)) :
+    Fintype.card s.Vertex = 2 * (k + 3) - 2 := by
+  induction k with
+  | zero =>
+      change Fintype.card (Fin 4) = 4
+      simp
+  | succ k ih =>
+      change Fintype.card (s.1.Vertex ⊕ Fin 2) = _
+      rw [Fintype.card_sum, ih s.1]
+      simp only [Fintype.card_fin]
+      omega
+
+/-- Summing a decoded skeleton over all vertex placements with one exterior vertex pinned costs
+one susceptibility factor per skeleton edge. -/
+theorem skeletonConnectivityPartition_le_susceptibility_pow
+    (d k : ℕ) (p : unitInterval) (s : CubicConnectivitySkeleton (k + 3))
+    (x : Cubic d) :
+    connectedKernelPartition s.edge (twoPointConnectivityENNReal d p)
+      (s.leaf 0) x ≤ susceptibility d p ^ CubicConnectivitySkeleton.edgeCount (k + 3) := by
+  have hsymm : ∀ a b : Cubic d,
+      twoPointConnectivityENNReal d p a b = twoPointConnectivityENNReal d p b a := by
+    intro a b
+    rw [twoPointConnectivityENNReal_eq_ofReal, twoPointConnectivityENNReal_eq_ofReal,
+      twoPointConnectivity_comm]
+  have hle : ∀ a b : Cubic d, twoPointConnectivityENNReal d p a b ≤ 1 := by
+    intro a b
+    unfold twoPointConnectivityENNReal
+    calc
+      bernoulliBondMeasure d p (connectionEvent d a b) ≤
+          bernoulliBondMeasure d p Set.univ :=
+        MeasureTheory.measure_mono (Set.subset_univ _)
+      _ = 1 := MeasureTheory.measure_univ
+  have h := connectedKernelPartition_le_pow_card_sub_one s.edge
+    (cubicConnectivitySkeleton_edge_ne k s)
+    (cubicConnectivitySkeleton_connected k s)
+    (twoPointConnectivityENNReal d p) (susceptibility d p) hsymm hle
+    (fun a ↦ (tsum_twoPointConnectivityENNReal d p a).le) (s.leaf 0) x
+  rw [cubicConnectivitySkeleton_card_vertex] at h
+  simpa [CubicConnectivitySkeleton.edgeCount] using h
+
+#print axioms cubicConnectivitySkeleton_connected
+#print axioms skeletonConnectivityPartition_le_susceptibility_pow
+
+/-- Add a pinned root in front of an ordered terminal tuple. -/
+def rootedTerminalTuple {α : Type*} {n : ℕ} (root : α) (y : Fin n → α) :
+    Fin (n + 1) → α :=
+  Fin.cases root y
+
+@[simp] theorem rootedTerminalTuple_zero {α : Type*} {n : ℕ} (root : α) (y : Fin n → α) :
+    rootedTerminalTuple root y 0 = root := rfl
+
+@[simp] theorem rootedTerminalTuple_succ {α : Type*} {n : ℕ} (root : α)
+    (y : Fin n → α) (i : Fin n) :
+    rootedTerminalTuple root y i.succ = y i := by
+  simp [rootedTerminalTuple]
+
+/-- Summing the leaf labels first is exactly the same as summing all skeleton placements with
+the root leaf pinned. -/
+theorem tsum_tuple_tsum_skeletonConnectivityWeight_eq_partition
+    (d k : ℕ) (p : unitInterval) (s : CubicConnectivitySkeleton (k + 3)) :
+    (∑' y : Fin (k + 2) → Cubic d,
+      ∑' ψ : s.Vertex → Cubic d,
+        skeletonConnectivityWeight p s ψ (rootedTerminalTuple cubicOrigin y)) =
+      connectedKernelPartition s.edge (twoPointConnectivityENNReal d p)
+        (s.leaf 0) cubicOrigin := by
+  classical
+  unfold connectedKernelPartition
+  rw [ENNReal.tsum_comm]
+  apply tsum_congr
+  intro ψ
+  let yψ : Fin (k + 2) → Cubic d := fun i ↦ ψ (s.leaf i.succ)
+  by_cases hroot : ψ (s.leaf 0) = cubicOrigin
+  · rw [tsum_eq_single yψ]
+    · simp only [skeletonConnectivityWeight]
+      rw [if_pos]
+      · simp [connectedKernelPartition, hroot]
+      · intro i
+        refine Fin.cases hroot (fun j ↦ ?_) i
+        simp [yψ]
+    · intro y hy
+      have hlabels : ¬∀ i, ψ (s.leaf i) = rootedTerminalTuple cubicOrigin y i := by
+        intro hall
+        apply hy
+        funext i
+        have hi := hall i.succ
+        simpa [yψ] using hi.symm
+      simp [skeletonConnectivityWeight, hlabels]
+  · have hzero : ∀ y : Fin (k + 2) → Cubic d,
+        skeletonConnectivityWeight p s ψ (rootedTerminalTuple cubicOrigin y) = 0 := by
+      intro y
+      rw [skeletonConnectivityWeight, if_neg]
+      intro hall
+      exact hroot (by simpa using hall 0)
+    rw [ENNReal.tsum_eq_zero.mpr hzero]
+    simp [connectedKernelPartition, hroot]
+
+/-- Each fixed skeleton contributes at most one susceptibility factor per edge after summing all
+ordered terminal tuples. -/
+theorem tsum_tuple_tsum_skeletonConnectivityWeight_le
+    (d k : ℕ) (p : unitInterval) (s : CubicConnectivitySkeleton (k + 3)) :
+    (∑' y : Fin (k + 2) → Cubic d,
+      ∑' ψ : s.Vertex → Cubic d,
+        skeletonConnectivityWeight p s ψ (rootedTerminalTuple cubicOrigin y)) ≤
+      susceptibility d p ^ CubicConnectivitySkeleton.edgeCount (k + 3) := by
+  rw [tsum_tuple_tsum_skeletonConnectivityWeight_eq_partition]
+  exact skeletonConnectivityPartition_le_susceptibility_pow d k p s cubicOrigin
+
+/-- Summed form of (6.93): the mass of all ordered `(k+2)`-tuples connected to the origin is at
+most the number of `(k+3)`-leaf skeletons times `χ^(2k+3)`. -/
+theorem orderedMultiPointConnectionMass_le
+    (d k : ℕ) (p : unitInterval) :
+    (∑' y : Fin (k + 2) → Cubic d,
+      bernoulliBondMeasure d p
+        (orderedMultiPointConnectionEvent d k
+          (rootedTerminalTuple cubicOrigin y))) ≤
+      (connectivitySkeletonCount (k + 3) : ℝ≥0∞) *
+        susceptibility d p ^ CubicConnectivitySkeleton.edgeCount (k + 3) := by
+  calc
+    (∑' y : Fin (k + 2) → Cubic d,
+        bernoulliBondMeasure d p
+          (orderedMultiPointConnectionEvent d k
+            (rootedTerminalTuple cubicOrigin y))) ≤
+        ∑' y : Fin (k + 2) → Cubic d,
+          ∑' s : CubicConnectivitySkeleton (k + 3),
+            ∑' ψ : s.Vertex → Cubic d,
+              skeletonConnectivityWeight p s ψ
+                (rootedTerminalTuple cubicOrigin y) := by
+      apply ENNReal.tsum_le_tsum
+      intro y
+      exact multiPointConnectivity_le_skeleton_sum d k p
+        (rootedTerminalTuple cubicOrigin y)
+    _ = ∑' s : CubicConnectivitySkeleton (k + 3),
+        ∑' y : Fin (k + 2) → Cubic d,
+          ∑' ψ : s.Vertex → Cubic d,
+            skeletonConnectivityWeight p s ψ
+              (rootedTerminalTuple cubicOrigin y) := ENNReal.tsum_comm
+    _ ≤ ∑' _s : CubicConnectivitySkeleton (k + 3),
+        susceptibility d p ^ CubicConnectivitySkeleton.edgeCount (k + 3) := by
+      apply ENNReal.tsum_le_tsum
+      intro s
+      exact tsum_tuple_tsum_skeletonConnectivityWeight_le d k p s
+    _ = (connectivitySkeletonCount (k + 3) : ℝ≥0∞) *
+        susceptibility d p ^ CubicConnectivitySkeleton.edgeCount (k + 3) := by
+      rw [tsum_fintype, Finset.sum_const, nsmul_eq_mul]
+      change (Fintype.card (CubicConnectivitySkeleton (k + 3)) : ℝ≥0∞) * _ = _
+      have hcard :
+          (Fintype.card (CubicConnectivitySkeleton (k + 3)) : ℝ≥0∞) =
+            connectivitySkeletonCount (k + 3) := by
+        rw [← Nat.card_eq_fintype_card]
+        exact_mod_cast cubicConnectivitySkeleton_natCard_eq (k + 3) (by omega)
+      rw [hcard]
+
+#print axioms orderedMultiPointConnectionMass_le
 
 
 end Percolation

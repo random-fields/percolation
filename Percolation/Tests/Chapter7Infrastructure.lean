@@ -6,6 +6,7 @@ import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
+import Percolation.Bernoulli.TailZeroOne
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
@@ -22,6 +23,7 @@ import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticRenormalizationFromSlab
+import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -844,5 +846,15 @@ example {d L : ℕ} (hd : 3 ≤ d) (p : I) (hp1 : (p : ℝ) < 1)
       Filter.atTop (nhds 1) :=
   epsilonGoodBox_probability_tendsto_one_of_quarterSlabCritical_lt
     hd p hp1 hcrit hepsilon0 hepsilon1
+
+example (p : I) :
+    setBer((Set.univ : Set ℕ), p) (Set.univ : Set (Set ℕ)) = 0 ∨
+      setBer((Set.univ : Set ℕ), p) (Set.univ : Set (Set ℕ)) = 1 := by
+  apply bernoulli_zero_or_one_of_invariantUnderFiniteClosing p MeasurableSet.univ
+  intro E omega
+  simp
+
+example : Function.Injective (separatedAxisEdge (d := 3) (by omega)) :=
+  separatedAxisEdge_injective (by omega)
 
 end Percolation

@@ -18,6 +18,7 @@ import Percolation.Bernoulli.UpwardDistance
 import Percolation.Bernoulli.StochasticDomination
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
+import Percolation.Bernoulli.TailZeroOne
 import Percolation.Bernoulli.FiniteEventContinuity
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.Basic
@@ -94,6 +95,7 @@ import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticRenormalizationFromSlab
+import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

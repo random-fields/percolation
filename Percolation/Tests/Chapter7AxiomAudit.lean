@@ -6,6 +6,7 @@ import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
+import Percolation.Bernoulli.TailZeroOne
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.StaticBlockAdjacency
@@ -16,6 +17,7 @@ import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticRenormalizationFromSlab
+import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -266,3 +268,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.exists_secondMacroscopicCluster_probability_le_exp_of_quarterSlabCritical_lt
 #print axioms Percolation.epsilonDenseCrossingCluster_probability_tendsto_one_of_quarterSlabCritical_lt
 #print axioms Percolation.epsilonGoodBox_probability_tendsto_one_of_quarterSlabCritical_lt
+#print axioms Percolation.generateFrom_compl_denumerablePrefix_le_tailBlock
+#print axioms Percolation.IsInvariantUnderFiniteClosing.measurableSet_tail
+#print axioms Percolation.bernoulli_zero_or_one_of_invariantUnderFiniteClosing
+#print axioms Percolation.separatedAxisEdge_injective

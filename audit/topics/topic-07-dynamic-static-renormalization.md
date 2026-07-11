@@ -48,7 +48,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | (7.57)–(7.60), pp. 177–178 | Coarse boxes are centered at `nx`; good-block indicators are stationary and `3d`-dependent. | `epsilonGoodBlockCenter`; `epsilonGoodBlockField`; `epsilonGoodBlockLaw_kDependent`; translation-stationarity target | center and actual `3d` dependence proved for `n≥1`; stationarity and selected-cluster transport target |
 | (7.62), pp. 178–179 | Above `p_c`, `P_p(B(n) is ε-good)→1`. | `epsilonGoodBox_probability_tendsto_one` | target |
 | (7.63), p. 179 | Stochastic domination is comparison of expectations of every bounded increasing measurable function. | `StochasticallyDominates`; `stochasticallyDominates_of_measureReal_le` | proved, including both event consequence and layer-cake converse for probability laws |
-| (7.64), p. 179 | Uniform one-step conditional lower bounds along an enumeration imply domination of iid sites. | `sequentialLowerBound_stochasticallyDominates` | target; finite-prefix and countable-extension proof window |
+| (7.64), p. 179 | Uniform one-step conditional lower bounds along an enumeration imply domination of iid sites. | `iidBoolEventMass_le_of_hasSequentialLowerBound`; `finiteSequentialLowerBound_stochasticallyDominates`; countable `sequentialLowerBound_stochasticallyDominates` target | finite ratio-free Boolean-cube kernel and exact expectation-level measure theorem proved; countable-extension proof window remains |
 | (7.66)–(7.67), p. 179 | A `k`-dependent field with one-site density at least `δ` dominates iid density `π(δ)`. | `exists_lssDominationDensity` | target |
 | (7.69)–(7.75), pp. 180–181 | Exponentially likely order-`r^(d-1)` disjoint crossings; slice crossings, independent slice family, and ACCFR sprinkling. | `maxEdgeDisjointCrossings_probability_ge`; `maxEdgeDisjointSquareRectangleCrossings`; `EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths`; existing `interiorDepth` inequality | arbitrary finite edge Menger and bounded crossing count proved; probability estimates and the set-to-set adapter target |
 | (7.70), p. 180 | High-density iid site percolation crosses a square with failure exponentially small in its scale. | `siteSquareRectangleCrossingEvent`; `siteSquareRectangleCrossingProbability`; exponential bound target | faithful finite site event/support/measurability/increasingness proved |
@@ -121,7 +121,8 @@ individual theorem rows.
 | Independent review remediation, faithful brick geometry, and checkpoint verification | 4416s | 5517s | 1101s | 1,178,200 | 1,413,658 | 235,458 |
 | Direct source inventory, finite static events, rooted exploration limit, stochastic-order layer cake, and site crossings | 5517s | 6466s | 949s | 1,413,658 | 1,733,685 | 320,027 |
 | General finite edge Menger (Chapter 11 shared prerequisite) and monotone-coupling bridge | 6466s | 7052s | 586s | 1,733,685 | 1,856,480 | 122,795 |
-| **Infrastructure subtotal** |  |  | **7052s** |  |  | **1,856,480** |
+| Finite sequential domination criterion (7.64 kernel and measure bridge) | 7052s | 7804s | 752s | 1,856,480 | 2,068,815 | 212,335 |
+| **Infrastructure subtotal** |  |  | **7804s** |  |  | **2,068,815** |
 
 The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
 7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one

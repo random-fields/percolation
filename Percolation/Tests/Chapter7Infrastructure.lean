@@ -2,6 +2,7 @@ import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Core.EdgeMenger
+import Percolation.Bernoulli.SequentialDomination
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -69,5 +70,13 @@ example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
         (∀ i, (P i).IsPath) ∧
           Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges :=
   EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths
+
+/-- With no coordinates, the ratio-free prefix hypothesis is vacuous and the finite sequential
+criterion correctly compares every probability law with the unique iid law. -/
+example (μ : Measure (Set (Fin 0))) [IsProbabilityMeasure μ] (p : I) :
+    StochasticallyDominates μ setBer((Set.univ : Set (Fin 0)), p) := by
+  apply finiteSequentialLowerBound_stochasticallyDominates μ p
+  intro i hi
+  omega
 
 end Percolation

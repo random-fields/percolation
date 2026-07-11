@@ -24,6 +24,12 @@ def connectionEventWithinVertices (d : ℕ) (A : Set (Cubic d)) (x y : Cubic d) 
   {ω | ∃ w : (cubicGraph d).Walk x y,
     walkIsOpen ω w ∧ ∀ z ∈ w.support, z ∈ A}
 
+/-- Connection from one vertex to some vertex of a target set, constrained to a region. -/
+def connectionEventWithinVerticesToSet
+    (d : ℕ) (A : Set (Cubic d)) (x : Cubic d) (B : Set (Cubic d)) :
+    Set (EdgeConfiguration d) :=
+  ⋃ y ∈ B, connectionEventWithinVertices d A x y
+
 theorem connectionEventWithinVertices_subset_connectionEvent
     (d : ℕ) (A : Set (Cubic d)) (x y : Cubic d) :
     connectionEventWithinVertices d A x y ⊆ connectionEvent d x y := by
@@ -73,6 +79,21 @@ theorem measurableSet_connectionEventWithinVertices
   rw [hrepr]
   exact MeasurableSet.iUnion fun steps ↦ MeasurableSet.iUnion fun hend ↦
     MeasurableSet.iUnion fun _hA ↦ measurableSet_walkIsOpen _
+
+theorem measurableSet_connectionEventWithinVerticesToSet
+    (d : ℕ) (A : Set (Cubic d)) (x : Cubic d) (B : Set (Cubic d)) :
+    MeasurableSet (connectionEventWithinVerticesToSet d A x B) :=
+  MeasurableSet.iUnion fun y ↦ MeasurableSet.iUnion fun _hy ↦
+    measurableSet_connectionEventWithinVertices d A x y
+
+theorem isIncreasingEvent_connectionEventWithinVerticesToSet
+    (d : ℕ) (A : Set (Cubic d)) (x : Cubic d) (B : Set (Cubic d)) :
+    IsIncreasingEvent (connectionEventWithinVerticesToSet d A x B) := by
+  intro ω η hωη hω
+  simp only [connectionEventWithinVerticesToSet, Set.mem_iUnion] at hω ⊢
+  obtain ⟨y, hyB, hconn⟩ := hω
+  exact ⟨y, hyB,
+    isIncreasingEvent_connectionEventWithinVertices d A x y hωη hconn⟩
 
 @[simp]
 theorem connectionEventWithinVertices_univ (d : ℕ) (x y : Cubic d) :
@@ -662,6 +683,23 @@ theorem regionHasInfiniteClusterProbability_pos_of_critical_lt
     exact le_csSup (regionCriticalZeroSet_bddAbove d A) hmem
   exact (not_le_of_gt hp) hle
 
+/-- In a connected region, being above its root-free critical probability gives positive
+percolation probability from every vertex of the region. -/
+theorem regionThetaFrom_pos_of_critical_lt_of_connected
+    {d : ℕ} {A : Set (Cubic d)}
+    (hAconn : (cubicRegionGraph d A).Connected) {p : I}
+    (hp : regionCriticalProbability d A < (p : ℝ))
+    {x : Cubic d} (hx : x ∈ A) :
+    0 < regionThetaFrom d A p x := by
+  have hglobal := regionHasInfiniteClusterProbability_pos_of_critical_lt hp
+  have hne : regionThetaFrom d A p x ≠ 0 := by
+    intro hxzero
+    have hglobalZero :=
+      (regionHasInfiniteClusterProbability_eq_zero_iff_regionThetaFrom_eq_zero_of_connected
+        hAconn p hx).2 hxzero
+    exact hglobal.ne' hglobalZero
+  exact lt_of_le_of_ne measureReal_nonneg hne.symm
+
 theorem regionCriticalProbability_univ (d : ℕ) :
     regionCriticalProbability d Set.univ = cubicCriticalProbability d := by
   have hsets : (((fun p : I ↦ (p : ℝ)) ''
@@ -941,6 +979,44 @@ theorem siteTheta_pos_of_criticalProbability_lt {V : Type*} [Countable V]
 /-- Grimmett's slab `ℤ² × [0,k]^(d-2)`. -/
 def cubicSlab (d k : ℕ) : Set (Cubic d) :=
   {x | ∀ i : Fin d, 2 ≤ i.val → 0 ≤ x i ∧ x i ≤ (k : ℤ)}
+
+/-- The quarter-slab `ℤ₊² × [0,k]^(d-2)` used in the proof of Lemma 7.78. -/
+def cubicQuarterSlab (d k : ℕ) : Set (Cubic d) :=
+  {x | ∀ i : Fin d, 0 ≤ x i ∧ (2 ≤ i.val → x i ≤ (k : ℤ))}
+
+@[simp]
+theorem mem_cubicQuarterSlab_iff {d k : ℕ} {x : Cubic d} :
+    x ∈ cubicQuarterSlab d k ↔
+      ∀ i : Fin d, 0 ≤ x i ∧ (2 ≤ i.val → x i ≤ (k : ℤ)) :=
+  Iff.rfl
+
+theorem cubicOrigin_mem_cubicQuarterSlab (d k : ℕ) :
+    cubicOrigin ∈ cubicQuarterSlab d k := by
+  intro i
+  simp [cubicOrigin]
+
+theorem cubicQuarterSlab_nonempty (d k : ℕ) :
+    (cubicQuarterSlab d k).Nonempty :=
+  ⟨cubicOrigin, cubicOrigin_mem_cubicQuarterSlab d k⟩
+
+theorem cubicQuarterSlab_coordinateConvex (d k : ℕ) {x y z : Cubic d}
+    (hx : x ∈ cubicQuarterSlab d k) (hy : y ∈ cubicQuarterSlab d k)
+    (hz : CubicCoordinateBetween x y z) : z ∈ cubicQuarterSlab d k := by
+  intro i
+  have hxi := hx i
+  have hyi := hy i
+  constructor
+  · rcases hz i with hzi | hzi <;> omega
+  · intro hi
+    rcases hz i with hzi | hzi
+    · exact hzi.2.trans (hyi.2 hi)
+    · exact hzi.2.trans (hxi.2 hi)
+
+theorem cubicRegionGraph_cubicQuarterSlab_connected (d k : ℕ) :
+    (cubicRegionGraph d (cubicQuarterSlab d k)).Connected :=
+  cubicRegionGraph_connected_of_coordinateConvex (cubicQuarterSlab_nonempty d k)
+    (fun {x} hx {y} hy {z} hz ↦
+      cubicQuarterSlab_coordinateConvex d k (x := x) (y := y) (z := z) hx hy hz)
 
 @[simp]
 theorem cubicSlab_two (k : ℕ) : cubicSlab 2 k = Set.univ := by

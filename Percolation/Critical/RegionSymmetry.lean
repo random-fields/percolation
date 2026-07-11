@@ -102,6 +102,56 @@ theorem bernoulliBondMeasure_real_connectionEventWithinVertices_graphIso
     (measurableSet_connectionEventWithinVertices d A x y), hpre] at hmap
   exact hmap.symm
 
+/-- A constrained connection to a target set is transported exactly by a cubic graph
+automorphism. -/
+theorem cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVerticesToSet_iff
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (A B : Set (Cubic d))
+    (ω : EdgeConfiguration d) (x : Cubic d) :
+    cubicGraphIsoConfigurationPullback F ω ∈
+        connectionEventWithinVerticesToSet d A x B ↔
+      ω ∈ connectionEventWithinVerticesToSet d
+        (cubicGraphIsoRegion F A) (F x) (cubicGraphIsoRegion F B) := by
+  simp only [connectionEventWithinVerticesToSet, Set.mem_iUnion]
+  constructor
+  · rintro ⟨y, hyB, hxy⟩
+    exact ⟨F y, (cubicGraphIso_mem_region_iff F B y).2 hyB,
+      (cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_iff
+        F A ω x y).1 hxy⟩
+  · rintro ⟨z, hzB, hxz⟩
+    obtain ⟨y, hyB, rfl⟩ := hzB
+    exact ⟨y, hyB,
+      (cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_iff
+        F A ω x y).2 hxz⟩
+
+/-- Bernoulli probability of a constrained connection to a target set is invariant under
+cubic graph automorphisms. -/
+theorem bernoulliBondMeasure_real_connectionEventWithinVerticesToSet_graphIso
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (A B : Set (Cubic d))
+    (p : I) (x : Cubic d) :
+    (bernoulliBondMeasure d p).real
+        (connectionEventWithinVerticesToSet d A x B) =
+      (bernoulliBondMeasure d p).real
+        (connectionEventWithinVerticesToSet d
+          (cubicGraphIsoRegion F A) (F x) (cubicGraphIsoRegion F B)) := by
+  let T := cubicGraphIsoConfigurationPullback F
+  have hpre : T ⁻¹' connectionEventWithinVerticesToSet d A x B =
+      connectionEventWithinVerticesToSet d
+        (cubicGraphIsoRegion F A) (F x) (cubicGraphIsoRegion F B) := by
+    ext ω
+    exact cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVerticesToSet_iff
+      F A B ω x
+  have hmap := congrArg
+    (fun μ : Measure (EdgeConfiguration d) ↦
+      μ.real (connectionEventWithinVerticesToSet d A x B))
+    (bernoulliBondMeasure_map_cubicGraphIsoConfigurationPullback p F)
+  change (Measure.map T (bernoulliBondMeasure d p)).real
+      (connectionEventWithinVerticesToSet d A x B) =
+    (bernoulliBondMeasure d p).real
+      (connectionEventWithinVerticesToSet d A x B) at hmap
+  rw [map_measureReal_apply (measurable_cubicGraphIsoConfigurationPullback F)
+    (measurableSet_connectionEventWithinVerticesToSet d A x B), hpre] at hmap
+  exact hmap.symm
+
 private theorem hasOpenPathOfLengthAtLeastWithinVertices_graphIso
     {d n : ℕ} {A : Set (Cubic d)} {ω : EdgeConfiguration d}
     (F : cubicGraph d ≃g cubicGraph d) (x : Cubic d)

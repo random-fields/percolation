@@ -13,6 +13,7 @@ import Percolation.Critical.StaticBlockPath
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
+import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -233,3 +234,9 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.epsilonGoodBox_probability_tendsto_one_of_uniformFiniteSlab
 #print axioms Percolation.halfSpaceTheta_critical_eq_zero_of_reliableBricks
 #print axioms Percolation.slabCriticalProbability_tendsto_cubicCriticalProbability_of_approximation
+#print axioms Percolation.regionThetaFrom_pos_of_critical_lt_of_connected
+#print axioms Percolation.bernoulliBondMeasure_real_connectionEventWithinVerticesToSet_graphIso
+#print axioms Percolation.infiniteQuarterSlabCluster_subset_slabCornerOriginExitEvent
+#print axioms Percolation.regionThetaFrom_half_le_slabCornerConnectionEvent
+#print axioms Percolation.slabCornerAllConnectionLowerBound_pos
+#print axioms Percolation.slabCornerAllConnectionLowerBound_le

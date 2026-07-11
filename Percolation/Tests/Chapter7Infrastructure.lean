@@ -19,6 +19,7 @@ import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
+import Percolation.Critical.FiniteSlabLowerBound
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -734,5 +735,27 @@ example (d : ℕ) (hd : 2 ≤ d) {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂)
       (bernoulliBondMeasure d p₂).real
         (allSlabCornersConnectedEvent d m L) :=
   slabCornersConnected_probability_ge d hd h12 m L hδ hprob
+
+example (d L : ℕ) : cubicOrigin ∈ cubicQuarterSlab d L :=
+  cubicOrigin_mem_cubicQuarterSlab d L
+
+example (d : ℕ) (hd : 2 ≤ d) (p : I) (m L : ℕ) (k : Fin 4) :
+    regionThetaFrom d (cubicQuarterSlab d L) p cubicOrigin / 2 ≤
+      (bernoulliBondMeasure d p).real
+        (slabCornerConnectionEvent d hd m L k) :=
+  regionThetaFrom_half_le_slabCornerConnectionEvent d hd p m L k
+
+example (d L : ℕ) {p₁ p₂ : I}
+    (hcrit : regionCriticalProbability d (cubicQuarterSlab d L) < (p₁ : ℝ))
+    (h12 : (p₁ : ℝ) < p₂) :
+    0 < slabCornerAllConnectionLowerBound d L p₁ p₂ :=
+  slabCornerAllConnectionLowerBound_pos d L hcrit h12
+
+example (d : ℕ) (hd : 2 ≤ d) (L : ℕ) {p₁ p₂ : I}
+    (h12 : (p₁ : ℝ) < p₂) (m : ℕ) :
+    slabCornerAllConnectionLowerBound d L p₁ p₂ ≤
+      (bernoulliBondMeasure d p₂).real
+        (allSlabCornersConnectedEvent d m L) :=
+  slabCornerAllConnectionLowerBound_le d hd L h12 m
 
 end Percolation

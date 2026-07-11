@@ -272,3 +272,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.IsInvariantUnderFiniteClosing.measurableSet_tail
 #print axioms Percolation.bernoulli_zero_or_one_of_invariantUnderFiniteClosing
 #print axioms Percolation.separatedAxisEdge_injective
+#print axioms Percolation.SimpleGraph.Connected.reachable_deleteEdges_endpoint_cover
+#print axioms Percolation.SimpleGraph.Connected.exists_infinite_reachable_deleteEdges_singleton

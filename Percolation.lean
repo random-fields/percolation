@@ -51,6 +51,7 @@ import Percolation.Critical.ClusterMoments
 import Percolation.Critical.ClusterExponential
 import Percolation.Critical.AnimalConcatenation
 import Percolation.Critical.AnchoredAnimals
+import Percolation.Critical.ClusterSizeRate
 import Percolation.Critical.RadiusDecay
 import Percolation.Critical.ClusterTail
 import Percolation.Critical.MenshikovBootstrap

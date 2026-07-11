@@ -101,15 +101,16 @@ theorem CubicCoordinateBetween.trans_right {d : ℕ} {x y z w : Cubic d}
   intro i
   rcases hz i with hz | hz <;> rcases hw i with hw | hw <;> omega
 
-/-- Coordinate-by-coordinate motion can be chosen so every intermediate vertex remains in the
-coordinate rectangle spanned by the endpoints. -/
-theorem exists_cubicWalk_support_between (d : ℕ) (x y : Cubic d) :
+/-- Coordinate-by-coordinate motion can be chosen with exact Manhattan length while every
+intermediate vertex remains in the coordinate rectangle spanned by the endpoints. -/
+theorem exists_cubicWalk_length_eq_l1Dist_support_between (d : ℕ) (x y : Cubic d) :
     ∃ w : (cubicGraph d).Walk x y,
-      ∀ z ∈ w.support, CubicCoordinateBetween x y z := by
+      w.length = cubicL1Dist x y ∧
+        ∀ z ∈ w.support, CubicCoordinateBetween x y z := by
   classical
   suffices h : ∀ (n : ℕ) (x : Cubic d), cubicL1Dist x y = n →
       ∃ w : (cubicGraph d).Walk x y,
-        ∀ z ∈ w.support, CubicCoordinateBetween x y z by
+        w.length = n ∧ ∀ z ∈ w.support, CubicCoordinateBetween x y z by
     exact h (cubicL1Dist x y) x rfl
   intro n
   induction n using Nat.strong_induction_on with
@@ -117,7 +118,7 @@ theorem exists_cubicWalk_support_between (d : ℕ) (x y : Cubic d) :
     intro x hx
     by_cases hxy : x = y
     · subst y
-      exact ⟨SimpleGraph.Walk.nil, by
+      exact ⟨SimpleGraph.Walk.nil, by simpa using hx, by
         intro z hz
         simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hz
         subst z
@@ -167,13 +168,24 @@ theorem exists_cubicWalk_support_between (d : ℕ) (x y : Cubic d) :
             exact Or.inr ⟨by omega, by omega⟩
         · rw [hstep_ne j hji]
           exact cubicCoordinateBetween_left x y j
-      obtain ⟨w, hw⟩ := ih (cubicL1Dist x' y) (by omega) x' rfl
-      refine ⟨SimpleGraph.Walk.cons (cubicGraph_adj_stepFrom x a) w, ?_⟩
+      obtain ⟨w, hwlen, hw⟩ := ih (cubicL1Dist x' y) (by omega) x' rfl
+      refine ⟨SimpleGraph.Walk.cons (cubicGraph_adj_stepFrom x a) w, ?_, ?_⟩
+      · simp only [SimpleGraph.Walk.length_cons]
+        omega
       intro z hz
       simp only [SimpleGraph.Walk.support_cons, List.mem_cons] at hz
       rcases hz with rfl | hz
       · exact cubicCoordinateBetween_left _ _
       · exact hstepBetween.trans_right (hw z hz)
+
+/-- Coordinate-by-coordinate motion can be chosen so every intermediate vertex remains in the
+coordinate rectangle spanned by the endpoints. -/
+theorem exists_cubicWalk_support_between (d : ℕ) (x y : Cubic d) :
+    ∃ w : (cubicGraph d).Walk x y,
+      ∀ z ∈ w.support, CubicCoordinateBetween x y z := by
+  obtain ⟨w, _hwlen, hw⟩ :=
+    exists_cubicWalk_length_eq_l1Dist_support_between d x y
+  exact ⟨w, hw⟩
 
 /-- Coordinate-convex subsets induce connected subgraphs of the cubic lattice. -/
 theorem cubicRegionGraph_connected_of_coordinateConvex {d : ℕ} {A : Set (Cubic d)}

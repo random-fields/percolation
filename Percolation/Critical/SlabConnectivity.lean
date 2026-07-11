@@ -393,4 +393,112 @@ theorem slabCornersConnected_probability_ge_of_boundedRepair
         (isIncreasingEvent_allSlabCornersConnectedEvent d m L).bernoulliBondMeasure_real_upwardDistanceAtMost_le
           (measurableSet_allSlabCornersConnectedEvent d m L) h12 K
 
+/-! ### Quantitative transverse lifts of projected intersections -/
+
+/-- Two vertices of `U_m(L)` with the same first two coordinates are at Manhattan distance at
+most `(d-2)L`. -/
+theorem cubicL1Dist_le_sub_two_mul_of_mem_slabCorner_of_agree_first_two
+    {d m L : ℕ} (hd : 2 ≤ d) {u v : Cubic d}
+    (hu : u ∈ slabCornerBoxVertices d m L)
+    (hv : v ∈ slabCornerBoxVertices d m L)
+    (hagrees : ∀ i : Fin d, i.val < 2 → u i = v i) :
+    cubicL1Dist u v ≤ (d - 2) * L := by
+  classical
+  rw [cubicL1Dist]
+  calc
+    (∑ i : Fin d, (v i - u i).natAbs) ≤
+        ∑ i : Fin d, if i.val < 2 then 0 else L := by
+      apply Finset.sum_le_sum
+      intro i _hi
+      by_cases hi : i.val < 2
+      · simp [hi, hagrees i hi]
+      · simp only [hi, ↓reduceIte]
+        have hui := mem_slabCornerBoxVertices_iff.mp hu i
+        have hvi := mem_slabCornerBoxVertices_iff.mp hv i
+        rw [if_neg hi] at hui hvi
+        apply Int.ofNat_le.mp
+        rw [Int.natCast_natAbs, abs_le]
+        constructor <;> omega
+    _ = (d - 2) * L := by
+      have hlt : ((Finset.univ : Finset (Fin d)).filter
+          fun i ↦ i.val < 2).card = 2 := by
+        have h := Fin.card_filter_val_lt (n := d) (m := 2)
+        simpa [Nat.min_eq_right hd] using h
+      have hge : ((Finset.univ : Finset (Fin d)).filter
+          fun i ↦ ¬ i.val < 2).card = d - 2 := by
+        have hpartition := Finset.card_filter_add_card_filter_not
+          (s := (Finset.univ : Finset (Fin d))) (p := fun i ↦ i.val < 2)
+        simp only [hlt, Finset.card_univ, Fintype.card_fin] at hpartition
+        omega
+      rw [show (∑ i : Fin d, if i.val < 2 then 0 else L) =
+          ∑ i ∈ (Finset.univ : Finset (Fin d)).filter (fun i ↦ ¬ i.val < 2), L by
+        rw [Finset.sum_filter]
+        apply Finset.sum_congr rfl
+        intro i _hi
+        by_cases hi : i.val < 2 <;> simp [hi]]
+      rw [Finset.sum_const, nsmul_eq_mul, hge]
+      simp
+
+/-- A projected intersection can be lifted inside `U_m(L)` by a self-avoiding transverse walk
+of length at most `(d-2)L`. -/
+theorem exists_transverse_cubicPath_in_slabCorner
+    {d m L : ℕ} (hd : 2 ≤ d) {u v : Cubic d}
+    (hu : u ∈ slabCornerBoxVertices d m L)
+    (hv : v ∈ slabCornerBoxVertices d m L)
+    (hagrees : ∀ i : Fin d, i.val < 2 → u i = v i) :
+    ∃ w : (cubicGraph d).Walk u v,
+      w.IsPath ∧ w.length ≤ (d - 2) * L ∧
+        ∀ z ∈ w.support, z ∈ slabCornerBoxVertices d m L := by
+  obtain ⟨w, hwlen, hwbetween⟩ :=
+    exists_cubicWalk_length_eq_l1Dist_support_between d u v
+  let q : (cubicGraph d).Walk u v := w.toPath
+  have hqlen : q.length ≤ w.length := by
+    simpa [q, SimpleGraph.Walk.toPath] using SimpleGraph.Walk.length_bypass_le w
+  refine ⟨q, by simp [q], hqlen.trans (hwlen.trans_le
+    (cubicL1Dist_le_sub_two_mul_of_mem_slabCorner_of_agree_first_two
+      hd hu hv hagrees)), ?_⟩
+  intro z hz
+  have hzbetween := hwbetween z (w.support_toPath_subset hz)
+  rw [mem_slabCornerBoxVertices_iff]
+  intro i
+  have hui := mem_slabCornerBoxVertices_iff.mp hu i
+  have hvi := mem_slabCornerBoxVertices_iff.mp hv i
+  by_cases hi : i.val < 2
+  · rw [if_pos hi] at hui hvi ⊢
+    rcases hzbetween i with hzbetween | hzbetween <;> omega
+  · rw [if_neg hi] at hui hvi ⊢
+    rcases hzbetween i with hzbetween | hzbetween <;> omega
+
+/-- Opening at most `(d-2)L` currently closed transverse bonds joins two lifted vertices whose
+first two coordinates agree.  This is the local repair used at each projected planar
+intersection in the proof of (7.83). -/
+theorem mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_agree_first_two
+    {d m L : ℕ} (hd : 2 ≤ d) {u v : Cubic d}
+    (hu : u ∈ slabCornerBoxVertices d m L)
+    (hv : v ∈ slabCornerBoxVertices d m L)
+    (hagrees : ∀ i : Fin d, i.val < 2 → u i = v i)
+    (ω : EdgeConfiguration d) :
+    ω ∈ upwardDistanceAtMost ((d - 2) * L)
+      (connectionEventWithinVertices d
+        (slabCornerBoxVertices d m L : Set (Cubic d)) u v) := by
+  classical
+  obtain ⟨w, hwPath, hwlen, hwsupport⟩ :=
+    exists_transverse_cubicPath_in_slabCorner hd hu hv hagrees
+  let D : Finset (CubicEdge d) := (walkEdgeFinset w).filter fun e ↦ e ∉ ω
+  refine ⟨D, ?_, ?_, ?_⟩
+  · calc
+      D.card ≤ (walkEdgeFinset w).card := Finset.card_filter_le _ _
+      _ = w.length := walkEdgeFinset_card_of_isTrail hwPath.isTrail
+      _ ≤ (d - 2) * L := hwlen
+  · rw [Set.disjoint_left]
+    intro e heD heω
+    exact (Finset.mem_filter.mp (Finset.mem_coe.mp heD)).2 heω
+  · refine ⟨w, ?_, hwsupport⟩
+    intro e he
+    let e' : CubicEdge d := ⟨e, w.edges_subset_edgeSet he⟩
+    have heE : e' ∈ walkEdgeFinset w := (mem_walkEdgeFinset_iff w e').mpr he
+    by_cases heω : e' ∈ ω
+    · exact Or.inl heω
+    · exact Or.inr (Finset.mem_coe.mpr (Finset.mem_filter.mpr ⟨heE, heω⟩))
+
 end Percolation

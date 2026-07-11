@@ -292,4 +292,50 @@ theorem infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
   rw [hEq]
   simpa [μ, C] using (tendsto_const_nhds (x := (1 : ℝ))).sub hfailure
 
+/-! ### Ratio-free peeling recursion for Lemma 7.89 -/
+
+/-- Iterating a ratio-free one-step estimate.  This is the safe form of multiplying the
+conditional probabilities in (7.93): it remains meaningful even when an earlier peeling event
+has probability zero. -/
+theorem measureReal_peeling_le_pow_mul
+    {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
+    (A : ℕ → Set Ω) (q : ℝ) (hq : 0 ≤ q)
+    (hstep : ∀ k, μ.real (A (k + 1)) ≤ q * μ.real (A k)) :
+    ∀ K, μ.real (A K) ≤ q ^ K * μ.real (A 0) := by
+  intro K
+  induction K with
+  | zero => simp
+  | succ K ih =>
+      calc
+        μ.real (A (K + 1)) ≤ q * μ.real (A K) := hstep K
+        _ ≤ q * (q ^ K * μ.real (A 0)) :=
+          mul_le_mul_of_nonneg_left ih hq
+        _ = q ^ (K + 1) * μ.real (A 0) := by
+          rw [pow_succ]
+          ring
+
+/-- Since a probability is at most one, the peeling recursion has the simpler upper bound
+`q^K`. -/
+theorem measureReal_peeling_le_pow
+    {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (A : ℕ → Set Ω) (q : ℝ) (hq : 0 ≤ q)
+    (hstep : ∀ k, μ.real (A (k + 1)) ≤ q * μ.real (A k)) (K : ℕ) :
+    μ.real (A K) ≤ q ^ K := by
+  calc
+    μ.real (A K) ≤ q ^ K * μ.real (A 0) :=
+      measureReal_peeling_le_pow_mul μ A q hq hstep K
+    _ ≤ q ^ K * 1 :=
+      mul_le_mul_of_nonneg_left measureReal_le_one (pow_nonneg hq K)
+    _ = q ^ K := mul_one _
+
+/-- Event-containment form used for the terminal two-arm event after `K` peeled layers. -/
+theorem measureReal_event_le_pow_of_peeling
+    {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (E : Set Ω) (A : ℕ → Set Ω) (q : ℝ) (hq : 0 ≤ q) (K : ℕ)
+    (hEA : E ⊆ A K)
+    (hstep : ∀ k, μ.real (A (k + 1)) ≤ q * μ.real (A k)) :
+    μ.real E ≤ q ^ K :=
+  (measureReal_mono hEA (measure_ne_top _ _)).trans
+    (measureReal_peeling_le_pow μ A q hq hstep K)
+
 end Percolation

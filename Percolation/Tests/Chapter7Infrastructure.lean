@@ -339,6 +339,17 @@ example {d : ℕ} {A : Set (EdgeConfiguration d)}
       (bernoulliBondMeasure d p₂).real A :=
   hAinc.bernoulliBondMeasure_real_upwardDistanceAtMost_le hAm h12 r
 
+example {d m L : ℕ} (hd : 2 ≤ d) {u v : Cubic d}
+    (hu : u ∈ slabCornerBoxVertices d m L)
+    (hv : v ∈ slabCornerBoxVertices d m L)
+    (hagrees : ∀ i : Fin d, i.val < 2 → u i = v i)
+    (ω : EdgeConfiguration d) :
+    ω ∈ upwardDistanceAtMost ((d - 2) * L)
+      (connectionEventWithinVertices d
+        (slabCornerBoxVertices d m L : Set (Cubic d)) u v) :=
+  mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_agree_first_two
+    hd hu hv hagrees ω
+
 example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
     (hrR : ∀ n, r n ≤ R n)
     (hpair : ∀ n, ∀ x ∈ cubicMetricBox d cubicOrigin (r n),
@@ -354,6 +365,13 @@ example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
       Filter.atTop (nhds 1) :=
   infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
     p r R q hrR hpair hdecay
+
+example {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (E : Set Ω) (A : ℕ → Set Ω) (q : ℝ) (hq : 0 ≤ q) (K : ℕ)
+    (hEA : E ⊆ A K)
+    (hstep : ∀ k, μ.real (A (k + 1)) ≤ q * μ.real (A k)) :
+    μ.real E ≤ q ^ K :=
+  measureReal_event_le_pow_of_peeling μ E A q hq K hEA hstep
 
 example {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (n m q : ℕ)
     (hmn : m ≤ n)

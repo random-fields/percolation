@@ -310,6 +310,100 @@ theorem reachable_between_of_mem_occupiedLimit (E : SiteExploration V)
   (E.reachable_of_mem_occupiedLimit answer root hinitial hu).symm.trans
     (E.reachable_of_mem_occupiedLimit answer root hinitial hv)
 
+/-! ### Connectivity through accepted sites
+
+`RootedAt` above records ambient reachability, which is useful for coarse geometry but is not
+strong enough by itself to produce a site-open cluster: an ambient witness may pass through
+rejected vertices.  The strengthened invariant below retains an explicit walk supported by the
+accepted set. -/
+
+/-- Every accepted site is joined to `root` by a walk whose entire support is accepted, and
+every frontier site has an accepted neighbor. -/
+def OpenRootedAt (E : SiteExploration V) (root : V) (s : SiteExplorationState V) : Prop :=
+  root ∈ s.occupied ∧
+    (∀ v ∈ s.occupied, ∃ w : E.graph.Walk root v,
+      ∀ z ∈ w.support, z ∈ s.occupied) ∧
+    ∀ v ∈ s.frontier, ∃ u ∈ s.occupied, E.graph.Adj u v
+
+theorem step_openRootedAt (E : SiteExploration V) (answer : V → Bool) (root : V)
+    {s : SiteExplorationState V} (hs : E.OpenRootedAt root s) :
+    E.OpenRootedAt root (E.step answer s) := by
+  classical
+  unfold OpenRootedAt at hs ⊢
+  unfold step
+  split
+  · exact hs
+  next v hnext =>
+    have hvfront : v ∈ s.frontier := mem_frontier_of_nextVertex_eq_some hnext
+    obtain ⟨u, huocc, huv⟩ := hs.2.2 v hvfront
+    split
+    · refine ⟨Finset.mem_insert_of_mem hs.1, ?_, ?_⟩
+      · intro z hz
+        rw [Finset.mem_insert] at hz
+        rcases hz with hzEq | hz
+        · subst z
+          obtain ⟨w, hw⟩ := hs.2.1 u huocc
+          let stepWalk : E.graph.Walk u v :=
+            SimpleGraph.Walk.cons huv SimpleGraph.Walk.nil
+          refine ⟨w.append stepWalk, ?_⟩
+          intro a ha
+          rw [SimpleGraph.Walk.mem_support_append_iff] at ha
+          rcases ha with ha | ha
+          · exact Finset.mem_insert_of_mem (hw a ha)
+          · simp only [stepWalk, SimpleGraph.Walk.support_cons, List.mem_cons,
+              SimpleGraph.Walk.support_nil] at ha
+            rcases ha with hau | ha
+            · rw [hau]
+              exact Finset.mem_insert_of_mem huocc
+            · rcases ha with hav | ha
+              · rw [hav]
+                exact Finset.mem_insert_self v s.occupied
+              · simp at ha
+        · obtain ⟨w, hw⟩ := hs.2.1 z hz
+          exact ⟨w, fun a ha ↦ Finset.mem_insert_of_mem (hw a ha)⟩
+      · intro z hz
+        have hz' := Finset.mem_sdiff.mp hz
+        rw [Finset.mem_union] at hz'
+        rcases hz'.1 with hzold | hznew
+        · obtain ⟨w, hwocc, hwz⟩ := hs.2.2 z (Finset.mem_of_mem_erase hzold)
+          exact ⟨w, Finset.mem_insert_of_mem hwocc, hwz⟩
+        · exact ⟨v, Finset.mem_insert_self v s.occupied, (E.mem_neighbors).mp hznew⟩
+    · refine ⟨hs.1, hs.2.1, ?_⟩
+      intro z hz
+      exact hs.2.2 z (Finset.mem_of_mem_erase hz)
+
+theorem stateAfter_openRootedAt (E : SiteExploration V) (answer : V → Bool) (root : V)
+    (hinitial : E.OpenRootedAt root E.initial) (n : ℕ) :
+    E.OpenRootedAt root (E.stateAfter answer n) := by
+  induction n with
+  | zero => exact hinitial
+  | succ n ih => exact E.step_openRootedAt answer root ih
+
+/-- Every limiting accepted site has a root path supported entirely by the limiting accepted
+set. -/
+theorem exists_open_walk_of_mem_occupiedLimit (E : SiteExploration V)
+    (answer : V → Bool) (root : V) (hinitial : E.OpenRootedAt root E.initial)
+    {v : V} (hv : v ∈ E.occupiedLimit answer) :
+    ∃ w : E.graph.Walk root v,
+      ∀ z ∈ w.support, z ∈ E.occupiedLimit answer := by
+  obtain ⟨n, hvn⟩ := hv
+  obtain ⟨w, hw⟩ := (E.stateAfter_openRootedAt answer root hinitial n).2.1 v hvn
+  exact ⟨w, fun z hz ↦ E.occupied_subset_occupiedLimit answer n (hw z hz)⟩
+
+/-- The limiting accepted set is contained in the site-open component of its root. -/
+theorem occupiedLimit_subset_siteOpenCluster (E : SiteExploration V)
+    (answer : V → Bool) (root : V) (hinitial : E.OpenRootedAt root E.initial) :
+    E.occupiedLimit answer ⊆ siteOpenCluster E.graph (E.occupiedLimit answer) root := by
+  intro v hv
+  exact E.exists_open_walk_of_mem_occupiedLimit answer root hinitial hv
+
+/-- An infinite limiting accepted set therefore contains an infinite site-open cluster. -/
+theorem hasInfiniteSiteCluster_occupiedLimit_of_infinite (E : SiteExploration V)
+    (answer : V → Bool) (root : V) (hinitial : E.OpenRootedAt root E.initial)
+    (hInf : (E.occupiedLimit answer).Infinite) :
+    hasInfiniteSiteCluster E.graph (E.occupiedLimit answer) := by
+  exact ⟨root, hInf.mono (E.occupiedLimit_subset_siteOpenCluster answer root hinitial)⟩
+
 end SiteExploration
 
 end Percolation

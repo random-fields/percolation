@@ -1,5 +1,6 @@
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.DynamicRenormalization
+import Percolation.Critical.ExplorationLaw
 
 /-!
 # Stochastic domination adapters for site explorations
@@ -64,5 +65,20 @@ theorem historySuccessLowerBound_conditional_of_pos {Ω : Type*} [MeasurableSpac
     (hh : 0 < μ.real history) :
     γ ≤ μ.real (success ∩ history) / μ.real history :=
   h.conditionalRatio hh
+
+/-- Lemma 7.24 in its ratio-free exploration-law interface.  If every finite prefix of the
+actual limiting-output law satisfies the uniform success lower bound, and the deterministic
+exploration invariant records paths through accepted sites, then the exploration produces an
+infinite occupied component with positive probability. -/
+theorem siteExploration_infinite_probability_pos
+    {V : Type*} [Countable V] [DecidableEq V] [LinearOrder V]
+    (E : SiteExploration V) (μ : Measure (Set V)) [IsProbabilityMeasure μ]
+    (e : ℕ ≃ V) (p : I) (hp : 0 < (p : ℝ)) (root : V)
+    (hinitial : E.OpenRootedAt root E.initial)
+    (hseq : E.OccupiedLimitHasPrefixLowerBound μ e (p : ℝ)) :
+    0 < μ.real {η : Set V |
+      hasInfiniteSiteCluster E.graph (E.occupiedLimit (configurationAnswer η))} :=
+  E.occupiedLimit_hasInfiniteSiteCluster_probability_pos_of_prefixLowerBound
+    μ e p hp root hinitial hseq
 
 end Percolation

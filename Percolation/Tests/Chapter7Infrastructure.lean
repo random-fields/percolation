@@ -62,6 +62,22 @@ example {V W : Type*} [Countable V] [Countable W]
     siteCriticalProbability H = siteCriticalProbability G :=
   siteCriticalProbability_graphIso F
 
+example {V : Type*} [DecidableEq V] [LinearOrder V]
+    (E : SiteExploration V) (answer : V → Bool) (root : V)
+    (hinitial : E.OpenRootedAt root E.initial)
+    (hInf : (E.occupiedLimit answer).Infinite) :
+    hasInfiniteSiteCluster E.graph (E.occupiedLimit answer) :=
+  E.hasInfiniteSiteCluster_occupiedLimit_of_infinite answer root hinitial hInf
+
+example {V : Type*} [Countable V] [DecidableEq V] [LinearOrder V]
+    (E : SiteExploration V) (μ : Measure (Set V)) [IsProbabilityMeasure μ]
+    (e : ℕ ≃ V) (p : I) (hp : 0 < (p : ℝ)) (root : V)
+    (hinitial : E.OpenRootedAt root E.initial)
+    (hseq : E.OccupiedLimitHasPrefixLowerBound μ e (p : ℝ)) :
+    0 < μ.real {η : Set V |
+      hasInfiniteSiteCluster E.graph (E.occupiedLimit (configurationAnswer η))} :=
+  siteExploration_infinite_probability_pos E μ e p hp root hinitial hseq
+
 example (d n N : ℕ) (x : Cubic d) : twoArmSeparationEvent d n N x x = ∅ :=
   twoArmSeparationEvent_self d n N x
 

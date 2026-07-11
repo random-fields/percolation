@@ -200,6 +200,21 @@ theorem occupiedLimit_infinite_probability_pos_of_prefixLowerBound
     E.measurable_occupiedLimit_configurationAnswer hInf] at hout
   exact hout
 
+/-- Strengthened exploration conclusion: under the accepted-site rooted invariant, an infinite
+output is not merely an infinite set but an infinite site-open cluster of the exploration graph.
+This closes the semantic gap between cardinality and connectivity in Lemma 7.24. -/
+theorem occupiedLimit_hasInfiniteSiteCluster_probability_pos_of_prefixLowerBound
+    (E : SiteExploration V) (μ : Measure (Set V)) [IsProbabilityMeasure μ]
+    (e : ℕ ≃ V) (p : I) (hp : 0 < (p : ℝ)) (root : V)
+    (hinitial : E.OpenRootedAt root E.initial)
+    (hseq : E.OccupiedLimitHasPrefixLowerBound μ e (p : ℝ)) :
+    0 < μ.real {η : Set V |
+      hasInfiniteSiteCluster E.graph (E.occupiedLimit (configurationAnswer η))} := by
+  have hInf := E.occupiedLimit_infinite_probability_pos_of_prefixLowerBound μ e p hp hseq
+  exact hInf.trans_le <| measureReal_mono fun η hη ↦
+    E.hasInfiniteSiteCluster_occupiedLimit_of_infinite
+      (configurationAnswer η) root hinitial hη
+
 end SiteExploration
 
 end Percolation

@@ -1,3 +1,4 @@
+import Percolation.Bernoulli.StochasticDomination
 import Percolation.Critical.Regions
 import Mathlib.Combinatorics.SimpleGraph.Diam
 import Mathlib.Data.Prod.Lex
@@ -477,6 +478,79 @@ instance epsilonGoodBlockLaw_isProbabilityMeasure
   unfold epsilonGoodBlockLaw
   exact Measure.isProbabilityMeasure_map
     (measurable_epsilonGoodBlockField d p ε n).aemeasurable
+
+theorem epsilonGoodBlockLaw_real_mem
+    (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (x : Cubic d) :
+    (epsilonGoodBlockLaw d p ε n).real {η : Set (Cubic d) | x ∈ η} =
+      (bernoulliBondMeasure d p).real
+        (epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n) := by
+  rw [epsilonGoodBlockLaw]
+  exact MeasureTheory.map_measureReal_apply
+    (measurable_epsilonGoodBlockField d p ε n) (measurableSet_mem x)
+
+/-- Underlying bond coordinates queried by a family of coarse blocks. -/
+def epsilonGoodBlockEdgeSupportSet
+    (d n : ℕ) (A : Set (Cubic d)) : Set (CubicEdge d) :=
+  ⋃ x : A, (cubicBoxEdges d (epsilonGoodBlockCenter n x.1) n : Set (CubicEdge d))
+
+theorem disjoint_epsilonGoodBlockEdgeSupportSet {d n : ℕ} (hn : 1 ≤ n)
+    {A B : Set (Cubic d)}
+    (hsep : ∀ x ∈ A, ∀ y ∈ B, ((3 * d : ℕ) : ℕ∞) < (cubicGraph d).edist x y) :
+    Disjoint (epsilonGoodBlockEdgeSupportSet d n A)
+      (epsilonGoodBlockEdgeSupportSet d n B) := by
+  rw [Set.disjoint_left]
+  intro e heA heB
+  obtain ⟨x, hex⟩ := Set.mem_iUnion.mp heA
+  obtain ⟨y, hey⟩ := Set.mem_iUnion.mp heB
+  have hfarE := hsep x.1 x.2 y.1 y.2
+  obtain ⟨w⟩ := nonempty_cubicWalk d x.1 y.1
+  have hreach : (cubicGraph d).Reachable x.1 y.1 := ⟨w⟩
+  have hfar : 3 * d < cubicL1Dist x.1 y.1 := by
+    rw [← hreach.coe_dist_eq_edist, cubicGraph_dist_eq_l1Dist] at hfarE
+    exact_mod_cast hfarE
+  exact Finset.disjoint_left.mp
+    (disjoint_cubicBoxEdges_epsilonGoodBlockCenter hn hfar) hex hey
+
+theorem comap_epsilonGoodBlockField_siteCoordinate_le
+    (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (A : Set (Cubic d)) :
+    MeasurableSpace.comap (epsilonGoodBlockField d p ε n)
+        (siteCoordinateMeasurableSpace (Cubic d) A) ≤
+      MeasurableSpace.generateFrom
+        (coordinateEvents (epsilonGoodBlockEdgeSupportSet d n A)) := by
+  rw [siteCoordinateMeasurableSpace, MeasurableSpace.comap_generateFrom]
+  apply MeasurableSpace.generateFrom_le
+  intro t ht
+  obtain ⟨s, hs, rfl⟩ := ht
+  obtain ⟨x, hx, rfl⟩ := hs
+  change MeasurableSet[MeasurableSpace.generateFrom
+      (coordinateEvents (epsilonGoodBlockEdgeSupportSet d n A))]
+    (epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n)
+  apply (dependsOn_epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n).measurableSet_generateFrom_coordinateEvents
+  intro e he
+  apply Set.mem_iUnion.mpr
+  exact ⟨⟨x, hx⟩, he⟩
+
+theorem epsilonGoodBlockLaw_kDependent
+    (d : ℕ) (p : I) (ε : ℝ) {n : ℕ} (hn : 1 ≤ n) :
+    KDependent (cubicGraph d) (3 * d) (epsilonGoodBlockLaw d p ε n) := by
+  intro A B hsep
+  have hsupports : Disjoint (epsilonGoodBlockEdgeSupportSet d n A)
+      (epsilonGoodBlockEdgeSupportSet d n B) :=
+    disjoint_epsilonGoodBlockEdgeSupportSet hn hsep
+  have hbase := indep_generateFrom_coordinateEvents p hsupports
+  have hcomap : Indep
+      (MeasurableSpace.comap (epsilonGoodBlockField d p ε n)
+        (siteCoordinateMeasurableSpace (Cubic d) A))
+      (MeasurableSpace.comap (epsilonGoodBlockField d p ε n)
+        (siteCoordinateMeasurableSpace (Cubic d) B))
+      (bernoulliBondMeasure d p) := by
+    apply indep_of_indep_of_le hbase
+    · exact comap_epsilonGoodBlockField_siteCoordinate_le d p ε n A
+    · exact comap_epsilonGoodBlockField_siteCoordinate_le d p ε n B
+  unfold epsilonGoodBlockLaw
+  exact Indep.map_measure (measurable_epsilonGoodBlockField d p ε n)
+    (siteCoordinateMeasurableSpace_le (Cubic d) A)
+    (siteCoordinateMeasurableSpace_le (Cubic d) B) hcomap
 
 /-- There is a crossing component containing at least `q` vertices. -/
 def largeCrossingClusterEvent (d q n : ℕ) (x : Cubic d) : Set (EdgeConfiguration d) :=

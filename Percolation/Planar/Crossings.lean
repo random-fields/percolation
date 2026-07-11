@@ -155,6 +155,26 @@ theorem hasEdgeDisjointSquareRectangleCrossings_zero (m n : ℕ)
   intro i
   exact Fin.elim0 i
 
+/-- At width zero, duplicate nil walks give an edge-disjoint family of every finite cardinality.
+This is the concrete counterexample requiring positive width in the source-facing maximum. -/
+theorem hasEdgeDisjointSquareRectangleCrossings_zero_left
+    (n k : ℕ) (ω : EdgeConfiguration 2) :
+    HasEdgeDisjointSquareRectangleCrossings 0 n k ω := by
+  let x : SquareVertex := squareVertex 0 0
+  have hxL : x ∈ squareRectangleLeft 0 n := by simp [x, cubicOrigin]
+  have hxR : x ∈ squareRectangleRight 0 n := by simp [x, cubicOrigin]
+  let C : Fin k → OpenSquareRectangleCrossing 0 n ω := fun _ ↦
+    { start := x
+      finish := x
+      walk := SimpleGraph.Walk.nil
+      start_mem := hxL
+      finish_mem := hxR
+      isOpen := by simp [walkIsOpen]
+      edges_subset := by simp [walkEdgeFinset, walkEdgeList] }
+  refine ⟨C, ?_⟩
+  intro i j _hij
+  simp [C, walkEdgeFinset, walkEdgeList]
+
 private theorem OpenSquareRectangleCrossing.start_ne_finish {m n : ℕ}
     (hm : 1 ≤ m) {ω : EdgeConfiguration 2} (C : OpenSquareRectangleCrossing m n ω) :
     C.start ≠ C.finish := by

@@ -4,9 +4,11 @@ import Percolation.Critical.DynamicRenormalization
 /-!
 # Stochastic domination adapters for site explorations
 
-This file isolates the final measure-theoretic step of Grimmett's Lemma 7.24.  Once a sequential
-exploration law has been shown to dominate a supercritical iid site field, positivity of an
-infinite explored cluster follows directly from the definition of stochastic domination.
+This file isolates one consequence needed near the end of Grimmett's Lemma 7.24.  Once a law on
+site configurations has been shown to dominate a supercritical iid site field, positivity of an
+infinite occupied cluster follows directly from stochastic domination.  Constructing that law
+from the exploration histories, identifying its limiting occupied set with the exploration, and
+proving the sequential-domination criterion are separate, still-open parts of Lemma 7.24.
 -/
 
 namespace Percolation
@@ -15,8 +17,8 @@ open MeasureTheory ProbabilityTheory
 open scoped unitInterval
 
 /-- Domination by a supercritical iid site field forces positive probability of an infinite
-cluster.  The remaining content of Lemma 7.24 is therefore precisely the sequential-domination
-criterion converting history-wise success bounds into `hdom`. -/
+cluster.  This is an adapter used after, but is not itself, the sequential exploration theorem
+of Lemma 7.24. -/
 theorem siteExploration_infinite_probability_pos_of_dominates
     {V : Type*} [Countable V] (G : SimpleGraph V)
     (μ : Measure (Set V)) (p : I)

@@ -109,4 +109,46 @@ theorem setBernoulli_kDependent {ι : Type*} [Countable ι] [DecidableEq ι]
       (s := fun x : ι ↦ {η : Set ι | x ∈ η}) hsm
       (setBernoulli_iIndepSet_mem_univ p) A B hdisj)
 
+/-- Independence of two sub-σ-algebras is transported through a measurable pushforward. -/
+theorem Indep.map_measure {Ω β : Type*} [MeasurableSpace Ω] [mβ : MeasurableSpace β]
+    {μ : Measure Ω} [IsZeroOrProbabilityMeasure μ] {f : Ω → β} (hf : Measurable f)
+    {m₁ m₂ : MeasurableSpace β}
+    (hm₁ : m₁ ≤ mβ)
+    (hm₂ : m₂ ≤ mβ)
+    (h : Indep (MeasurableSpace.comap f m₁) (MeasurableSpace.comap f m₂) μ) :
+    @Indep β m₁ m₂ mβ
+      (@Measure.map Ω β _ mβ f μ) := by
+  let ν : @Measure β mβ :=
+    @Measure.map Ω β _ mβ f μ
+  change @Indep β m₁ m₂ mβ ν
+  rw [@indep_iff_forall_indepSet β m₁ m₂
+    mβ ν]
+  intro s t hs ht
+  have hsGlobal : @MeasurableSet β mβ s := by
+    exact hm₁ s hs
+  have htGlobal : @MeasurableSet β mβ t := by
+    exact hm₂ t ht
+  have hsComap : MeasurableSet[MeasurableSpace.comap f m₁] (f ⁻¹' s) :=
+    ⟨s, hs, rfl⟩
+  have htComap : MeasurableSet[MeasurableSpace.comap f m₂] (f ⁻¹' t) :=
+    ⟨t, ht, rfl⟩
+  have hind := h.indepSet_of_measurableSet hsComap htComap
+  have hmapInter : ν (s ∩ t) = μ (f ⁻¹' (s ∩ t)) := by
+    dsimp [ν]
+    exact @Measure.map_apply Ω β _ mβ μ f hf (s ∩ t) (hsGlobal.inter htGlobal)
+  have hmapS : ν s = μ (f ⁻¹' s) := by
+    dsimp [ν]
+    exact @Measure.map_apply Ω β _ mβ μ f hf s hsGlobal
+  have hmapT : ν t = μ (f ⁻¹' t) := by
+    dsimp [ν]
+    exact @Measure.map_apply Ω β _ mβ μ f hf t htGlobal
+  apply (indepSet_iff_indepSets_singleton hsGlobal htGlobal ν).mpr
+  apply indepSets_singleton_iff.mpr
+  calc
+    ν (s ∩ t) = μ (f ⁻¹' (s ∩ t)) := hmapInter
+    _ = μ (f ⁻¹' s) * μ (f ⁻¹' t) := by
+      simpa [Set.preimage_inter] using hind.measure_inter_eq_mul
+    _ = ν s * ν t := by
+      rw [hmapS, hmapT]
+
 end Percolation

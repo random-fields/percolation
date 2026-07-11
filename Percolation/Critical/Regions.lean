@@ -954,6 +954,36 @@ def cubicScale {d : ℕ} (a : ℤ) (x : Cubic d) : Cubic d :=
 def cubicDilatedThickening (d : ℕ) (F : Set (Cubic d)) (k : ℕ) : Set (Cubic d) :=
   {y | ∃ x ∈ F, y ∈ cubicMetricBox d (cubicScale (2 * (k : ℤ)) x) k}
 
+/-- Literal Minkowski-sum presentation `2kF + B(k)`. -/
+def cubicDilatedMinkowskiSum (d : ℕ) (F : Set (Cubic d)) (k : ℕ) : Set (Cubic d) :=
+  {y | ∃ x ∈ F, ∃ b ∈ cubicMetricBox d cubicOrigin k,
+    y = cubicTranslate cubicOrigin (cubicScale (2 * (k : ℤ)) x) b}
+
+theorem cubicDilatedThickening_eq_minkowskiSum
+    (d : ℕ) (F : Set (Cubic d)) (k : ℕ) :
+    cubicDilatedThickening d F k = cubicDilatedMinkowskiSum d F k := by
+  ext y
+  constructor
+  · rintro ⟨x, hx, hy⟩
+    let c := cubicScale (2 * (k : ℤ)) x
+    let b := cubicTranslate c cubicOrigin y
+    have hb : b ∈ cubicMetricBox d cubicOrigin k := by
+      apply mem_cubicMetricBox_iff_lInfDist_le.mpr
+      have hdist : cubicLInfDist cubicOrigin b = cubicLInfDist c y := by
+        simpa [b, c] using cubicLInfDist_translate c cubicOrigin c y
+      rw [hdist]
+      exact mem_cubicMetricBox_iff_lInfDist_le.mp hy
+    refine ⟨x, hx, b, hb, ?_⟩
+    funext i
+    simp [b, c, cubicTranslate, cubicOrigin]
+  · rintro ⟨x, hx, b, hb, rfl⟩
+    refine ⟨x, hx, ?_⟩
+    apply mem_cubicMetricBox_iff_lInfDist_le.mpr
+    have hdist := cubicLInfDist_translate cubicOrigin
+      (cubicScale (2 * (k : ℤ)) x) cubicOrigin b
+    simpa [cubicOrigin] using
+      hdist.trans_le (mem_cubicMetricBox_iff_lInfDist_le.mp hb)
+
 /-- Critical probability of the width-`k` slab. -/
 noncomputable def slabCriticalProbability (d k : ℕ) : ℝ :=
   regionCriticalProbability d (cubicSlab d k)

@@ -1,0 +1,39 @@
+Command:
+
+  lake env lean /tmp/Chapter7Axioms.lean
+
+Imports:
+
+  Percolation.Critical.SiteExplorationDomination
+  Percolation.Critical.HalfSpaceBricks
+  Percolation.Planar.Crossings
+
+Output:
+
+'Percolation.regionCriticalProbability_anti' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.regionThetaFrom_eq_zero_iff_of_connected' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.cubicRegionGraph_cubicHalfSpace_connected' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.dependsOn_seedConnectionEvent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.SiteExploration.stateAfter_wellFormed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.dependsOn_halfSpaceBrickGoodEvent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.dependsOn_epsilonGoodBoxEvent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.disjoint_cubicBoxEdges_epsilonGoodBlockCenter' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.hasEdgeDisjointSquareRectangleCrossings_iff_le_max' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.siteExploration_infinite_probability_pos_of_dominates' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+Result: PASS for this infrastructure slice. No nonstandard project axiom occurs transitively.
+
+Post-review command:
+
+  lake build Percolation.Tests.Chapter7AxiomAudit
+
+Additional output after correcting the good-brick event:
+
+'Percolation.dependsOn_halfSpaceBrickGoodEvent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.continuous_halfSpaceBrickGoodProbability' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.epsilonGoodBlockLaw_kDependent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.continuous_seedConnectionProbability' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.cubicDilatedThickening_eq_minkowskiSum' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Percolation.siteExploration_infinite_probability_pos_of_dominates' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+Post-review result: PASS. The full repository build also passed (8,559 jobs).

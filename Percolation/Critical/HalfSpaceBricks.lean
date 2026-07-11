@@ -68,6 +68,17 @@ theorem brickFacetKind_card (d : ℕ) :
 
 example : Fintype.card (BrickFacetKind 3) = 12 := by native_decide
 
+/-- Placement of a brick by a cubic-lattice graph automorphism.  Concrete explorations use the
+translation and signed-coordinate-permutation isomorphisms from `CubicSymmetry`. -/
+structure RotatedBrickPlacement (d : ℕ) where
+  iso : cubicGraph d ≃g cubicGraph d
+
+/-- Vertex set of a placed brick. -/
+noncomputable def RotatedBrickPlacement.vertices {d : ℕ}
+    (P : RotatedBrickPlacement d) (L H : ℕ) : Finset (Cubic d) := by
+  classical
+  exact (halfSpaceBrick d L H).image P.iso
+
 /-- Vertices in one selected brick subfacet. -/
 noncomputable def brickFacet {d : ℕ} (hd : 1 ≤ d) (L H : ℕ)
     (kind : BrickFacetKind d) : Finset (Cubic d) := by
@@ -103,6 +114,13 @@ theorem mem_brickFacet_iff {d : ℕ} (hd : 1 ≤ d) {L H : ℕ}
   classical
   simp [brickFacet]
 
+/-- Vertex set of a placed brick subfacet. -/
+noncomputable def RotatedBrickPlacement.facet {d : ℕ}
+    (P : RotatedBrickPlacement d) (hd : 1 ≤ d) (L H : ℕ)
+    (kind : BrickFacetKind d) : Finset (Cubic d) := by
+  classical
+  exact (brickFacet hd L H kind).image P.iso
+
 /-- A codimension-one seed plane centered at `c`, orthogonal to coordinate `normal`. -/
 noncomputable def brickSeedPlane {d : ℕ} (c : Cubic d) (normal : Fin d) (m : ℕ) :
     Finset (Cubic d) :=
@@ -136,35 +154,103 @@ noncomputable def halfSpaceBrickEdges (d L H : ℕ) : Finset (CubicEdge d) := by
   exact (cubicBoxEdges d cubicOrigin (max L H)).filter fun e ↦
     e.1.out.1 ∈ halfSpaceBrick d L H ∧ e.1.out.2 ∈ halfSpaceBrick d L H
 
-/-- Finite-volume goodness event: the central seed plane connects inside the brick to a fully
-open seed centered at some vertex of every required subfacet. -/
+/-- Edges usable by the brick exploration.  Bonds lying wholly in the underside are excluded;
+the initial seed is represented by its vertex set, rather than by revealing those underside
+bonds. -/
+noncomputable def halfSpaceBrickUsableEdges {d : ℕ} (hd : 1 ≤ d) (L H : ℕ) :
+    Finset (CubicEdge d) := by
+  classical
+  exact (halfSpaceBrickEdges d L H).filter fun e ↦
+    ¬(e.1.out.1 (brickVerticalIndex hd) = 0 ∧
+      e.1.out.2 (brickVerticalIndex hd) = 0)
+
+theorem not_both_vertical_zero_of_mem_halfSpaceBrickUsableEdges {d : ℕ}
+    (hd : 1 ≤ d) {L H : ℕ} {e : CubicEdge d}
+    (he : e ∈ halfSpaceBrickUsableEdges hd L H) :
+    ¬(e.1.out.1 (brickVerticalIndex hd) = 0 ∧
+      e.1.out.2 (brickVerticalIndex hd) = 0) := by
+  classical
+  simpa [halfSpaceBrickUsableEdges] using (Finset.mem_filter.mp he).2
+
+/-- The normal to a seed parallel to the selected brick facet. -/
+def brickFacetSeedNormal {d : ℕ} (hd : 1 ≤ d) : BrickFacetKind d → Fin d
+  | .top _ => brickVerticalIndex hd
+  | .side normal _ _ => brickHorizontalIndex hd normal
+
+/-- Centers whose entire seed plane lies in the selected subfacet.  This explicit filter is
+important when the seed radius is comparable with the facet dimensions. -/
+noncomputable def brickFacetSeedCenters {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ)
+    (kind : BrickFacetKind d) : Finset (Cubic d) := by
+  classical
+  exact (brickFacet hd L H kind).filter fun y ↦
+    brickSeedPlane y (brickFacetSeedNormal hd kind) m ⊆ brickFacet hd L H kind
+
+theorem brickSeedPlane_subset_facet_of_mem_seedCenters {d : ℕ} (hd : 1 ≤ d)
+    {m L H : ℕ} {kind : BrickFacetKind d} {y : Cubic d}
+    (hy : y ∈ brickFacetSeedCenters hd m L H kind) :
+    brickSeedPlane y (brickFacetSeedNormal hd kind) m ⊆ brickFacet hd L H kind := by
+  classical
+  exact (Finset.mem_filter.mp hy).2
+
+/-- The initial seed square `b(0)` on the underside of the brick. -/
+noncomputable def brickCentralSeedPlane {d : ℕ} (hd : 1 ≤ d) (m : ℕ) :
+    Finset (Cubic d) :=
+  brickSeedPlane cubicOrigin (brickVerticalIndex hd) m
+
+/-- A connection from the initial seed square to a target seed square, using no underside
+edge.  Endpoints range over the two seed vertex sets; fixing their centers as endpoints would
+make the event artificially require bonds adjacent to those distinguished vertices. -/
+def brickSeedConnectionEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ)
+    (kind : BrickFacetKind d) (y : Cubic d) : Set (EdgeConfiguration d) :=
+  ⋃ z ∈ brickCentralSeedPlane hd m,
+    ⋃ t ∈ brickSeedPlane y (brickFacetSeedNormal hd kind) m,
+      connectionEventIn d (halfSpaceBrickUsableEdges hd L H) z t
+
+/-- Finite-volume goodness event: the initial seed square connects, without underside bonds,
+to a fully open seed square contained in every required subfacet. -/
 def halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
     Set (EdgeConfiguration d) :=
   ⋂ kind : BrickFacetKind d,
-    ⋃ y ∈ brickFacet hd L H kind,
-      brickSeedPlaneEvent y (brickVerticalIndex hd) m ∩
-        connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y
+    ⋃ y ∈ brickFacetSeedCenters hd m L H kind,
+      brickSeedPlaneEvent y (brickFacetSeedNormal hd kind) m ∩
+        brickSeedConnectionEvent hd m L H kind y
 
 /-- A finite edge support deciding the good-brick event. -/
 noncomputable def halfSpaceBrickGoodSupport {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
     Finset (CubicEdge d) := by
   classical
-  exact halfSpaceBrickEdges d L H ∪
+  exact halfSpaceBrickUsableEdges hd L H ∪
     (Finset.univ : Finset (BrickFacetKind d)).biUnion fun kind ↦
-      (brickFacet hd L H kind).biUnion fun y ↦
-        brickSeedPlaneEdges y (brickVerticalIndex hd) m
+      (brickFacetSeedCenters hd m L H kind).biUnion fun y ↦
+        brickSeedPlaneEdges y (brickFacetSeedNormal hd kind) m
+
+theorem dependsOn_brickSeedConnectionEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ)
+    (kind : BrickFacetKind d) (y : Cubic d) :
+    DependsOn (halfSpaceBrickUsableEdges hd L H)
+      (brickSeedConnectionEvent hd m L H kind y) := by
+  classical
+  intro ω η hagree
+  simp only [brickSeedConnectionEvent, Set.mem_iUnion]
+  constructor <;> intro h
+  · obtain ⟨z, hz, t, ht, hconn⟩ := h
+    exact ⟨z, hz, t, ht,
+      (dependsOn_connectionEventIn d (halfSpaceBrickUsableEdges hd L H) z t hagree).mp hconn⟩
+  · obtain ⟨z, hz, t, ht, hconn⟩ := h
+    exact ⟨z, hz, t, ht,
+      (dependsOn_connectionEventIn d (halfSpaceBrickUsableEdges hd L H) z t hagree).mpr hconn⟩
 
 theorem dependsOn_halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
     DependsOn (halfSpaceBrickGoodSupport hd m L H)
       (halfSpaceBrickGoodEvent hd m L H) := by
   classical
   intro ω η hagree
-  have hagreeBrick : ∀ e ∈ halfSpaceBrickEdges d L H, (e ∈ ω ↔ e ∈ η) := by
+  have hagreeBrick : ∀ e ∈ halfSpaceBrickUsableEdges hd L H, (e ∈ ω ↔ e ∈ η) := by
     intro e he
     exact hagree e (Finset.mem_union_left _ he)
   have hagreeSeed : ∀ (kind : BrickFacetKind d) (y : Cubic d),
-      y ∈ brickFacet hd L H kind →
-      ∀ e ∈ brickSeedPlaneEdges y (brickVerticalIndex hd) m, (e ∈ ω ↔ e ∈ η) := by
+      y ∈ brickFacetSeedCenters hd m L H kind →
+      ∀ e ∈ brickSeedPlaneEdges y (brickFacetSeedNormal hd kind) m,
+        (e ∈ ω ↔ e ∈ η) := by
     intro kind y hy e he
     apply hagree e
     apply Finset.mem_union_right
@@ -179,24 +265,22 @@ theorem dependsOn_halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ)
     refine ⟨y, hy, ?_, ?_⟩
     · intro e he
       exact (hagreeSeed kind y hy e he).mp (hyseed he)
-    · exact (dependsOn_connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y
-          hagreeBrick).mp hyconn
+    · exact (dependsOn_brickSeedConnectionEvent hd m L H kind y hagreeBrick).mp hyconn
   · intro hη kind
     obtain ⟨y, hy, hyseed, hyconn⟩ := hη kind
     refine ⟨y, hy, ?_, ?_⟩
     · intro e he
       exact (hagreeSeed kind y hy e he).mpr (hyseed he)
-    · exact (dependsOn_connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y
-          hagreeBrick).mpr hyconn
+    · exact (dependsOn_brickSeedConnectionEvent hd m L H kind y hagreeBrick).mpr hyconn
 
 theorem measurableSet_halfSpaceBrickGoodEvent {d : ℕ} (hd : 1 ≤ d) (m L H : ℕ) :
     MeasurableSet (halfSpaceBrickGoodEvent hd m L H) := by
   apply MeasurableSet.iInter
   intro kind
-  apply (brickFacet hd L H kind).measurableSet_biUnion
+  apply (brickFacetSeedCenters hd m L H kind).measurableSet_biUnion
   intro y _hy
-  exact (measurableSet_brickSeedPlaneEvent y (brickVerticalIndex hd) m).inter
-    (dependsOn_connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y).measurableSet
+  exact (measurableSet_brickSeedPlaneEvent y (brickFacetSeedNormal hd kind) m).inter
+    (dependsOn_brickSeedConnectionEvent hd m L H kind y).measurableSet
 
 theorem continuous_halfSpaceBrickGoodProbability {d : ℕ}
     (hd : 1 ≤ d) (m L H : ℕ) :
@@ -224,12 +308,16 @@ theorem isIncreasingEvent_halfSpaceBrickGoodEvent {d : ℕ}
     (hd : 1 ≤ d) (m L H : ℕ) :
     IsIncreasingEvent (halfSpaceBrickGoodEvent hd m L H) := by
   intro ω η hωη hω
-  simp only [halfSpaceBrickGoodEvent, Set.mem_iInter, Set.mem_iUnion, Set.mem_inter_iff] at hω ⊢
+  simp only [halfSpaceBrickGoodEvent, brickSeedConnectionEvent, Set.mem_iInter,
+    Set.mem_iUnion, Set.mem_inter_iff] at hω ⊢
   intro kind
   obtain ⟨y, hyfacet, hyseed, hyconn⟩ := hω kind
   exact ⟨y, hyfacet,
-    isIncreasingEvent_brickSeedPlaneEvent y (brickVerticalIndex hd) m hωη hyseed,
-    isIncreasingEvent_connectionEventIn d (halfSpaceBrickEdges d L H) cubicOrigin y
-      hωη hyconn⟩
+    isIncreasingEvent_brickSeedPlaneEvent y (brickFacetSeedNormal hd kind) m hωη hyseed,
+    by
+      obtain ⟨z, hz, t, ht, hzt⟩ := hyconn
+      exact ⟨z, hz, t, ht,
+        isIncreasingEvent_connectionEventIn d (halfSpaceBrickUsableEdges hd L H) z t
+          hωη hzt⟩⟩
 
 end Percolation

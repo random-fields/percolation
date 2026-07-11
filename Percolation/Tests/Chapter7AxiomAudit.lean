@@ -8,6 +8,7 @@ import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
+import Percolation.Critical.RegionTranslation
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -18,6 +19,9 @@ import Percolation.Critical.StaticBlockTranslation
 #print axioms Percolation.cubicDilatedThickening_eq_minkowskiSum
 #print axioms Percolation.slabCriticalProbability_antitone
 #print axioms Percolation.cubicCriticalProbability_le_slabCriticalProbability
+#print axioms Percolation.cubicTranslationConfigurationPullback_hasInfiniteOpenClusterInVertices_iff
+#print axioms Percolation.regionHasInfiniteClusterProbability_translate
+#print axioms Percolation.regionCriticalProbability_translate
 #print axioms Percolation.siteExploration_infinite_probability_pos_of_dominates
 #print axioms Percolation.stochasticallyDominates_iff_measureReal_le
 #print axioms Percolation.HasMonotoneCoupling.stochasticallyDominates

@@ -8,6 +8,7 @@ import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
+import Percolation.Critical.RegionTranslation
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -78,6 +79,11 @@ example {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂) {r : ℕ} (hr : 1 ≤ r)
 example (d : ℕ) (F : Set (Cubic d)) (k : ℕ) :
     cubicDilatedThickening d F k = cubicDilatedMinkowskiSum d F k :=
   cubicDilatedThickening_eq_minkowskiSum d F k
+
+example (d : ℕ) (A : Set (Cubic d)) (x y : Cubic d) :
+    regionCriticalProbability d (cubicTranslateRegion x y A) =
+      regionCriticalProbability d A :=
+  regionCriticalProbability_translate A x y
 
 example (d : ℕ) (p : I) (ε : ℝ) {n : ℕ} (hn : 1 ≤ n) :
     KDependent (cubicGraph d) (3 * d) (epsilonGoodBlockLaw d p ε n) :=

@@ -71,6 +71,7 @@ import Percolation.Critical.ClusterDensityDerivative
 import Percolation.Critical.ClusterDensityEndpoints
 import Percolation.Critical.ClusterAnalyticity
 import Percolation.Critical.Regions
+import Percolation.Critical.RegionTranslation
 import Percolation.Critical.StaticBlocks
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.Seeds

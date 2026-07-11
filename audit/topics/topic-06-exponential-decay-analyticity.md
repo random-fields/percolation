@@ -39,11 +39,11 @@ formalization window has yet completed; it is not an estimate.
 | Theorem 6.44, (6.45)–(6.46) | 126 | Axis two-point function has rate `φ` and lower bound `c p / n^(4(d-1)) * exp(-nφ)` | `Percolation.twoPointConnectivity_axis_logRate_tendsto`, `Percolation.twoPointConnectivity_axis_twoSided_decay` | proved; the dimension-only constant is quantified before `p`, and the displayed bound requires `n>0` | jointly measured | jointly measured |
 | Proposition 6.47, (6.48) | 126–127 | General two-point function has matching norm-dependent exponential bounds | `Percolation.twoPointConnectivity_twoSided_decay` | proved; lower bound requires `x≠0` and contains the corrected `p^(d*|x|)` factor; upper bound handles `x=0` exactly | jointly measured | jointly measured |
 | Proposition 6.49 | 127–128 | `τ(0,x)≤(1-χ⁻¹)^|x|`, hence `ξ≤χ` below criticality | `Percolation.twoPointConnectivity_le_one_sub_susceptibility_inv_pow`, `Percolation.correlationLength_le_susceptibility`, `Percolation.susceptibility_tendsto_top_at_critical` | proved; `correlationLength` is ENNReal-valued, equals `⊤` at `p_c`, and the divergence theorem uses the left-neighborhood filter | jointly measured | jointly measured |
-| Theorem 6.75, (6.77) | 132 | Subcritical cluster size has an exponential tail | missing | target; exact (6.77) assumes `n>χ²`, general strict exponential is eventual |  |  |
+| Theorem 6.75, (6.77) | 132 | Subcritical cluster size has an exponential tail | `Percolation.clusterSizeAtLeast_exponential_decay_of_lt_critical`, `Percolation.clusterSizeAtLeast_le_two_exp_neg` | proved; exact (6.77) assumes `n>χ²`; the strict no-prefactor bound is stated eventually because the printed `n≥1` claim is false at `n=1` | jointly measured | jointly measured |
 | Theorem 6.78, (6.80), (6.82)–(6.83) | 132–134 | Exact-size and finite-tail exponential rates exist, are positive below criticality, and `ζ≤φ` | missing | target |  |  |
 | Lemma 6.87 | 134–135 | A finite nonempty terminal set has a removable terminal preserving connectivity of the rest | `Percolation.exists_terminal_deletion_preserves_connected` | proved for an arbitrary connected ambient graph and a finite nonempty `Finset`; deletion is encoded by `deleteIncidenceSet` | jointly measured | jointly measured |
 | Lemma 6.89 | 135–136 | Three-point connectivity is bounded by a sum of three two-point products | `Percolation.threePointConnectivity_le_tsum_prod` | proved in `ℝ≥0∞`; includes deterministic first-hit tripod extraction and iterated BK | jointly measured | jointly measured |
-| (6.93)–(6.97) | 136–138 | Skeleton tree-graph bound, skeleton count, moment bound, and exponential-moment bound | `Percolation.multiPointConnectivity_le_skeleton_sum`, `Percolation.cubicConnectivitySkeleton_card_eq`, `Percolation.connectivitySkeletonCount_eq_doubleFactorial`, `Percolation.clusterSizeMoment_le`; 6.97 pending | partial: (6.93)–(6.96) are proved; the moment theorem uses the actual `ℝ≥0∞` cluster-size integral and a proved ordered-tuple expansion, while 6.97 remains to be summed | jointly measured | jointly measured |
+| (6.93)–(6.97) | 136–138 | Skeleton tree-graph bound, skeleton count, moment bound, and exponential-moment bound | `Percolation.multiPointConnectivity_le_skeleton_sum`, `Percolation.cubicConnectivitySkeleton_card_eq`, `Percolation.connectivitySkeletonCount_eq_doubleFactorial`, `Percolation.clusterSizeMoment_le`, `Percolation.clusterSize_expMoment_le` | proved; the moment theorem uses the actual `ℝ≥0∞` cluster-size integral, and (6.97) evaluates the exact half-binomial skeleton generating function | jointly measured | jointly measured |
 | Lemma 6.102 | 139–141 | Normalized exact cluster-size probabilities satisfy the animal-concatenation inequality | missing | target |  |  |
 | Theorem 6.108 | 142–145 | `κ` and `χ` are analytic on `[0,p_c)` | missing | target must bundle analytic series with equality to the probabilistic functions |  |  |
 
@@ -57,6 +57,7 @@ formalization window has yet completed; it is not an estimate.
 | Lemmas 6.87 and 6.89 with tripod infrastructure | minimum finite connected carrier, removable terminal, first-hit path splitting, component-local tripods, open-graph transport, and endpoint-safe BK summation | 19m51s | 205,604 |
 | Skeleton extraction and (6.93) infrastructure | recursive edge-insertion decoder, exact skeleton count, first-hit insertion of a new terminal, path normalization, pairwise edge-disjointness, deterministic event extraction, iterated BK, two-point row-sum identity, and initial connected-kernel partition infrastructure | 63m17s | 660,031 |
 | Connected-kernel partition and (6.94) infrastructure | vertex-deletion induction for finite connected kernels, specialization to decoded skeletons, instance-independent cardinality transport, ordered terminal summation, measurable tuple expansion of cluster-size powers, and the source moment bound | 57m04s | 954,610 |
+| (6.97), Theorem 6.75, and (6.77) infrastructure | exact half-multichoose skeleton generating function, ENNReal exponential moment, at-least tail and strict-tail shift, series Markov inequality, optimized source constant, and corrected eventual exponential theorem | 42m48s | 883,194 |
 
 The initial window included the first 6.1 scaffold before an internal counter snapshot was taken.
 It is charged once to shared infrastructure and is not duplicated in the theorem row.  The 6.1
@@ -91,3 +92,9 @@ The connected-kernel and moment window runs from `(12632s, 2485686)` through
 `(16056s, 3440296)`. It includes the general finite-kernel deletion theorem, its skeleton
 specialization, the ordered-multipoint mass estimate, the exact measurable identity between
 cluster moments and ordered connection masses, (6.94), local module builds, and axiom audits.
+
+The exponential-moment and tail window runs from `(16056s, 3440296)` through
+`(18624s, 4323490)`. It includes the coefficient identification and generating-function proof for
+(6.97), the at-least-tail API and exact shift to Chapter 5's strict tail, the series Markov bound,
+the optimized inequality (6.77), the corrected eventual form of Theorem 6.75, local verification,
+and axiom audits.

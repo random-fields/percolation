@@ -48,6 +48,7 @@ import Percolation.Critical.TreeGraph
 import Percolation.Critical.ConnectivitySkeleton
 import Percolation.Critical.ConnectedKernel
 import Percolation.Critical.ClusterMoments
+import Percolation.Critical.ClusterExponential
 import Percolation.Critical.RadiusDecay
 import Percolation.Critical.ClusterTail
 import Percolation.Critical.MenshikovBootstrap

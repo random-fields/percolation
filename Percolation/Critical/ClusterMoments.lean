@@ -1,4 +1,5 @@
 import Percolation.Critical.ConnectedKernel
+import Mathlib.Analysis.Analytic.Binomial
 
 /-!
 # Cluster moments from the tree-graph inequality
@@ -153,9 +154,172 @@ theorem clusterSizeMoment_le (d k : ℕ) (p : unitInterval) :
   refine (orderedMultiPointConnectionMass_le d k p).trans_eq ?_
   congr 2
 
+@[simp] theorem clusterSizeMomentENNReal_one (d : ℕ) (p : unitInterval) :
+    clusterSizeMomentENNReal d p 1 = susceptibility d p := by
+  simp [clusterSizeMomentENNReal, susceptibility]
+
+/-- Uniform reindexing of (6.94), including its first-moment endpoint. -/
+theorem clusterSizeMoment_succ_le (d n : ℕ) (p : unitInterval) :
+    clusterSizeMomentENNReal d p (n + 1) ≤
+      (connectivitySkeletonCount (n + 2) : ℝ≥0∞) *
+        susceptibility d p ^ (2 * n + 1) := by
+  cases n with
+  | zero => simp [connectivitySkeletonCount]
+  | succ k => simpa [Nat.mul_add, Nat.add_assoc] using clusterSizeMoment_le d k p
+
+/-- Power-series form of `E(|C| exp(t|C|))`; keeping the series in `ℝ≥0∞` preserves infinite
+clusters and avoids a lossy `toReal` convention. -/
+noncomputable def clusterSizeWeightedExpMoment
+    (d : ℕ) (p : unitInterval) (t : ℝ≥0∞) : ℝ≥0∞ :=
+  ∑' n : ℕ, t ^ n / (Nat.factorial n : ℝ≥0∞) *
+    clusterSizeMomentENNReal d p (n + 1)
+
+/-- The moment estimate summed termwise, before evaluating the skeleton generating function. -/
+theorem clusterSizeWeightedExpMoment_le_skeletonSeries
+    (d : ℕ) (p : unitInterval) (t : ℝ≥0∞) :
+    clusterSizeWeightedExpMoment d p t ≤
+      susceptibility d p *
+        ∑' n : ℕ, (connectivitySkeletonCount (n + 2) : ℝ≥0∞) /
+          (Nat.factorial n : ℝ≥0∞) *
+            (t * susceptibility d p ^ 2) ^ n := by
+  rw [clusterSizeWeightedExpMoment, ← ENNReal.tsum_mul_left]
+  apply ENNReal.tsum_le_tsum
+  intro n
+  calc
+    t ^ n / (Nat.factorial n : ℝ≥0∞) * clusterSizeMomentENNReal d p (n + 1) ≤
+        t ^ n / (Nat.factorial n : ℝ≥0∞) *
+          ((connectivitySkeletonCount (n + 2) : ℝ≥0∞) *
+            susceptibility d p ^ (2 * n + 1)) :=
+      mul_le_mul_left' (clusterSizeMoment_succ_le d n p) _
+    _ = susceptibility d p *
+        ((connectivitySkeletonCount (n + 2) : ℝ≥0∞) /
+          (Nat.factorial n : ℝ≥0∞) *
+            (t * susceptibility d p ^ 2) ^ n) := by
+      rw [mul_pow]
+      have hexp : 2 * n + 1 = 1 + 2 * n := by omega
+      rw [hexp, pow_add, pow_one, pow_mul]
+      simp only [div_eq_mul_inv]
+      ac_rfl
+
+/-! ### The skeleton generating function -/
+
+/-- The skeleton coefficient is the scaled half-multichoose coefficient. -/
+theorem connectivitySkeletonCount_eq_scaled_half_multichoose (n : ℕ) :
+    (2 : ℝ) ^ n * Nat.factorial n * Ring.multichoose (1 / 2 : ℝ) n =
+      connectivitySkeletonCount (n + 2) := by
+  induction n with
+  | zero => norm_num [connectivitySkeletonCount]
+  | succ n ih =>
+      by_cases hn : n = 0
+      · subst n
+        norm_num [connectivitySkeletonCount]
+      have hp_n := Ring.factorial_nsmul_multichoose_eq_ascPochhammer (1 / 2 : ℝ) n
+      have hp_succ := Ring.factorial_nsmul_multichoose_eq_ascPochhammer
+        (1 / 2 : ℝ) (n + 1)
+      simp only [nsmul_eq_mul] at hp_n hp_succ
+      rw [ascPochhammer_succ_right, Polynomial.smeval_mul,
+        Polynomial.smeval_add, Polynomial.smeval_X, Polynomial.smeval_natCast] at hp_succ
+      norm_num [nsmul_eq_mul] at hp_succ
+      rw [pow_succ]
+      calc
+        (2 : ℝ) ^ n * 2 * Nat.factorial (n + 1) *
+            Ring.multichoose (1 / 2 : ℝ) (n + 1) =
+            (2 : ℝ) ^ n * 2 *
+              (Nat.factorial (n + 1) * Ring.multichoose (1 / 2 : ℝ) (n + 1)) := by ring
+        _ = (2 : ℝ) ^ n * 2 *
+              ((ascPochhammer ℕ n).smeval (1 / 2 : ℝ) * (1 / 2 + n)) := by rw [hp_succ]
+        _ = (2 * n + 1 : ℝ) *
+              ((2 : ℝ) ^ n * Nat.factorial n * Ring.multichoose (1 / 2 : ℝ) n) := by
+                rw [← hp_n]
+                push_cast
+                ring
+        _ = (2 * n + 1 : ℝ) * connectivitySkeletonCount (n + 2) := by rw [ih]
+        _ = connectivitySkeletonCount (n + 1 + 2) := by
+          have hfactor : 2 * (n + 2) - 3 = 2 * n + 1 := by omega
+          rw [show n + 1 + 2 = (n + 2) + 1 by omega,
+            connectivitySkeletonCount_succ (n := n + 2) (by omega), hfactor]
+          push_cast
+          ring
+
+/-- Generating function for the labelled-skeleton coefficients. -/
+theorem hasSum_connectivitySkeletonCount_div_factorial (x : ℝ) (hx : |2 * x| < 1) :
+    HasSum (fun n : ℕ ↦
+      (connectivitySkeletonCount (n + 2) : ℝ) / Nat.factorial n * x ^ n)
+      (1 / (1 - 2 * x) ^ (1 / 2 : ℝ)) := by
+  have hy : (2 * x : ℝ) ∈ Metric.eball (0 : ℝ) 1 := by
+    rw [Metric.mem_eball, edist_dist, Real.dist_eq, sub_zero]
+    change ENNReal.ofReal |2 * x| < 1
+    exact ENNReal.ofReal_lt_one.mpr hx
+  have hs :=
+    (Real.one_div_one_sub_rpow_hasFPowerSeriesOnBall_zero (1 / 2 : ℝ)).hasSum_sub hy
+  convert hs using 1
+  · funext n
+    rw [FormalMultilinearSeries.ofScalars_apply_eq]
+    simp only [sub_zero, smul_eq_mul]
+    rw [← connectivitySkeletonCount_eq_scaled_half_multichoose n]
+    rw [show Ring.choose (1 / 2 + (n : ℝ) - 1) n =
+        Ring.multichoose (1 / 2 : ℝ) n by
+      symm
+      exact Ring.multichoose_eq (1 / 2 : ℝ) n]
+    field_simp [Nat.factorial_ne_zero]
+    ring
+
+/-- `ℝ≥0∞` form of the skeleton generating function, suitable for moment estimates. -/
+theorem tsum_connectivitySkeletonCount_div_factorial
+    (x : ℝ≥0∞) (hx : 2 * x < 1) :
+    (∑' n : ℕ, (connectivitySkeletonCount (n + 2) : ℝ≥0∞) /
+      (Nat.factorial n : ℝ≥0∞) * x ^ n) =
+        ENNReal.ofReal
+          (1 / (1 - 2 * x.toReal) ^ (1 / 2 : ℝ)) := by
+  have hx_top : x ≠ ⊤ := by
+    intro h
+    simp [h] at hx
+  have hx_nonneg : 0 ≤ x.toReal := ENNReal.toReal_nonneg
+  have hx_real : |2 * x.toReal| < 1 := by
+    rw [abs_of_nonneg (mul_nonneg (by norm_num) hx_nonneg)]
+    apply ENNReal.ofReal_lt_one.mp
+    rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat,
+      ENNReal.ofReal_toReal hx_top]
+    simpa using hx
+  have hs := hasSum_connectivitySkeletonCount_div_factorial x.toReal hx_real
+  calc
+    (∑' n : ℕ, (connectivitySkeletonCount (n + 2) : ℝ≥0∞) /
+        (Nat.factorial n : ℝ≥0∞) * x ^ n) =
+        ∑' n : ℕ, ENNReal.ofReal
+          ((connectivitySkeletonCount (n + 2) : ℝ) /
+            Nat.factorial n * x.toReal ^ n) := by
+      apply tsum_congr
+      intro n
+      rw [ENNReal.ofReal_mul (div_nonneg (by positivity) (by positivity)),
+        ENNReal.ofReal_div_of_pos (by positivity), ENNReal.ofReal_pow hx_nonneg,
+        ENNReal.ofReal_toReal hx_top]
+      norm_cast
+    _ = ENNReal.ofReal (∑' n : ℕ,
+        (connectivitySkeletonCount (n + 2) : ℝ) /
+          Nat.factorial n * x.toReal ^ n) := by
+      rw [ENNReal.ofReal_tsum_of_nonneg (fun n ↦
+        mul_nonneg (div_nonneg (by positivity) (by positivity)) (by positivity)) hs.summable]
+    _ = ENNReal.ofReal
+        (1 / (1 - 2 * x.toReal) ^ (1 / 2 : ℝ)) := by rw [hs.tsum_eq]
+
+/-- Grimmett (6.97): the size-weighted exponential moment is controlled by the square-root
+singularity of the skeleton generating function. -/
+theorem clusterSize_expMoment_le
+    (d : ℕ) (p : unitInterval) (t : ℝ≥0∞)
+    (ht : 2 * (t * susceptibility d p ^ 2) < 1) :
+    clusterSizeWeightedExpMoment d p t ≤
+      susceptibility d p * ENNReal.ofReal
+        (1 / (1 - 2 * (t * susceptibility d p ^ 2).toReal) ^ (1 / 2 : ℝ)) := by
+  refine (clusterSizeWeightedExpMoment_le_skeletonSeries d p t).trans_eq ?_
+  rw [tsum_connectivitySkeletonCount_div_factorial _ ht]
+
 #print axioms tsum_pi_prod_eq_pow
 #print axioms clusterSizeENNReal_pow_eq_tsum_prod
 #print axioms clusterSizeMomentENNReal_eq_orderedConnectionMass
 #print axioms clusterSizeMoment_le
+#print axioms connectivitySkeletonCount_eq_scaled_half_multichoose
+#print axioms hasSum_connectivitySkeletonCount_div_factorial
+#print axioms tsum_connectivitySkeletonCount_div_factorial
+#print axioms clusterSize_expMoment_le
 
 end Percolation

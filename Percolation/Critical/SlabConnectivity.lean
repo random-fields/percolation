@@ -804,4 +804,41 @@ theorem SlabCornerConnectionWitnessFamily.mem_upwardDistanceAtMost_of_hasProject
     (W ⟨2, by decide⟩).isOpen
     (W ⟨3, by decide⟩).isOpen
 
+/-- Pure discrete planar geometry missing from Grimmett's phrase "it is clear from Figure
+7.14": every valid cyclic corner-to-opposite-face witness family has the three projected
+intersections above. -/
+def SlabCornerProjectedChainGeometry : Prop :=
+  ∀ (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) (ω : EdgeConfiguration d)
+    (W : SlabCornerConnectionWitnessFamily hd m L ω),
+    W.HasProjectedChain
+
+/-- The pure projected-chain geometry gives the exact configuration-dependent bounded repair
+inclusion used by (7.83). -/
+theorem allSlabCornerConnectionEvents_subset_upwardDistanceAtMost_of_projectedChainGeometry
+    (G : SlabCornerProjectedChainGeometry)
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) :
+    allSlabCornerConnectionEvents d hd m L ⊆
+      upwardDistanceAtMost (4 * ((d - 2) * L))
+        (allSlabCornersConnectedEvent d m L) := by
+  intro ω hω
+  obtain ⟨W⟩ :=
+    (mem_allSlabCornerConnectionEvents_iff_nonempty_witnessFamily hd m L ω).mp hω
+  exact W.mem_upwardDistanceAtMost_of_hasProjectedChain (G d hd m L ω W)
+
+/-- Equation (7.83), with the omitted planar assertion isolated as the pure proposition above.
+All FKG, sprinkling, random-repair, and exact-constant bookkeeping is discharged here. -/
+theorem slabCornersConnected_probability_ge_of_projectedChainGeometry
+    (G : SlabCornerProjectedChainGeometry)
+    (d : ℕ) (hd : 2 ≤ d) {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂)
+    (m L : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hprob : ∀ k : Fin 4, δ ≤ (bernoulliBondMeasure d p₁).real
+      (slabCornerConnectionEvent d hd m L k)) :
+    (((p₂ : ℝ) - p₁) / (1 - (p₁ : ℝ))) ^ (4 * ((d - 2) * L)) * δ ^ 4 ≤
+      (bernoulliBondMeasure d p₂).real
+        (allSlabCornersConnectedEvent d m L) := by
+  exact slabCornersConnected_probability_ge_of_boundedRepair
+    d hd h12 m L (4 * ((d - 2) * L)) hδ hprob
+      (allSlabCornerConnectionEvents_subset_upwardDistanceAtMost_of_projectedChainGeometry
+        G d hd m L)
+
 end Percolation

@@ -306,3 +306,4 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.orthantBoundaryContactProbability_eq_reference
 #print axioms Percolation.orthantContactLt_probability_pow_le_fullContactLt
 #print axioms Percolation.exists_allPositiveOrthantContactCardGe_probability_gt
+#print axioms Percolation.exists_eventually_allPositiveOrthantContactCardGe_probability_gt

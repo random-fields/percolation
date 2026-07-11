@@ -620,6 +620,61 @@ theorem exists_allPositiveOrthantContactCardGe_probability_gt
     rwa [← orthantBoundaryContactCardGeEvent_eq_compl] at h
   exact ⟨m, n, hmn, by linarith⟩
 
+/-- Eventual form of the quadrant-contact bound.  This permits choosing the radius in any
+cofinal arithmetic progression, as required by Grimmett's simplifying divisibility convention
+`2m+1 ∣ n+1`. -/
+theorem exists_eventually_allPositiveOrthantContactCardGe_probability_gt
+    (d : ℕ) [NeZero d] (hd : 0 < d) (p : I) (htheta : 0 < theta d p)
+    (hp1 : (p : ℝ) < 1) (i : Fin d) (ell : ℕ)
+    {epsilon : ℝ} (hepsilon : 0 < epsilon) :
+    ∃ m : ℕ, ∀ᶠ n : ℕ in Filter.atTop,
+      m ≤ n ∧
+        1 - epsilon <
+          (bernoulliBondMeasure d p).real
+            (orthantBoundaryContactCardGeEvent d m n
+              (allPositiveBoxSurfaceOrthantIndex i) ell) := by
+  let Q : ℕ := d * 2 ^ d
+  have hQ : Q ≠ 0 := by simp [Q, hd]
+  have hepsilonPow : 0 < epsilon ^ Q := pow_pos hepsilon Q
+  obtain ⟨m, hm⟩ := exists_centralBoxMeetsInfiniteCluster_probability_gt
+    d p htheta (half_pos hepsilonPow)
+  have hsmallT := smallNonemptyBoundaryContact_probability_tendsto_zero
+    d m (Q * ell) p hp1
+  have hsmallEventually : ∀ᶠ n : ℕ in Filter.atTop,
+      (bernoulliBondMeasure d p).real
+          (smallNonemptyBoundaryContactEvent d m n (Q * ell)) < epsilon ^ Q / 2 :=
+    hsmallT.eventually (Iio_mem_nhds (half_pos hepsilonPow))
+  refine ⟨m, ?_⟩
+  filter_upwards [eventually_ge_atTop m, hsmallEventually] with n hmn hsmall
+  let mu := bernoulliBondMeasure d p
+  have hempty := emptyBoundaryContact_probability_le_one_sub_central d p hmn
+  have hbadUnion := boundaryContactCardLt_probability_le_empty_add_small
+    d m n (Q * ell) p
+  have hfullBad :
+      mu.real (boundaryContactCardLtEvent d m n (Q * ell)) < epsilon ^ Q := by
+    dsimp [mu]
+    linarith
+  have hpow := orthantContactLt_probability_pow_le_fullContactLt
+    (d := d) (m := m) (n := n) (ell := ell) hd p i
+  have hrefPow :
+      (mu.real (orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell)) ^ Q < epsilon ^ Q :=
+    hpow.trans_lt (by simpa [Q, mu] using hfullBad)
+  have hrefBad :
+      mu.real (orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell) < epsilon :=
+    (pow_lt_pow_iff_left₀ measureReal_nonneg (le_of_lt hepsilon) hQ).mp hrefPow
+  have hrefCompl :
+      mu.real (orthantBoundaryContactCardLtEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell) +
+        mu.real (orthantBoundaryContactCardGeEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell) = 1 := by
+    have h := probReal_add_probReal_compl
+      (μ := mu) (measurableSet_orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell)
+    rwa [← orthantBoundaryContactCardGeEvent_eq_compl] at h
+  exact ⟨hmn, by linarith⟩
+
 /-- If every signed orthant has fewer than `ell` contacts, the whole surface has fewer than
 `(d*2^d)*ell` contacts. -/
 theorem iInter_orthantContactLt_subset_fullContactLt

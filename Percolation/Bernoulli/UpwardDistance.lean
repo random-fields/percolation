@@ -34,6 +34,12 @@ theorem mem_upwardDistanceAtMost {r : ℕ} {A : Set (Set ι)} {ω : Set ι} :
         B.card ≤ r ∧ Disjoint (B : Set ι) ω ∧ ω ∪ (B : Set ι) ∈ A :=
   Iff.rfl
 
+/-- Allowing more opened coordinates can only enlarge an upward-distance event. -/
+theorem upwardDistanceAtMost_mono_radius {r s : ℕ} {A : Set (Set ι)}
+    (hrs : r ≤ s) : upwardDistanceAtMost r A ⊆ upwardDistanceAtMost s A := by
+  rintro ω ⟨D, hDcard, hDdisj, hD⟩
+  exact ⟨D, hDcard.trans hrs, hDdisj, hD⟩
+
 theorem upwardDistanceAtMost_zero (A : Set (Set ι)) :
     upwardDistanceAtMost 0 A = A := by
   ext ω

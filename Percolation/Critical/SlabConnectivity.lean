@@ -1,5 +1,6 @@
 import Percolation.Critical.Regions
 import Percolation.Bernoulli.UpwardDistance
+import Percolation.Planar.Projection
 
 /-!
 # Finite thick-slab connection regions
@@ -395,6 +396,40 @@ theorem slabCornersConnected_probability_ge_of_boundedRepair
 
 /-! ### Quantitative transverse lifts of projected intersections -/
 
+/-- Bounded upward repairs for two within-region connections compose additively.  Both repair
+sets are selected from the original configuration; their union is still disjoint from it, and
+increasingness of walk openness lets both witnesses live in the union repair. -/
+theorem mem_upwardDistanceAtMost_connectionWithinVertices_trans
+    {d r s : ℕ} {A : Set (Cubic d)} {x y z : Cubic d} {ω : EdgeConfiguration d}
+    (hxy : ω ∈ upwardDistanceAtMost r (connectionEventWithinVertices d A x y))
+    (hyz : ω ∈ upwardDistanceAtMost s (connectionEventWithinVertices d A y z)) :
+    ω ∈ upwardDistanceAtMost (r + s) (connectionEventWithinVertices d A x z) := by
+  classical
+  rcases hxy with ⟨D, hDcard, hDdisj, p, hpopen, hpA⟩
+  rcases hyz with ⟨E, hEcard, hEdisj, q, hqopen, hqA⟩
+  refine ⟨D ∪ E, (Finset.card_union_le D E).trans (Nat.add_le_add hDcard hEcard), ?_,
+    p.append q, ?_, ?_⟩
+  · rw [Set.disjoint_left]
+    intro e he heω
+    rw [Finset.mem_coe, Finset.mem_union] at he
+    rcases he with heD | heE
+    · exact Set.disjoint_left.mp hDdisj (Finset.mem_coe.mpr heD) heω
+    · exact Set.disjoint_left.mp hEdisj (Finset.mem_coe.mpr heE) heω
+  · apply walkIsOpen_append
+    · intro e he
+      rcases hpopen e he with heω | heD
+      · exact Or.inl heω
+      · exact Or.inr (Finset.mem_coe.mpr
+          (Finset.mem_union_left E (Finset.mem_coe.mp heD)))
+    · intro e he
+      rcases hqopen e he with heω | heE
+      · exact Or.inl heω
+      · exact Or.inr (Finset.mem_coe.mpr
+          (Finset.mem_union_right D (Finset.mem_coe.mp heE)))
+  · intro u hu
+    rw [SimpleGraph.Walk.mem_support_append_iff] at hu
+    exact hu.elim (hpA u) (hqA u)
+
 /-- Two vertices of `U_m(L)` with the same first two coordinates are at Manhattan distance at
 most `(d-2)L`. -/
 theorem cubicL1Dist_le_sub_two_mul_of_mem_slabCorner_of_agree_first_two
@@ -500,5 +535,168 @@ theorem mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_agree_first_two
     by_cases heω : e' ∈ ω
     · exact Or.inl heω
     · exact Or.inr (Finset.mem_coe.mpr (Finset.mem_filter.mpr ⟨heE, heω⟩))
+
+/-- If two open slab-corner walks meet after projection to the first two coordinates, opening at
+most `(d-2)L` transverse edges joins their starting vertices.  This is the exact two-path merge
+operation used four times in Figure 7.14. -/
+theorem mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_projected_inter
+    {d m L : ℕ} (hd : 2 ≤ d) {x₁ y₁ x₂ y₂ : Cubic d}
+    (w₁ : (cubicGraph d).Walk x₁ y₁) (w₂ : (cubicGraph d).Walk x₂ y₂)
+    (hw₁A : ∀ z ∈ w₁.support, z ∈ slabCornerBoxVertices d m L)
+    (hw₂A : ∀ z ∈ w₂.support, z ∈ slabCornerBoxVertices d m L)
+    (hinter : ∃ z, z ∈ (projectCubicWalkFirstTwo hd w₁).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd w₂).support)
+    (ω : EdgeConfiguration d) (hw₁open : walkIsOpen ω w₁)
+    (hw₂open : walkIsOpen ω w₂) :
+    ω ∈ upwardDistanceAtMost ((d - 2) * L)
+      (connectionEventWithinVertices d
+        (slabCornerBoxVertices d m L : Set (Cubic d)) x₁ x₂) := by
+  have hinter' := (projectCubicWalkFirstTwo_support_inter_iff hd w₁ w₂).mp hinter
+  obtain ⟨u, hu₁, v, hv₂, huv⟩ := hinter'
+  have huA := hw₁A u hu₁
+  have hvA := hw₂A v hv₂
+  rcases mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_agree_first_two
+      hd huA hvA huv ω with ⟨D, hDcard, hDdisj, q, hqopen, hqA⟩
+  let p₁ := w₁.takeUntil u hu₁
+  let p₂ := (w₂.takeUntil v hv₂).reverse
+  have hp₁openω : walkIsOpen ω p₁ :=
+    walkIsOpen_of_edges_subset hw₁open (w₁.edges_takeUntil_subset hu₁)
+  have hp₂openω : walkIsOpen ω p₂ :=
+    walkIsOpen_reverse
+      (walkIsOpen_of_edges_subset hw₂open (w₂.edges_takeUntil_subset hv₂))
+  have hp₁open : walkIsOpen (ω ∪ (D : Set (CubicEdge d))) p₁ := by
+    intro e he
+    exact Or.inl (hp₁openω e he)
+  have hp₂open : walkIsOpen (ω ∪ (D : Set (CubicEdge d))) p₂ := by
+    intro e he
+    exact Or.inl (hp₂openω e he)
+  refine ⟨D, hDcard, hDdisj, p₁.append (q.append p₂),
+    walkIsOpen_append hp₁open (walkIsOpen_append hqopen hp₂open), ?_⟩
+  intro z hz
+  rw [SimpleGraph.Walk.mem_support_append_iff,
+    SimpleGraph.Walk.mem_support_append_iff] at hz
+  rcases hz with hz | hz | hz
+  · exact hw₁A z ((w₁.support_takeUntil_subset_support hu₁) hz)
+  · exact hqA z hz
+  · have hz' : z ∈ (w₂.takeUntil v hv₂).support := by
+      simpa [p₂] using hz
+    exact hw₂A z ((w₂.support_takeUntil_subset_support hv₂) hz')
+
+/-- Three bounded repairs joining consecutive corners can be performed simultaneously.  The
+same union repair witnesses all four root-to-corner connections, so repair costs are not
+double-counted. -/
+theorem mem_upwardDistanceAtMost_allSlabCornersConnectedEvent_of_chain
+    {d m L K : ℕ} {ω : EdgeConfiguration d}
+    (h01 : ω ∈ upwardDistanceAtMost K
+      (connectionEventWithinVertices d (slabCornerBoxVertices d m L : Set (Cubic d))
+        (slabCornerVertex d m ⟨0, by decide⟩) (slabCornerVertex d m ⟨1, by decide⟩)))
+    (h12 : ω ∈ upwardDistanceAtMost K
+      (connectionEventWithinVertices d (slabCornerBoxVertices d m L : Set (Cubic d))
+        (slabCornerVertex d m ⟨1, by decide⟩) (slabCornerVertex d m ⟨2, by decide⟩)))
+    (h23 : ω ∈ upwardDistanceAtMost K
+      (connectionEventWithinVertices d (slabCornerBoxVertices d m L : Set (Cubic d))
+        (slabCornerVertex d m ⟨2, by decide⟩) (slabCornerVertex d m ⟨3, by decide⟩))) :
+    ω ∈ upwardDistanceAtMost (3 * K) (allSlabCornersConnectedEvent d m L) := by
+  classical
+  rcases h01 with ⟨D01, hD01card, hD01disj, p01, hp01open, hp01A⟩
+  rcases h12 with ⟨D12, hD12card, hD12disj, p12, hp12open, hp12A⟩
+  rcases h23 with ⟨D23, hD23card, hD23disj, p23, hp23open, hp23A⟩
+  let D := (D01 ∪ D12) ∪ D23
+  have hDcard : D.card ≤ 3 * K := by
+    dsimp [D]
+    calc
+      ((D01 ∪ D12) ∪ D23).card ≤ (D01 ∪ D12).card + D23.card :=
+        Finset.card_union_le _ _
+      _ ≤ (D01.card + D12.card) + D23.card :=
+        Nat.add_le_add_right (Finset.card_union_le _ _) _
+      _ ≤ (K + K) + K := Nat.add_le_add (Nat.add_le_add hD01card hD12card) hD23card
+      _ = 3 * K := by omega
+  have hDdisj : Disjoint (D : Set (CubicEdge d)) ω := by
+    rw [Set.disjoint_left]
+    intro e heD heω
+    have heD' : e ∈ (D01 ∪ D12) ∪ D23 := Finset.mem_coe.mp heD
+    rcases Finset.mem_union.mp heD' with he0112 | he23
+    · rcases Finset.mem_union.mp he0112 with he01 | he12
+      · exact Set.disjoint_left.mp hD01disj (Finset.mem_coe.mpr he01) heω
+      · exact Set.disjoint_left.mp hD12disj (Finset.mem_coe.mpr he12) heω
+    · exact Set.disjoint_left.mp hD23disj (Finset.mem_coe.mpr he23) heω
+  have hp01open' : walkIsOpen (ω ∪ (D : Set (CubicEdge d))) p01 := by
+    intro e he
+    rcases hp01open e he with heω | he01
+    · exact Or.inl heω
+    · exact Or.inr (Finset.mem_coe.mpr
+        (Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_coe.mp he01))))
+  have hp12open' : walkIsOpen (ω ∪ (D : Set (CubicEdge d))) p12 := by
+    intro e he
+    rcases hp12open e he with heω | he12
+    · exact Or.inl heω
+    · exact Or.inr (Finset.mem_coe.mpr
+        (Finset.mem_union_left _ (Finset.mem_union_right _ (Finset.mem_coe.mp he12))))
+  have hp23open' : walkIsOpen (ω ∪ (D : Set (CubicEdge d))) p23 := by
+    intro e he
+    rcases hp23open e he with heω | he23
+    · exact Or.inl heω
+    · exact Or.inr (Finset.mem_coe.mpr
+        (Finset.mem_union_right _ (Finset.mem_coe.mp he23)))
+  refine ⟨D, hDcard, hDdisj, ?_⟩
+  simp only [allSlabCornersConnectedEvent, Set.mem_iInter]
+  intro k _hk
+  fin_cases k
+  · exact ⟨SimpleGraph.Walk.nil, by intro e he; simp at he, by
+      intro z hz
+      simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hz
+      subst z
+      exact slabCornerVertex_mem d m L ⟨0, by decide⟩⟩
+  · exact ⟨p01, hp01open', hp01A⟩
+  · exact ⟨p01.append p12, walkIsOpen_append hp01open' hp12open', by
+      intro z hz
+      rw [SimpleGraph.Walk.mem_support_append_iff] at hz
+      exact hz.elim (hp01A z) (hp12A z)⟩
+  · exact ⟨(p01.append p12).append p23,
+      walkIsOpen_append (walkIsOpen_append hp01open' hp12open') hp23open', by
+        intro z hz
+        rw [SimpleGraph.Walk.mem_support_append_iff,
+          SimpleGraph.Walk.mem_support_append_iff] at hz
+        exact hz.elim (fun hz' ↦ hz'.elim (hp01A z) (hp12A z)) (hp23A z)⟩
+
+/-- Figure 7.14 reduced to its three projected-intersection obligations.  Consecutive projected
+walks are repaired transversely and the repairs are united without double counting.  The proof
+actually costs `3(d-2)L`; the public conclusion retains Grimmett's stated `4(d-2)L` bound. -/
+theorem mem_upwardDistanceAtMost_allSlabCornersConnectedEvent_of_projected_chain
+    {d m L : ℕ} (hd : 2 ≤ d) {y₀ y₁ y₂ y₃ : Cubic d}
+    (w₀ : (cubicGraph d).Walk (slabCornerVertex d m ⟨0, by decide⟩) y₀)
+    (w₁ : (cubicGraph d).Walk (slabCornerVertex d m ⟨1, by decide⟩) y₁)
+    (w₂ : (cubicGraph d).Walk (slabCornerVertex d m ⟨2, by decide⟩) y₂)
+    (w₃ : (cubicGraph d).Walk (slabCornerVertex d m ⟨3, by decide⟩) y₃)
+    (hw₀A : ∀ z ∈ w₀.support, z ∈ slabCornerBoxVertices d m L)
+    (hw₁A : ∀ z ∈ w₁.support, z ∈ slabCornerBoxVertices d m L)
+    (hw₂A : ∀ z ∈ w₂.support, z ∈ slabCornerBoxVertices d m L)
+    (hw₃A : ∀ z ∈ w₃.support, z ∈ slabCornerBoxVertices d m L)
+    (h01 : ∃ z, z ∈ (projectCubicWalkFirstTwo hd w₀).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd w₁).support)
+    (h12 : ∃ z, z ∈ (projectCubicWalkFirstTwo hd w₁).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd w₂).support)
+    (h23 : ∃ z, z ∈ (projectCubicWalkFirstTwo hd w₂).support ∧
+      z ∈ (projectCubicWalkFirstTwo hd w₃).support)
+    (ω : EdgeConfiguration d) (hw₀open : walkIsOpen ω w₀)
+    (hw₁open : walkIsOpen ω w₁) (hw₂open : walkIsOpen ω w₂)
+    (hw₃open : walkIsOpen ω w₃) :
+    ω ∈ upwardDistanceAtMost (4 * ((d - 2) * L))
+      (allSlabCornersConnectedEvent d m L) := by
+  let K := (d - 2) * L
+  have hrepair01 :=
+    mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_projected_inter
+      hd w₀ w₁ hw₀A hw₁A h01 ω hw₀open hw₁open
+  have hrepair12 :=
+    mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_projected_inter
+      hd w₁ w₂ hw₁A hw₂A h12 ω hw₁open hw₂open
+  have hrepair23 :=
+    mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_projected_inter
+      hd w₂ w₃ hw₂A hw₃A h23 ω hw₂open hw₃open
+  have hchain := mem_upwardDistanceAtMost_allSlabCornersConnectedEvent_of_chain
+    (K := K) hrepair01 hrepair12 hrepair23
+  apply upwardDistanceAtMost_mono_radius (A := allSlabCornersConnectedEvent d m L)
+      (show 3 * K ≤ 4 * K by omega)
+  simpa [K] using hchain
 
 end Percolation

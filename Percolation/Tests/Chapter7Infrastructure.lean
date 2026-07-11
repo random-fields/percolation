@@ -350,6 +350,27 @@ example {d m L : ℕ} (hd : 2 ≤ d) {u v : Cubic d}
   mem_upwardDistanceAtMost_connectionWithin_slabCorner_of_agree_first_two
     hd hu hv hagrees ω
 
+/-- A transverse edge contracts to a stutter under the first-two-coordinate projection. -/
+example (x : Cubic 3) (b : Bool) :
+    cubicFirstTwoProjection (by decide)
+        (cubicStepFrom x (⟨2, by decide⟩, b)) =
+      cubicFirstTwoProjection (by decide) x := by
+  ext i
+  fin_cases i <;>
+    simp [cubicFirstTwoProjection, cubicRestrict, cubicStepFrom]
+
+example {d : ℕ} (hd : 2 ≤ d) {x₁ y₁ x₂ y₂ : Cubic d}
+    (w₁ : (cubicGraph d).Walk x₁ y₁) (w₂ : (cubicGraph d).Walk x₂ y₂) :
+    (∃ z, z ∈ (projectCubicWalkFirstTwo hd w₁).support ∧
+        z ∈ (projectCubicWalkFirstTwo hd w₂).support) ↔
+      ∃ u ∈ w₁.support, ∃ v ∈ w₂.support,
+        ∀ i : Fin d, i.val < 2 → u i = v i :=
+  projectCubicWalkFirstTwo_support_inter_iff hd w₁ w₂
+
+example {ι : Type*} {r s : ℕ} {A : Set (Set ι)} (hrs : r ≤ s) :
+    upwardDistanceAtMost r A ⊆ upwardDistanceAtMost s A :=
+  upwardDistanceAtMost_mono_radius hrs
+
 example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
     (hrR : ∀ n, r n ≤ R n)
     (hpair : ∀ n, ∀ x ∈ cubicMetricBox d cubicOrigin (r n),

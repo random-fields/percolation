@@ -11,7 +11,7 @@ inserting leaf `k` into one of the `2k-3` edges of a `k`-leaf skeleton.
 namespace Percolation
 
 open Set SimpleGraph
-open scoped BigOperators
+open scoped BigOperators ENNReal unitInterval
 
 /-- Recursive insertion codes for labelled trivalent skeletons. -/
 @[reducible] def CubicConnectivitySkeleton : ℕ → Type
@@ -235,6 +235,11 @@ private theorem exists_firstHit_walkFamily
       ⟨hijle.trans hjlen, t, hqi.symm ▸ hvT⟩
     exact (not_lt_of_ge (Nat.find_min' hex hcand)) hij
 
+private theorem List.Disjoint.monoSublist {α : Type*} {a b a' b' : List α}
+    (h : a.Disjoint b) (ha : a' ⊆ a) (hb : b' ⊆ b) : a'.Disjoint b' := by
+  rw [List.disjoint_left] at h ⊢
+  exact fun _ hxa hxb ↦ h (ha hxa) (hb hxb)
+
 /-- Base case of the skeleton construction: the three-terminal tripod. -/
 theorem exists_skeletonRealization_three
     {V : Type*} [DecidableEq V] (G : SimpleGraph V) (x : Fin 3 → V)
@@ -254,9 +259,9 @@ theorem exists_skeletonRealization_three
       · simpa [s, ψ] using w₁
       · refine Fin.cases ?_ (fun e₀ ↦ Fin.elim0 e₀) e₁
         simpa [s, ψ] using w₂
-  have hwalk₀ : (walk 0).edges = w₀.edges := by simp [walk]
-  have hwalk₁ : (walk 1).edges = w₁.edges := by simp [walk]
-  have hwalk₂ : (walk 2).edges = w₂.edges := by simp [walk]
+  have hwalk₀ : (walk 0).edges = w₀.edges := by rfl
+  have hwalk₁ : (walk 1).edges = w₁.edges := by rfl
+  have hwalk₂ : (walk 2).edges = w₂.edges := by rfl
   refine ⟨s, ψ, ?_, ⟨⟨walk, ?_⟩⟩⟩
   · intro i
     fin_cases i <;> rfl
@@ -285,11 +290,22 @@ private theorem CubicConnectivitySkeleton.Realization.exists_insert
       ψ' (s'.leaf (Fin.last n)) = z ∧ Nonempty (s'.Realization G ψ') := by
   classical
   obtain ⟨q⟩ := hz
-  have hzOld : ∃ i, ψ (s.leaf ⟨0, by omega⟩) ∈ (R.walk i).support := by
+  let oldWalk : ∀ i, G.Walk (ψ (s.edge i).1) (ψ (s.edge i).2) :=
+    fun i ↦ (R.walk i).toPath
+  have oldWalk_isTrail : ∀ i, (oldWalk i).IsTrail := by
+    intro i
+    exact (R.walk i).toPath.isTrail
+  have oldWalk_disjoint : ∀ i j, i ≠ j → (oldWalk i).edges.Disjoint (oldWalk j).edges := by
+    intro i j hij
+    exact List.Disjoint.monoSublist (R.edgeDisjoint i j hij)
+      (R.walk i).edges_toPath_subset (R.walk j).edges_toPath_subset
+  have hzOld : ∃ i, ψ (s.leaf ⟨0, by omega⟩) ∈ (oldWalk i).support := by
     refine ⟨s.rootEdge, ?_⟩
     rw [← s.edge_rootEdge_snd_eq_leaf_zero hn]
-    exact (R.walk s.rootEdge).end_mem_support
-  obtain ⟨e, u, hu, r, hr⟩ := exists_firstHit_walkFamily R.walk q hzOld
+    exact (oldWalk s.rootEdge).end_mem_support
+  let qPath : G.Walk z (ψ (s.leaf ⟨0, by omega⟩)) := q.toPath
+  obtain ⟨e, u, hu, r, hr⟩ :=
+    exists_firstHit_walkFamily oldWalk qPath hzOld
   let E := CubicConnectivitySkeleton.edgeCount n
   have hnform : ∃ k, n = k + 3 := by exact ⟨n - 3, by omega⟩
   obtain ⟨k, rfl⟩ := hnform
@@ -303,60 +319,146 @@ private theorem CubicConnectivitySkeleton.Realization.exists_insert
     if hi : i.1 < E then
       let j : Fin E := ⟨i.1, hi⟩
       if hje : j = e then
-        simpa [s', ψ', CubicConnectivitySkeleton.edge, E, hi, j, hje] using
-          (R.walk e).takeUntil u hu
+        exact ((oldWalk e).takeUntil u hu).copy
+          (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, j, hje])
+          (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, j, hje])
       else
-        simpa [s', ψ', CubicConnectivitySkeleton.edge, E, hi, j, hje] using R.walk j
+        exact (oldWalk j).copy
+          (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, j, hje])
+          (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, j, hje])
     else if hiE : i.1 = E then
-      simpa [s', ψ', CubicConnectivitySkeleton.edge, E, hi, hiE] using
-        (R.walk e).dropUntil u hu
+      exact ((oldWalk e).dropUntil u hu).copy
+        (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, hiE])
+        (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, hiE])
     else
-      simpa [s', ψ', CubicConnectivitySkeleton.edge, E, hi, hiE] using r.reverse
+      exact r.reverse.copy
+        (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, hiE])
+        (by simp [s', ψ', CubicConnectivitySkeleton.edge, E, hi, hiE])
+  have walk_edges_lt_eq (i : Fin (CubicConnectivitySkeleton.edgeCount (k + 3 + 1)))
+      (hi : i.1 < E) (hie : (⟨i.1, hi⟩ : Fin E) = e) :
+      (walk i).edges = ((oldWalk e).takeUntil u hu).edges := by
+    simp [walk, hi, hie]
+  have walk_edges_lt_ne (i : Fin (CubicConnectivitySkeleton.edgeCount (k + 3 + 1)))
+      (hi : i.1 < E) (hie : (⟨i.1, hi⟩ : Fin E) ≠ e) :
+      (walk i).edges = (oldWalk ⟨i.1, hi⟩).edges := by
+    simp [walk, hi, hie]
+  have walk_edges_mid (i : Fin (CubicConnectivitySkeleton.edgeCount (k + 3 + 1)))
+      (hi : ¬i.1 < E) (hiE : i.1 = E) :
+      (walk i).edges = ((oldWalk e).dropUntil u hu).edges := by
+    simp [walk, hi, hiE]
+  have walk_edges_last (i : Fin (CubicConnectivitySkeleton.edgeCount (k + 3 + 1)))
+      (hi : ¬i.1 < E) (hiE : i.1 ≠ E) :
+      (walk i).edges = r.reverse.edges := by
+    simp [walk, hi, hiE]
   refine ⟨s', ψ', ?_, ?_, ⟨⟨walk, ?_⟩⟩⟩
   · intro i
     simp [s', ψ', CubicConnectivitySkeleton.leaf, i.2]
   · simp [s', ψ', CubicConnectivitySkeleton.leaf]
   · intro i j hij
-    dsimp only [walk]
-    split_ifs with hi hie hi' hje hj hjE hj' hje'
-    all_goals try omega
-    · exact (R.edgeDisjoint ⟨i.1, hi⟩ ⟨j.1, hj⟩ (by
-        intro hEq
-        apply hij
-        exact Fin.ext (congrArg Fin.val hEq))).mono
-          (R.walk ⟨i.1, hi⟩).edges_takeUntil_subset
-          (R.walk ⟨j.1, hj⟩).edges_takeUntil_subset
-    · exact (R.edgeDisjoint ⟨i.1, hi⟩ ⟨j.1, hj⟩ (by
-        intro hEq
-        apply hij
-        exact Fin.ext (congrArg Fin.val hEq))).mono
-          (R.walk ⟨i.1, hi⟩).edges_takeUntil_subset (by rfl)
-    · exact (hr ⟨i.1, hi⟩).symm.mono
-          (R.walk ⟨i.1, hi⟩).edges_takeUntil_subset (by rfl)
-    · exact (R.edgeDisjoint ⟨i.1, hi⟩ ⟨j.1, hj⟩ (by
-        intro hEq
-        apply hij
-        exact Fin.ext (congrArg Fin.val hEq))).mono
-          (by rfl) (R.walk ⟨j.1, hj⟩).edges_takeUntil_subset
-    · exact R.edgeDisjoint ⟨i.1, hi⟩ ⟨j.1, hj⟩ (by
-        intro hEq
-        apply hij
-        exact Fin.ext (congrArg Fin.val hEq))
-    · exact (hr ⟨i.1, hi⟩).symm
-    · simpa [hie, hje'] using
-        (R.walk e).isTrail.disjoint_edges_takeUntil_dropUntil u hu
-    · exact (R.edgeDisjoint e ⟨j.1, hj⟩ (by simpa [hie] using hje')).mono
-        (R.walk e).edges_dropUntil_subset (by rfl)
-    · exact (hr e).symm.mono (R.walk e).edges_dropUntil_subset (by rfl)
-    · simpa [hje, hjE] using
-        ((R.walk e).isTrail.disjoint_edges_takeUntil_dropUntil u hu).symm
-    · exact (R.edgeDisjoint ⟨i.1, hi⟩ e (by simpa [hje] using hie)).mono
-        (by rfl) (R.walk e).edges_dropUntil_subset
-    · exact (hr ⟨i.1, hi⟩).symm
-    · exact (hr ⟨j.1, hj⟩)
-    · exact (hr e).mono (by rfl) (R.walk e).edges_dropUntil_subset
-    · exact (hr e).symm.mono (R.walk e).edges_dropUntil_subset (by rfl)
-    · exact (hij (Fin.ext (by omega))).elim
+    by_cases hi : i.1 < E
+    · let ii : Fin E := ⟨i.1, hi⟩
+      by_cases hie : ii = e
+      · by_cases hj : j.1 < E
+        · let jj : Fin E := ⟨j.1, hj⟩
+          by_cases hje : jj = e
+          · exfalso
+            apply hij
+            have hiij : ii = jj := hie.trans hje.symm
+            exact Fin.ext (by simpa [ii, jj] using congrArg Fin.val hiij)
+          · have hd := List.Disjoint.monoSublist (oldWalk_disjoint e jj (Ne.symm hje))
+                ((oldWalk e).edges_takeUntil_subset hu) (fun _ h ↦ h)
+            rw [walk_edges_lt_eq i hi (by simpa [ii] using hie),
+              walk_edges_lt_ne j hj (by simpa [jj] using hje)]
+            exact hd
+        · by_cases hjE : j.1 = E
+          · have hd := (oldWalk_isTrail e).disjoint_edges_takeUntil_dropUntil hu
+            rw [walk_edges_lt_eq i hi (by simpa [ii] using hie), walk_edges_mid j hj hjE]
+            exact hd
+          · have hd := List.Disjoint.monoSublist (hr e).symm
+                ((oldWalk e).edges_takeUntil_subset hu) (fun _ h ↦ h)
+            rw [walk_edges_lt_eq i hi (by simpa [ii] using hie), walk_edges_last j hj hjE,
+              SimpleGraph.Walk.edges_reverse, List.disjoint_reverse_right]
+            exact hd
+      · by_cases hj : j.1 < E
+        · let jj : Fin E := ⟨j.1, hj⟩
+          by_cases hje : jj = e
+          · have hd := List.Disjoint.monoSublist (oldWalk_disjoint ii e hie)
+                (fun _ h ↦ h) ((oldWalk e).edges_takeUntil_subset hu)
+            rw [walk_edges_lt_ne i hi (by simpa [ii] using hie),
+              walk_edges_lt_eq j hj (by simpa [jj] using hje)]
+            exact hd
+          · have hiij : ii ≠ jj := by
+              intro hEq
+              apply hij
+              have hv : i.1 = j.1 := by
+                simpa [ii, jj] using congrArg Fin.val hEq
+              exact Fin.ext hv
+            rw [walk_edges_lt_ne i hi (by simpa [ii] using hie),
+              walk_edges_lt_ne j hj (by simpa [jj] using hje)]
+            exact oldWalk_disjoint ii jj hiij
+        · by_cases hjE : j.1 = E
+          · have hd := List.Disjoint.monoSublist (oldWalk_disjoint ii e hie)
+                (fun _ h ↦ h) ((oldWalk e).edges_dropUntil_subset hu)
+            rw [walk_edges_lt_ne i hi (by simpa [ii] using hie), walk_edges_mid j hj hjE]
+            exact hd
+          · have hd := (hr ii).symm
+            rw [walk_edges_lt_ne i hi (by simpa [ii] using hie), walk_edges_last j hj hjE,
+              SimpleGraph.Walk.edges_reverse, List.disjoint_reverse_right]
+            exact hd
+    · by_cases hiE : i.1 = E
+      · by_cases hj : j.1 < E
+        · let jj : Fin E := ⟨j.1, hj⟩
+          by_cases hje : jj = e
+          · have hd :=
+                ((oldWalk_isTrail e).disjoint_edges_takeUntil_dropUntil hu).symm
+            rw [walk_edges_mid i hi hiE,
+              walk_edges_lt_eq j hj (by simpa [jj] using hje)]
+            exact hd
+          · have hd := List.Disjoint.monoSublist (oldWalk_disjoint e jj (Ne.symm hje))
+                ((oldWalk e).edges_dropUntil_subset hu) (fun _ h ↦ h)
+            rw [walk_edges_mid i hi hiE,
+              walk_edges_lt_ne j hj (by simpa [jj] using hje)]
+            exact hd
+        · by_cases hjE : j.1 = E
+          · exact (hij (Fin.ext (hiE.trans hjE.symm))).elim
+          · have hd := List.Disjoint.monoSublist (hr e).symm
+                ((oldWalk e).edges_dropUntil_subset hu) (fun _ h ↦ h)
+            rw [walk_edges_mid i hi hiE, walk_edges_last j hj hjE,
+              SimpleGraph.Walk.edges_reverse, List.disjoint_reverse_right]
+            exact hd
+      · by_cases hj : j.1 < E
+        · let jj : Fin E := ⟨j.1, hj⟩
+          by_cases hje : jj = e
+          · have hd := List.Disjoint.monoSublist (hr e)
+                (fun _ h ↦ h) ((oldWalk e).edges_takeUntil_subset hu)
+            rw [walk_edges_last i hi hiE,
+              walk_edges_lt_eq j hj (by simpa [jj] using hje),
+              SimpleGraph.Walk.edges_reverse, List.disjoint_reverse_left]
+            exact hd
+          · have hd := hr jj
+            rw [walk_edges_last i hi hiE,
+              walk_edges_lt_ne j hj (by simpa [jj] using hje),
+              SimpleGraph.Walk.edges_reverse, List.disjoint_reverse_left]
+            exact hd
+        · by_cases hjE : j.1 = E
+          · have hd := List.Disjoint.monoSublist (hr e)
+                (fun _ h ↦ h) ((oldWalk e).edges_dropUntil_subset hu)
+            rw [walk_edges_last i hi hiE, walk_edges_mid j hj hjE,
+              SimpleGraph.Walk.edges_reverse, List.disjoint_reverse_left]
+            exact hd
+          · have hiLast : i.1 = E + 1 := by
+              have hCount : CubicConnectivitySkeleton.edgeCount (k + 3 + 1) = E + 2 := by
+                simp [CubicConnectivitySkeleton.edgeCount, E]
+                omega
+              have hiBound : i.1 < E + 2 := by simpa only [hCount] using i.2
+              omega
+            have hjLast : j.1 = E + 1 := by
+              have hCount : CubicConnectivitySkeleton.edgeCount (k + 3 + 1) = E + 2 := by
+                simp [CubicConnectivitySkeleton.edgeCount, E]
+                omega
+              have hjBound : j.1 < E + 2 := by simpa only [hCount] using j.2
+              omega
+            exact (hij (Fin.ext (hiLast.trans hjLast.symm))).elim
 
 /-- Every finite connected family of at least three labelled terminals admits a realization by
 one of the canonical trivalent skeletons. -/
@@ -382,7 +484,9 @@ theorem exists_skeletonRealization
       by_cases hi : i.1 < n + 3
       · let j : Fin (n + 3) := ⟨i.1, hi⟩
         simpa [j, xOld] using (hold j).trans (hleaf j)
-      · have hiLast : i = Fin.last (n + 3) := Fin.ext (by omega)
+      · have hiLast : i = Fin.last (n + 3) := Fin.ext (by
+          change i.1 = n + 3
+          omega)
         simpa [hiLast, z] using hnew
 
 /-! ### The tree-graph event and inequality (6.93) -/
@@ -415,7 +519,13 @@ private theorem disjoint_walkEdgeFinset_of_map_edges_disjoint
   rw [Finset.disjoint_left]
   intro edge hp hq
   rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_map] at hp hq
-  exact h hp hq
+  rw [List.disjoint_left] at h
+  obtain ⟨ep, hep, hepMap⟩ := List.mem_map.mp hp
+  obtain ⟨eq, heq, heqMap⟩ := List.mem_map.mp hq
+  have hinj : Function.Injective (Sym2.map (cubicOpenGraphHom d ω)) :=
+    Sym2.map.injective fun _ _ hxy ↦ hxy
+  have hepeq : ep = eq := hinj (hepMap.trans heqMap.symm)
+  exact h hep (hepeq ▸ heq)
 
 /-- Deterministic tree extraction: a common open cluster contains a labelled skeleton whose
 edge paths are pairwise edge-disjoint. -/
@@ -437,7 +547,8 @@ theorem orderedMultiPointConnectionEvent_subset_iUnion_skeleton
   rw [Set.mem_iUnion]
   let φ : s.Vertex → Cubic d := fun v ↦ (ψ v : Cubic d)
   refine ⟨φ, ?_⟩
-  simp only [labelledSkeletonEvent, if_pos (fun i ↦ congrArg Subtype.val (hleaf i))]
+  have hφ : ∀ i, φ (s.leaf i) = x i := by simpa [φ] using hleaf
+  rw [labelledSkeletonEvent, if_pos hφ]
   let w : ∀ e : Fin (CubicConnectivitySkeleton.edgeCount (n + 3)),
       (cubicGraph d).Walk (φ (s.edge e).1) (φ (s.edge e).2) :=
     fun e ↦ (R.some.walk e).map (cubicOpenGraphHom d ω)
@@ -450,15 +561,39 @@ theorem orderedMultiPointConnectionEvent_subset_iUnion_skeleton
 
 /-- The product weight assigned to one labelled placement of one connectivity skeleton. -/
 noncomputable def skeletonConnectivityWeight {d n : ℕ}
-    (p : I) (s : CubicConnectivitySkeleton (n + 3))
+    (p : unitInterval) (s : CubicConnectivitySkeleton (n + 3))
     (ψ : s.Vertex → Cubic d) (x : Fin (n + 3) → Cubic d) : ℝ≥0∞ :=
   if ∀ i, ψ (s.leaf i) = x i then
     ∏ e : Fin (CubicConnectivitySkeleton.edgeCount (n + 3)),
       twoPointConnectivityENNReal d p (ψ (s.edge e).1) (ψ (s.edge e).2)
   else 0
 
+/-- Translation invariance turns every row sum of the two-point kernel into the
+susceptibility. -/
+theorem tsum_twoPointConnectivityENNReal (d : ℕ) (p : unitInterval) (x : Cubic d) :
+    ∑' y : Cubic d, twoPointConnectivityENNReal d p x y = susceptibility d p := by
+  let T := cubicTranslationEquiv x cubicOrigin
+  calc
+    ∑' y : Cubic d, twoPointConnectivityENNReal d p x y =
+        ∑' y : Cubic d, twoPointConnectivityENNReal d p cubicOrigin (T y) := by
+      apply tsum_congr
+      intro y
+      rw [twoPointConnectivityENNReal_eq_ofReal,
+        twoPointConnectivityENNReal_eq_ofReal]
+      congr 1
+      simpa [T] using (twoPointConnectivity_translate p x cubicOrigin x y).symm
+    _ = ∑' y : Cubic d,
+        twoPointConnectivityENNReal d p cubicOrigin y := by
+      exact Equiv.tsum_eq T
+        (fun y ↦ twoPointConnectivityENNReal d p cubicOrigin y)
+    _ = susceptibility d p := by
+      rw [susceptibility_eq_tsum_connection]
+      apply tsum_congr
+      intro y
+      exact rfl
+
 private theorem measure_labelledSkeletonEvent_le_weight
-    {d n : ℕ} (p : I) (s : CubicConnectivitySkeleton (n + 3))
+    {d n : ℕ} (p : unitInterval) (s : CubicConnectivitySkeleton (n + 3))
     (ψ : s.Vertex → Cubic d) (x : Fin (n + 3) → Cubic d) :
     bernoulliBondMeasure d p (labelledSkeletonEvent s ψ x) ≤
       skeletonConnectivityWeight p s ψ x := by
@@ -474,6 +609,7 @@ private theorem measure_labelledSkeletonEvent_le_weight
       ψ (s.edge e).2
     have hbk := bernoulliBondMeasure_real_existsPairwiseDisjointOpenWalks_le_prod
       d p J a b
+    change μ (ExistsPairwiseDisjointOpenWalks d J a b) ≤ _
     rw [← MeasureTheory.ofReal_measureReal
       (μ := μ) (s := ExistsPairwiseDisjointOpenWalks d J a b)]
     calc
@@ -485,7 +621,7 @@ private theorem measure_labelledSkeletonEvent_le_weight
       _ = ∏ e : Fin (CubicConnectivitySkeleton.edgeCount (n + 3)),
             twoPointConnectivityENNReal d p (ψ (s.edge e).1) (ψ (s.edge e).2) := by
         rw [ENNReal.ofReal_prod_of_nonneg]
-        · simp only [J, Finset.mem_univ, Finset.prod_univ, a, b]
+        · simp only [J, Finset.mem_univ, a, b]
           apply Finset.prod_congr rfl
           intro e _he
           exact (twoPointConnectivityENNReal_eq_ofReal d p _ _).symm
@@ -497,7 +633,7 @@ private theorem measure_labelledSkeletonEvent_le_weight
 terminals is bounded by the sum, over all labelled trivalent skeletons and all placements of
 their internal vertices, of the products of the two-point connectivities along skeleton edges. -/
 theorem multiPointConnectivity_le_skeleton_sum
-    (d n : ℕ) (p : I) (x : Fin (n + 3) → Cubic d) :
+    (d n : ℕ) (p : unitInterval) (x : Fin (n + 3) → Cubic d) :
     bernoulliBondMeasure d p (orderedMultiPointConnectionEvent d n x) ≤
       ∑' s : CubicConnectivitySkeleton (n + 3),
         ∑' ψ : s.Vertex → Cubic d, skeletonConnectivityWeight p s ψ x := by
@@ -525,5 +661,6 @@ theorem multiPointConnectivity_le_skeleton_sum
 #print axioms exists_skeletonRealization
 #print axioms orderedMultiPointConnectionEvent_subset_iUnion_skeleton
 #print axioms multiPointConnectivity_le_skeleton_sum
+#print axioms tsum_twoPointConnectivityENNReal
 
 end Percolation

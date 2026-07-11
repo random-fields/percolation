@@ -16,6 +16,7 @@ import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
+import Percolation.Critical.StaticGoodAssembly
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -289,5 +290,15 @@ example {d n N : ℕ} (p : I) (hnN : n ≤ N) :
         ∑ y ∈ cubicMetricBox d cubicOrigin n,
           (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) :=
   bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_sum p hnN
+
+example {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (n m q : ℕ)
+    (hmn : m ≤ n)
+    (hqBox : (2 * m + 1) ^ d < q)
+    (hqDensity : (1 - ε) * theta d p * (cubicMetricBox d x n).card ≤ q) :
+    (epsilonGoodBoxEvent d p ε x n)ᶜ ⊆
+      (largeCrossingClusterEvent d q n x)ᶜ ∪
+        secondMacroscopicClusterEvent d m n x :=
+  epsilonGoodBoxEvent_compl_subset_largeCrossing_compl_union_secondMacroscopic
+    p ε x n m q hmn hqBox hqDensity
 
 end Percolation

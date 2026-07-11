@@ -16,6 +16,7 @@ import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
+import Percolation.Critical.StaticGoodAssembly
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -83,3 +84,7 @@ import Percolation.Critical.StaticCoalescence
 #print axioms Percolation.connectionEventIn_of_infinite_of_not_twoArm
 #print axioms Percolation.infiniteClusterCoalescenceEvent_compl_subset_iUnion_twoArm
 #print axioms Percolation.bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_sum
+#print axioms Percolation.finiteBoxGraphComponentCard_le_boxCard_of_diameter_lt
+#print axioms Percolation.FiniteBoxGraph.isEpsilonGood_of_largeCrossing_of_noSecondMacroscopic
+#print axioms Percolation.epsilonGoodBoxEvent_compl_subset_largeCrossing_compl_union_secondMacroscopic
+#print axioms Percolation.one_sub_bernoulliBondMeasure_real_epsilonGoodBoxEvent_le

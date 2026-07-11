@@ -15,6 +15,7 @@ import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
+import Percolation.Critical.StaticCoalescence
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -77,3 +78,8 @@ import Percolation.Critical.InfiniteClusterDensity
 #print axioms Percolation.infiniteClusterVertexDensity_measureReal_tendsto_zero
 #print axioms Percolation.mem_denseInfiniteClusterVertexEvent_iff_card
 #print axioms Percolation.denseInfiniteClusterVertexEvent_probability_tendsto_one
+#print axioms Percolation.exists_open_walk_to_cubicBoxSurface_in_box_of_mem
+#print axioms Percolation.hasInfiniteOpenClusterFrom_mem_connectionToBoxSurfaceEvent
+#print axioms Percolation.connectionEventIn_of_infinite_of_not_twoArm
+#print axioms Percolation.infiniteClusterCoalescenceEvent_compl_subset_iUnion_twoArm
+#print axioms Percolation.bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_sum

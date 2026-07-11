@@ -15,6 +15,7 @@ import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
+import Percolation.Critical.StaticCoalescence
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -271,5 +272,22 @@ example {d : ℕ} {p : I} {δ : ℝ} {n : ℕ} {ω : EdgeConfiguration d} :
       (1 - δ) * theta d p * ((cubicMetricBox d cubicOrigin n).card : ℝ) ≤
         (infiniteClusterVerticesIn d (cubicMetricBox d cubicOrigin n) ω).card :=
   mem_denseInfiniteClusterVertexEvent_iff_card
+
+example {d n N : ℕ} {ω : EdgeConfiguration d} {x y : Cubic d}
+    (hx : x ∈ cubicMetricBox d cubicOrigin n)
+    (hy : y ∈ cubicMetricBox d cubicOrigin n)
+    (hnN : n ≤ N)
+    (hxInf : hasInfiniteOpenClusterFrom d ω x)
+    (hyInf : hasInfiniteOpenClusterFrom d ω y)
+    (hnot : ω ∉ twoArmSeparationEvent d n N x y) :
+    ω ∈ connectionEventIn d (cubicBoxEdges d cubicOrigin N) x y :=
+  connectionEventIn_of_infinite_of_not_twoArm hx hy hnN hxInf hyInf hnot
+
+example {d n N : ℕ} (p : I) (hnN : n ≤ N) :
+    (bernoulliBondMeasure d p).real (infiniteClusterCoalescenceEvent d n N)ᶜ ≤
+      ∑ x ∈ cubicMetricBox d cubicOrigin n,
+        ∑ y ∈ cubicMetricBox d cubicOrigin n,
+          (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) :=
+  bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_sum p hnN
 
 end Percolation

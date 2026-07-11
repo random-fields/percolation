@@ -83,6 +83,7 @@ import Percolation.Critical.StaticBlocks
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.StaticBlockAdjacency
 import Percolation.Critical.StaticBlockPath
+import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization
 import Percolation.Critical.ExplorationLaw

@@ -46,6 +46,62 @@ theorem cubicGraphIsoRegion_univ {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) 
   intro x
   exact ⟨F.symm x, Set.mem_univ _, by simp⟩
 
+private theorem cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_of_map
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (A : Set (Cubic d))
+    (ω : EdgeConfiguration d) (x y : Cubic d) :
+    cubicGraphIsoConfigurationPullback F ω ∈ connectionEventWithinVertices d A x y →
+      ω ∈ connectionEventWithinVertices d (cubicGraphIsoRegion F A) (F x) (F y) := by
+  rintro ⟨w, hwopen, hwA⟩
+  refine ⟨w.map F.toHom, walkIsOpen_map_cubicGraphIso F w hwopen, ?_⟩
+  intro z hz
+  rw [SimpleGraph.Walk.support_map] at hz
+  obtain ⟨u, hu, rfl⟩ := List.mem_map.mp hz
+  exact (cubicGraphIso_mem_region_iff F A u).2 (hwA u hu)
+
+/-- Vertex-constrained connectivity is transported exactly by any cubic graph automorphism. -/
+theorem cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_iff
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (A : Set (Cubic d))
+    (ω : EdgeConfiguration d) (x y : Cubic d) :
+    cubicGraphIsoConfigurationPullback F ω ∈ connectionEventWithinVertices d A x y ↔
+      ω ∈ connectionEventWithinVertices d (cubicGraphIsoRegion F A) (F x) (F y) := by
+  constructor
+  · exact cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_of_map
+      F A ω x y
+  · intro h
+    have h' : cubicGraphIsoConfigurationPullback F.symm
+        (cubicGraphIsoConfigurationPullback F ω) ∈
+          connectionEventWithinVertices d (cubicGraphIsoRegion F A) (F x) (F y) := by
+      simpa using h
+    have hback :=
+      cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_of_map
+        F.symm (cubicGraphIsoRegion F A) (cubicGraphIsoConfigurationPullback F ω)
+          (F x) (F y) h'
+    simpa using hback
+
+/-- Bernoulli probability of a vertex-constrained connection is invariant under cubic graph
+automorphisms. -/
+theorem bernoulliBondMeasure_real_connectionEventWithinVertices_graphIso
+    {d : ℕ} (F : cubicGraph d ≃g cubicGraph d) (A : Set (Cubic d))
+    (p : I) (x y : Cubic d) :
+    (bernoulliBondMeasure d p).real (connectionEventWithinVertices d A x y) =
+      (bernoulliBondMeasure d p).real
+        (connectionEventWithinVertices d (cubicGraphIsoRegion F A) (F x) (F y)) := by
+  let T := cubicGraphIsoConfigurationPullback F
+  have hpre : T ⁻¹' connectionEventWithinVertices d A x y =
+      connectionEventWithinVertices d (cubicGraphIsoRegion F A) (F x) (F y) := by
+    ext ω
+    exact cubicGraphIsoConfigurationPullback_mem_connectionEventWithinVertices_iff
+      F A ω x y
+  have hmap := congrArg
+    (fun μ : Measure (EdgeConfiguration d) ↦ μ.real (connectionEventWithinVertices d A x y))
+    (bernoulliBondMeasure_map_cubicGraphIsoConfigurationPullback p F)
+  change (Measure.map T (bernoulliBondMeasure d p)).real
+      (connectionEventWithinVertices d A x y) =
+    (bernoulliBondMeasure d p).real (connectionEventWithinVertices d A x y) at hmap
+  rw [map_measureReal_apply (measurable_cubicGraphIsoConfigurationPullback F)
+    (measurableSet_connectionEventWithinVertices d A x y), hpre] at hmap
+  exact hmap.symm
+
 private theorem hasOpenPathOfLengthAtLeastWithinVertices_graphIso
     {d n : ℕ} {A : Set (Cubic d)} {ω : EdgeConfiguration d}
     (F : cubicGraph d ≃g cubicGraph d) (x : Cubic d)

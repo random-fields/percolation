@@ -408,6 +408,42 @@ example {q : ℝ} {m M : ℕ} (hq0 : 0 < q) (hq1 : q < 1)
     q ^ (m / M) ≤ Real.exp (-(secondClusterPeelingRate q M) * m) :=
   pow_natDiv_le_exp_neg_secondClusterPeelingRate hq0 hq1 hM hm
 
+/-- Oracle for the exact translated/rotated identification used in the 7.104 strip step. -/
+example {d n L : ℕ} (hd : 1 ≤ d) (i : Fin d) (r : ℤ)
+    (hrlower : -(n : ℤ) ≤ r) (hrupper : r + L ≤ n) (x : Cubic d) :
+    coordinateBandToLastIso hd i r x ∈ finiteThickSlabTVertices d n L ↔
+      x ∈ coordinateClosedStripVertices d n i r (r + L) :=
+  coordinateBandToLastIso_mem_finiteThickSlabTVertices_iff
+    hd i r hrlower hrupper x
+
+/-- The one-block estimate is derived from the actual finite-slab package, rather than accepted
+as a theorem parameter. -/
+example {d n L : ℕ} (hd : 1 ≤ d) (p : I) {δ : ℝ}
+    (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ)
+    (hn : 1 ≤ n) {i : Fin d} {φ : ℤ} {x y : Cubic d}
+    (hx : x ∈ coordinateHyperplaneVertices d n i φ)
+    (hy : y ∈ coordinateHyperplaneVertices d n i φ) :
+    ∀ j,
+      (bernoulliBondMeasure d p).real
+          (forwardTwoArmSeparationEvent d n i φ ((j + 1) * (L + 2)) x y) ≤
+        (1 - (p : ℝ) ^ 2 * δ) * (bernoulliBondMeasure d p).real
+          (forwardTwoArmSeparationEvent d n i φ (j * (L + 2)) x y) :=
+  forwardTwoArmSeparation_uniform_block_step_of_uniformFiniteSlab
+    hd p hδ0 hδ1 hslab hn hx hy
+
+/-- Exact polynomial-times-exponential 7.104 conclusion from Lemma 7.78's source-facing
+finite-slab conclusion. -/
+example {d L : ℕ} (hd : 1 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ) :
+    ∃ μ : ℝ, 0 < μ ∧ ∀ m n : ℕ, 1 ≤ m → 1 ≤ n →
+      (bernoulliBondMeasure d p).real
+          (secondMacroscopicClusterEvent d m n cubicOrigin) ≤
+        d * (2 * n + 1 : ℝ) ^ (2 * d) * Real.exp (-μ * m) :=
+  exists_secondMacroscopicCluster_probability_le_exp_of_uniformFiniteSlab
+    hd p hp0 hδ0 hδ1 hslab
+
 example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
     (hrR : ∀ n, r n ≤ R n)
     (hpair : ∀ n, ∀ x ∈ cubicMetricBox d cubicOrigin (r n),

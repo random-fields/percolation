@@ -507,23 +507,27 @@ theorem one_sub_referenceFaceProbability_pow_le_innerHasInfiniteClusterVertexEve
 /-- The failure probability of one reference face tends to zero once the inner box contains an
 infinite-cluster vertex with high probability.  The proof uses the `2d`-th power inequality
 rather than introducing a totalized real root. -/
-theorem one_sub_referenceFaceProbability_tendsto_zero
-    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p) :
+theorem one_sub_referenceFaceProbability_tendsto_zero_of_radii
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    (r R : ℕ → ℕ) (hr : Filter.Tendsto r Filter.atTop Filter.atTop)
+    (hR : ∀ n, r n ≤ R n) :
     Filter.Tendsto
       (fun n ↦ 1 - (bernoulliBondMeasure d p).real
-        (innerInfiniteClusterReachesFaceEvent d n (2 * n) ⟨0, hd⟩ true))
+        (innerInfiniteClusterReachesFaceEvent d (r n) (R n) ⟨0, hd⟩ true))
       Filter.atTop (nhds 0) := by
   let emptyProb : ℕ → ℝ := fun n ↦
-    (bernoulliBondMeasure d p).real (innerHasInfiniteClusterVertexEvent d n)ᶜ
-  have hinner := innerHasInfiniteClusterVertexEvent_probability_tendsto_one hd p hp
+    (bernoulliBondMeasure d p).real (innerHasInfiniteClusterVertexEvent d (r n))ᶜ
+  have hinner :=
+    (innerHasInfiniteClusterVertexEvent_probability_tendsto_one hd p hp).comp hr
   have hempty : Filter.Tendsto emptyProb Filter.atTop (nhds 0) := by
     have hEq : emptyProb = fun n ↦
-        1 - (bernoulliBondMeasure d p).real (innerHasInfiniteClusterVertexEvent d n) := by
+        1 - (bernoulliBondMeasure d p).real
+          (innerHasInfiniteClusterVertexEvent d (r n)) := by
       funext n
       change (bernoulliBondMeasure d p).real
-        (innerHasInfiniteClusterVertexEvent d n)ᶜ = _
+        (innerHasInfiniteClusterVertexEvent d (r n))ᶜ = _
       rw [probReal_compl_eq_one_sub
-        (measurableSet_innerHasInfiniteClusterVertexEvent d n)]
+        (measurableSet_innerHasInfiniteClusterVertexEvent d (r n))]
     rw [hEq]
     convert (tendsto_const_nhds (x := (1 : ℝ))).sub hinner using 1 <;> norm_num
   apply Metric.tendsto_atTop.2
@@ -532,19 +536,19 @@ theorem one_sub_referenceFaceProbability_tendsto_zero
   · refine ⟨0, fun n hn ↦ ?_⟩
     rw [Real.dist_eq, sub_zero, abs_of_nonneg (sub_nonneg.mpr measureReal_le_one)]
     have hprob0 : 0 ≤ (bernoulliBondMeasure d p).real
-        (innerInfiniteClusterReachesFaceEvent d n (2 * n) ⟨0, hd⟩ true) :=
+        (innerInfiniteClusterReachesFaceEvent d (r n) (R n) ⟨0, hd⟩ true) :=
       measureReal_nonneg
     linarith
   · have hpowPos : 0 < ε ^ (2 * d) := pow_pos hε _
     obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 hempty (ε ^ (2 * d)) hpowPos
     refine ⟨N, fun n hn ↦ ?_⟩
     let b := 1 - (bernoulliBondMeasure d p).real
-      (innerInfiniteClusterReachesFaceEvent d n (2 * n) ⟨0, hd⟩ true)
+      (innerInfiniteClusterReachesFaceEvent d (r n) (R n) ⟨0, hd⟩ true)
     have hb0 : 0 ≤ b := sub_nonneg.mpr measureReal_le_one
     have hbpow : b ^ (2 * d) ≤ emptyProb n := by
       simpa [b, emptyProb] using
         one_sub_referenceFaceProbability_pow_le_innerHasInfiniteClusterVertexEvent_compl
-          (Nat.zero_lt_one.trans_le hd) (by omega : n ≤ 2 * n) p
+          (Nat.zero_lt_one.trans_le hd) (hR n) p
     have hemptyLt : emptyProb n < ε ^ (2 * d) := by
       have h := hN n hn
       rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at h
@@ -557,15 +561,55 @@ theorem one_sub_referenceFaceProbability_tendsto_zero
     rw [Real.dist_eq, sub_zero, abs_of_nonneg hb0]
     exact hbε
 
+theorem one_sub_referenceFaceProbability_tendsto_zero_of_outer
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    (R : ℕ → ℕ) (hR : ∀ n, n ≤ R n) :
+    Filter.Tendsto
+      (fun n ↦ 1 - (bernoulliBondMeasure d p).real
+        (innerInfiniteClusterReachesFaceEvent d n (R n) ⟨0, hd⟩ true))
+      Filter.atTop (nhds 0) :=
+  one_sub_referenceFaceProbability_tendsto_zero_of_radii hd p hp id R
+    Filter.tendsto_id hR
+
+theorem one_sub_referenceFaceProbability_tendsto_zero
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p) :
+    Filter.Tendsto
+      (fun n ↦ 1 - (bernoulliBondMeasure d p).real
+        (innerInfiniteClusterReachesFaceEvent d n (2 * n) ⟨0, hd⟩ true))
+      Filter.atTop (nhds 0) :=
+  one_sub_referenceFaceProbability_tendsto_zero_of_outer hd p hp
+    (fun n ↦ 2 * n) (fun n ↦ by dsimp; omega)
+
+theorem referenceFaceProbability_tendsto_one_of_radii
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    (r R : ℕ → ℕ) (hr : Filter.Tendsto r Filter.atTop Filter.atTop)
+    (hR : ∀ n, r n ≤ R n) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (innerInfiniteClusterReachesFaceEvent d (r n) (R n) ⟨0, hd⟩ true))
+      Filter.atTop (nhds 1) := by
+  have hfail := one_sub_referenceFaceProbability_tendsto_zero_of_radii
+    hd p hp r R hr hR
+  have h := (tendsto_const_nhds (x := (1 : ℝ))).sub hfail
+  convert h using 1 <;> norm_num
+
+theorem referenceFaceProbability_tendsto_one_of_outer
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    (R : ℕ → ℕ) (hR : ∀ n, n ≤ R n) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (innerInfiniteClusterReachesFaceEvent d n (R n) ⟨0, hd⟩ true))
+      Filter.atTop (nhds 1) :=
+  referenceFaceProbability_tendsto_one_of_radii hd p hp id R Filter.tendsto_id hR
+
 theorem referenceFaceProbability_tendsto_one
     {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p) :
     Filter.Tendsto
       (fun n ↦ (bernoulliBondMeasure d p).real
         (innerInfiniteClusterReachesFaceEvent d n (2 * n) ⟨0, hd⟩ true))
-      Filter.atTop (nhds 1) := by
-  have hfail := one_sub_referenceFaceProbability_tendsto_zero hd p hp
-  have h := (tendsto_const_nhds (x := (1 : ℝ))).sub hfail
-  convert h using 1 <;> norm_num
+      Filter.atTop (nhds 1) :=
+  referenceFaceProbability_tendsto_one_of_outer hd p hp
+    (fun n ↦ 2 * n) (fun n ↦ by dsimp; omega)
 
 theorem referenceFaceProbability_pow_le_allInnerInfiniteClusterFacesProbability
     {d n N : ℕ} (hd : 0 < d) (p : I) :
@@ -586,16 +630,18 @@ theorem referenceFaceProbability_pow_le_allInnerInfiniteClusterFacesProbability
 /-- Equation (7.103) at the convenient outer radius `2n`: all signed faces are reached by the
 same coalescing family with probability tending to one.  The coalescence itself is handled by
 the separate two-arm estimate. -/
-theorem allInnerInfiniteClusterFacesEvent_probability_tendsto_one
-    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p) :
+theorem allInnerInfiniteClusterFacesEvent_probability_tendsto_one_of_radii
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    (r R : ℕ → ℕ) (hr : Filter.Tendsto r Filter.atTop Filter.atTop)
+    (hR : ∀ n, r n ≤ R n) :
     Filter.Tendsto
       (fun n ↦ (bernoulliBondMeasure d p).real
-        (allInnerInfiniteClusterFacesEvent d n (2 * n)))
+        (allInnerInfiniteClusterFacesEvent d (r n) (R n)))
       Filter.atTop (nhds 1) := by
-  have href := referenceFaceProbability_tendsto_one hd p hp
+  have href := referenceFaceProbability_tendsto_one_of_radii hd p hp r R hr hR
   have hlower : Filter.Tendsto
       (fun n ↦ ((bernoulliBondMeasure d p).real
-        (innerInfiniteClusterReachesFaceEvent d n (2 * n) ⟨0, hd⟩ true)) ^ (2 * d))
+        (innerInfiniteClusterReachesFaceEvent d (r n) (R n) ⟨0, hd⟩ true)) ^ (2 * d))
       Filter.atTop (nhds 1) := by
     simpa using href.pow (2 * d)
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le hlower tendsto_const_nhds
@@ -604,5 +650,118 @@ theorem allInnerInfiniteClusterFacesEvent_probability_tendsto_one
       (Nat.zero_lt_one.trans_le hd) p
   · intro n
     exact measureReal_le_one
+
+theorem allInnerInfiniteClusterFacesEvent_probability_tendsto_one_of_outer
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    (R : ℕ → ℕ) (hR : ∀ n, n ≤ R n) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (allInnerInfiniteClusterFacesEvent d n (R n)))
+      Filter.atTop (nhds 1) :=
+  allInnerInfiniteClusterFacesEvent_probability_tendsto_one_of_radii
+    hd p hp id R Filter.tendsto_id hR
+
+theorem allInnerInfiniteClusterFacesEvent_probability_tendsto_one
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (allInnerInfiniteClusterFacesEvent d n (2 * n)))
+      Filter.atTop (nhds 1) :=
+  allInnerInfiniteClusterFacesEvent_probability_tendsto_one_of_outer hd p hp
+    (fun n ↦ 2 * n) (fun n ↦ by dsimp; omega)
+
+/-- Probability-level assembly of Lemma 7.97.  The geometric two-arm argument is isolated in
+the hypothesis that all inner infinite-cluster vertices coalesce in the outer box with
+probability tending to one.  Thus a later proof of Lemma 7.89 plugs into this declaration
+without duplicating the density or all-face arguments. -/
+theorem largeCrossingCluster_probability_tendsto_one_of_coalescence
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    {δ : ℝ} (hδ : 0 < δ) (r R q : ℕ → ℕ)
+    (hr : Filter.Tendsto r Filter.atTop Filter.atTop)
+    (hrR : ∀ n, r n ≤ R n) (hq : ∀ n, 1 ≤ q n)
+    (hqDensity : ∀ n, (q n : ℝ) ≤
+      (1 - δ) * theta d p * ((cubicMetricBox d cubicOrigin (r n)).card : ℝ))
+    (hcoalesce : Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (infiniteClusterCoalescenceEvent d (r n) (R n)))
+      Filter.atTop (nhds 1)) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (largeCrossingClusterEvent d (q n) (R n) cubicOrigin))
+      Filter.atTop (nhds 1) := by
+  let μ := bernoulliBondMeasure d p
+  let D : ℕ → Set (EdgeConfiguration d) := fun n ↦
+    denseInfiniteClusterVertexEvent d p δ (r n)
+  let C : ℕ → Set (EdgeConfiguration d) := fun n ↦
+    infiniteClusterCoalescenceEvent d (r n) (R n)
+  let F : ℕ → Set (EdgeConfiguration d) := fun n ↦
+    allInnerInfiniteClusterFacesEvent d (r n) (R n)
+  let L : ℕ → Set (EdgeConfiguration d) := fun n ↦
+    largeCrossingClusterEvent d (q n) (R n) cubicOrigin
+  have hdenseFail : Filter.Tendsto (fun n ↦ μ.real (D n)ᶜ)
+      Filter.atTop (nhds 0) := by
+    simpa [μ, D] using
+      (denseInfiniteClusterVertexEvent_compl_measureReal_tendsto_zero
+        hd p hp hδ).comp hr
+  have hcoalesceFail : Filter.Tendsto (fun n ↦ μ.real (C n)ᶜ)
+      Filter.atTop (nhds 0) := by
+    have hEq : (fun n ↦ μ.real (C n)ᶜ) =
+        fun n ↦ 1 - μ.real (C n) := by
+      funext n
+      rw [probReal_compl_eq_one_sub
+        (measurableSet_infiniteClusterCoalescenceEvent d (r n) (R n))]
+    rw [hEq]
+    simpa [μ, C] using (tendsto_const_nhds (x := (1 : ℝ))).sub hcoalesce
+  have hfaces := allInnerInfiniteClusterFacesEvent_probability_tendsto_one_of_radii
+    hd p hp r R hr hrR
+  have hfacesFail : Filter.Tendsto (fun n ↦ μ.real (F n)ᶜ)
+      Filter.atTop (nhds 0) := by
+    have hEq : (fun n ↦ μ.real (F n)ᶜ) =
+        fun n ↦ 1 - μ.real (F n) := by
+      funext n
+      rw [probReal_compl_eq_one_sub
+        (measurableSet_allInnerInfiniteClusterFacesEvent d (r n) (R n))]
+    rw [hEq]
+    simpa [μ, F] using (tendsto_const_nhds (x := (1 : ℝ))).sub hfaces
+  have hsum : Filter.Tendsto
+      (fun n ↦ μ.real (D n)ᶜ + μ.real (C n)ᶜ + μ.real (F n)ᶜ)
+      Filter.atTop (nhds 0) := by
+    convert (hdenseFail.add hcoalesceFail).add hfacesFail using 1 <;> norm_num
+  have hfailure : Filter.Tendsto (fun n ↦ μ.real (L n)ᶜ)
+      Filter.atTop (nhds 0) := by
+    apply squeeze_zero' (Filter.Eventually.of_forall fun n ↦ measureReal_nonneg)
+      (Filter.Eventually.of_forall fun n ↦ ?_) hsum
+    have hsubset : (L n)ᶜ ⊆ (D n)ᶜ ∪ (C n)ᶜ ∪ (F n)ᶜ := by
+      intro ω hω
+      by_cases hD : ω ∈ D n
+      · by_cases hC : ω ∈ C n
+        · by_cases hF : ω ∈ F n
+          · exfalso
+            apply hω
+            apply mem_largeCrossingClusterEvent_of_dense_of_coalescence_of_allFaces
+              (hq n) (hrR n)
+            · have hcardReal := (hqDensity n).trans
+                (mem_denseInfiniteClusterVertexEvent_iff_card.mp hD)
+              exact_mod_cast hcardReal
+            · exact hC
+            · exact mem_allInnerInfiniteClusterFacesEvent_iff.mp hF
+          · exact Or.inr hF
+        · exact Or.inl (Or.inr hC)
+      · exact Or.inl (Or.inl hD)
+    calc
+      μ.real (L n)ᶜ ≤ μ.real ((D n)ᶜ ∪ (C n)ᶜ ∪ (F n)ᶜ) :=
+        measureReal_mono hsubset (measure_ne_top _ _)
+      _ ≤ μ.real ((D n)ᶜ ∪ (C n)ᶜ) + μ.real (F n)ᶜ :=
+        measureReal_union_le _ _
+      _ ≤ μ.real (D n)ᶜ + μ.real (C n)ᶜ + μ.real (F n)ᶜ := by
+        gcongr
+        exact measureReal_union_le _ _
+  have hEq : (fun n ↦ μ.real (L n)) = fun n ↦ 1 - μ.real (L n)ᶜ := by
+    funext n
+    rw [probReal_compl_eq_one_sub
+      (measurableSet_largeCrossingClusterEvent d (q n) (R n) cubicOrigin)]
+    linarith
+  rw [hEq]
+  simpa [μ, L] using (tendsto_const_nhds (x := (1 : ℝ))).sub hfailure
 
 end Percolation

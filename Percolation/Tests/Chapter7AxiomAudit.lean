@@ -18,6 +18,7 @@ import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
+import Percolation.Critical.SlabConnectivity
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -85,6 +86,7 @@ import Percolation.Critical.StaticLargeCrossing
 #print axioms Percolation.connectionEventIn_of_infinite_of_not_twoArm
 #print axioms Percolation.infiniteClusterCoalescenceEvent_compl_subset_iUnion_twoArm
 #print axioms Percolation.bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_sum
+#print axioms Percolation.infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
 #print axioms Percolation.finiteBoxGraphComponentCard_le_boxCard_of_diameter_lt
 #print axioms Percolation.FiniteBoxGraph.isEpsilonGood_of_largeCrossing_of_noSecondMacroscopic
 #print axioms Percolation.epsilonGoodBoxEvent_compl_subset_largeCrossing_compl_union_secondMacroscopic
@@ -101,3 +103,9 @@ import Percolation.Critical.StaticLargeCrossing
 #print axioms Percolation.prod_complFaceProbabilities_le_innerHasInfiniteClusterVertexEvent_compl
 #print axioms Percolation.one_sub_referenceFaceProbability_tendsto_zero
 #print axioms Percolation.allInnerInfiniteClusterFacesEvent_probability_tendsto_one
+#print axioms Percolation.allInnerInfiniteClusterFacesEvent_probability_tendsto_one_of_radii
+#print axioms Percolation.largeCrossingCluster_probability_tendsto_one_of_coalescence
+#print axioms Percolation.mem_finiteThickSlabSVertices_iff
+#print axioms Percolation.mem_finiteThickSlabTVertices_iff
+#print axioms Percolation.measurableSet_finiteThickSlabSConnectionEvent
+#print axioms Percolation.finiteThickSlabSConnectionEvent_self

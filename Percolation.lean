@@ -86,6 +86,7 @@ import Percolation.Critical.StaticBlockPath
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
+import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization
 import Percolation.Critical.ExplorationLaw

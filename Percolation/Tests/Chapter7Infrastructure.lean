@@ -18,6 +18,7 @@ import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
+import Percolation.Critical.SlabConnectivity
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -292,6 +293,38 @@ example {d n N : ℕ} (p : I) (hnN : n ≤ N) :
           (bernoulliBondMeasure d p).real (twoArmSeparationEvent d n N x y) :=
   bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_sum p hnN
 
+example {d n L : ℕ} {x : Cubic d} :
+    x ∈ finiteThickSlabSVertices d n L ↔
+      ∀ i : Fin d,
+        if i.val < 2 then (x i).natAbs ≤ n else 0 ≤ x i ∧ x i ≤ L :=
+  mem_finiteThickSlabSVertices_iff
+
+example {d n L : ℕ} {x : Cubic d} :
+    x ∈ finiteThickSlabTVertices d n L ↔
+      ∀ i : Fin d,
+        if i.val + 1 = d then 0 ≤ x i ∧ x i ≤ L else (x i).natAbs ≤ n :=
+  mem_finiteThickSlabTVertices_iff
+
+example {d n L : ℕ} {x : Cubic d} (hx : x ∈ finiteThickSlabSVertices d n L) :
+    finiteThickSlabSConnectionEvent d n L x x = Set.univ :=
+  finiteThickSlabSConnectionEvent_self hx
+
+example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
+    (hrR : ∀ n, r n ≤ R n)
+    (hpair : ∀ n, ∀ x ∈ cubicMetricBox d cubicOrigin (r n),
+      ∀ y ∈ cubicMetricBox d cubicOrigin (r n),
+        (bernoulliBondMeasure d p).real
+          (twoArmSeparationEvent d (r n) (R n) x y) ≤ q n)
+    (hdecay : Filter.Tendsto
+      (fun n ↦ ((cubicMetricBox d cubicOrigin (r n)).card : ℝ) ^ 2 * q n)
+      Filter.atTop (nhds 0)) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (infiniteClusterCoalescenceEvent d (r n) (R n)))
+      Filter.atTop (nhds 1) :=
+  infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
+    p r R q hrR hpair hdecay
+
 example {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (n m q : ℕ)
     (hmn : m ≤ n)
     (hqBox : (2 * m + 1) ^ d < q)
@@ -318,6 +351,18 @@ example {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p) :
         (allInnerInfiniteClusterFacesEvent d n (2 * n)))
       Filter.atTop (nhds 1) :=
   allInnerInfiniteClusterFacesEvent_probability_tendsto_one hd p hp
+
+/-- Oracle case for the paired-radius interface used by the logarithmic-annulus proof of
+Lemma 7.97: no hidden equality between the inner and outer radius is required. -/
+example {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    (r R : ℕ → ℕ) (hr : Filter.Tendsto r Filter.atTop Filter.atTop)
+    (hrR : ∀ n, r n ≤ R n) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (allInnerInfiniteClusterFacesEvent d (r n) (R n)))
+      Filter.atTop (nhds 1) :=
+  allInnerInfiniteClusterFacesEvent_probability_tendsto_one_of_radii
+    hd p hp r R hr hrR
 
 example {d n N : ℕ} (p : I) (e : Fin d ≃ Fin d) (i : Fin d) (positive : Bool) :
     (bernoulliBondMeasure d p).real

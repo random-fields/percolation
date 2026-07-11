@@ -256,4 +256,40 @@ theorem bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_card_
     _ = ((cubicMetricBox d cubicOrigin n).card : ℝ) ^ 2 * q := by
       simp [pow_two, mul_assoc]
 
+/-- A uniform pairwise two-arm estimate whose polynomially corrected upper bound tends to zero
+implies that every pair of inner infinite-cluster vertices coalesces in the outer box with
+probability tending to one.  This is the exact analytic interface between Lemma 7.89 and the
+probability assembly of Lemma 7.97. -/
+theorem infiniteClusterCoalescenceEvent_probability_tendsto_one_of_twoArm_bound
+    {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
+    (hrR : ∀ n, r n ≤ R n)
+    (hpair : ∀ n, ∀ x ∈ cubicMetricBox d cubicOrigin (r n),
+      ∀ y ∈ cubicMetricBox d cubicOrigin (r n),
+        (bernoulliBondMeasure d p).real
+          (twoArmSeparationEvent d (r n) (R n) x y) ≤ q n)
+    (hdecay : Filter.Tendsto
+      (fun n ↦ ((cubicMetricBox d cubicOrigin (r n)).card : ℝ) ^ 2 * q n)
+      Filter.atTop (nhds 0)) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (infiniteClusterCoalescenceEvent d (r n) (R n)))
+      Filter.atTop (nhds 1) := by
+  let μ := bernoulliBondMeasure d p
+  let C : ℕ → Set (EdgeConfiguration d) := fun n ↦
+    infiniteClusterCoalescenceEvent d (r n) (R n)
+  have hfailure : Filter.Tendsto (fun n ↦ μ.real (C n)ᶜ)
+      Filter.atTop (nhds 0) := by
+    apply squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ measureReal_nonneg)
+      (Filter.Eventually.of_forall fun n ↦ ?_) hdecay
+    simpa [μ, C] using
+      bernoulliBondMeasure_real_infiniteClusterCoalescenceEvent_compl_le_card_sq_mul
+        p (hrR n) (q n) (hpair n)
+  have hEq : (fun n ↦ μ.real (C n)) = fun n ↦ 1 - μ.real (C n)ᶜ := by
+    funext n
+    rw [probReal_compl_eq_one_sub
+      (measurableSet_infiniteClusterCoalescenceEvent d (r n) (R n))]
+    linarith
+  rw [hEq]
+  simpa [μ, C] using (tendsto_const_nhds (x := (1 : ℝ))).sub hfailure
+
 end Percolation

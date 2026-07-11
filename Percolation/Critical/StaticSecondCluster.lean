@@ -531,4 +531,125 @@ theorem secondMacroscopicCluster_probability_le_boxPolynomial_mul
       congr 3
       omega
 
+/-! ### Geometric-to-exponential conversion in Lemma 7.104 -/
+
+/-- Above one block, the quotient `m/M` is at least half of the real ratio `m/M`. -/
+theorem nat_le_two_mul_mul_div {m M : ℕ} (hM : 1 ≤ M) (hm : M ≤ m) :
+    m ≤ 2 * M * (m / M) := by
+  have hk : 1 ≤ m / M := (Nat.le_div_iff_mul_le hM).2 (by simpa using hm)
+  have hMle : M ≤ M * (m / M) := by
+    simpa using Nat.mul_le_mul_left M hk
+  have hmod : m % M < M := Nat.mod_lt m hM
+  calc
+    m = M * (m / M) + m % M := (Nat.div_add_mod m M).symm
+    _ ≤ M * (m / M) + M * (m / M) := Nat.add_le_add_left (hmod.le.trans hMle) _
+    _ = 2 * M * (m / M) := by ring
+
+/-- The positive rate used to absorb both the quotient-rounding loss and the finitely many
+widths below one block. -/
+noncomputable def secondClusterPeelingRate (q : ℝ) (M : ℕ) : ℝ :=
+  min (-Real.log q / (2 * M)) (Real.log 2 / M)
+
+theorem secondClusterPeelingRate_pos {q : ℝ} {M : ℕ}
+    (hq0 : 0 < q) (hq1 : q < 1) (hM : 1 ≤ M) :
+    0 < secondClusterPeelingRate q M := by
+  rw [secondClusterPeelingRate, lt_min_iff]
+  constructor
+  · exact div_pos (neg_pos.mpr (Real.log_neg hq0 hq1)) (by positivity)
+  · exact div_pos (Real.log_pos (by norm_num)) (by positivity)
+
+/-- For widths at least one block, the geometric factor is bounded by the selected exponential
+rate. -/
+theorem pow_natDiv_le_exp_neg_secondClusterPeelingRate
+    {q : ℝ} {m M : ℕ} (hq0 : 0 < q) (hq1 : q < 1)
+    (hM : 1 ≤ M) (hm : M ≤ m) :
+    q ^ (m / M) ≤ Real.exp (-(secondClusterPeelingRate q M) * m) := by
+  let k := m / M
+  let a : ℝ := -Real.log q / (2 * M)
+  have hlog : Real.log q < 0 := Real.log_neg hq0 hq1
+  have hnat := nat_le_two_mul_mul_div hM hm
+  have hcast : (m : ℝ) ≤ 2 * (M : ℝ) * (k : ℝ) := by
+    exact_mod_cast hnat
+  have hden : 0 < 2 * (M : ℝ) := by positivity
+  have hratio : (m : ℝ) / (2 * M) ≤ (k : ℝ) := by
+    rw [div_le_iff₀ hden]
+    nlinarith
+  have hexp : (k : ℝ) * Real.log q ≤ Real.log q * (m / (2 * M)) := by
+    nlinarith
+  have hgeom : q ^ k ≤ Real.exp (-a * m) := by
+    calc
+      q ^ k = (Real.exp (Real.log q)) ^ k := by rw [Real.exp_log hq0]
+      _ = Real.exp ((k : ℝ) * Real.log q) := (Real.exp_nat_mul _ _).symm
+      _ ≤ Real.exp (Real.log q * (m / (2 * M))) := Real.exp_le_exp.mpr hexp
+      _ = Real.exp (-a * m) := by
+        congr 1
+        dsimp [a]
+        field_simp
+  exact hgeom.trans (Real.exp_le_exp.mpr <| by
+    have hμa : secondClusterPeelingRate q M ≤ a := min_le_left _ _
+    nlinarith)
+
+/-- A uniform one-block failure factor proves the complete exponential estimate of Lemma 7.104.
+The sole remaining source-specific input is the hypothesis `hstep`, obtained from Lemma 7.78. -/
+theorem exists_secondMacroscopicCluster_probability_le_exp_of_block_step
+    {d : ℕ} (hd : 1 ≤ d) (p : I) {q : ℝ} {M : ℕ}
+    (hq0 : 0 < q) (hq1 : q < 1) (hM : 1 ≤ M)
+    (hstep : ∀ n (i : Fin d) (x : Cubic d), x ∈ cubicMetricBox d cubicOrigin n →
+      ∀ y : Cubic d, y ∈ cubicMetricBox d cubicOrigin n → x i = y i → ∀ j,
+        (bernoulliBondMeasure d p).real
+            (forwardTwoArmSeparationEvent d n i (x i) ((j + 1) * M) x y) ≤
+          q * (bernoulliBondMeasure d p).real
+            (forwardTwoArmSeparationEvent d n i (x i) (j * M) x y)) :
+    ∃ μ : ℝ, 0 < μ ∧ ∀ m n : ℕ, 1 ≤ m → 1 ≤ n →
+      (bernoulliBondMeasure d p).real
+          (secondMacroscopicClusterEvent d m n cubicOrigin) ≤
+        d * (2 * n + 1 : ℝ) ^ (2 * d) * Real.exp (-μ * m) := by
+  let μ := secondClusterPeelingRate q M
+  refine ⟨μ, secondClusterPeelingRate_pos hq0 hq1 hM, ?_⟩
+  intro m n hm hn
+  by_cases hmM : M ≤ m
+  · have hpair : ∀ i : Fin d, ∀ x ∈ cubicMetricBox d cubicOrigin n,
+        ∀ y ∈ cubicMetricBox d cubicOrigin n, x i = y i →
+          (bernoulliBondMeasure d p).real
+            (forwardTwoArmSeparationEvent d n i (x i) m x y) ≤ Real.exp (-μ * m) := by
+      intro i x hx y hy hxy
+      exact (forwardTwoArmSeparation_probability_le_pow_of_block_step p
+        (mem_coordinateHyperplaneVertices_iff.mpr ⟨hx, rfl⟩)
+        (mem_coordinateHyperplaneVertices_iff.mpr ⟨hy, hxy.symm⟩) hq0.le
+        (hstep n i x hx y hy hxy)).trans
+          (pow_natDiv_le_exp_neg_secondClusterPeelingRate hq0 hq1 hM hmM)
+    exact secondMacroscopicCluster_probability_le_boxPolynomial_mul hd p
+      (Real.exp_pos _).le hpair
+  · have hmLt : m < M := Nat.lt_of_not_ge hmM
+    have hμle : μ ≤ Real.log 2 / M := min_le_right _ _
+    have hμm : μ * m < Real.log 2 := by
+      have hMpos : (0 : ℝ) < M := by positivity
+      have hmcast : (m : ℝ) < M := by exact_mod_cast hmLt
+      have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+      have hμnonneg : 0 ≤ μ := (secondClusterPeelingRate_pos hq0 hq1 hM).le
+      calc
+        μ * m ≤ (Real.log 2 / M) * m :=
+          mul_le_mul_of_nonneg_right hμle (by positivity)
+        _ < (Real.log 2 / M) * M := by
+          exact mul_lt_mul_of_pos_left hmcast (div_pos hlog2 hMpos)
+        _ = Real.log 2 := by field_simp
+    have hexpHalf : (1 / 2 : ℝ) ≤ Real.exp (-μ * m) := by
+      have := Real.exp_le_exp.mpr (show -Real.log 2 ≤ -μ * m by linarith)
+      rw [Real.exp_neg, Real.exp_log (by norm_num : (0 : ℝ) < 2)] at this
+      norm_num at this ⊢
+      exact this
+    have hbase : (3 : ℝ) ≤ 2 * n + 1 := by exact_mod_cast (show 3 ≤ 2 * n + 1 by omega)
+    have hpow : (3 : ℝ) ≤ (2 * n + 1 : ℝ) ^ (2 * d) := by
+      exact hbase.trans (le_self_pow₀ (by nlinarith) (by omega))
+    have hfactor : (2 : ℝ) ≤ d * (2 * n + 1 : ℝ) ^ (2 * d) := by
+      have hdcast : (1 : ℝ) ≤ d := by exact_mod_cast hd
+      nlinarith [mul_le_mul hdcast hpow (by positivity) (by positivity)]
+    calc
+      (bernoulliBondMeasure d p).real
+          (secondMacroscopicClusterEvent d m n cubicOrigin) ≤ 1 := measureReal_le_one
+      _ ≤ (d * (2 * n + 1 : ℝ) ^ (2 * d)) * (1 / 2) := by nlinarith
+      _ ≤ (d * (2 * n + 1 : ℝ) ^ (2 * d)) * Real.exp (-μ * m) :=
+        mul_le_mul_of_nonneg_left hexpHalf (by positivity)
+      _ = d * (2 * n + 1 : ℝ) ^ (2 * d) * Real.exp (-μ * m) := rfl
+
 end Percolation

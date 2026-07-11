@@ -399,6 +399,15 @@ example {d m n : ℕ} (hd : 1 ≤ d) (p : I) {q : ℝ} (hq : 0 ≤ q)
       d * (2 * n + 1 : ℝ) ^ (2 * d) * q :=
   secondMacroscopicCluster_probability_le_boxPolynomial_mul hd p hq hpair
 
+example {q : ℝ} {M : ℕ} (hq0 : 0 < q) (hq1 : q < 1) (hM : 1 ≤ M) :
+    0 < secondClusterPeelingRate q M :=
+  secondClusterPeelingRate_pos hq0 hq1 hM
+
+example {q : ℝ} {m M : ℕ} (hq0 : 0 < q) (hq1 : q < 1)
+    (hM : 1 ≤ M) (hm : M ≤ m) :
+    q ^ (m / M) ≤ Real.exp (-(secondClusterPeelingRate q M) * m) :=
+  pow_natDiv_le_exp_neg_secondClusterPeelingRate hq0 hq1 hM hm
+
 example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
     (hrR : ∀ n, r n ≤ R n)
     (hpair : ∀ n, ∀ x ∈ cubicMetricBox d cubicOrigin (r n),

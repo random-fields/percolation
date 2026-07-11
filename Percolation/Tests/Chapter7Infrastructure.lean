@@ -17,6 +17,7 @@ import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
+import Percolation.Critical.StaticLargeCrossing
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -300,5 +301,15 @@ example {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (n m q : ℕ)
         secondMacroscopicClusterEvent d m n x :=
   epsilonGoodBoxEvent_compl_subset_largeCrossing_compl_union_secondMacroscopic
     p ε x n m q hmn hqBox hqDensity
+
+example {d n N q : ℕ} (hq : 1 ≤ q) (hnN : n ≤ N) {ω : EdgeConfiguration d}
+    (hdense : q ≤ (infiniteClusterVerticesIn d
+      (cubicMetricBox d cubicOrigin n) ω).card)
+    (hcoalesce : ω ∈ infiniteClusterCoalescenceEvent d n N)
+    (hfaces : ∀ i : Fin d, ∀ positive : Bool,
+      ω ∈ innerInfiniteClusterReachesFaceEvent d n N i positive) :
+    ω ∈ largeCrossingClusterEvent d q N cubicOrigin :=
+  mem_largeCrossingClusterEvent_of_dense_of_coalescence_of_allFaces
+    hq hnN hdense hcoalesce hfaces
 
 end Percolation

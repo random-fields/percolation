@@ -19,6 +19,7 @@ import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
+import Percolation.Critical.StaticSecondCluster
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -370,6 +371,33 @@ example {d : ℕ} (hd : 2 ≤ d) {x₁ y₁ x₂ y₂ : Cubic d}
 example {ι : Type*} {r s : ℕ} {A : Set (Set ι)} (hrs : r ≤ s) :
     upwardDistanceAtMost r A ⊆ upwardDistanceAtMost s A :=
   upwardDistanceAtMost_mono_radius hrs
+
+example {d n k : ℕ} {i : Fin d} {φ : ℤ} {x : Cubic d}
+    (hk : 1 ≤ k) (hx : x ∈ coordinateHyperplaneVertices d n i φ) :
+    forwardTwoArmSeparationEvent d n i φ k x x = ∅ :=
+  forwardTwoArmSeparationEvent_self_eq_empty hk hx
+
+example {d n k : ℕ} {i : Fin d} {φ : ℤ} {x y : Cubic d}
+    (hfar : (n : ℤ) < φ + k) :
+    forwardTwoArmSeparationEvent d n i φ k x y = ∅ :=
+  forwardTwoArmSeparationEvent_eq_empty_of_nat_lt hfar
+
+example {d n k l : ℕ} {i : Fin d} {φ : ℤ} {x y : Cubic d}
+    (hx : x ∈ coordinateHyperplaneVertices d n i φ)
+    (hy : y ∈ coordinateHyperplaneVertices d n i φ) (hkl : k ≤ l) :
+    forwardTwoArmSeparationEvent d n i φ l x y ⊆
+      forwardTwoArmSeparationEvent d n i φ k x y :=
+  forwardTwoArmSeparationEvent_anti_width hx hy hkl
+
+example {d m n : ℕ} (hd : 1 ≤ d) (p : I) {q : ℝ} (hq : 0 ≤ q)
+    (hpair : ∀ i : Fin d, ∀ x ∈ cubicMetricBox d cubicOrigin n,
+      ∀ y ∈ cubicMetricBox d cubicOrigin n, x i = y i →
+        (bernoulliBondMeasure d p).real
+          (forwardTwoArmSeparationEvent d n i (x i) m x y) ≤ q) :
+    (bernoulliBondMeasure d p).real
+        (secondMacroscopicClusterEvent d m n cubicOrigin) ≤
+      d * (2 * n + 1 : ℝ) ^ (2 * d) * q :=
+  secondMacroscopicCluster_probability_le_boxPolynomial_mul hd p hq hpair
 
 example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
     (hrR : ∀ n, r n ≤ R n)

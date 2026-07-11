@@ -91,6 +91,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | Good-block face-to-face lift | A good coarse walk gives an actual open bond connection from the negative face of its first box to the positive face of its last box in any coordinate. | `exists_cubicOpenGraph_reachable_between_faces_of_good_walk`, `exists_connectionEvent_between_faces_of_good_walk` | proved | Extracts face vertices from the crossing clauses of the endpoint good boxes and applies the path-lifting theorem. |
 | Finite-range variance/Chebyshev infrastructure | A finite average with at most `D` potentially nonzero covariance partners per site has variance at most `D/|B|`, with an explicit deviation-probability corollary. | `variance_finset_average_le_of_finite_covariance_neighborhood`, `measure_average_deviation_le_of_finite_covariance_neighborhood` | proved slice | This is the generic quantitative engine used by the percolation-specific finite-cylinder density proof in the following row. |
 | Box-density law used in Lemma 7.97 | The proportion of vertices of `B(n)` which lie in infinite open clusters converges in probability to `θ(p)`. | `cubicEdgeSetRadius`, `disjoint_cubicTranslation_image_edgeSets_of_far`, `covariance_translatedCylinderIndicator_eq_zero_of_far`, `bernoulliBondMeasure_real_infiniteClusterVertexDensity_deviation_le_of_approx`, `infiniteClusterVertexDensity_measureReal_tendsto_zero` | proved | The origin infinite-cluster event is approximated in symmetric-difference mass by a finite cylinder. Translated supports are disjoint beyond twice an explicit radius, giving a finite-range Chebyshev estimate; a separate `L¹`/Markov estimate transfers it to the genuine infinite-cluster field. This avoids the unresolved multiparameter pointwise-ergodic adapter. The internal theorem only needs `1 ≤ d`, hence covers the source range `d ≥ 2`. |
+| Dense infinite-cluster vertices (input to 7.97) | If `θ(p)>0`, with probability tending to one at least `(1-ε)θ(p)|B(n)|` vertices of `B(n)` belong to infinite clusters. | `infiniteClusterVerticesIn`, `mem_denseInfiniteClusterVertexEvent_iff_card`, `denseInfiniteClusterVertexEvent_probability_tendsto_one` | proved | The public membership theorem preserves the exact real-valued cardinality inequality from the source; no floor or ceiling convention is hidden. This is the density half of 7.97. Coalescing these vertices into one finite-box crossing cluster still requires Lemma 7.89. |
 
 ## Adversarial checks already encoded
 
@@ -151,7 +152,9 @@ individual theorem rows.
 | Good-block face-to-face bond lift, planar-prerequisite inspection, and preceding checkpoint Git | 12052s | 12193s | 141s | 3,590,640 | 3,638,262 | 47,622 |
 | Finite-range variance/Chebyshev infrastructure, density-law audit, and preceding checkpoint Git | 12193s | 12401s | 208s | 3,638,262 | 3,698,430 | 60,168 |
 | Finite-cylinder translated supports and the infinite-cluster box-density law, including preceding checkpoint Git | 12401s | 13288s | 887s | 3,698,430 | 3,944,999 | 246,569 |
-| **Measured subtotal** |  |  | **13288s** |  |  | **3,944,999** |
+| Density-law test/audit integration, clean full build, and Git checkpoint (non-theorem) | 13288s | 13432s | 144s | 3,944,999 | 3,989,857 | 44,858 |
+| Dense infinite-cluster vertex cardinality and high-probability consequence for Lemma 7.97 | 13432s | 13590s | 158s | 3,989,857 | 4,021,200 | 31,343 |
+| **Measured subtotal** |  |  | **13590s** |  |  | **4,021,200** |
 
 The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
 7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one

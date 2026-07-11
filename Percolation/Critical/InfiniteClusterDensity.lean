@@ -41,6 +41,51 @@ noncomputable def infiniteClusterVertexDensity (d : ℕ) (s : Finset (Cubic d))
     (ω : EdgeConfiguration d) : ℝ :=
   (∑ x ∈ s, eventIndicator (infiniteClusterVertexEvent d x) ω) / (s.card : ℝ)
 
+/-- Vertices of a finite set which belong to infinite open clusters. -/
+noncomputable def infiniteClusterVerticesIn (d : ℕ) (s : Finset (Cubic d))
+    (ω : EdgeConfiguration d) : Finset (Cubic d) :=
+  by
+    classical
+    exact s.filter fun x ↦ hasInfiniteOpenClusterFrom d ω x
+
+@[simp]
+theorem mem_infiniteClusterVerticesIn {d : ℕ} {s : Finset (Cubic d)}
+    {ω : EdgeConfiguration d} {x : Cubic d} :
+    x ∈ infiniteClusterVerticesIn d s ω ↔
+      x ∈ s ∧ hasInfiniteOpenClusterFrom d ω x := by
+  simp [infiniteClusterVerticesIn]
+
+theorem infiniteClusterVertexDensity_eq_card_div (d : ℕ) (s : Finset (Cubic d))
+    (ω : EdgeConfiguration d) :
+    infiniteClusterVertexDensity d s ω =
+      ((infiniteClusterVerticesIn d s ω).card : ℝ) / s.card := by
+  classical
+  unfold infiniteClusterVertexDensity infiniteClusterVerticesIn
+  congr 1
+  rw [Finset.card_filter]
+  push_cast
+  apply Finset.sum_congr rfl
+  intro x hx
+  by_cases h : hasInfiniteOpenClusterFrom d ω x <;>
+    simp [eventIndicator, infiniteClusterVertexEvent, h]
+
+theorem measurable_infiniteClusterVertexDensity (d : ℕ) (s : Finset (Cubic d)) :
+    Measurable (infiniteClusterVertexDensity d s) := by
+  unfold infiniteClusterVertexDensity
+  apply Measurable.div_const
+  have hfun : (fun ω ↦ ∑ x ∈ s,
+      eventIndicator (infiniteClusterVertexEvent d x) ω) =
+      ∑ x ∈ s, fun ω ↦ eventIndicator (infiniteClusterVertexEvent d x) ω := by
+    funext ω
+    simp
+  rw [hfun]
+  exact Finset.sum_induction (s := s)
+    (fun x ω ↦ eventIndicator (infiniteClusterVertexEvent d x) ω)
+    (fun f ↦ Measurable f)
+    (fun _ _ hf hg ↦ hf.add hg)
+    measurable_const
+    (fun x _ ↦ measurable_eventIndicator (measurableSet_infiniteClusterVertexEvent d x))
+
 theorem infiniteClusterVertexDensity_eq_translatedAverage (d : ℕ)
     (s : Finset (Cubic d)) (ω : EdgeConfiguration d) :
     infiniteClusterVertexDensity d s ω =
@@ -292,5 +337,82 @@ theorem infiniteClusterVertexDensity_measureReal_tendsto_zero
           (D / ((cubicMetricBox d cubicOrigin n).card : ℝ)) / (ε / 2) ^ 2 := by
             simpa [μ, A, D] using hbound
     _ < η := by linarith
+
+/-- The finite-box event whose source-facing cardinality interpretation is that at least
+`(1-δ) θ(p) |B|` vertices of the box lie in infinite clusters. -/
+def denseInfiniteClusterVertexEvent (d : ℕ) (p : I) (δ : ℝ) (n : ℕ) :
+    Set (EdgeConfiguration d) :=
+  {ω | (1 - δ) * theta d p ≤
+    infiniteClusterVertexDensity d (cubicMetricBox d cubicOrigin n) ω}
+
+theorem measurableSet_denseInfiniteClusterVertexEvent
+    (d : ℕ) (p : I) (δ : ℝ) (n : ℕ) :
+    MeasurableSet (denseInfiniteClusterVertexEvent d p δ n) :=
+  measurableSet_Ici.preimage
+    (measurable_infiniteClusterVertexDensity d (cubicMetricBox d cubicOrigin n))
+
+theorem mem_denseInfiniteClusterVertexEvent_iff_card {d : ℕ} {p : I} {δ : ℝ}
+    {n : ℕ} {ω : EdgeConfiguration d} :
+    ω ∈ denseInfiniteClusterVertexEvent d p δ n ↔
+      (1 - δ) * theta d p * ((cubicMetricBox d cubicOrigin n).card : ℝ) ≤
+        (infiniteClusterVerticesIn d (cubicMetricBox d cubicOrigin n) ω).card := by
+  rw [denseInfiniteClusterVertexEvent, Set.mem_setOf_eq,
+    infiniteClusterVertexDensity_eq_card_div]
+  apply le_div_iff₀
+  exact_mod_cast (Finset.card_pos.mpr
+    (show (cubicMetricBox d cubicOrigin n).Nonempty from
+      ⟨cubicOrigin, mem_cubicMetricBox_iff_lInfDist_le.mpr (by simp)⟩))
+
+/-- The probability that the infinite-cluster vertex density falls below
+`(1-δ)θ(p)` tends to zero. -/
+theorem denseInfiniteClusterVertexEvent_compl_measureReal_tendsto_zero
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (denseInfiniteClusterVertexEvent d p δ n)ᶜ)
+      atTop (nhds 0) := by
+  let failure : ℕ → Set (EdgeConfiguration d) := fun n ↦
+    {ω | infiniteClusterVertexDensity d (cubicMetricBox d cubicOrigin n) ω <
+      (1 - δ) * theta d p}
+  have hcompl (n : ℕ) :
+      (denseInfiniteClusterVertexEvent d p δ n)ᶜ = failure n := by
+    ext ω
+    simp [denseInfiniteClusterVertexEvent, failure]
+  simp_rw [hcompl]
+  have hε : 0 < δ * theta d p := mul_pos hδ hp
+  have hdev := infiniteClusterVertexDensity_measureReal_tendsto_zero hd p hε
+  apply squeeze_zero' (Eventually.of_forall fun _ ↦ measureReal_nonneg)
+    (Eventually.of_forall fun n ↦ ?_) hdev
+  apply measureReal_mono (h₂ := measure_ne_top _ _)
+  intro ω hω
+  change infiniteClusterVertexDensity d (cubicMetricBox d cubicOrigin n) ω <
+    (1 - δ) * theta d p at hω
+  change δ * theta d p ≤
+    |infiniteClusterVertexDensity d (cubicMetricBox d cubicOrigin n) ω - theta d p|
+  rw [abs_of_nonpos (by linarith)]
+  linarith
+
+/-- Source-facing high-probability density consequence used before the coalescence argument in
+Lemma 7.97. -/
+theorem denseInfiniteClusterVertexEvent_probability_tendsto_one
+    {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
+    {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (denseInfiniteClusterVertexEvent d p δ n))
+      atTop (nhds 1) := by
+  have hfail := denseInfiniteClusterVertexEvent_compl_measureReal_tendsto_zero
+    hd p hp hδ
+  have hEq : (fun n ↦ (bernoulliBondMeasure d p).real
+      (denseInfiniteClusterVertexEvent d p δ n)) =
+      fun n ↦ 1 - (bernoulliBondMeasure d p).real
+        (denseInfiniteClusterVertexEvent d p δ n)ᶜ := by
+    funext n
+    rw [measureReal_compl (measurableSet_denseInfiniteClusterVertexEvent d p δ n),
+      probReal_univ]
+    linarith
+  rw [hEq]
+  simpa using tendsto_const_nhds.sub hfail
 
 end Percolation

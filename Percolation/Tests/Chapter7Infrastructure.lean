@@ -259,4 +259,17 @@ example (p : I) {ε : ℝ} (hε : 0 < ε) :
       Filter.atTop (nhds 0) :=
   infiniteClusterVertexDensity_measureReal_tendsto_zero (by omega) p hε
 
+example (p : I) (hp : 0 < theta 2 p) {δ : ℝ} (hδ : 0 < δ) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure 2 p).real
+        (denseInfiniteClusterVertexEvent 2 p δ n))
+      Filter.atTop (nhds 1) :=
+  denseInfiniteClusterVertexEvent_probability_tendsto_one (by omega) p hp hδ
+
+example {d : ℕ} {p : I} {δ : ℝ} {n : ℕ} {ω : EdgeConfiguration d} :
+    ω ∈ denseInfiniteClusterVertexEvent d p δ n ↔
+      (1 - δ) * theta d p * ((cubicMetricBox d cubicOrigin n).card : ℝ) ≤
+        (infiniteClusterVerticesIn d (cubicMetricBox d cubicOrigin n) ω).card :=
+  mem_denseInfiniteClusterVertexEvent_iff_card
+
 end Percolation

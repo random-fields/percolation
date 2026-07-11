@@ -5,6 +5,7 @@ import Percolation.Core.EdgeMenger
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
+import Percolation.Critical.StaticBlockTranslation
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -28,3 +29,6 @@ import Percolation.Critical.ExplorationLaw
 #print axioms Percolation.infinite_siteSet_probability_pos_of_prefixSequential
 #print axioms Percolation.SiteExploration.measurable_occupiedLimit_configurationAnswer
 #print axioms Percolation.SiteExploration.occupiedLimit_infinite_probability_pos_of_prefixLowerBound
+#print axioms Percolation.finiteBoxGraphLargestComponent_map_translation
+#print axioms Percolation.finiteBoxGraph_isEpsilonGood_translation_iff
+#print axioms Percolation.epsilonGoodBlockLaw_map_cubicSiteTranslationPullback

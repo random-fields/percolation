@@ -115,6 +115,58 @@ noncomputable def finiteBoxGraphComponentKey {d : ℕ} {x : Cubic d} {n : ℕ}
   toLex (finiteBoxGraphComponentCard C,
     OrderDual.toDual (finiteBoxGraphComponentAnchor C))
 
+theorem finiteBoxGraphComponentVertices_nonempty {d : ℕ} {x : Cubic d} {n : ℕ}
+    {G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}}
+    (C : G.ConnectedComponent) : (finiteBoxGraphComponentVertices C).Nonempty := by
+  classical
+  obtain ⟨y, hy⟩ := C.nonempty_supp
+  exact ⟨y.1, by
+    rw [finiteBoxGraphComponentVertices, Finset.mem_filter]
+    exact ⟨y.2, y.2, hy⟩⟩
+
+theorem exists_vertex_finiteBoxGraphComponentAnchor {d : ℕ} {x : Cubic d} {n : ℕ}
+    {G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}}
+    (C : G.ConnectedComponent) :
+    ∃ y ∈ finiteBoxGraphComponentVertices C,
+      boxRelativeVertex x y = finiteBoxGraphComponentAnchor C := by
+  classical
+  let s := (finiteBoxGraphComponentVertices C).image (boxRelativeVertex x)
+  have hmem : finiteBoxGraphComponentAnchor C ∈ s := by
+    simpa [finiteBoxGraphComponentAnchor, s] using
+      s.min'_mem ((finiteBoxGraphComponentVertices_nonempty C).image (boxRelativeVertex x))
+  simpa [s] using hmem
+
+theorem finiteBoxGraphComponent_eq_of_anchor_eq {d : ℕ} {x : Cubic d} {n : ℕ}
+    {G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}}
+    {C D : G.ConnectedComponent}
+    (h : finiteBoxGraphComponentAnchor C = finiteBoxGraphComponentAnchor D) : C = D := by
+  classical
+  obtain ⟨y, hyC, hyAnchor⟩ := exists_vertex_finiteBoxGraphComponentAnchor C
+  obtain ⟨z, hzD, hzAnchor⟩ := exists_vertex_finiteBoxGraphComponentAnchor D
+  have hyz : y = z := by
+    have hrel := congrArg ofLex (hyAnchor.trans (h.trans hzAnchor.symm))
+    change (fun i ↦ y i - x i) = (fun i ↦ z i - x i) at hrel
+    funext i
+    have hi := congrFun hrel i
+    omega
+  rw [finiteBoxGraphComponentVertices, Finset.mem_filter] at hyC hzD
+  obtain ⟨hyBox, _hyBox', hySupp⟩ := hyC
+  obtain ⟨hzBox, _hzBox', hzSupp⟩ := hzD
+  subst z
+  have hzSupp' :
+      (⟨y, hyBox⟩ : {q : Cubic d // q ∈ cubicMetricBox d x n}) ∈ D.supp := by
+    simpa using hzSupp
+  exact ((C.mem_supp_iff _).mp hySupp).symm.trans ((D.mem_supp_iff _).mp hzSupp')
+
+theorem finiteBoxGraphComponentKey_injective {d : ℕ} {x : Cubic d} {n : ℕ}
+    {G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}} :
+    Function.Injective (finiteBoxGraphComponentKey (G := G)) := by
+  intro C D h
+  have h' := congrArg ofLex h
+  have hAnchor : finiteBoxGraphComponentAnchor C = finiteBoxGraphComponentAnchor D :=
+    congrArg (fun q : ℕ × OrderDual (Lex (Cubic d)) ↦ OrderDual.ofDual q.2) h'
+  exact finiteBoxGraphComponent_eq_of_anchor_eq hAnchor
+
 private theorem finiteBoxGraphComponents_nonempty {d : ℕ} (x : Cubic d) (n : ℕ)
     (G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}) :
     (Finset.univ : Finset G.ConnectedComponent).Nonempty := by
@@ -127,6 +179,16 @@ noncomputable def finiteBoxGraphLargestComponent {d : ℕ} (x : Cubic d) (n : �
     (G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n}) : G.ConnectedComponent :=
   Classical.choose <| Finset.exists_max_image (Finset.univ : Finset G.ConnectedComponent)
     finiteBoxGraphComponentKey (finiteBoxGraphComponents_nonempty x n G)
+
+theorem finiteBoxGraphComponentKey_le_largest {d : ℕ} (x : Cubic d) (n : ℕ)
+    (G : SimpleGraph {y : Cubic d // y ∈ cubicMetricBox d x n})
+    (C : G.ConnectedComponent) :
+    finiteBoxGraphComponentKey C ≤
+      finiteBoxGraphComponentKey (finiteBoxGraphLargestComponent x n G) :=
+  (Classical.choose_spec <|
+    Finset.exists_max_image (Finset.univ : Finset G.ConnectedComponent)
+      finiteBoxGraphComponentKey (finiteBoxGraphComponents_nonempty x n G)).2 C
+        (Finset.mem_univ C)
 
 /-- Graph-parametric form of Grimmett's `ε`-good predicate. -/
 def FiniteBoxGraph.IsEpsilonGood {d : ℕ} (p : I) (ε : ℝ) (x : Cubic d) (n : ℕ)
@@ -354,6 +416,14 @@ theorem boxLargestCluster_mem_components
   (Classical.choose_spec <|
     Finset.exists_max_image (boxOpenComponents d ω x n) boxComponentKey
       (boxOpenComponents_nonempty d ω x n)).1
+
+theorem boxComponentKey_le_largest
+    (d : ℕ) (ω : EdgeConfiguration d) (x : Cubic d) (n : ℕ)
+    (C : (finiteBoxOpenGraph d ω x n).ConnectedComponent) :
+    boxComponentKey C ≤ boxComponentKey (boxLargestCluster d ω x n) :=
+  (Classical.choose_spec <|
+    Finset.exists_max_image (boxOpenComponents d ω x n) boxComponentKey
+      (boxOpenComponents_nonempty d ω x n)).2 C (by simp [boxOpenComponents])
 
 theorem boxComponentCard_le_largest
     (d : ℕ) (ω : EdgeConfiguration d) (x : Cubic d) (n : ℕ)

@@ -5,6 +5,7 @@ import Percolation.Core.EdgeMenger
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
+import Percolation.Critical.StaticBlockTranslation
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -53,6 +54,18 @@ example (d : ℕ) (F : Set (Cubic d)) (k : ℕ) :
 example (d : ℕ) (p : I) (ε : ℝ) {n : ℕ} (hn : 1 ≤ n) :
     KDependent (cubicGraph d) (3 * d) (epsilonGoodBlockLaw d p ε n) :=
   epsilonGoodBlockLaw_kDependent d p ε hn
+
+/-- Stationarity is an equality of the full translated site-field laws, not merely equality of
+the one-site marginals. -/
+example (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (x y : Cubic d) :
+    (epsilonGoodBlockLaw d p ε n).map (cubicSiteTranslationPullback x y) =
+      epsilonGoodBlockLaw d p ε n :=
+  epsilonGoodBlockLaw_map_cubicSiteTranslationPullback d p ε n x y
+
+example (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (x y : Cubic d) :
+  (bernoulliBondMeasure d p).real (epsilonGoodBoxEvent d p ε x n) =
+      (bernoulliBondMeasure d p).real (epsilonGoodBoxEvent d p ε y n) :=
+  bernoulliBondMeasure_real_epsilonGoodBoxEvent_eq p ε x y n
 
 example {d m n : ℕ} (hd : 2 ≤ d) (i : Fin d) (ω : EdgeConfiguration d)
     (hn : n < 2 * m) : seededBoundaryPoints d i m n ω = ∅ :=

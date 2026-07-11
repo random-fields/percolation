@@ -44,7 +44,7 @@ formalization window has yet completed; it is not an estimate.
 | Lemma 6.87 | 134–135 | A finite nonempty terminal set has a removable terminal preserving connectivity of the rest | `Percolation.exists_terminal_deletion_preserves_connected` | proved for an arbitrary connected ambient graph and a finite nonempty `Finset`; deletion is encoded by `deleteIncidenceSet` | jointly measured | jointly measured |
 | Lemma 6.89 | 135–136 | Three-point connectivity is bounded by a sum of three two-point products | `Percolation.threePointConnectivity_le_tsum_prod` | proved in `ℝ≥0∞`; includes deterministic first-hit tripod extraction and iterated BK | jointly measured | jointly measured |
 | (6.93)–(6.97) | 136–138 | Skeleton tree-graph bound, skeleton count, moment bound, and exponential-moment bound | `Percolation.multiPointConnectivity_le_skeleton_sum`, `Percolation.cubicConnectivitySkeleton_card_eq`, `Percolation.connectivitySkeletonCount_eq_doubleFactorial`, `Percolation.clusterSizeMoment_le`, `Percolation.clusterSize_expMoment_le` | proved; the moment theorem uses the actual `ℝ≥0∞` cluster-size integral, and (6.97) evaluates the exact half-binomial skeleton generating function | jointly measured | jointly measured |
-| Lemma 6.102 | 139–141 | Normalized exact cluster-size probabilities satisfy the animal-concatenation inequality | missing | target |  |  |
+| Lemma 6.102 | 139–141 | Normalized exact cluster-size probabilities satisfy the animal-concatenation inequality | `Percolation.CubicBondAnimal.finiteClusterSizeProbability_normalized_supermultiplicative` | proved with the exact factor `p(1-p)⁻²`; the `1/n` normalization is discharged by an explicit equivalence between rooted animals and an anchored translation class with a selected root | 63m50s | 798,069 |
 | Theorem 6.108 | 142–145 | `κ` and `χ` are analytic on `[0,p_c)` | missing | target must bundle analytic series with equality to the probabilistic functions |  |  |
 
 ## Shared infrastructure telemetry
@@ -58,6 +58,7 @@ formalization window has yet completed; it is not an estimate.
 | Skeleton extraction and (6.93) infrastructure | recursive edge-insertion decoder, exact skeleton count, first-hit insertion of a new terminal, path normalization, pairwise edge-disjointness, deterministic event extraction, iterated BK, two-point row-sum identity, and initial connected-kernel partition infrastructure | 63m17s | 660,031 |
 | Connected-kernel partition and (6.94) infrastructure | vertex-deletion induction for finite connected kernels, specialization to decoded skeletons, instance-independent cardinality transport, ordered terminal summation, measurable tuple expansion of cluster-size powers, and the source moment bound | 57m04s | 954,610 |
 | (6.97), Theorem 6.75, and (6.77) infrastructure | exact half-multichoose skeleton generating function, ENNReal exponential moment, at-least tail and strict-tail shift, series Markov inequality, optimized source constant, and corrected eventual exponential theorem | 42m48s | 883,194 |
+| Lemma 6.102 and anchored-animal infrastructure | lexicographic anchoring, injective animal concatenation, exact occupied-edge and closed-boundary counts, rerooting equivalence, rooted/anchored mass identity, and normalized probability inequality | 63m50s | 798,069 |
 
 The initial window included the first 6.1 scaffold before an internal counter snapshot was taken.
 It is charged once to shared infrastructure and is not duplicated in the theorem row.  The 6.1
@@ -98,3 +99,8 @@ The exponential-moment and tail window runs from `(16056s, 3440296)` through
 (6.97), the at-least-tail API and exact shift to Chapter 5's strict tail, the series Markov bound,
 the optimized inequality (6.77), the corrected eventual form of Theorem 6.75, local verification,
 and axiom audits.
+
+The anchored-animal window runs from `(18624s, 4323490)` through `(22454s, 5121559)`. It includes
+the exact boundary-overlap proof, injectivity of concatenation, the construction and verification
+of rerooted animals, the equivalence between rooted animals and pointed anchored translation
+classes, the `1/n` mass identity, Lemma 6.102 itself, local builds, and axiom audits.

@@ -434,24 +434,65 @@ theorem threePointConnectivity_le_tsum_prod
 
 /-! ### Labelled skeleton enumeration (6.95)--(6.96) -/
 
-/-- Number of isomorphism classes of labelled trivalent skeletons with `n` exterior vertices.
-The source only uses `n ≥ 3`; totalized values below three are harmless implementation detail. -/
-def connectivitySkeletonCount (n : ℕ) : ℕ := Nat.doubleFactorial (2 * n - 5)
+/-- Canonical insertion codes for labelled trivalent skeletons.  Starting from the unique tripod,
+the code for `n+1` leaves consists of an `n`-leaf code and one of its `2n-3` edges.  Removing the
+largest labelled leaf is the inverse canonical operation in the source's proof of (6.95). -/
+@[reducible] def CanonicalLabelledTrivalentSkeleton : ℕ → Type
+  | 0 | 1 | 2 => PUnit
+  | 3 => PUnit
+  | n + 4 => CanonicalLabelledTrivalentSkeleton (n + 3) × Fin (2 * (n + 3) - 3)
+
+@[reducible] private def canonicalLabelledTrivalentSkeletonFinite :
+    (n : ℕ) → Finite (CanonicalLabelledTrivalentSkeleton n)
+  | 0 | 1 | 2 => inferInstance
+  | 3 => inferInstance
+  | n + 4 =>
+      letI := canonicalLabelledTrivalentSkeletonFinite (n + 3)
+      inferInstance
+
+attribute [local instance] canonicalLabelledTrivalentSkeletonFinite
+
+/-- Number of canonical labelled trivalent skeletons with `n` exterior vertices.  Unlike a
+closed-form definition, this cardinality makes the recurrence (6.95) the primary combinatorial
+fact and the double-factorial formula a theorem. -/
+noncomputable def connectivitySkeletonCount (n : ℕ) : ℕ :=
+  Nat.card (CanonicalLabelledTrivalentSkeleton n)
 
 /-- Finite cardinality-facing index for labelled skeletons. -/
 abbrev CubicConnectivitySkeletonIndex (n : ℕ) := Fin (connectivitySkeletonCount n)
 
-@[simp] theorem connectivitySkeletonCount_three : connectivitySkeletonCount 3 = 1 := by decide
-@[simp] theorem connectivitySkeletonCount_four : connectivitySkeletonCount 4 = 3 := by decide
-@[simp] theorem connectivitySkeletonCount_five : connectivitySkeletonCount 5 = 15 := by decide
+@[simp] theorem connectivitySkeletonCount_three : connectivitySkeletonCount 3 = 1 := by
+  simp [connectivitySkeletonCount, CanonicalLabelledTrivalentSkeleton]
+@[simp] theorem connectivitySkeletonCount_two : connectivitySkeletonCount 2 = 1 := by
+  simp [connectivitySkeletonCount, CanonicalLabelledTrivalentSkeleton]
+@[simp] theorem connectivitySkeletonCount_four : connectivitySkeletonCount 4 = 3 := by
+  simp [connectivitySkeletonCount, CanonicalLabelledTrivalentSkeleton]
+@[simp] theorem connectivitySkeletonCount_five : connectivitySkeletonCount 5 = 15 := by
+  simp [connectivitySkeletonCount, CanonicalLabelledTrivalentSkeleton]
 
 /-- Recurrence (6.95): insert the newest exterior vertex into one of the `2n-3` old edges. -/
 theorem connectivitySkeletonCount_succ {n : ℕ} (hn : 3 ≤ n) :
     connectivitySkeletonCount (n + 1) = (2 * n - 3) * connectivitySkeletonCount n := by
-  unfold connectivitySkeletonCount
-  have h₁ : 2 * (n + 1) - 5 = (2 * n - 5) + 2 := by omega
-  have h₂ : 2 * n - 5 + 2 = 2 * n - 3 := by omega
-  rw [h₁, Nat.doubleFactorial_add_two, h₂]
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 3 := ⟨n - 3, by omega⟩
+  simp [connectivitySkeletonCount, CanonicalLabelledTrivalentSkeleton,
+    Nat.card_prod, Nat.card_fin, mul_comm]
+
+/-- Solving the source recurrence gives the odd double factorial. -/
+theorem connectivitySkeletonCount_eq_oddDoubleFactorial {n : ℕ} (hn : 3 ≤ n) :
+    connectivitySkeletonCount n = Nat.doubleFactorial (2 * n - 5) := by
+  induction n using Nat.strong_induction_on with
+  | h n ih =>
+      rcases n with (_ | _ | _ | _ | n)
+      · omega
+      · omega
+      · omega
+      · simp
+      · rw [show n + 4 = (n + 3) + 1 by omega,
+          connectivitySkeletonCount_succ (n := n + 3) (by omega),
+          ih (n + 3) (by omega) (by omega)]
+        have h₁ : 2 * (n + 4) - 5 = (2 * (n + 3) - 5) + 2 := by omega
+        have h₂ : 2 * (n + 3) - 5 + 2 = 2 * (n + 3) - 3 := by omega
+        rw [h₁, Nat.doubleFactorial_add_two, h₂, mul_comm]
 
 /-- Factorial form of (6.96).  Multiplication is used instead of truncated natural-number
 division, so the statement records the exact arithmetic identity without a divisibility side
@@ -460,10 +501,11 @@ theorem connectivitySkeletonCount_eq_doubleFactorial
     {n : ℕ} (hn : 2 ≤ n) :
     2 ^ (n - 1) * Nat.factorial (n - 1) * connectivitySkeletonCount (n + 1) =
       Nat.factorial (2 * n - 2) := by
+  rw [connectivitySkeletonCount_eq_oddDoubleFactorial (n := n + 1) (by omega)]
   have hEven : 2 * n - 2 = 2 * (n - 1) := by omega
   have hOdd : 2 * (n + 1) - 5 = 2 * n - 3 := by omega
   have hSucc : 2 * n - 2 = (2 * n - 3) + 1 := by omega
-  rw [← Nat.doubleFactorial_two_mul (n - 1), connectivitySkeletonCount, hOdd]
+  rw [← Nat.doubleFactorial_two_mul (n - 1), hOdd]
   rw [← hEven, hSucc]
   exact (Nat.factorial_eq_mul_doubleFactorial (2 * n - 3)).symm
 

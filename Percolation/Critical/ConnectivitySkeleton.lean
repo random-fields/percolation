@@ -13,7 +13,10 @@ namespace Percolation
 open Set SimpleGraph
 open scoped BigOperators ENNReal unitInterval
 
-/-- Recursive insertion codes for labelled trivalent skeletons. -/
+/-- Recursive insertion codes for labelled trivalent skeletons.  This concrete decoder carries
+the vertex and edge geometry used by the realization theorem below.  The extensionally equal
+counting code in `TreeGraph.lean` is deliberately separate, so enumeration does not erase these
+geometric fields. -/
 @[reducible] def CubicConnectivitySkeleton : ℕ → Type
   | 0 | 1 | 2 => Empty
   | 3 => PUnit

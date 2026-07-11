@@ -174,6 +174,86 @@ noncomputable def clusterSizeWeightedExpMoment
   ∑' n : ℕ, t ^ n / (Nat.factorial n : ℝ≥0∞) *
     clusterSizeMomentENNReal d p (n + 1)
 
+/-- The literal expectation `E(|C| exp(t |C|))` occurring in Grimmett (6.97), written as an
+`ℝ≥0∞` integral so infinite clusters and moments keep their intended value. -/
+noncomputable def clusterSizeExponentialMoment
+    (d : ℕ) (p : unitInterval) (t : ℝ≥0∞) : ℝ≥0∞ :=
+  ∫⁻ ω, clusterSizeENNReal d ω *
+    ENNReal.ofReal (Real.exp (t * clusterSizeENNReal d ω).toReal)
+      ∂bernoulliBondMeasure d p
+
+private theorem tsum_pow_div_factorial_eq_ofReal_exp'
+    (x : ℝ≥0∞) (hx : x ≠ ⊤) :
+    (∑' n : ℕ, x ^ n / (Nat.factorial n : ℝ≥0∞)) =
+      ENNReal.ofReal (Real.exp x.toReal) := by
+  have hs := NormedSpace.expSeries_div_hasSum_exp x.toReal
+  calc
+    (∑' n : ℕ, x ^ n / (Nat.factorial n : ℝ≥0∞)) =
+        ∑' n : ℕ, ENNReal.ofReal (x.toReal ^ n / Nat.factorial n) := by
+      apply tsum_congr
+      intro n
+      rw [ENNReal.ofReal_div_of_pos (by positivity),
+        ENNReal.ofReal_pow ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx]
+      norm_cast
+    _ = ENNReal.ofReal (∑' n : ℕ, x.toReal ^ n / Nat.factorial n) := by
+      rw [ENNReal.ofReal_tsum_of_nonneg (fun n ↦ div_nonneg (by positivity) (by positivity))
+        hs.summable]
+    _ = ENNReal.ofReal (Real.exp x.toReal) := by
+      rw [hs.tsum_eq, Real.exp_eq_exp_ℝ]
+
+theorem tsum_weighted_powers_eq_mul_exp
+    (t x : ℝ≥0∞) (ht : t ≠ ⊤) :
+    (∑' n : ℕ, t ^ n / (Nat.factorial n : ℝ≥0∞) * x ^ (n + 1)) =
+      x * ENNReal.ofReal (Real.exp (t * x).toReal) := by
+  by_cases hx : x = ⊤
+  · subst x
+    have hle : (⊤ : ℝ≥0∞) ≤
+        ∑' n : ℕ, t ^ n / (Nat.factorial n : ℝ≥0∞) * ⊤ ^ (n + 1) := by
+      simpa using ENNReal.le_tsum
+        (f := fun n : ℕ ↦ t ^ n / (Nat.factorial n : ℝ≥0∞) * ⊤ ^ (n + 1)) 0
+    rw [top_unique hle]
+    simp
+  · have htx : t * x ≠ ⊤ := ENNReal.mul_ne_top ht hx
+    calc
+      (∑' n : ℕ, t ^ n / (Nat.factorial n : ℝ≥0∞) * x ^ (n + 1)) =
+          ∑' n : ℕ, x * ((t * x) ^ n / (Nat.factorial n : ℝ≥0∞)) := by
+        apply tsum_congr
+        intro n
+        rw [pow_succ, mul_pow]
+        simp only [div_eq_mul_inv]
+        ac_rfl
+      _ = x * ∑' n : ℕ, (t * x) ^ n / (Nat.factorial n : ℝ≥0∞) := by
+        rw [ENNReal.tsum_mul_left]
+      _ = x * ENNReal.ofReal (Real.exp (t * x).toReal) := by
+        rw [tsum_pow_div_factorial_eq_ofReal_exp' _ htx]
+
+theorem clusterSizeWeightedExpMoment_eq_exponentialMoment
+    (d : ℕ) (p : unitInterval) (t : ℝ≥0∞) (ht : t ≠ ⊤) :
+    clusterSizeWeightedExpMoment d p t = clusterSizeExponentialMoment d p t := by
+  rw [clusterSizeWeightedExpMoment, clusterSizeExponentialMoment]
+  simp_rw [clusterSizeMomentENNReal]
+  simp_rw [← lintegral_const_mul _ ((measurable_clusterSizeENNReal d).pow_const _)]
+  rw [← lintegral_tsum]
+  · apply lintegral_congr
+    intro ω
+    exact tsum_weighted_powers_eq_mul_exp t (clusterSizeENNReal d ω) ht
+  · intro n
+    exact ((measurable_clusterSizeENNReal d).pow_const (n + 1)).const_mul
+      (t ^ n / (Nat.factorial n : ℝ≥0∞)) |>.aemeasurable
+
+theorem one_le_susceptibility (d : ℕ) (p : unitInterval) :
+    1 ≤ susceptibility d p := by
+  rw [susceptibility_eq_tsum_connection]
+  have hterm := ENNReal.le_tsum
+    (f := fun y : Cubic d ↦ bernoulliBondMeasure d p
+      (connectionEvent d cubicOrigin y)) cubicOrigin
+  have hevent : connectionEvent d cubicOrigin (cubicOrigin : Cubic d) = Set.univ := by
+    ext ω
+    simp only [connectionEvent, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    exact ⟨SimpleGraph.Walk.nil, by intro e he; simp at he⟩
+  rw [hevent, measure_univ] at hterm
+  exact hterm
+
 /-- The moment estimate summed termwise, before evaluating the skeleton generating function. -/
 theorem clusterSizeWeightedExpMoment_le_skeletonSeries
     (d : ℕ) (p : unitInterval) (t : ℝ≥0∞) :
@@ -313,6 +393,23 @@ theorem clusterSize_expMoment_le
   refine (clusterSizeWeightedExpMoment_le_skeletonSeries d p t).trans_eq ?_
   rw [tsum_connectivitySkeletonCount_div_factorial _ ht]
 
+/-- Source-facing form of Grimmett (6.97), with the literal exponential random-variable
+expectation on the left. -/
+theorem clusterSizeExponentialMoment_le
+    (d : ℕ) (p : unitInterval) (t : ℝ≥0∞)
+    (ht : 2 * (t * susceptibility d p ^ 2) < 1) :
+    clusterSizeExponentialMoment d p t ≤
+      susceptibility d p * ENNReal.ofReal
+        (1 / (1 - 2 * (t * susceptibility d p ^ 2).toReal) ^ (1 / 2 : ℝ)) := by
+  have htTop : t ≠ ⊤ := by
+    intro htop
+    subst t
+    have hchi0 : susceptibility d p ≠ 0 :=
+      ne_of_gt (zero_lt_one.trans_le (one_le_susceptibility d p))
+    simp [hchi0] at ht
+  rw [← clusterSizeWeightedExpMoment_eq_exponentialMoment d p t htTop]
+  exact clusterSize_expMoment_le d p t ht
+
 #print axioms tsum_pi_prod_eq_pow
 #print axioms clusterSizeENNReal_pow_eq_tsum_prod
 #print axioms clusterSizeMomentENNReal_eq_orderedConnectionMass
@@ -321,5 +418,7 @@ theorem clusterSize_expMoment_le
 #print axioms hasSum_connectivitySkeletonCount_div_factorial
 #print axioms tsum_connectivitySkeletonCount_div_factorial
 #print axioms clusterSize_expMoment_le
+#print axioms clusterSizeWeightedExpMoment_eq_exponentialMoment
+#print axioms clusterSizeExponentialMoment_le
 
 end Percolation

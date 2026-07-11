@@ -1533,6 +1533,56 @@ rate has infinite correlation length rather than the junk value zero. -/
 noncomputable def correlationLength (d : ℕ) (p : I) : ℝ≥0∞ :=
   (ENNReal.ofReal (boxRadiusDecayRate d p))⁻¹
 
+/-- The correlation length is continuous throughout the positive subcritical interval. -/
+theorem correlationLength_continuousOn_subcritical (d : ℕ) (hd : 2 ≤ d) :
+    ContinuousOn (correlationLength d)
+      {p : I | 0 < (p : ℝ) ∧ (p : ℝ) < cubicCriticalProbability d} := by
+  let S : Set I := {p : I | 0 < (p : ℝ) ∧ (p : ℝ) < cubicCriticalProbability d}
+  have hrate : ContinuousOn (boxRadiusDecayRate d) S :=
+    (boxRadiusDecayRate_continuousOn d (by omega)).mono fun _ hp ↦ hp.1
+  have hrateNe : ∀ p ∈ S, boxRadiusDecayRate d p ≠ 0 := by
+    intro p hp
+    exact ne_of_gt (boxRadiusDecayRate_pos_of_lt_critical d hd p hp.1 hp.2)
+  have hinv : ContinuousOn (fun p : I ↦ (boxRadiusDecayRate d p)⁻¹) S :=
+    hrate.inv₀ hrateNe
+  have hofReal : ContinuousOn
+      (fun p : I ↦ ENNReal.ofReal ((boxRadiusDecayRate d p)⁻¹)) S :=
+    ENNReal.continuous_ofReal.comp_continuousOn hinv
+  refine hofReal.congr ?_
+  intro p hp
+  change (ENNReal.ofReal (boxRadiusDecayRate d p))⁻¹ =
+    ENNReal.ofReal ((boxRadiusDecayRate d p)⁻¹)
+  exact (ENNReal.ofReal_inv_of_pos
+    (boxRadiusDecayRate_pos_of_lt_critical d hd p hp.1 hp.2)).symm
+
+/-- The strict decrease of the inverse correlation rate becomes strict increase of correlation
+length on `(0,p_c)`. -/
+theorem correlationLength_strictMonoOn_subcritical (d : ℕ) (hd : 2 ≤ d) :
+    StrictMonoOn (correlationLength d)
+      {p : I | 0 < (p : ℝ) ∧ (p : ℝ) < cubicCriticalProbability d} := by
+  let S : Set I := {p : I | 0 < (p : ℝ) ∧ (p : ℝ) < cubicCriticalProbability d}
+  intro a ha b hb hab
+  have hpa := boxRadiusDecayRate_pos_of_lt_critical d hd a ha.1 ha.2
+  have hpb := boxRadiusDecayRate_pos_of_lt_critical d hd b hb.1 hb.2
+  have hrate := boxRadiusDecayRate_strictAntiOn_subcritical d hd ha hb hab
+  have hinv : (boxRadiusDecayRate d a)⁻¹ < (boxRadiusDecayRate d b)⁻¹ :=
+    (inv_lt_inv₀ hpa hpb).2 hrate
+  rw [correlationLength, correlationLength,
+    ← ENNReal.ofReal_inv_of_pos hpa, ← ENNReal.ofReal_inv_of_pos hpb]
+  exact (ENNReal.ofReal_lt_ofReal_iff (inv_pos.mpr hpb)).2 hinv
+
+/-- Real-density endpoint extension used for the source limit `xi(p) -> 0` as `p ↓ 0`. -/
+noncomputable def clampedCorrelationLength (d : ℕ) (x : ℝ) : ℝ≥0∞ :=
+  (ENNReal.ofReal (clampedBoxRadiusDecayRate d x))⁻¹
+
+/-- Grimmett (6.55): the correlation length tends to zero at zero density. -/
+theorem correlationLength_tendsto_zero_at_zero (d : ℕ) (hd : 0 < d) :
+    Tendsto (clampedCorrelationLength d) (𝓝[>] (0 : ℝ)) (𝓝 0) := by
+  have hrate := boxRadiusDecayRate_tendsto_top_at_zero d hd
+  have hofReal : Tendsto (fun x : ℝ ↦ ENNReal.ofReal (clampedBoxRadiusDecayRate d x))
+      (𝓝[>] (0 : ℝ)) (𝓝 ⊤) := ENNReal.tendsto_ofReal_atTop.comp hrate
+  simpa [clampedCorrelationLength] using continuous_inv.continuousAt.tendsto.comp hofReal
+
 /-- Proposition 6.49: below criticality, the correlation length is at most susceptibility. -/
 theorem correlationLength_le_susceptibility
     {d : ℕ} (hd : 2 ≤ d) {p : I} (hp : 0 < (p : ℝ))
@@ -1623,6 +1673,9 @@ theorem susceptibility_tendsto_top_at_critical (d : ℕ) (hd : 2 ≤ d) :
 #print axioms twoPointConnectivity_twoSided_decay
 #print axioms twoPointConnectivity_le_one_sub_susceptibility_inv_pow
 #print axioms correlationLength_le_susceptibility
+#print axioms correlationLength_continuousOn_subcritical
+#print axioms correlationLength_strictMonoOn_subcritical
+#print axioms correlationLength_tendsto_zero_at_zero
 #print axioms susceptibility_tendsto_top_at_critical
 
 end Percolation

@@ -163,6 +163,16 @@ example {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d)
     (cubicOpenGraph d ω).Reachable u v :=
   epsilonGoodBlockClusterVertices_reachable_of_good_walk p ε ω w hgood hu hv
 
+example {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d)
+    {x y : Cubic d} (w : (cubicGraph d).Walk x y)
+    (hgood : ∀ z ∈ w.support,
+      ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n z) n)
+    (i : Fin d) :
+    ∃ u ∈ cubicBoxFace d (epsilonGoodBlockCenter n x) n i false,
+      ∃ v ∈ cubicBoxFace d (epsilonGoodBlockCenter n y) n i true,
+        ω ∈ connectionEvent d u v :=
+  exists_connectionEvent_between_faces_of_good_walk p ε ω w hgood i
+
 example (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (x y : Cubic d) :
   (bernoulliBondMeasure d p).real (epsilonGoodBoxEvent d p ε x n) =
       (bernoulliBondMeasure d p).real (epsilonGoodBoxEvent d p ε y n) :=

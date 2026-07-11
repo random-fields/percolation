@@ -52,6 +52,14 @@ theorem epsilonGoodBlockClusterVertices_inter_of_step
   simpa [epsilonGoodBlockClusterVertices] using
     finiteBoxGraphLargestComponents_inter_of_mem_goodBoxEvents p ε ω x a hx hy
 
+theorem epsilonGoodBlockCluster_isCrossing_of_mem_goodBoxEvent
+    {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d) (x : Cubic d)
+    (hx : ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n) :
+    finiteBoxGraphComponentIsCrossing
+      (finiteBoxGraphLargestComponent (epsilonGoodBlockCenter n x) n
+        (finiteBoxOpenGraph d ω (epsilonGoodBlockCenter n x) n)) := by
+  exact hx.1
+
 /-- A coarse cubic walk consisting entirely of good blocks lifts to open-bond reachability
 between arbitrary vertices of its selected endpoint clusters. -/
 theorem epsilonGoodBlockClusterVertices_reachable_of_good_walk
@@ -83,5 +91,43 @@ theorem epsilonGoodBlockClusterVertices_reachable_of_good_walk
         intro z hz
         exact hgood z (by simp [hz])
       exact hus.trans (ih hgoodTail hs₁ hv)
+
+/-- A good coarse walk yields an open-graph connection from the negative face of its first
+block to the positive face of its last block, in any chosen coordinate direction. -/
+theorem exists_cubicOpenGraph_reachable_between_faces_of_good_walk
+    {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d)
+    {x y : Cubic d} (w : (cubicGraph d).Walk x y)
+    (hgood : ∀ z ∈ w.support,
+      ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n z) n)
+    (i : Fin d) :
+    ∃ u ∈ cubicBoxFace d (epsilonGoodBlockCenter n x) n i false,
+      ∃ v ∈ cubicBoxFace d (epsilonGoodBlockCenter n y) n i true,
+        (cubicOpenGraph d ω).Reachable u v := by
+  have hxGood : ω ∈ epsilonGoodBoxEvent d p ε
+      (epsilonGoodBlockCenter n x) n := hgood x w.start_mem_support
+  have hyGood : ω ∈ epsilonGoodBoxEvent d p ε
+      (epsilonGoodBlockCenter n y) n := hgood y w.end_mem_support
+  have hxCross := epsilonGoodBlockCluster_isCrossing_of_mem_goodBoxEvent p ε ω x hxGood
+  have hyCross := epsilonGoodBlockCluster_isCrossing_of_mem_goodBoxEvent p ε ω y hyGood
+  obtain ⟨u, huM, huFace⟩ := (hxCross i).1
+  obtain ⟨v, hvM, hvFace⟩ := (hyCross i).2
+  refine ⟨u, huFace, v, hvFace, ?_⟩
+  exact epsilonGoodBlockClusterVertices_reachable_of_good_walk p ε ω w hgood huM hvM
+
+/-- Source-facing bond-event form of the good-walk face connection. -/
+theorem exists_connectionEvent_between_faces_of_good_walk
+    {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d)
+    {x y : Cubic d} (w : (cubicGraph d).Walk x y)
+    (hgood : ∀ z ∈ w.support,
+      ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n z) n)
+    (i : Fin d) :
+    ∃ u ∈ cubicBoxFace d (epsilonGoodBlockCenter n x) n i false,
+      ∃ v ∈ cubicBoxFace d (epsilonGoodBlockCenter n y) n i true,
+        ω ∈ connectionEvent d u v := by
+  obtain ⟨u, huFace, v, hvFace, huv⟩ :=
+    exists_cubicOpenGraph_reachable_between_faces_of_good_walk p ε ω w hgood i
+  obtain ⟨q⟩ := huv
+  refine ⟨u, huFace, v, hvFace, q.map (cubicOpenGraphHom d ω), ?_⟩
+  exact walkIsOpen_map_cubicOpenGraphHom q
 
 end Percolation

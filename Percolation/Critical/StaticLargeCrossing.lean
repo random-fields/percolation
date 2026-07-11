@@ -678,8 +678,9 @@ theorem largeCrossingCluster_probability_tendsto_one_of_coalescence
     {d : ℕ} (hd : 1 ≤ d) (p : I) (hp : 0 < theta d p)
     {δ : ℝ} (hδ : 0 < δ) (r R q : ℕ → ℕ)
     (hr : Filter.Tendsto r Filter.atTop Filter.atTop)
-    (hrR : ∀ n, r n ≤ R n) (hq : ∀ n, 1 ≤ q n)
-    (hqDensity : ∀ n, (q n : ℝ) ≤
+    (hrR : ∀ n, r n ≤ R n)
+    (hq : ∀ᶠ n : ℕ in Filter.atTop, 1 ≤ q n)
+    (hqDensity : ∀ᶠ n : ℕ in Filter.atTop, (q n : ℝ) ≤
       (1 - δ) * theta d p * ((cubicMetricBox d cubicOrigin (r n)).card : ℝ))
     (hcoalesce : Filter.Tendsto
       (fun n ↦ (bernoulliBondMeasure d p).real
@@ -726,36 +727,38 @@ theorem largeCrossingCluster_probability_tendsto_one_of_coalescence
   have hsum : Filter.Tendsto
       (fun n ↦ μ.real (D n)ᶜ + μ.real (C n)ᶜ + μ.real (F n)ᶜ)
       Filter.atTop (nhds 0) := by
-    convert (hdenseFail.add hcoalesceFail).add hfacesFail using 1 <;> norm_num
+    simpa using (hdenseFail.add hcoalesceFail).add hfacesFail
   have hfailure : Filter.Tendsto (fun n ↦ μ.real (L n)ᶜ)
       Filter.atTop (nhds 0) := by
     apply squeeze_zero' (Filter.Eventually.of_forall fun n ↦ measureReal_nonneg)
-      (Filter.Eventually.of_forall fun n ↦ ?_) hsum
-    have hsubset : (L n)ᶜ ⊆ (D n)ᶜ ∪ (C n)ᶜ ∪ (F n)ᶜ := by
-      intro ω hω
-      by_cases hD : ω ∈ D n
-      · by_cases hC : ω ∈ C n
-        · by_cases hF : ω ∈ F n
-          · exfalso
-            apply hω
-            apply mem_largeCrossingClusterEvent_of_dense_of_coalescence_of_allFaces
-              (hq n) (hrR n)
-            · have hcardReal := (hqDensity n).trans
-                (mem_denseInfiniteClusterVertexEvent_iff_card.mp hD)
-              exact_mod_cast hcardReal
-            · exact hC
-            · exact mem_allInnerInfiniteClusterFacesEvent_iff.mp hF
-          · exact Or.inr hF
-        · exact Or.inl (Or.inr hC)
-      · exact Or.inl (Or.inl hD)
-    calc
-      μ.real (L n)ᶜ ≤ μ.real ((D n)ᶜ ∪ (C n)ᶜ ∪ (F n)ᶜ) :=
-        measureReal_mono hsubset (measure_ne_top _ _)
-      _ ≤ μ.real ((D n)ᶜ ∪ (C n)ᶜ) + μ.real (F n)ᶜ :=
-        measureReal_union_le _ _
-      _ ≤ μ.real (D n)ᶜ + μ.real (C n)ᶜ + μ.real (F n)ᶜ := by
-        gcongr
-        exact measureReal_union_le _ _
+      (by
+        filter_upwards [hq, hqDensity] with n hqN hqDensityN
+        show μ.real (L n)ᶜ ≤ _
+        have hsubset : (L n)ᶜ ⊆ (D n)ᶜ ∪ (C n)ᶜ ∪ (F n)ᶜ := by
+          intro ω hω
+          by_cases hD : ω ∈ D n
+          · by_cases hC : ω ∈ C n
+            · by_cases hF : ω ∈ F n
+              · exfalso
+                apply hω
+                apply mem_largeCrossingClusterEvent_of_dense_of_coalescence_of_allFaces
+                  hqN (hrR n)
+                · have hcardReal := hqDensityN.trans
+                    (mem_denseInfiniteClusterVertexEvent_iff_card.mp hD)
+                  exact_mod_cast hcardReal
+                · exact hC
+                · exact mem_allInnerInfiniteClusterFacesEvent_iff.mp hF
+              · exact Or.inr hF
+            · exact Or.inl (Or.inr hC)
+          · exact Or.inl (Or.inl hD)
+        calc
+          μ.real (L n)ᶜ ≤ μ.real ((D n)ᶜ ∪ (C n)ᶜ ∪ (F n)ᶜ) :=
+            measureReal_mono hsubset (measure_ne_top _ _)
+          _ ≤ μ.real ((D n)ᶜ ∪ (C n)ᶜ) + μ.real (F n)ᶜ :=
+            measureReal_union_le _ _
+          _ ≤ μ.real (D n)ᶜ + μ.real (C n)ᶜ + μ.real (F n)ᶜ := by
+            gcongr
+            exact measureReal_union_le _ _) hsum
   have hEq : (fun n ↦ μ.real (L n)) = fun n ↦ 1 - μ.real (L n)ᶜ := by
     funext n
     rw [probReal_compl_eq_one_sub

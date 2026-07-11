@@ -21,6 +21,7 @@ import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
+import Percolation.Critical.StaticLogInset
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -202,3 +203,13 @@ import Percolation.Critical.StaticAnnularPeeling
 #print axioms Percolation.tendsto_cubicMetricBox_card_sq_mul_exp_neg_nat
 #print axioms Percolation.infiniteClusterCoalescenceEvent_probability_tendsto_one_of_uniformFiniteSlab
 #print axioms Percolation.secondMacroscopicCluster_probability_tendsto_zero_of_uniformFiniteSlab
+#print axioms Percolation.tendsto_logarithmicInsetRadius_div_nat
+#print axioms Percolation.tendsto_logarithmicInsetRadius_atTop
+#print axioms Percolation.tendsto_logarithmicInset_boxCard_ratio
+#print axioms Percolation.tendsto_logarithmicInsetWidth_boxCard_ratio
+#print axioms Percolation.tendsto_cubicMetricBox_card_sq_mul_exp_neg_logarithmicInset
+#print axioms Percolation.tendsto_cubicMetricBox_card_sq_mul_exp_neg_logarithmicInsetWidth
+#print axioms Percolation.exists_logarithmicInset_infiniteClusterCoalescence_probability_tendsto_one
+#print axioms Percolation.epsilonDenseCrossingClusterEvent_eq_largeCrossingClusterEvent
+#print axioms Percolation.epsilonDenseCrossingCluster_probability_tendsto_one_of_uniformFiniteSlab
+#print axioms Percolation.epsilonGoodBox_probability_tendsto_one_of_uniformFiniteSlab

@@ -87,6 +87,7 @@ import Percolation.Critical.StaticBlockPath
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
+import Percolation.Critical.StaticLogInset
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity

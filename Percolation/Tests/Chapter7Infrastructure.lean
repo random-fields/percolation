@@ -21,6 +21,7 @@ import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
+import Percolation.Critical.StaticLogInset
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -647,5 +648,45 @@ example {d n N : ℕ} (p : I) (e : Fin d ≃ Fin d) (i : Fin d) (positive : Bool
       (bernoulliBondMeasure d p).real
         (innerInfiniteClusterReachesFaceEvent d n N (e i) positive) :=
   innerInfiniteClusterReachesFaceProbability_permutation p e i positive
+
+example (v : ℝ) (n : ℕ) : logarithmicInsetRadius v n ≤ n :=
+  logarithmicInsetRadius_le v n
+
+example {v : ℝ} (hv : 0 ≤ v) :
+    Filter.Tendsto (fun n : ℕ ↦ (logarithmicInsetRadius v n : ℝ) / n)
+      Filter.atTop (nhds 1) :=
+  tendsto_logarithmicInsetRadius_div_nat hv
+
+example {d : ℕ} {v : ℝ} (hv : 0 ≤ v) :
+    Filter.Tendsto
+      (fun n : ℕ ↦
+        ((cubicMetricBox d cubicOrigin (logarithmicInsetRadius v n)).card : ℝ) /
+          (cubicMetricBox d cubicOrigin n).card)
+      Filter.atTop (nhds 1) :=
+  tendsto_logarithmicInset_boxCard_ratio hv
+
+example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    (hp1 : (p : ℝ) < 1) (hθ : 0 < theta d p)
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ)
+    {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (epsilonDenseCrossingClusterEvent d p ε n cubicOrigin))
+      Filter.atTop (nhds 1) :=
+  epsilonDenseCrossingCluster_probability_tendsto_one_of_uniformFiniteSlab
+    hd p hp0 hp1 hθ hδ0 hδ1 hslab hε0 hε1
+
+example {d L : ℕ} (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    (hp1 : (p : ℝ) < 1) (hθ : 0 < theta d p)
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hslab : UniformFiniteSlabConnectionLowerBound d p L δ)
+    {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure d p).real
+        (epsilonGoodBoxEvent d p ε cubicOrigin n))
+      Filter.atTop (nhds 1) :=
+  epsilonGoodBox_probability_tendsto_one_of_uniformFiniteSlab
+    hd p hp0 hp1 hθ hδ0 hδ1 hslab hε0 hε1
 
 end Percolation

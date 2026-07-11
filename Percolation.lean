@@ -74,6 +74,9 @@ import Percolation.Critical.ClusterDensityEndpoints
 import Percolation.Critical.ClusterAnalyticity
 import Percolation.Critical.Regions
 import Percolation.Critical.RegionTranslation
+import Percolation.Critical.FiniteCylinderTranslation
+import Percolation.Critical.FiniteCylinderField
+import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.StaticBlocks

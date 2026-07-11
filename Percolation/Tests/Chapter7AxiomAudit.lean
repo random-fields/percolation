@@ -14,6 +14,7 @@ import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
+import Percolation.Critical.InfiniteClusterDensity
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -70,3 +71,7 @@ import Percolation.Critical.SiteSymmetry
 #print axioms Percolation.exists_connectionEvent_between_faces_of_good_walk
 #print axioms Percolation.variance_finset_average_le_of_finite_covariance_neighborhood
 #print axioms Percolation.measure_average_deviation_le_of_finite_covariance_neighborhood
+#print axioms Percolation.disjoint_cubicTranslation_image_edgeSets_of_far
+#print axioms Percolation.covariance_translatedCylinderIndicator_eq_zero_of_far
+#print axioms Percolation.bernoulliBondMeasure_real_infiniteClusterVertexDensity_deviation_le_of_approx
+#print axioms Percolation.infiniteClusterVertexDensity_measureReal_tendsto_zero

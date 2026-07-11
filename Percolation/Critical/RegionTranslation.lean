@@ -45,6 +45,16 @@ theorem cubicTranslateRegion_inverse {d : ℕ} (x y : Cubic d) (A : Set (Cubic d
     simp [cubicTranslate]
     ring
 
+@[simp]
+theorem cubicTranslateRegion_univ {d : ℕ} (x y : Cubic d) :
+    cubicTranslateRegion x y (Set.univ : Set (Cubic d)) = Set.univ := by
+  apply Set.eq_univ_of_forall
+  intro z
+  exact ⟨cubicTranslate y x z, Set.mem_univ _, by
+    ext i
+    simp [cubicTranslate]
+    ring⟩
+
 private theorem hasOpenPathOfLengthAtLeastWithinVertices_translate
     {d n : ℕ} {A : Set (Cubic d)} {ω : EdgeConfiguration d}
     (x y z : Cubic d)
@@ -92,6 +102,26 @@ theorem hasOpenPathOfLengthAtLeastWithinVertices_translate_iff
       simp [cubicTranslate]
       ring
     simpa [cubicTranslateRegion_inverse, hEq] using hback
+
+theorem cubicTranslationConfigurationPullback_clusterWithin_infinite_iff
+    {d : ℕ} (A : Set (Cubic d)) (ω : EdgeConfiguration d)
+    (x y z : Cubic d) :
+    (cubicOpenClusterWithinVertices d A
+        (cubicTranslationConfigurationPullback x y ω) z).Infinite ↔
+      (cubicOpenClusterWithinVertices d (cubicTranslateRegion x y A) ω
+        (cubicTranslate x y z)).Infinite := by
+  rw [cubicOpenClusterWithinVertices_infinite_iff_arbitrarilyLong,
+    cubicOpenClusterWithinVertices_infinite_iff_arbitrarilyLong]
+  exact forall_congr' fun n ↦
+    hasOpenPathOfLengthAtLeastWithinVertices_translate_iff A ω x y z
+
+theorem cubicTranslationConfigurationPullback_hasInfiniteOpenClusterFrom_iff
+    {d : ℕ} (ω : EdgeConfiguration d) (x y z : Cubic d) :
+    hasInfiniteOpenClusterFrom d (cubicTranslationConfigurationPullback x y ω) z ↔
+      hasInfiniteOpenClusterFrom d ω (cubicTranslate x y z) := by
+  simpa [hasInfiniteOpenClusterFrom, cubicOpenClusterWithinVertices_univ] using
+    (cubicTranslationConfigurationPullback_clusterWithin_infinite_iff
+      (Set.univ : Set (Cubic d)) ω x y z)
 
 private theorem hasInfiniteOpenClusterInVertices_translate
     {d : ℕ} {A : Set (Cubic d)} {ω : EdgeConfiguration d}

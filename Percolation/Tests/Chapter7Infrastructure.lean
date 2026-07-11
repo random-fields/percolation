@@ -14,6 +14,7 @@ import Percolation.Critical.StaticBlockPath
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
+import Percolation.Critical.InfiniteClusterDensity
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -241,5 +242,21 @@ example {Ω ι : Type*} [MeasurableSpace Ω] [DecidableEq ι]
       (D : ℝ) / s.card :=
   variance_finset_average_le_of_finite_covariance_neighborhood
     μ s hs X hX N D hNcard hcovZero hcovLe
+
+example (d : ℕ) (x : Cubic d) :
+    translatedCylinderEvent x (infiniteClusterVertexEvent d cubicOrigin) =
+      infiniteClusterVertexEvent d x :=
+  translatedCylinderEvent_infiniteClusterOrigin d x
+
+/-- The density law is tested in the source range `d ≥ 2`; the implementation exposes the
+sharp nondegenerate assumption `1 ≤ d`. -/
+example (p : I) {ε : ℝ} (hε : 0 < ε) :
+    Filter.Tendsto
+      (fun n ↦ (bernoulliBondMeasure 2 p).real
+        {ω | ε ≤
+          |infiniteClusterVertexDensity 2 (cubicMetricBox 2 cubicOrigin n) ω -
+            theta 2 p|})
+      Filter.atTop (nhds 0) :=
+  infiniteClusterVertexDensity_measureReal_tendsto_zero (by omega) p hε
 
 end Percolation

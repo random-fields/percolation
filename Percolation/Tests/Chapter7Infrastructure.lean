@@ -4,6 +4,7 @@ import Percolation.Planar.Crossings
 import Percolation.Core.EdgeMenger
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
+import Percolation.Critical.ExplorationLaw
 
 /-!
 # Chapter 7 infrastructure oracle tests

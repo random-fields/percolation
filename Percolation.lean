@@ -74,6 +74,7 @@ import Percolation.Critical.Regions
 import Percolation.Critical.StaticBlocks
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization
+import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Basic

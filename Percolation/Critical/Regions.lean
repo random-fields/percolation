@@ -1027,6 +1027,27 @@ theorem cubicDilatedThickening_eq_minkowskiSum
 noncomputable def slabCriticalProbability (d k : ℕ) : ℝ :=
   regionCriticalProbability d (cubicSlab d k)
 
+theorem cubicSlab_mono {d k l : ℕ} (hkl : k ≤ l) :
+    cubicSlab d k ⊆ cubicSlab d l := by
+  intro x hx i hi
+  obtain ⟨hxi0, hxik⟩ := hx i hi
+  exact ⟨hxi0, hxik.trans (by exact_mod_cast hkl)⟩
+
+theorem slabCriticalProbability_antitone (d : ℕ) :
+    Antitone (slabCriticalProbability d) := by
+  intro k l hkl
+  exact regionCriticalProbability_anti (cubicSlab_mono hkl)
+
+theorem cubicCriticalProbability_le_slabCriticalProbability (d k : ℕ) :
+    cubicCriticalProbability d ≤ slabCriticalProbability d k := by
+  rw [slabCriticalProbability, ← regionCriticalProbability_univ d]
+  exact regionCriticalProbability_anti (Set.subset_univ (cubicSlab d k))
+
+@[simp]
+theorem slabCriticalProbability_two (k : ℕ) :
+    slabCriticalProbability 2 k = cubicCriticalProbability 2 := by
+  rw [slabCriticalProbability, cubicSlab_two, regionCriticalProbability_univ]
+
 /-- Half-space percolation probability. -/
 noncomputable def halfSpaceTheta (d : ℕ) (p : I) : ℝ :=
   regionTheta d (cubicHalfSpace d) p

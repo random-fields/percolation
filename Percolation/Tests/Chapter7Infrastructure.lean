@@ -24,6 +24,14 @@ open scoped unitInterval
 
 example (k : ℕ) : cubicSlab 2 k = Set.univ := cubicSlab_two k
 
+example (d k l : ℕ) (hkl : k ≤ l) :
+    slabCriticalProbability d l ≤ slabCriticalProbability d k :=
+  slabCriticalProbability_antitone d hkl
+
+example (d k : ℕ) :
+    cubicCriticalProbability d ≤ slabCriticalProbability d k :=
+  cubicCriticalProbability_le_slabCriticalProbability d k
+
 example : Fintype.card (BrickFacetKind 2) = 6 := by native_decide
 example : Fintype.card (BrickFacetKind 3) = 12 := by native_decide
 example : Fintype.card (BrickFacetKind 4) = 20 := by native_decide

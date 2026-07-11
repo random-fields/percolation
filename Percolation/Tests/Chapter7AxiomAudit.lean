@@ -16,6 +16,8 @@ import Percolation.Critical.StaticBlockTranslation
 #print axioms Percolation.epsilonGoodBlockLaw_kDependent
 #print axioms Percolation.continuous_seedConnectionProbability
 #print axioms Percolation.cubicDilatedThickening_eq_minkowskiSum
+#print axioms Percolation.slabCriticalProbability_antitone
+#print axioms Percolation.cubicCriticalProbability_le_slabCriticalProbability
 #print axioms Percolation.siteExploration_infinite_probability_pos_of_dominates
 #print axioms Percolation.stochasticallyDominates_iff_measureReal_le
 #print axioms Percolation.HasMonotoneCoupling.stochasticallyDominates

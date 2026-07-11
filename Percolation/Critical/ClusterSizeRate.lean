@@ -256,6 +256,22 @@ theorem clusterSizeProbability_logRate_tendsto
     ring
   simpa using hsum.congr' hevent
 
+/-- The exact-size decay rate is nonnegative throughout `0 < p < 1`. -/
+theorem clusterSizeDecayRate_nonneg
+    (d : ℕ) (p : I) (hd : 0 < d) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1) :
+    0 ≤ clusterSizeDecayRate d p := by
+  have hzero : Tendsto (fun _ : ℕ ↦ (0 : ℝ)) atTop (𝓝 0) := tendsto_const_nhds
+  have hlimit := clusterSizeProbability_logRate_tendsto d p hd hp0 hp1
+  have hnonneg : ∀ᶠ n : ℕ in atTop,
+      0 ≤ -Real.log (finiteClusterSizeProbability d p n) / (n : ℝ) := by
+    filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn
+    have hnpos : 0 < n := zero_lt_one.trans_le hn
+    have hprob := finiteClusterSizeProbability_pos d n p hd hnpos hp0 hp1
+    have hlog : Real.log (finiteClusterSizeProbability d p n) ≤ 0 :=
+      Real.log_nonpos hprob.le (finiteClusterSizeProbability_le_one d p n)
+    exact div_nonneg (neg_nonneg.mpr hlog) (by positivity)
+  exact le_of_tendsto_of_tendsto hzero hlimit hnonneg
+
 /-- Fekete's finite-index estimate for the corrected normalized mass. -/
 theorem clusterSizeFeketeWeight_le_exp_rate
     (d : ℕ) (p : I) (hd : 0 < d) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
@@ -472,16 +488,15 @@ theorem tendsto_log_natCast_succ_div_natCast :
   exact squeeze_zero' hnonneg hle hupper
 
 /-- The finite-cluster tail has the same logarithmic decay rate as the exact-size law (6.82). -/
-theorem finiteClusterSizeTail_logRate_tendsto
-    (d : ℕ) (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
-    (hp : (p : ℝ) < cubicCriticalProbability d) :
+theorem finiteClusterSizeTail_logRate_tendsto_of_rate_pos
+    (d : ℕ) (hd : 0 < d) (p : I) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
+    (hzeta0 : 0 < clusterSizeDecayRate d p) :
     Tendsto (fun n : ℕ ↦ -Real.log (finiteClusterSizeTail d p n) / n) atTop
       (𝓝 (clusterSizeDecayRate d p)) := by
   let zeta := clusterSizeDecayRate d p
   let r := Real.exp (-zeta)
   let D := (p : ℝ)⁻¹ * (1 - (p : ℝ)) ^ 2 * geometricFirstMoment r
-  have hp1 : (p : ℝ) < 1 := hp.trans (cubicCriticalProbability_pos_lt_one hd).2
-  have hzeta : 0 < zeta := clusterSizeDecayRate_pos_of_lt_critical d hd p hp0 hp
+  have hzeta : 0 < zeta := hzeta0
   have hr0 : 0 ≤ r := (Real.exp_pos _).le
   have hr1 : r < 1 := by
     dsimp only [r]
@@ -506,15 +521,15 @@ theorem finiteClusterSizeTail_logRate_tendsto
       zeta - Real.log (D * (n + 1 : ℝ)) / (n : ℝ)) atTop (𝓝 zeta) := by
     simpa using tendsto_const_nhds.sub hlogPref
   have hupperT := clusterSizeProbability_logRate_tendsto d p
-    (Nat.zero_lt_of_lt hd) hp0 hp1
+    hd hp0 hp1
   have hlower : ∀ᶠ n : ℕ in atTop,
       zeta - Real.log (D * (n + 1 : ℝ)) / (n : ℝ) ≤
         -Real.log (finiteClusterSizeTail d p n) / n := by
     filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn
     have hnpos : 0 < n := zero_lt_one.trans_le hn
-    have htail := finiteClusterSizeTail_pos d p (Nat.zero_lt_of_lt hd) hp0 hp1 hnpos
+    have htail := finiteClusterSizeTail_pos d p hd hp0 hp1 hnpos
     have hbound := finiteClusterSizeTail_le_rate_prefactor d p
-      (Nat.zero_lt_of_lt hd) hp0 hp1 hzeta hnpos
+      hd hp0 hp1 hzeta hnpos
     change finiteClusterSizeTail d p n ≤
       D * (n + 1 : ℝ) * Real.exp (-(n : ℝ) * zeta) at hbound
     have hright : 0 < D * (n + 1 : ℝ) * Real.exp (-(n : ℝ) * zeta) := by positivity
@@ -532,11 +547,21 @@ theorem finiteClusterSizeTail_logRate_tendsto
         -Real.log (finiteClusterSizeProbability d p n) / n := by
     filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn
     have hnpos : 0 < n := zero_lt_one.trans_le hn
-    have hprob := finiteClusterSizeProbability_pos d n p (Nat.zero_lt_of_lt hd) hnpos hp0 hp1
+    have hprob := finiteClusterSizeProbability_pos d n p hd hnpos hp0 hp1
     have hle := finiteClusterSizeProbability_le_finiteClusterSizeTail d p n
     have hlog := Real.log_le_log hprob hle
     exact div_le_div_of_nonneg_right (neg_le_neg hlog) (by positivity)
   exact hlowerT.squeeze' hupperT hlower hupper
+
+/-- Subcritical compatibility wrapper for (6.82). -/
+theorem finiteClusterSizeTail_logRate_tendsto
+    (d : ℕ) (hd : 2 ≤ d) (p : I) (hp0 : 0 < (p : ℝ))
+    (hp : (p : ℝ) < cubicCriticalProbability d) :
+    Tendsto (fun n : ℕ ↦ -Real.log (finiteClusterSizeTail d p n) / n) atTop
+      (𝓝 (clusterSizeDecayRate d p)) :=
+  finiteClusterSizeTail_logRate_tendsto_of_rate_pos d (Nat.zero_lt_of_lt hd) p hp0
+    (hp.trans (cubicCriticalProbability_pos_lt_one hd).2)
+    (clusterSizeDecayRate_pos_of_lt_critical d hd p hp0 hp)
 
 theorem finiteClusterAtLeastEvent_eq_iUnion_size (d n : ℕ) :
     finiteClusterEvent d ∩ clusterSizeAtLeastEvent d n =
@@ -588,6 +613,37 @@ theorem finiteClusterSizeTail_eq_measure_inter (d : ℕ) (p : I) (n : ℕ) :
   · rfl
   · intro k
     exact measure_ne_top _ _
+
+/-- Full source range of (6.82): the finite-cluster tail has the exact-size rate for every
+`0 < p < 1`, including supercritical densities. -/
+theorem finiteClusterSizeTail_logRate_tendsto_all
+    (d : ℕ) (hd : 0 < d) (p : I) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1) :
+    Tendsto (fun n : ℕ ↦ -Real.log (finiteClusterSizeTail d p n) / n) atTop
+      (𝓝 (clusterSizeDecayRate d p)) := by
+  by_cases hz : clusterSizeDecayRate d p = 0
+  · have hexact := clusterSizeProbability_logRate_tendsto d p hd hp0 hp1
+    have hzero : Tendsto (fun _ : ℕ ↦ (0 : ℝ)) atTop
+        (𝓝 (clusterSizeDecayRate d p)) := by simpa [hz] using tendsto_const_nhds
+    have hlower : ∀ᶠ n : ℕ in atTop,
+        0 ≤ -Real.log (finiteClusterSizeTail d p n) / (n : ℝ) := by
+      filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn
+      have hnpos : 0 < n := zero_lt_one.trans_le hn
+      have htail := finiteClusterSizeTail_pos d p hd hp0 hp1 hnpos
+      have htailOne : finiteClusterSizeTail d p n ≤ 1 := by
+        rw [finiteClusterSizeTail_eq_measure_inter]
+        exact measureReal_le_one
+      exact div_nonneg (neg_nonneg.mpr (Real.log_nonpos htail.le htailOne)) (by positivity)
+    have hupper : ∀ᶠ n : ℕ in atTop,
+        -Real.log (finiteClusterSizeTail d p n) / (n : ℝ) ≤
+          -Real.log (finiteClusterSizeProbability d p n) / (n : ℝ) := by
+      filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn
+      have hnpos : 0 < n := zero_lt_one.trans_le hn
+      have hprob := finiteClusterSizeProbability_pos d n p hd hnpos hp0 hp1
+      have hle := finiteClusterSizeProbability_le_finiteClusterSizeTail d p n
+      exact div_le_div_of_nonneg_right (neg_le_neg (Real.log_le_log hprob hle)) (by positivity)
+    exact hzero.squeeze' hexact hlower hupper
+  · exact finiteClusterSizeTail_logRate_tendsto_of_rate_pos d hd p hp0 hp1
+      (lt_of_le_of_ne (clusterSizeDecayRate_nonneg d p hd hp0 hp1) (Ne.symm hz))
 
 theorem clusterSizeAtLeast_eq_finiteClusterSizeTail_of_theta_eq_zero
     (d : ℕ) (p : I) (n : ℕ) (htheta : theta d p = 0) :
@@ -697,9 +753,11 @@ theorem clusterSizeDecayRate_le_boxRadiusDecayRate
   exact div_le_div_of_nonneg_right (neg_le_neg hlog) (by positivity)
 
 #print axioms clusterSizeProbability_logRate_tendsto
+#print axioms clusterSizeDecayRate_nonneg
 #print axioms finiteClusterSizeProbability_le_rate
 #print axioms clusterSizeDecayRate_pos_of_lt_critical
 #print axioms finiteClusterSizeTail_logRate_tendsto
+#print axioms finiteClusterSizeTail_logRate_tendsto_all
 #print axioms clusterSizeDecayRate_le_boxRadiusDecayRate
 
 end Percolation

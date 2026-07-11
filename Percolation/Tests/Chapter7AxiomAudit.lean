@@ -14,6 +14,7 @@ import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.FiniteSlabLowerBound
+import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -249,3 +250,10 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.slabCornerLowerBound_four_mul_transverse_le_connectionS
 #print axioms Percolation.finiteThickSlabSConnectionLowerBound_pos
 #print axioms Percolation.finiteThickSlabSConnectionLowerBound_le
+#print axioms Percolation.cubicGraphIsoRegion_tSlabSlice_subset_T
+#print axioms Percolation.tSlabChainTail_lowerBound
+#print axioms Percolation.finiteThickSlabTConnection_origin_lowerBound
+#print axioms Percolation.exists_cubicPath_in_finiteThickSlabT
+#print axioms Percolation.finiteThickSlabSConnectionLowerBound_pow_le_connectionT_of_L_le_n
+#print axioms Percolation.finiteThickSlabTConnectionLowerBound_pos
+#print axioms Percolation.finiteThickSlabTConnectionLowerBound_le

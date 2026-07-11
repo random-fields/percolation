@@ -20,6 +20,7 @@ import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
 import Percolation.Critical.SlabConnectivity
 import Percolation.Critical.FiniteSlabLowerBound
+import Percolation.Critical.FiniteSlabTLowerBound
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -800,5 +801,31 @@ example (d : ℕ) (hd : 2 ≤ d) (L : ℕ) {p₁ p₂ : I}
       (bernoulliBondMeasure d p₂).real
         (finiteThickSlabSConnectionEvent d n L x y) :=
   finiteThickSlabSConnectionLowerBound_le d hd L h12 hx hy
+
+example (d : ℕ) (hd : 3 ≤ d) (L : ℕ) {p₁ p₂ : I}
+    (h12 : (p₁ : ℝ) < p₂) {n : ℕ} (hnL : L ≤ n) {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabTVertices d n L)
+    (hy : y ∈ finiteThickSlabTVertices d n L) :
+    (finiteThickSlabSConnectionLowerBound d L p₁ p₂ ^ (d - 1)) ^ 2 ≤
+      (bernoulliBondMeasure d p₂).real
+        (finiteThickSlabTConnectionEvent d n L x y) :=
+  finiteThickSlabSConnectionLowerBound_pow_le_connectionT_of_L_le_n
+    d hd L h12 hnL hx hy
+
+example {d n L : ℕ} (p : I) (hnL : n < L) {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabTVertices d n L)
+    (hy : y ∈ finiteThickSlabTVertices d n L) :
+    (p : ℝ) ^ (d * (3 * L)) ≤ (bernoulliBondMeasure d p).real
+      (finiteThickSlabTConnectionEvent d n L x y) :=
+  pow_d_mul_three_L_le_connectionT_of_n_lt_L p hnL hx hy
+
+example (d : ℕ) (hd : 3 ≤ d) (L : ℕ) {p₁ p₂ : I}
+    (h12 : (p₁ : ℝ) < p₂) {n : ℕ} {x y : Cubic d}
+    (hx : x ∈ finiteThickSlabTVertices d n L)
+    (hy : y ∈ finiteThickSlabTVertices d n L) :
+    finiteThickSlabTConnectionLowerBound d L p₁ p₂ ≤
+      (bernoulliBondMeasure d p₂).real
+        (finiteThickSlabTConnectionEvent d n L x y) :=
+  finiteThickSlabTConnectionLowerBound_le d hd L h12 hx hy
 
 end Percolation

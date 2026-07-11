@@ -8,6 +8,7 @@ import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
+import Percolation.Critical.StaticBlockAdjacency
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
@@ -124,6 +125,32 @@ example (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (x y : Cubic d) :
     (epsilonGoodBlockLaw d p ε n).map (cubicSiteTranslationPullback x y) =
       epsilonGoodBlockLaw d p ε n :=
   epsilonGoodBlockLaw_map_cubicSiteTranslationPullback d p ε n x y
+
+example {d : ℕ} {G : SimpleGraph (Cubic d)} (hG : G ≤ cubicGraph d)
+    {u v : Cubic d} (w : G.Walk u v) (i : Fin d) (a : ℤ)
+    (hu : a ≤ u i) (hv : v i ≤ a) :
+    ∃ z : Cubic d, ∃ q : G.Walk u z,
+      z i = a ∧ (∀ x ∈ q.support, a ≤ x i) ∧
+        ∀ x ∈ q.support, x ∈ w.support :=
+  exists_cubicWalk_prefix_to_level_of_end_le hG w i a hu hv
+
+/-- Equation (7.59) is tested at its source-facing event interface: neighboring good blocks'
+selected clusters share an actual lattice vertex. -/
+example {d n : ℕ} (p : I) (ε : ℝ) (ω : EdgeConfiguration d)
+    (x : Cubic d) (a : CubicDirection d)
+    (hx : ω ∈ epsilonGoodBoxEvent d p ε (epsilonGoodBlockCenter n x) n)
+    (hy : ω ∈ epsilonGoodBoxEvent d p ε
+      (epsilonGoodBlockCenter n (cubicStepFrom x a)) n) :
+    ∃ u : Cubic d,
+      u ∈ finiteBoxGraphComponentVertices
+        (finiteBoxGraphLargestComponent (epsilonGoodBlockCenter n x) n
+          (finiteBoxOpenGraph d ω (epsilonGoodBlockCenter n x) n)) ∧
+      u ∈ finiteBoxGraphComponentVertices
+        (finiteBoxGraphLargestComponent
+          (epsilonGoodBlockCenter n (cubicStepFrom x a)) n
+          (finiteBoxOpenGraph d ω
+            (epsilonGoodBlockCenter n (cubicStepFrom x a)) n)) :=
+  finiteBoxGraphLargestComponents_inter_of_mem_goodBoxEvents p ε ω x a hx hy
 
 example (d : ℕ) (p : I) (ε : ℝ) (n : ℕ) (x y : Cubic d) :
   (bernoulliBondMeasure d p).real (epsilonGoodBoxEvent d p ε x n) =

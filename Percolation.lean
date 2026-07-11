@@ -1,5 +1,6 @@
 import Percolation.Core.Configuration
 import Percolation.Core.Cubic
+import Percolation.Core.CubicWalkLevel
 import Percolation.Core.TwoEdgeMenger
 import Percolation.Core.TwoEdgeMengerToSet
 import Percolation.Bernoulli.Basic
@@ -76,6 +77,7 @@ import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.StaticBlocks
 import Percolation.Critical.StaticBlockTranslation
+import Percolation.Critical.StaticBlockAdjacency
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization
 import Percolation.Critical.ExplorationLaw

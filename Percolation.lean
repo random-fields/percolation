@@ -13,6 +13,7 @@ import Percolation.Bernoulli.FKGInfinite
 import Percolation.Bernoulli.Reliability
 import Percolation.Bernoulli.Russo
 import Percolation.Bernoulli.Sprinkling
+import Percolation.Bernoulli.StochasticDomination
 import Percolation.Critical.Basic
 import Percolation.Critical.VertexIndependence
 import Percolation.Critical.OpenClusterDensity
@@ -66,6 +67,12 @@ import Percolation.Critical.ConcreteClusterSeries
 import Percolation.Critical.ClusterDensityDerivative
 import Percolation.Critical.ClusterDensityEndpoints
 import Percolation.Critical.ClusterAnalyticity
+import Percolation.Critical.Regions
+import Percolation.Critical.StaticBlocks
+import Percolation.Critical.Seeds
+import Percolation.Critical.DynamicRenormalization
+import Percolation.Critical.HalfSpaceBricks
 import Percolation.Planar.Basic
 import Percolation.Planar.Peierls
+import Percolation.Planar.Crossings
 import Percolation.RandomCluster.Basic

@@ -25,6 +25,13 @@ def cubicLInfDist {d : ℕ} (x y : Cubic d) : ℕ :=
 theorem cubicLInfDist_self {d : ℕ} (x : Cubic d) : cubicLInfDist x x = 0 := by
   simp [cubicLInfDist]
 
+theorem cubicLInfDist_comm {d : ℕ} (x y : Cubic d) :
+    cubicLInfDist x y = cubicLInfDist y x := by
+  unfold cubicLInfDist
+  apply Finset.sup_congr rfl
+  intro i _hi
+  rw [show x i - y i = -(y i - x i) by omega, Int.natAbs_neg]
+
 /-- Every coordinate displacement is bounded by the `L∞` distance. -/
 theorem cubicLInfDist_coord_le {d : ℕ} (x y : Cubic d) (i : Fin d) :
     (y i - x i).natAbs ≤ cubicLInfDist x y := by

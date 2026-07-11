@@ -85,6 +85,7 @@ proof window; it does not mark any member of the group proved unless the status 
 | General finite terminal-set edge Menger | Survival of a connection from one source to a terminal set, or between two finite terminal sets, is equivalent to the corresponding arbitrary-cardinality family of pairwise edge-disjoint walks. | `EdgeMenger.IsEdgeReachableToFinset`, `EdgeMenger.isEdgeReachableToFinset_iff_exists_pairwise_edgeDisjoint_walks`, `EdgeMenger.IsEdgeReachableBetweenFinsets`, `EdgeMenger.isEdgeReachableBetweenFinsets_iff_exists_pairwise_edgeDisjoint_walks` | proved slice | Uses `k` private two-edge channels at each terminal so repeated endpoints and shared `A∩B` vertices do not create false capacity-one bottlenecks. |
 | Stochastic-order vocabulary | Expectation definition, event consequence, iid ordering, monotone-coupling bridge, finite-range dependence. | `StochasticallyDominates`, `StochasticallyDominates.measureReal_le`, `stochasticallyDominates_iff_measureReal_le`, `HasMonotoneCoupling`, `HasMonotoneCoupling.stochasticallyDominates`, `setBernoulli_stochasticallyDominates`, `KDependent`, `setBernoulli_kDependent` | proved slice | The iid theorem checks the direction of domination. The coupling theorem derives the exact expectation formulation from an almost-sure coordinatewise inclusion. LSS remains a target. |
 | Induced-region cubic symmetry | Vertex-constrained paths, infinite region components, their probability, and the induced critical value are invariant under every cubic graph automorphism. | `hasOpenPathOfLengthAtLeastWithinVertices_graphIso_iff`, `cubicGraphIsoConfigurationPullback_hasInfiniteOpenClusterInVertices_iff`, `regionHasInfiniteClusterProbability_graphIso`, `regionCriticalProbability_graphIso` | proved slice | Coordinate-permutation and single-coordinate-reflection corollaries are exposed explicitly for slab, brick, and face reductions. |
+| Site-percolation graph-isomorphism invariance | Site connections and infinite clusters transport exactly through graph isomorphisms, preserving both `siteTheta` and the critical site density. | `siteGraphIsoConfigurationPullback_mem_siteConnectionEvent_iff`, `siteGraphIsoConfigurationPullback_hasInfiniteSiteCluster_iff`, `siteTheta_graphIso`, `siteCriticalProbability_graphIso` | proved slice | This closes the graph-independent symmetry adapter used by rotated brick explorations and auxiliary site fields. |
 
 ## Adversarial checks already encoded
 
@@ -139,7 +140,8 @@ individual theorem rows.
 | Induced-region path, infinite-event, probability, and critical-value translation invariance | 10891s | 11231s | 340s | 3,207,402 | 3,359,970 | 152,568 |
 | Region-translation checkpoint documentation and Git (non-theorem) | 11231s | 11257s | 26s | 3,359,970 | 3,369,461 | 9,491 |
 | Induced-region cubic-automorphism invariance | 11257s | 11378s | 121s | 3,369,461 | 3,407,022 | 37,561 |
-| **Measured subtotal** |  |  | **11378s** |  |  | **3,407,022** |
+| Site-percolation graph-isomorphism invariance and preceding checkpoint Git | 11378s | 11585s | 207s | 3,407,022 | 3,506,404 | 99,382 |
+| **Measured subtotal** |  |  | **11585s** |  |  | **3,506,404** |
 
 The final measured window contains both the Chapter 11 edge-Menger prerequisite and the Chapter
 7 coupling bridge because its intermediate boundary snapshot was missed.  It is retained as one

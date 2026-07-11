@@ -10,6 +10,7 @@ import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
+import Percolation.Critical.SiteSymmetry
 
 /-! Transitive axiom audit for the current Chapter 7 infrastructure checkpoint. -/
 
@@ -27,6 +28,10 @@ import Percolation.Critical.RegionSymmetry
 #print axioms Percolation.cubicGraphIsoConfigurationPullback_hasInfiniteOpenClusterInVertices_iff
 #print axioms Percolation.regionHasInfiniteClusterProbability_graphIso
 #print axioms Percolation.regionCriticalProbability_graphIso
+#print axioms Percolation.siteGraphIsoConfigurationPullback_mem_siteConnectionEvent_iff
+#print axioms Percolation.siteGraphIsoConfigurationPullback_hasInfiniteSiteCluster_iff
+#print axioms Percolation.siteTheta_graphIso
+#print axioms Percolation.siteCriticalProbability_graphIso
 #print axioms Percolation.siteExploration_infinite_probability_pos_of_dominates
 #print axioms Percolation.stochasticallyDominates_iff_measureReal_le
 #print axioms Percolation.HasMonotoneCoupling.stochasticallyDominates

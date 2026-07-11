@@ -73,6 +73,7 @@ import Percolation.Critical.ClusterAnalyticity
 import Percolation.Critical.Regions
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
+import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.StaticBlocks
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.Seeds

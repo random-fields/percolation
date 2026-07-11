@@ -10,6 +10,7 @@ import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
 import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
+import Percolation.Critical.SiteSymmetry
 
 /-!
 # Chapter 7 infrastructure oracle tests
@@ -40,6 +41,16 @@ example : Fintype.card (BrickFacetKind 4) = 20 := by native_decide
 
 example (d : ℕ) (G : SimpleGraph (Fin d)) : siteTheta G (0 : I) = 0 :=
   siteTheta_zero G
+
+example {V W : Type*} [Countable V] [Countable W]
+    {G : SimpleGraph V} {H : SimpleGraph W} (F : G ≃g H) (p : I) :
+    siteTheta H p = siteTheta G p :=
+  siteTheta_graphIso F p
+
+example {V W : Type*} [Countable V] [Countable W]
+    {G : SimpleGraph V} {H : SimpleGraph W} (F : G ≃g H) :
+    siteCriticalProbability H = siteCriticalProbability G :=
+  siteCriticalProbability_graphIso F
 
 example (d n N : ℕ) (x : Cubic d) : twoArmSeparationEvent d n N x x = ∅ :=
   twoArmSeparationEvent_self d n N x

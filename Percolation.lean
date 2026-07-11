@@ -14,6 +14,7 @@ import Percolation.Bernoulli.FKGInfinite
 import Percolation.Bernoulli.Reliability
 import Percolation.Bernoulli.Russo
 import Percolation.Bernoulli.Sprinkling
+import Percolation.Bernoulli.UpwardDistance
 import Percolation.Bernoulli.StochasticDomination
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable

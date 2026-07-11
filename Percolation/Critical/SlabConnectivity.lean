@@ -1,4 +1,5 @@
 import Percolation.Critical.Regions
+import Percolation.Bernoulli.UpwardDistance
 
 /-!
 # Finite thick-slab connection regions
@@ -158,5 +159,238 @@ def UniformFiniteSlabConnectionLowerBound
     ∀ y ∈ finiteThickSlabTVertices d n L,
       δ ≤ (bernoulliBondMeasure d p).real
         (finiteThickSlabTConnectionEvent d n L x y))
+
+/-! ### The corner box and the four events in (7.82) -/
+
+/-- The finite corner box `U_m(L) = [0,m]² × [0,L]^(d-2)`. -/
+noncomputable def slabCornerBoxVertices (d m L : ℕ) : Finset (Cubic d) :=
+  (cubicMetricBox d cubicOrigin (max m L)).filter fun x ↦
+    ∀ i : Fin d,
+      if i.val < 2 then 0 ≤ x i ∧ x i ≤ m else 0 ≤ x i ∧ x i ≤ L
+
+@[simp]
+theorem mem_slabCornerBoxVertices_iff {d m L : ℕ} {x : Cubic d} :
+    x ∈ slabCornerBoxVertices d m L ↔
+      ∀ i : Fin d,
+        if i.val < 2 then 0 ≤ x i ∧ x i ≤ m else 0 ≤ x i ∧ x i ≤ L := by
+  classical
+  rw [slabCornerBoxVertices, Finset.mem_filter]
+  constructor
+  · exact fun h ↦ h.2
+  · intro h
+    refine ⟨?_, h⟩
+    rw [mem_cubicMetricBox]
+    intro i
+    simp only [cubicOrigin, zero_sub, zero_add]
+    have hi := h i
+    split at hi
+    · have hmmax : (m : ℤ) ≤ (max m L : ℕ) := by
+        exact_mod_cast Nat.le_max_left m L
+      constructor <;> omega
+    · have hLmax : (L : ℤ) ≤ (max m L : ℕ) := by
+        exact_mod_cast Nat.le_max_right m L
+      constructor <;> omega
+
+/-- The four planar corners `x₁₃,x₃₂,x₂₄,x₄₁`, in cyclic order. -/
+def slabCornerVertex (d m : ℕ) (k : Fin 4) : Cubic d := fun i ↦
+  if i.val = 0 then
+    if k.val = 1 ∨ k.val = 2 then m else 0
+  else if i.val = 1 then
+    if k.val = 2 ∨ k.val = 3 then m else 0
+  else 0
+
+theorem slabCornerVertex_mem (d m L : ℕ) (k : Fin 4) :
+    slabCornerVertex d m k ∈ slabCornerBoxVertices d m L := by
+  rw [mem_slabCornerBoxVertices_iff]
+  intro i
+  simp only [slabCornerVertex]
+  split_ifs <;> omega
+
+/-- The target face paired with a corner in the four events of (7.82): right, top, left,
+bottom, respectively. -/
+noncomputable def slabCornerTargetFace
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) : Finset (Cubic d) :=
+  (slabCornerBoxVertices d m L).filter fun x ↦
+    if k.val = 0 then x ⟨0, by omega⟩ = m
+    else if k.val = 1 then x ⟨1, hd⟩ = m
+    else if k.val = 2 then x ⟨0, by omega⟩ = 0
+    else x ⟨1, hd⟩ = 0
+
+theorem slabCornerTargetFace_subset
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) :
+    slabCornerTargetFace d hd m L k ⊆ slabCornerBoxVertices d m L :=
+  Finset.filter_subset _ _
+
+/-- One of the four corner-to-opposite-face connection events in (7.82). -/
+def slabCornerConnectionEvent
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) : Set (EdgeConfiguration d) :=
+  ⋃ y ∈ slabCornerTargetFace d hd m L k,
+    connectionEventWithinVertices d (slabCornerBoxVertices d m L : Set (Cubic d))
+      (slabCornerVertex d m k) y
+
+theorem measurableSet_slabCornerConnectionEvent
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) :
+    MeasurableSet (slabCornerConnectionEvent d hd m L k) :=
+  (slabCornerTargetFace d hd m L k).measurableSet_biUnion fun y _hy ↦
+    measurableSet_connectionEventWithinVertices d _ _ y
+
+theorem isIncreasingEvent_slabCornerConnectionEvent
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) (k : Fin 4) :
+    IsIncreasingEvent (slabCornerConnectionEvent d hd m L k) := by
+  intro ω η hωη hω
+  obtain ⟨y, hy⟩ := Set.mem_iUnion.mp hω
+  obtain ⟨hyFace, hconn⟩ := Set.mem_iUnion.mp hy
+  exact Set.mem_iUnion.mpr ⟨y, Set.mem_iUnion.mpr ⟨hyFace,
+    isIncreasingEvent_connectionEventWithinVertices d _ _ y hωη hconn⟩⟩
+
+/-- Simultaneous occurrence of all four events in (7.82). -/
+def allSlabCornerConnectionEvents
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) : Set (EdgeConfiguration d) :=
+  ⋂ k ∈ (Finset.univ : Finset (Fin 4)), slabCornerConnectionEvent d hd m L k
+
+theorem measurableSet_allSlabCornerConnectionEvents
+    (d : ℕ) (hd : 2 ≤ d) (m L : ℕ) :
+    MeasurableSet (allSlabCornerConnectionEvents d hd m L) :=
+  (Finset.univ : Finset (Fin 4)).measurableSet_biInter fun k _hk ↦
+    measurableSet_slabCornerConnectionEvent d hd m L k
+
+/-- Iterated FKG for the four corner events, the measure-theoretic content of (7.82). -/
+theorem prod_slabCornerConnectionProbabilities_le_all
+    (d : ℕ) (hd : 2 ≤ d) (p : I) (m L : ℕ) :
+    (∏ k : Fin 4, (bernoulliBondMeasure d p).real
+      (slabCornerConnectionEvent d hd m L k)) ≤
+        (bernoulliBondMeasure d p).real
+          (allSlabCornerConnectionEvents d hd m L) := by
+  simpa [allSlabCornerConnectionEvents] using
+    bernoulliBondMeasure_prod_le_real_biInter_fkg' p
+      (J := (Finset.univ : Finset (Fin 4)))
+      (fun k _hk ↦ isIncreasingEvent_slabCornerConnectionEvent d hd m L k)
+      (fun k _hk ↦ measurableSet_slabCornerConnectionEvent d hd m L k)
+
+/-- If each of the four events has probability at least `δ`, their intersection has probability
+at least `δ⁴`.  Taking `δ=θ/2` gives the displayed lower bound (7.82). -/
+theorem slabCornerConnection_lowerBound_pow_four
+    (d : ℕ) (hd : 2 ≤ d) (p : I) (m L : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hprob : ∀ k : Fin 4, δ ≤ (bernoulliBondMeasure d p).real
+      (slabCornerConnectionEvent d hd m L k)) :
+    δ ^ 4 ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornerConnectionEvents d hd m L) := by
+  calc
+    δ ^ 4 = ∏ _k : Fin 4, δ := by simp
+    _ ≤ ∏ k : Fin 4, (bernoulliBondMeasure d p).real
+        (slabCornerConnectionEvent d hd m L k) := by
+      exact Finset.prod_le_prod (fun _ _ ↦ hδ) (fun k _ ↦ hprob k)
+    _ ≤ (bernoulliBondMeasure d p).real
+        (allSlabCornerConnectionEvents d hd m L) :=
+      prod_slabCornerConnectionProbabilities_le_all d hd p m L
+
+/-- All four distinguished corners belong to one open cluster inside `U_m(L)`. -/
+def allSlabCornersConnectedEvent
+    (d m L : ℕ) : Set (EdgeConfiguration d) :=
+  ⋂ k ∈ (Finset.univ : Finset (Fin 4)),
+    connectionEventWithinVertices d (slabCornerBoxVertices d m L : Set (Cubic d))
+      (slabCornerVertex d m ⟨0, by decide⟩) (slabCornerVertex d m k)
+
+theorem measurableSet_allSlabCornersConnectedEvent
+    (d m L : ℕ) :
+    MeasurableSet (allSlabCornersConnectedEvent d m L) :=
+  (Finset.univ : Finset (Fin 4)).measurableSet_biInter fun _k _hk ↦
+    measurableSet_connectionEventWithinVertices d _ _ _
+
+theorem isIncreasingEvent_allSlabCornersConnectedEvent
+    (d m L : ℕ) :
+    IsIncreasingEvent (allSlabCornersConnectedEvent d m L) := by
+  intro ω η hωη hω
+  simp only [allSlabCornersConnectedEvent, Set.mem_iInter] at hω ⊢
+  intro k hk
+  exact isIncreasingEvent_connectionEventWithinVertices d _ _ _ hωη (hω k hk)
+
+/-- Fixed-edge finite-energy repair.  If an increasing event `A`, together with opening every
+edge of a fixed finite set `E`, forces `B`, then `P(A) p^|E| ≤ P(B)`.  The path-dependent repair
+in (7.83) needs an additional finite-energy distance argument; this lemma deliberately does not
+pretend that Grimmett's random repair set is fixed. -/
+theorem bernoulliBondMeasure_real_mul_pow_card_le_of_inter_openEdgeSet_subset
+    {d : ℕ} (p : I) {A B : Set (EdgeConfiguration d)} (E : Finset (CubicEdge d))
+    (hAinc : IsIncreasingEvent A) (hAm : MeasurableSet A)
+    (hsub : A ∩ openEdgeSetEvent d E ⊆ B) :
+    (bernoulliBondMeasure d p).real A * (p : ℝ) ^ E.card ≤
+      (bernoulliBondMeasure d p).real B := by
+  calc
+    (bernoulliBondMeasure d p).real A * (p : ℝ) ^ E.card =
+        (bernoulliBondMeasure d p).real A *
+          (bernoulliBondMeasure d p).real (openEdgeSetEvent d E) := by
+      rw [bernoulliBondMeasure_real_openEdgeSetEvent]
+    _ ≤ (bernoulliBondMeasure d p).real (A ∩ openEdgeSetEvent d E) :=
+      bernoulliBondMeasure_real_fkg p hAinc
+        (by intro ω η hωη hω e he; exact hωη (hω he)) hAm
+        (measurableSet_openEdgeSetEvent d E)
+    _ ≤ (bernoulliBondMeasure d p).real B :=
+      measureReal_mono hsub (measure_ne_top _ _)
+
+/-- Fixed-bridge consequence of (7.82).  This is the probability algebra in (7.83) once a
+single repair set is supplied; the source's path-dependent bounded repair remains a separate
+geometric/finite-energy obligation. -/
+theorem slabCornersConnected_probability_ge_of_fixedBridge
+    (d : ℕ) (hd : 2 ≤ d) (p : I) (m L : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hprob : ∀ k : Fin 4, δ ≤ (bernoulliBondMeasure d p).real
+      (slabCornerConnectionEvent d hd m L k))
+    (E : Finset (CubicEdge d))
+    (hbridge : allSlabCornerConnectionEvents d hd m L ∩ openEdgeSetEvent d E ⊆
+      allSlabCornersConnectedEvent d m L) :
+    δ ^ 4 * (p : ℝ) ^ E.card ≤
+      (bernoulliBondMeasure d p).real
+        (allSlabCornersConnectedEvent d m L) := by
+  calc
+    δ ^ 4 * (p : ℝ) ^ E.card ≤
+        (bernoulliBondMeasure d p).real
+            (allSlabCornerConnectionEvents d hd m L) * (p : ℝ) ^ E.card := by
+      exact mul_le_mul_of_nonneg_right
+        (slabCornerConnection_lowerBound_pow_four d hd p m L hδ hprob)
+        (pow_nonneg p.2.1 _)
+    _ ≤ (bernoulliBondMeasure d p).real
+        (allSlabCornersConnectedEvent d m L) :=
+      bernoulliBondMeasure_real_mul_pow_card_le_of_inter_openEdgeSet_subset p E
+        (by
+          intro ω η hωη hω
+          simp only [allSlabCornerConnectionEvents, Set.mem_iInter] at hω ⊢
+          intro k hk
+          exact isIncreasingEvent_slabCornerConnectionEvent d hd m L k hωη (hω k hk))
+        (measurableSet_allSlabCornerConnectionEvents d hd m L) hbridge
+
+/-- Path-dependent finite-energy consequence of (7.82), using the exact upward-distance
+inequality (2.49).  Once the geometric inclusion is proved with
+`K = 4 * (d - 2) * L`, this is the probability estimate (7.83). -/
+theorem slabCornersConnected_probability_ge_of_boundedRepair
+    (d : ℕ) (hd : 2 ≤ d) {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂)
+    (m L K : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hprob : ∀ k : Fin 4, δ ≤ (bernoulliBondMeasure d p₁).real
+      (slabCornerConnectionEvent d hd m L k))
+    (hrepair : allSlabCornerConnectionEvents d hd m L ⊆
+      upwardDistanceAtMost K (allSlabCornersConnectedEvent d m L)) :
+    (((p₂ : ℝ) - p₁) / (1 - (p₁ : ℝ))) ^ K * δ ^ 4 ≤
+      (bernoulliBondMeasure d p₂).real
+        (allSlabCornersConnectedEvent d m L) := by
+  let c : ℝ := (((p₂ : ℝ) - p₁) / (1 - (p₁ : ℝ))) ^ K
+  have hc : 0 ≤ c := by
+    apply pow_nonneg
+    exact div_nonneg (sub_nonneg.mpr h12.le) (sub_nonneg.mpr p₁.2.2)
+  have hA := slabCornerConnection_lowerBound_pow_four d hd p₁ m L hδ hprob
+  have hmono : (bernoulliBondMeasure d p₁).real
+      (allSlabCornerConnectionEvents d hd m L) ≤
+      (bernoulliBondMeasure d p₁).real
+        (upwardDistanceAtMost K (allSlabCornersConnectedEvent d m L)) :=
+    measureReal_mono hrepair (measure_ne_top _ _)
+  calc
+    c * δ ^ 4 ≤ c * (bernoulliBondMeasure d p₁).real
+        (allSlabCornerConnectionEvents d hd m L) :=
+      mul_le_mul_of_nonneg_left hA hc
+    _ ≤ c * (bernoulliBondMeasure d p₁).real
+        (upwardDistanceAtMost K (allSlabCornersConnectedEvent d m L)) :=
+      mul_le_mul_of_nonneg_left hmono hc
+    _ ≤ (bernoulliBondMeasure d p₂).real
+        (allSlabCornersConnectedEvent d m L) := by
+      simpa [c] using
+        (isIncreasingEvent_allSlabCornersConnectedEvent d m L).bernoulliBondMeasure_real_upwardDistanceAtMost_le
+          (measurableSet_allSlabCornersConnectedEvent d m L) h12 K
 
 end Percolation

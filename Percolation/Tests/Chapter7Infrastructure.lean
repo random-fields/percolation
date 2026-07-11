@@ -309,6 +309,36 @@ example {d n L : ℕ} {x : Cubic d} (hx : x ∈ finiteThickSlabSVertices d n L) 
     finiteThickSlabSConnectionEvent d n L x x = Set.univ :=
   finiteThickSlabSConnectionEvent_self hx
 
+example (d m L : ℕ) (k : Fin 4) :
+    slabCornerVertex d m k ∈ slabCornerBoxVertices d m L :=
+  slabCornerVertex_mem d m L k
+
+example (d : ℕ) (hd : 2 ≤ d) (p : I) (m L : ℕ) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hprob : ∀ k : Fin 4, δ ≤ (bernoulliBondMeasure d p).real
+      (slabCornerConnectionEvent d hd m L k)) :
+    δ ^ 4 ≤ (bernoulliBondMeasure d p).real
+      (allSlabCornerConnectionEvents d hd m L) :=
+  slabCornerConnection_lowerBound_pow_four d hd p m L hδ hprob
+
+example {d : ℕ} (p : I) {A B : Set (EdgeConfiguration d)}
+    (E : Finset (CubicEdge d)) (hAinc : IsIncreasingEvent A) (hAm : MeasurableSet A)
+    (hsub : A ∩ openEdgeSetEvent d E ⊆ B) :
+    (bernoulliBondMeasure d p).real A * (p : ℝ) ^ E.card ≤
+      (bernoulliBondMeasure d p).real B :=
+  bernoulliBondMeasure_real_mul_pow_card_le_of_inter_openEdgeSet_subset
+    p E hAinc hAm hsub
+
+example {ι : Type*} (A : Set (Set ι)) : upwardDistanceAtMost 0 A = A :=
+  upwardDistanceAtMost_zero A
+
+example {d : ℕ} {A : Set (EdgeConfiguration d)}
+    (hAinc : IsIncreasingEvent A) (hAm : MeasurableSet A)
+    {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂) (r : ℕ) :
+    (((p₂ : ℝ) - p₁) / (1 - (p₁ : ℝ))) ^ r *
+        (bernoulliBondMeasure d p₁).real (upwardDistanceAtMost r A) ≤
+      (bernoulliBondMeasure d p₂).real A :=
+  hAinc.bernoulliBondMeasure_real_upwardDistanceAtMost_le hAm h12 r
+
 example {d : ℕ} (p : I) (r R : ℕ → ℕ) (q : ℕ → ℝ)
     (hrR : ∀ n, r n ≤ R n)
     (hpair : ∀ n, ∀ x ∈ cubicMetricBox d cubicOrigin (r n),

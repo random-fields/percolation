@@ -21,6 +21,7 @@ import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
+import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -316,3 +317,6 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.bernoulliBondMeasure_iIndepSet_openEdgeSetEvent_of_pairwiseDisjoint
 #print axioms Percolation.orthantContactGe_inter_seedConnection_compl_probability_le
 #print axioms Percolation.seedConnection_probability_gt
+#print axioms Percolation.couplingMeasure_real_sprinkledFailure_inter_history_le
+#print axioms Percolation.sprinkledAvailableExit_inter_history_gt
+#print axioms Percolation.sprinkledAvailableExit_conditionalProbability_gt

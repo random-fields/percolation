@@ -27,6 +27,7 @@ import Percolation.Critical.InfiniteClusterZeroOne
 import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
+import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -927,5 +928,35 @@ example (p : I) (hp : 0 < theta 3 p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
       1 - epsilon <
         (bernoulliBondMeasure 3 p).real (seedConnectionEvent 3 i m n) :=
   seedConnection_probability_gt 3 (by omega) p hp hp0 hp1 i hepsilon
+
+example :
+    (couplingMeasure (Fin 2)).real
+        (boundaryClosedHistoryEvent Finset.univ (fun _ => (0 : I))) = 1 := by
+  rw [couplingMeasure_real_boundaryClosedHistoryEvent]
+  simp
+
+example :
+    (couplingMeasure (Fin 2)).real
+        (sprinkledAvailableExitFailureEvent (fun _ => (0 : I)) (1 / 2 : ℝ)
+          (fun _ => (Finset.univ : Finset (Fin 2))) ∩
+          boundaryClosedHistoryEvent Finset.univ (fun _ => (0 : I))) ≤ 1 / 4 := by
+  let U : (Fin 2 → ℝ) → Finset (Fin 2) := fun _ => Finset.univ
+  have hU : ∀ X, U X ⊆ (Finset.univ : Finset (Fin 2)) := fun _ => Finset.subset_univ _
+  have hexact : ∀ S ⊆ (Finset.univ : Finset (Fin 2)),
+      MeasurableSet[coordSigma (Fin 2) ((Finset.univ : Set (Fin 2))ᶜ)]
+        (exactAvailableExitSetEvent U S) := by
+    intro S _hS
+    by_cases hS : S = Finset.univ
+    · subst S
+      convert MeasurableSet.univ
+      ext X
+      simp [exactAvailableExitSetEvent, U]
+    · convert MeasurableSet.empty
+      ext X
+      simp [exactAvailableExitSetEvent, U, hS]
+  have h := couplingMeasure_real_sprinkledFailure_inter_history_le
+    (Finset.univ : Finset (Fin 2)) (fun _ => (0 : I)) (1 / 2 : ℝ) U 1 hU
+      (by norm_num) (by norm_num) (by intro e he; norm_num) hexact
+  simpa [U, fewAvailableExitsEvent] using h
 
 end Percolation

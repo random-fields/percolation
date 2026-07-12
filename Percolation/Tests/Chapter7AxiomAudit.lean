@@ -3,6 +3,7 @@ import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
+import Percolation.Critical.FiniteExplorationTermination
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -393,3 +394,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.AdaptiveSiteExploration.adaptiveDecisionWinMass_succ
 #print axioms Percolation.AdaptiveSiteExploration.iidAdaptiveDecisionValue_mul_historyMass_le
 #print axioms Percolation.AdaptiveSiteExploration.iidAdaptiveDecisionValue_le_winMass
+#print axioms Percolation.SiteExploration.step_decided_card_eq_add_one
+#print axioms Percolation.SiteExploration.stateAfter_card_frontier_eq_empty
+#print axioms Percolation.AdaptiveSiteExploration.step_wellFormed
+#print axioms Percolation.AdaptiveSiteExploration.stateAfter_card_frontier_eq_empty

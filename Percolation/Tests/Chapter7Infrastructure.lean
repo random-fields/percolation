@@ -32,6 +32,7 @@ import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
+import Percolation.Critical.FiniteExplorationTermination
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
@@ -1207,5 +1208,18 @@ example {Omega V : Type*} [MeasurableSpace Omega]
           mu answer query win (history ++ [(query history, false)]) depth :=
   AdaptiveSiteExploration.adaptiveDecisionWinMass_succ
     mu answer query win history depth
+
+example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
+    (E : SiteExploration V) (answer : V → Bool)
+    (hinitial : E.initial.WellFormed) :
+    (E.stateAfter answer (Fintype.card V)).frontier = ∅ :=
+  E.stateAfter_card_frontier_eq_empty answer hinitial
+
+example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
+    (E : AdaptiveSiteExploration V)
+    (answer : List (V × Bool) → V → Bool)
+    (hinitial : E.initial.WellFormed) :
+    (E.stateAfter answer (Fintype.card V)).frontier = ∅ :=
+  E.stateAfter_card_frontier_eq_empty answer hinitial
 
 end Percolation

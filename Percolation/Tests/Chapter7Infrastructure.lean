@@ -1,4 +1,5 @@
 import Percolation.Critical.HalfSpaceBricks
+import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -1221,5 +1222,15 @@ example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
     (hinitial : E.initial.WellFormed) :
     (E.stateAfter answer (Fintype.card V)).frontier = ∅ :=
   E.stateAfter_card_frontier_eq_empty answer hinitial
+
+example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
+    (G : SimpleGraph V) (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (root : V) (eta : Set V) (hroot : root ∈ eta) :
+    (((rootedSiteExploration G neighbors mem_neighbors root).stateAfter
+      (configurationAnswer eta) (Fintype.card V)).occupied : Set V) =
+        siteOpenCluster G eta root :=
+  rootedSiteExploration_stateAfter_card_occupied_eq_siteOpenCluster
+    G neighbors mem_neighbors root eta hroot
 
 end Percolation

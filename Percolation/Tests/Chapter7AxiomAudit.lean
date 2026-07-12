@@ -4,6 +4,7 @@ import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
+import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -398,3 +399,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.SiteExploration.stateAfter_card_frontier_eq_empty
 #print axioms Percolation.AdaptiveSiteExploration.step_wellFormed
 #print axioms Percolation.AdaptiveSiteExploration.stateAfter_card_frontier_eq_empty
+#print axioms Percolation.SiteExploration.step_answersAgree
+#print axioms Percolation.SiteExploration.step_frontierClosed
+#print axioms Percolation.SiteExploration.occupied_eq_siteOpenCluster_of_frontier_eq_empty
+#print axioms Percolation.rootedSiteExploration_stateAfter_card_occupied_eq_siteOpenCluster

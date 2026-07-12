@@ -30,6 +30,8 @@ import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
+import Percolation.Critical.AdaptiveQueryDomination
+import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
@@ -1185,5 +1187,25 @@ example {Omega V : Type*} [MeasurableSpace Omega]
     AdaptiveSiteExploration.eventAdaptiveAnswer success omega history v = true ↔
       omega ∈ success history v :=
   AdaptiveSiteExploration.eventAdaptiveAnswer_eq_true_iff success omega history v
+
+example (q : ℝ) :
+    AdaptiveSiteExploration.iidAdaptiveDecisionValue q
+        (fun _history : List (Unit × Bool) => ())
+        (fun history => history.any fun entry => entry.2) [] 1 = q := by
+  simp [AdaptiveSiteExploration.iidAdaptiveDecisionValue]
+
+example {Omega V : Type*} [MeasurableSpace Omega]
+    (mu : Measure Omega)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (query : List (V × Bool) → V)
+    (win : List (V × Bool) → Prop) (history : List (V × Bool)) (depth : ℕ) :
+    AdaptiveSiteExploration.adaptiveDecisionWinMass
+        mu answer query win history (depth + 1) =
+      AdaptiveSiteExploration.adaptiveDecisionWinMass
+          mu answer query win (history ++ [(query history, true)]) depth +
+        AdaptiveSiteExploration.adaptiveDecisionWinMass
+          mu answer query win (history ++ [(query history, false)]) depth :=
+  AdaptiveSiteExploration.adaptiveDecisionWinMass_succ
+    mu answer query win history depth
 
 end Percolation

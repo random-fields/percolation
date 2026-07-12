@@ -1,6 +1,8 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
+import Percolation.Critical.AdaptiveQueryDomination
+import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -385,3 +387,9 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.AdaptiveSiteExploration.measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
 #print axioms Percolation.AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn.false_mass_le
 #print axioms Percolation.AdaptiveSiteExploration.measurableAnswer_eventAdaptiveAnswer
+#print axioms Percolation.AdaptiveSiteExploration.boolInitMass_adaptiveQueryWeight
+#print axioms Percolation.AdaptiveSiteExploration.adaptiveQueryWeight_hasSequentialLowerBound
+#print axioms Percolation.AdaptiveSiteExploration.iidBoolEventMass_le_adaptiveQueryWeight
+#print axioms Percolation.AdaptiveSiteExploration.adaptiveDecisionWinMass_succ
+#print axioms Percolation.AdaptiveSiteExploration.iidAdaptiveDecisionValue_mul_historyMass_le
+#print axioms Percolation.AdaptiveSiteExploration.iidAdaptiveDecisionValue_le_winMass

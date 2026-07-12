@@ -41,6 +41,7 @@ import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
+import Percolation.Critical.DynamicScheduleCells
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
@@ -1357,5 +1358,14 @@ example {Omega C : Type*} [Fintype C]
 example {d m n : ℕ} {omega : EdgeConfiguration d} (hmn : m ≤ n) :
     cubicMetricBox d cubicOrigin m ⊆ restartExploredRegion d omega m n :=
   cubicMetricBox_subset_restartExploredRegion hmn
+
+example {d m n : ℕ} (i : Fin d) (omega : EdgeConfiguration d)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    {e : CubicEdge d} (he : e ∈ seedConnectionSupport d i m n) :
+    (RestartRevealCellIndex.ofScheduleExploredRegion
+      (m := m) (n := n) i omega S hS).edgeMultiplicity e = S.multiplicity e :=
+  RestartRevealCellIndex.edgeMultiplicity_ofScheduleExploredRegion
+    (m := m) (n := n) i omega S hS he
 
 end Percolation

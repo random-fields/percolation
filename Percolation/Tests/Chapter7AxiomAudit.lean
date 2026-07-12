@@ -5,6 +5,7 @@ import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
+import Percolation.Critical.DynamicScheduleCells
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.AdaptiveDecisionOutcome
@@ -464,3 +465,6 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.restartExploredRegion_boundary_not_open
 #print axioms Percolation.restartExploredRegion_mem_boundaryClosedHistoryEvent
 #print axioms Percolation.RestartRevealCellIndex.ofExploredRegion_boundary_closed
+#print axioms Percolation.RestartRevealCellIndex.edgeMultiplicity_ofScheduleExploredRegion
+#print axioms Percolation.RestartRevealCellIndex.thresholdProfile_ofScheduleExploredRegion
+#print axioms Percolation.RestartRevealCellIndex.dynamicThresholdProfile_ofScheduleExploredRegion

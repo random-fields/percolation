@@ -43,6 +43,11 @@ def originalOpenOnProductEvent {ι : Type*} (C : Finset ι) :
     Set (Set ι × Set ι) :=
   {yz | (C : Set ι) ⊆ yz.1}
 
+/-- One specified site is open in the original field. -/
+def originalOpenAtProductEvent {ι : Type*} (x : ι) :
+    Set (Set ι × Set ι) :=
+  {yz | x ∈ yz.1}
+
 /-- All sites in `C` are retained by the auxiliary iid field. -/
 def retentionOpenOnProductEvent {ι : Type*} (C : Finset ι) :
     Set (Set ι × Set ι) :=
@@ -496,5 +501,229 @@ theorem productMeasure_real_retentionClosed_inter_originalOpen_inter_dilutedCons
       simp [originalOpenOnProductEvent, hone]
     rw [hleftSection, hrightSection]
     simp
+
+/-- Open-bit counterpart of (7.121).  This is the exact factor canceled when the source
+replaces previously conditioned original ones by previously conditioned diluted ones. -/
+theorem productMeasure_real_retentionOpen_inter_originalOpen_inter_dilutedConstraint
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (p : I) (retainedSites originalSites M : Finset ι) (z : Set ι)
+    (hdisj : Disjoint retainedSites M) :
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+        ((retentionOpenOnProductEvent retainedSites ∩
+          originalOpenOnProductEvent originalSites) ∩
+          dilutedConstraintEvent M z) =
+      (p : ℝ) ^ retainedSites.card *
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (originalOpenOnProductEvent originalSites ∩
+            dilutedConstraintEvent M z) := by
+  classical
+  let nu := setBer((Set.univ : Set ι), p)
+  let retainedOpen : Set (Set ι) :=
+    {retained | (retainedSites : Set ι) ⊆ retained}
+  let originalOpen : Set (Set ι) :=
+    {original | (originalSites : Set ι) ⊆ original}
+  let farEvent : Set (Set ι × Set ι) := dilutedConstraintEvent M z
+  have hleft : MeasurableSet
+      ((retentionOpenOnProductEvent retainedSites ∩
+        originalOpenOnProductEvent originalSites) ∩ farEvent) :=
+    (Set.toFinite _).measurableSet
+  have hright : MeasurableSet
+      (originalOpenOnProductEvent originalSites ∩ farEvent) :=
+    (Set.toFinite _).measurableSet
+  change (mu.prod nu).real
+      ((retentionOpenOnProductEvent retainedSites ∩
+        originalOpenOnProductEvent originalSites) ∩ farEvent) =
+    (p : ℝ) ^ retainedSites.card *
+      (mu.prod nu).real
+        (originalOpenOnProductEvent originalSites ∩ farEvent)
+  rw [measureReal_prod_eq_sum_sections mu nu hleft,
+    measureReal_prod_eq_sum_sections mu nu hright, Finset.mul_sum]
+  apply Finset.sum_congr rfl
+  intro original _horiginal
+  by_cases hopen : original ∈ originalOpen
+  · change (originalSites : Set ι) ⊆ original at hopen
+    let farSection : Set (Set ι) :=
+      {retained | (original, retained) ∈ farEvent}
+    have hretainedOpen : MeasurableSet[MeasurableSpace.generateFrom
+        (coordinateEvents (retainedSites : Set ι))] retainedOpen := by
+      have hdep : DependsOn retainedSites retainedOpen := by
+        intro y y' hyy'
+        simp only [retainedOpen, Set.mem_setOf_eq]
+        constructor <;> intro h x hx
+        · exact (hyy' x hx).mp (h hx)
+        · exact (hyy' x hx).mpr (h hx)
+      exact hdep.measurableSet_generateFrom_coordinateEvents Set.Subset.rfl
+    have hfarSection : MeasurableSet[MeasurableSpace.generateFrom
+        (coordinateEvents (M : Set ι))] farSection := by
+      exact (dependsOn_dilutedConstraint_retentionSection M z original
+        ).measurableSet_generateFrom_coordinateEvents Set.Subset.rfl
+    have hsetDisj : Disjoint (retainedSites : Set ι) (M : Set ι) := by
+      rw [Set.disjoint_left]
+      intro x hxretained hxM
+      exact Finset.disjoint_left.mp hdisj hxretained hxM
+    have hfactor := ((indep_generateFrom_coordinateEvents p hsetDisj
+      ).indepSet_of_measurableSet hretainedOpen hfarSection).measure_inter_eq_mul
+    have hfactorReal := congrArg ENNReal.toReal hfactor
+    rw [ENNReal.toReal_mul] at hfactorReal
+    have hretainedMass : nu.real retainedOpen = (p : ℝ) ^ retainedSites.card := by
+      exact setBernoulli_real_superset_finset_univ retainedSites p
+    have hleftSection : (Prod.mk original) ⁻¹'
+        ((retentionOpenOnProductEvent retainedSites ∩
+          originalOpenOnProductEvent originalSites) ∩ farEvent) =
+        retainedOpen ∩ farSection := by
+      ext retained
+      simp [retentionOpenOnProductEvent, originalOpenOnProductEvent,
+        retainedOpen, farSection, hopen]
+    have hrightSection : (Prod.mk original) ⁻¹'
+        (originalOpenOnProductEvent originalSites ∩ farEvent) = farSection := by
+      ext retained
+      simp [originalOpenOnProductEvent, farSection, hopen]
+    rw [hleftSection, hrightSection]
+    change mu.real {original} * nu.real (retainedOpen ∩ farSection) =
+      (p : ℝ) ^ retainedSites.card *
+        (mu.real {original} * nu.real farSection)
+    rw [show nu.real (retainedOpen ∩ farSection) =
+        nu.real retainedOpen * nu.real farSection by
+      simpa only [measureReal_def] using hfactorReal,
+      hretainedMass]
+    ring
+  · change ¬ (originalSites : Set ι) ⊆ original at hopen
+    have hleftSection : (Prod.mk original) ⁻¹'
+        ((retentionOpenOnProductEvent retainedSites ∩
+          originalOpenOnProductEvent originalSites) ∩ farEvent) = ∅ := by
+      ext retained
+      simp [retentionOpenOnProductEvent, originalOpenOnProductEvent, hopen]
+    have hrightSection : (Prod.mk original) ⁻¹'
+        (originalOpenOnProductEvent originalSites ∩ farEvent) = ∅ := by
+      ext retained
+      simp [originalOpenOnProductEvent, hopen]
+    rw [hleftSection, hrightSection]
+    simp
+
+/-- Adding a disjoint set of prescribed ones to a diluted history is the same event as opening
+those sites in both the original and retention fields. -/
+theorem dilutedConstraintEvent_union_true
+    {ι : Type*} [DecidableEq ι]
+    (M ones : Finset ι) (z : Set ι) (hdisj : Disjoint M ones) :
+    dilutedConstraintEvent (M ∪ ones) (z ∪ (ones : Set ι)) =
+      (originalOpenOnProductEvent ones ∩
+        retentionOpenOnProductEvent ones) ∩ dilutedConstraintEvent M z := by
+  ext yz
+  simp only [dilutedConstraintEvent, originalOpenOnProductEvent,
+    retentionOpenOnProductEvent, Set.mem_setOf_eq, Set.mem_inter_iff,
+    Finset.mem_union, Set.mem_union]
+  constructor
+  · intro h
+    refine ⟨⟨?_, ?_⟩, ?_⟩
+    · intro x hxones
+      exact (h x (Or.inr hxones)).mpr (Or.inr hxones) |>.1
+    · intro x hxones
+      exact (h x (Or.inr hxones)).mpr (Or.inr hxones) |>.2
+    · intro x hxM
+      have hxnotones : x ∉ ones := fun hxones ↦
+        Finset.disjoint_left.mp hdisj hxM hxones
+      simpa [hxnotones] using h x (Or.inl hxM)
+  · rintro ⟨⟨hopenY, hopenZ⟩, hM⟩ x (hxM | hxones)
+    · have hxnotones : x ∉ ones := fun hxones ↦
+        Finset.disjoint_left.mp hdisj hxM hxones
+      simpa [hxnotones] using hM x hxM
+    · constructor
+      · intro _
+        exact Or.inr hxones
+      · intro _
+        exact ⟨hopenY hxones, hopenZ hxones⟩
+
+/-- General finite-set form of the induction claim (7.117), restricted to histories smaller
+than `J`.  The current coordinate is required to be new, exactly as in the source. -/
+def HasLSSConstraintLowerBoundBelow
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (mu : Measure (Set ι)) (p : I) (a : ℝ) (J : ℕ) : Prop :=
+  ∀ C : Finset ι, ∀ z : Set ι, ∀ current : ι,
+    C.card < J → current ∉ C →
+      a * (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent C z) ≤
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent C z ∩ originalOpenAtProductEvent current)
+
+/-- Equation (7.122), ratio-free form.  The preceding induction claims multiply to give an
+`a^|N¹|` lower bound for opening every original site in `N¹`, conditional on a disjoint
+diluted history. -/
+theorem pow_mul_measureReal_dilutedConstraint_le_originalOpen_inter
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (p : I) (a : ℝ) (J : ℕ)
+    (hp : 0 < (p : ℝ)) (ha : 0 ≤ a)
+    (hlower : HasLSSConstraintLowerBoundBelow mu p a J)
+    (M ones : Finset ι) (z : Set ι)
+    (hdisj : Disjoint M ones) (hcard : M.card + ones.card < J) :
+    a ^ ones.card *
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent M z) ≤
+      (mu.prod setBer((Set.univ : Set ι), p)).real
+        (originalOpenOnProductEvent ones ∩ dilutedConstraintEvent M z) := by
+  classical
+  induction ones using Finset.induction_on generalizing M z with
+  | empty =>
+      simp [originalOpenOnProductEvent]
+  | @insert x ones hx ih =>
+      have hxM : x ∉ M := by
+        intro hxM
+        exact Finset.disjoint_left.mp hdisj hxM (Finset.mem_insert_self x ones)
+      have hdisjMones : Disjoint M ones :=
+        hdisj.mono_right (Finset.subset_insert x ones)
+      have hcardSmall : M.card + ones.card < J := by
+        rw [Finset.card_insert_of_notMem hx] at hcard
+        omega
+      have hprev := ih M z hdisjMones hcardSmall
+      let enlargedValues : Set ι := z ∪ (ones : Set ι)
+      have hMonesCard : (M ∪ ones).card < J := by
+        rw [Finset.card_union_of_disjoint hdisjMones]
+        exact hcardSmall
+      have hxUnion : x ∉ M ∪ ones := by simp [hxM, hx]
+      have hconditional := hlower (M ∪ ones) enlargedValues x
+        hMonesCard hxUnion
+      have hhistory : dilutedConstraintEvent (M ∪ ones) enlargedValues =
+          (retentionOpenOnProductEvent ones ∩
+            originalOpenOnProductEvent ones) ∩ dilutedConstraintEvent M z := by
+        rw [dilutedConstraintEvent_union_true M ones z hdisjMones]
+        ext yz
+        simp [Set.inter_comm]
+      have hhistoryOpen :
+          dilutedConstraintEvent (M ∪ ones) enlargedValues ∩
+              originalOpenAtProductEvent x =
+            (retentionOpenOnProductEvent ones ∩
+              originalOpenOnProductEvent (insert x ones)) ∩
+                dilutedConstraintEvent M z := by
+        rw [hhistory]
+        ext yz
+        simp [originalOpenOnProductEvent, originalOpenAtProductEvent,
+          Set.insert_subset_iff, Set.inter_assoc, Set.inter_comm, and_comm]
+      rw [hhistoryOpen, hhistory] at hconditional
+      rw [productMeasure_real_retentionOpen_inter_originalOpen_inter_dilutedConstraint
+          mu p ones ones M z hdisjMones.symm,
+        productMeasure_real_retentionOpen_inter_originalOpen_inter_dilutedConstraint
+          mu p ones (insert x ones) M z hdisjMones.symm] at hconditional
+      have hretainedPos : 0 < (p : ℝ) ^ ones.card := pow_pos hp _
+      have hstep :
+          a * (mu.prod setBer((Set.univ : Set ι), p)).real
+              (originalOpenOnProductEvent ones ∩ dilutedConstraintEvent M z) ≤
+            (mu.prod setBer((Set.univ : Set ι), p)).real
+              (originalOpenOnProductEvent (insert x ones) ∩
+                dilutedConstraintEvent M z) := by
+        apply le_of_mul_le_mul_left _ hretainedPos
+        simpa [mul_assoc, mul_left_comm, mul_comm] using hconditional
+      rw [Finset.card_insert_of_notMem hx, pow_succ]
+      calc
+        a ^ ones.card * a *
+              (mu.prod setBer((Set.univ : Set ι), p)).real
+                (dilutedConstraintEvent M z) =
+            a * (a ^ ones.card *
+              (mu.prod setBer((Set.univ : Set ι), p)).real
+                (dilutedConstraintEvent M z)) := by ring
+        _ ≤ a * (mu.prod setBer((Set.univ : Set ι), p)).real
+              (originalOpenOnProductEvent ones ∩ dilutedConstraintEvent M z) := by
+          exact mul_le_mul_of_nonneg_left hprev ha
+        _ ≤ _ := hstep
 
 end Percolation

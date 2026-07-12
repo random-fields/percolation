@@ -371,6 +371,29 @@ example {ι : Type*} [Fintype ι] [DecidableEq ι]
   productMeasure_real_retentionClosed_inter_originalOpen_inter_dilutedConstraint
     μ p Nzero None M z hdisj
 
+example {ι : Type*} [DecidableEq ι]
+    (M ones : Finset ι) (z : Set ι) (hdisj : Disjoint M ones) :
+    dilutedConstraintEvent (M ∪ ones) (z ∪ (ones : Set ι)) =
+      (originalOpenOnProductEvent ones ∩
+        retentionOpenOnProductEvent ones) ∩ dilutedConstraintEvent M z :=
+  dilutedConstraintEvent_union_true M ones z hdisj
+
+/-- Compiling application of the multiplicative `A¹` estimate (7.122). -/
+example {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (μ : Measure (Set ι)) [IsProbabilityMeasure μ]
+    (p : I) (a : ℝ) (J : ℕ)
+    (hp : 0 < (p : ℝ)) (ha : 0 ≤ a)
+    (hlower : HasLSSConstraintLowerBoundBelow μ p a J)
+    (M ones : Finset ι) (z : Set ι)
+    (hdisj : Disjoint M ones) (hcard : M.card + ones.card < J) :
+    a ^ ones.card *
+        (μ.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent M z) ≤
+      (μ.prod setBer((Set.univ : Set ι), p)).real
+        (originalOpenOnProductEvent ones ∩ dilutedConstraintEvent M z) :=
+  pow_mul_measureReal_dilutedConstraint_le_originalOpen_inter
+    μ p a J hp ha hlower M ones z hdisj hcard
+
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :
     G.IsEdgeReachable k u v ↔

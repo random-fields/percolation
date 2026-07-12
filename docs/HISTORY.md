@@ -982,6 +982,14 @@ Dated milestones and anti-library notes.
     explicit density-zero and density-one behavior. The `A¹` lower bound (7.122) and the strong
     induction assembling (7.117) remain.
 
+91. **Chapter 7 LSS original-one induction kernel (2026-07-12).** Proved the exact
+    `p^|N¹|` factor for independently retained original-one conditions and identified this event
+    with the enlarged diluted history used by the source. For positive retention density, these
+    factors cancel on both sides of each strictly smaller instance of (7.117). Finset induction
+    then proves the complete multiplicative estimate (7.122), including the empty-`N¹` endpoint.
+    This is an induction kernel: the outer strong induction establishing (7.117) from
+    (7.119)--(7.121) is still required before Theorem 7.65 is complete.
+
 ## Axiom Ledger
 
 Empty.

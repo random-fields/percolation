@@ -1,5 +1,5 @@
 import Percolation.Bernoulli.LSSInduction
-import Percolation.Bernoulli.SequentialDominationCountable
+import Percolation.Bernoulli.SequentialDominationRegularity
 
 /-!
 # Countable finite-prefix transport for LSS domination
@@ -224,9 +224,7 @@ theorem enumerationPrefixLaw_siteDilution_hasFiniteSequentialLowerBound_lss
   rw [hcommute]
   exact hseqAA.mono hqaa
 
-/-- Countable LSS comparison for every increasing finite-cylinder event.  The full
-expectation-form Theorem 7.65 additionally requires the monotone-class/regularity lift from
-finite cylinders to arbitrary bounded increasing measurable observables. -/
+/-- Countable LSS comparison for every increasing finite-cylinder event. -/
 theorem lss_finiteCylinder_measureReal_le
     {V : Type*} [Countable V] [DecidableEq V]
     (G : SimpleGraph V) (k B : ℕ) (e : ℕ ≃ V)
@@ -257,6 +255,28 @@ theorem lss_finiteCylinder_measureReal_le
       hdep.measurableSet hinc
   exact hiidDiluted.trans hDilutedOriginal
 
+/-- **Theorem 7.65 (LSS domination), fixed-density form.**  A `k`-dependent site law whose
+one-site marginals exceed the explicit LSS threshold stochastically dominates iid sites of
+density `q`, in Grimmett's expectation formulation for all bounded increasing measurable
+observables. -/
+theorem lss_stochasticallyDominates
+    {V : Type*} [Countable V] [DecidableEq V]
+    (G : SimpleGraph V) (k B : ℕ) (e : ℕ ≃ V)
+    (hneighbor : ∀ n (current : Fin n),
+      (Finset.univ.filter fun x ↦
+        (enumerationPrefixDependencyGraph G k e n).edist current x ≤ 1).card ≤ B)
+    (q : I) (hq : (q : ℝ) < 1)
+    (mu : Measure (Set V)) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu)
+    (hmarginal : ∀ current : V,
+      (lssMarginalThresholdUnit B q hq : ℝ) ≤
+        mu.real {original : Set V | current ∈ original}) :
+    StochasticallyDominates mu setBer((Set.univ : Set V), q) := by
+  apply stochasticallyDominates_of_finiteCylinder_measureReal_le
+  intro R A hdep hinc
+  exact lss_finiteCylinder_measureReal_le
+    G k B e hneighbor q hq mu hmu hmarginal hdep hinc
+
 /-- Source-style threshold formulation of the countable finite-cylinder LSS theorem: for
 every requested iid density below one, a uniform marginal threshold strictly below one
 suffices. -/
@@ -282,5 +302,28 @@ theorem exists_lssFiniteCylinderDominationThreshold
     letI : IsProbabilityMeasure mu := hprob
     exact lss_finiteCylinder_measureReal_le
       G k B e hneighbor q hq mu hmu hmarginal hdep hinc
+
+/-- **Theorem 7.65 (Liggett--Schonmann--Stacey).**  For every target iid density below one,
+there is a marginal threshold below one such that every `k`-dependent site law satisfying
+that threshold dominates the target iid law. -/
+theorem exists_lssDominationDensity
+    {V : Type*} [Countable V] [DecidableEq V]
+    (G : SimpleGraph V) (k B : ℕ) (e : ℕ ≃ V)
+    (hneighbor : ∀ n (current : Fin n),
+      (Finset.univ.filter fun x ↦
+        (enumerationPrefixDependencyGraph G k e n).edist current x ≤ 1).card ≤ B)
+    (q : I) (hq : (q : ℝ) < 1) :
+    ∃ delta : I, (delta : ℝ) < 1 ∧
+      ∀ (mu : Measure (Set V)), IsProbabilityMeasure mu →
+        KDependent G k mu →
+        (∀ current : V,
+          (delta : ℝ) ≤ mu.real {original : Set V | current ∈ original}) →
+        StochasticallyDominates mu setBer((Set.univ : Set V), q) := by
+  let delta := lssMarginalThresholdUnit B q hq
+  refine ⟨delta, lssMarginalThreshold_lt_one B q.2.1 hq, ?_⟩
+  intro mu hprob hmu hmarginal
+  letI : IsProbabilityMeasure mu := hprob
+  exact lss_stochasticallyDominates
+    G k B e hneighbor q hq mu hmu hmarginal
 
 end Percolation

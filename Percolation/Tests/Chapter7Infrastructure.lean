@@ -440,6 +440,27 @@ example {V : Type*} (e : ℕ ≃ V) (n : ℕ)
       siteDilutionLaw (enumerationPrefixLaw e n μ) p :=
   enumerationPrefixLaw_siteDilutionLaw e n μ p
 
+/-- The all-observable regularity lift reaches the increasing event of having infinitely
+many occupied sites, which cannot depend on any finite coordinate set. -/
+example {V : Type*} [Countable V] [DecidableEq V]
+    (G : SimpleGraph V) (k B : ℕ) (e : ℕ ≃ V)
+    (hneighbor : ∀ n (current : Fin n),
+      (Finset.univ.filter fun x ↦
+        (enumerationPrefixDependencyGraph G k e n).edist current x ≤ 1).card ≤ B)
+    (q : I) (hq : (q : ℝ) < 1)
+    (μ : Measure (Set V)) [IsProbabilityMeasure μ]
+    (hμ : KDependent G k μ)
+    (hmarginal : ∀ current : V,
+      (lssMarginalThresholdUnit B q hq : ℝ) ≤
+        μ.real {η : Set V | current ∈ η}) :
+    setBer((Set.univ : Set V), q).real {η : Set V | η.Infinite} ≤
+      μ.real {η : Set V | η.Infinite} := by
+  apply (lss_stochasticallyDominates
+    G k B e hneighbor q hq μ hμ hmarginal).measureReal_le
+  · exact MeasurableSet.setOf_infinite
+  · intro eta xi hetaxi heta
+    exact heta.mono hetaxi
+
 example (d k : ℕ) (e : ℕ ≃ Cubic d) :
     ∀ n (current : Fin n),
       (Finset.univ.filter fun x ↦

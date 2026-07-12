@@ -1043,6 +1043,16 @@ Dated milestones and anti-library notes.
     endpoint block faces. This formalizes the LSS/path-lifting core of (7.73)--(7.74); the
     exponential site-crossing input (7.70) remains.
 
+99. **Chapter 7 full LSS stochastic domination (2026-07-12).** Closed the semantic gap between
+    finite-cylinder inequalities and Grimmett's expectation definition. Configurations are
+    transported measurably to the compact Boolean product space; inner/outer regularity and two
+    finite-subcover arguments insert an increasing finite union of positive cylinders between
+    compact and open approximants. This proves the countable sequential criterion (7.64), the
+    full `lss_stochasticallyDominates`, and source-quantified `exists_lssDominationDensity`, with
+    cubic and stationary good-block corollaries. A test applies the theorem to the increasing
+    event of infinitely many occupied sites, which cannot have finite support. This work occurred
+    after the tracker pause and therefore has no measured theorem telemetry.
+
 ## Axiom Ledger
 
 Empty.

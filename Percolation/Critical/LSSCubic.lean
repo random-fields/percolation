@@ -2,7 +2,7 @@ import Percolation.Bernoulli.LSSCountable
 import Percolation.Critical.Radius
 
 /-!
-# Cubic-lattice application of the LSS finite-cylinder theorem
+# Cubic-lattice application of the LSS theorem
 
 The graph-metric ball of radius `k` is a concrete uniform cover of every dependence
 neighborhood.  Its elementary volume bound supplies the dimension/range constant needed by
@@ -79,6 +79,34 @@ theorem cubic_lss_finiteCylinder_measureReal_le'
   cubic_lss_finiteCylinder_measureReal_le
     d k (cubicNatEquiv d hd) q hq mu hmu hmarginal hdep hinc
 
+/-- Cubic-lattice LSS domination in the full expectation formulation. -/
+theorem cubic_lss_stochasticallyDominates
+    (d k : ℕ) (e : ℕ ≃ Cubic d)
+    (q : I) (hq : (q : ℝ) < 1)
+    (mu : Measure (Set (Cubic d))) [IsProbabilityMeasure mu]
+    (hmu : KDependent (cubicGraph d) k mu)
+    (hmarginal : ∀ current : Cubic d,
+      (lssMarginalThresholdUnit (3 ^ d * (k + 1) ^ d) q hq : ℝ) ≤
+        mu.real {original : Set (Cubic d) | current ∈ original}) :
+    StochasticallyDominates mu setBer((Set.univ : Set (Cubic d)), q) := by
+  exact lss_stochasticallyDominates
+    (cubicGraph d) k (3 ^ d * (k + 1) ^ d) e
+    (cubic_enumerationPrefixDependencyGraph_neighbor_card_le d k e)
+    q hq mu hmu hmarginal
+
+/-- Source-facing positive-dimensional cubic LSS theorem with the enumeration hidden. -/
+theorem cubic_lss_stochasticallyDominates'
+    (d k : ℕ) (hd : 0 < d)
+    (q : I) (hq : (q : ℝ) < 1)
+    (mu : Measure (Set (Cubic d))) [IsProbabilityMeasure mu]
+    (hmu : KDependent (cubicGraph d) k mu)
+    (hmarginal : ∀ current : Cubic d,
+      (lssMarginalThresholdUnit (3 ^ d * (k + 1) ^ d) q hq : ℝ) ≤
+        mu.real {original : Set (Cubic d) | current ∈ original}) :
+    StochasticallyDominates mu setBer((Set.univ : Set (Cubic d)), q) :=
+  cubic_lss_stochasticallyDominates
+    d k (cubicNatEquiv d hd) q hq mu hmu hmarginal
+
 /-- Threshold form of finite-cylinder LSS domination on `ℤ^d`. -/
 theorem exists_cubic_lssFiniteCylinderDominationThreshold
     (d k : ℕ) (hd : 0 < d) (q : I) (hq : (q : ℝ) < 1) :
@@ -92,6 +120,21 @@ theorem exists_cubic_lssFiniteCylinderDominationThreshold
           DependsOn R A → IsIncreasingEvent A →
             setBer((Set.univ : Set (Cubic d)), q).real A ≤ mu.real A := by
   exact exists_lssFiniteCylinderDominationThreshold
+    (cubicGraph d) k (3 ^ d * (k + 1) ^ d) (cubicNatEquiv d hd)
+    (cubic_enumerationPrefixDependencyGraph_neighbor_card_le
+      d k (cubicNatEquiv d hd)) q hq
+
+/-- Source-style threshold form of Theorem 7.65 on `ℤ^d`. -/
+theorem exists_cubic_lssDominationDensity
+    (d k : ℕ) (hd : 0 < d) (q : I) (hq : (q : ℝ) < 1) :
+    ∃ delta : I, (delta : ℝ) < 1 ∧
+      ∀ (mu : Measure (Set (Cubic d))), IsProbabilityMeasure mu →
+        KDependent (cubicGraph d) k mu →
+        (∀ current : Cubic d,
+          (delta : ℝ) ≤
+            mu.real {original : Set (Cubic d) | current ∈ original}) →
+        StochasticallyDominates mu setBer((Set.univ : Set (Cubic d)), q) := by
+  exact exists_lssDominationDensity
     (cubicGraph d) k (3 ^ d * (k + 1) ^ d) (cubicNatEquiv d hd)
     (cubic_enumerationPrefixDependencyGraph_neighbor_card_le
       d k (cubicNatEquiv d hd)) q hq

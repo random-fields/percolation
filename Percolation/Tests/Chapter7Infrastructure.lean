@@ -29,6 +29,7 @@ import Percolation.Critical.RegionTranslation
 import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
+import Percolation.Critical.LSSCubic
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
@@ -436,6 +437,13 @@ example {V : Type*} (e : ℕ ≃ V) (n : ℕ)
     enumerationPrefixLaw e n (siteDilutionLaw μ p) =
       siteDilutionLaw (enumerationPrefixLaw e n μ) p :=
   enumerationPrefixLaw_siteDilutionLaw e n μ p
+
+example (d k : ℕ) (e : ℕ ≃ Cubic d) :
+    ∀ n (current : Fin n),
+      (Finset.univ.filter fun x ↦
+        (enumerationPrefixDependencyGraph (cubicGraph d) k e n).edist current x ≤ 1).card ≤
+        3 ^ d * (k + 1) ^ d :=
+  cubic_enumerationPrefixDependencyGraph_neighbor_card_le d k e
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

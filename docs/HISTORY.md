@@ -1015,6 +1015,12 @@ Dated milestones and anti-library notes.
     obligation is the regularity/monotone-class extension to every bounded increasing
     measurable observable in the definition of `StochasticallyDominates`.
 
+95. **Chapter 7 cubic LSS neighborhood adapter (2026-07-12).** Instantiated the abstract
+    prefix dependency graph on `ℤ^d`. The graph-metric ball of radius `k` covers every
+    dependence neighbor and has cardinality at most `3^d(k+1)^d`, yielding a concrete
+    `cubic_lss_finiteCylinder_measureReal_le` theorem with no ad hoc prefix-cardinality
+    hypothesis. This is the form needed by finite-support good-block crossing events.
+
 ## Axiom Ledger
 
 Empty.

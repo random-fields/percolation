@@ -1,4 +1,5 @@
 import Percolation.Critical.HalfSpaceBricks
+import Percolation.Critical.LSSCubic
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveAnswerSupport
@@ -538,3 +539,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.enumerationPrefixLaw_siteDilutionLaw
 #print axioms Percolation.enumerationPrefixLaw_siteDilution_hasFiniteSequentialLowerBound_lss
 #print axioms Percolation.lss_finiteCylinder_measureReal_le
+#print axioms Percolation.cubic_enumerationPrefixDependencyGraph_neighbor_card_le
+#print axioms Percolation.cubic_lss_finiteCylinder_measureReal_le

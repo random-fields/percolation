@@ -1268,4 +1268,12 @@ example (answer : Fin 1 → List (Fin 1 × Bool) → Fin 1 → Bool) (omega : Fi
       answer omega [((0 : Fin 1), true)] 0 := by
   rfl
 
+example {V Omega : Type*} [DecidableEq V] [LinearOrder V]
+    (E : SiteExploration V)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (target : Finset V) (n : ℕ) :
+    E.adaptiveTargetHitEvent answer target n ⊆
+      E.adaptiveLimitTargetHitEvent answer target :=
+  E.adaptiveTargetHitEvent_subset_adaptiveLimitTargetHitEvent answer target n
+
 end Percolation

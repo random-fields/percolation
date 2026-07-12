@@ -194,6 +194,37 @@ theorem measurableSet_adaptiveTargetHitEvent
   intro _hit
   exact E.toAdaptive.measurableSet_stateAfter_fiber hanswer n s
 
+/-- Event that the limiting actual exploration accepts at least one target vertex. -/
+def adaptiveLimitTargetHitEvent
+    (E : SiteExploration V)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (target : Finset V) : Set Omega :=
+  {omega | ∃ t ∈ target, t ∈ E.toAdaptive.occupiedLimit (answer omega)}
+
+theorem measurableSet_adaptiveLimitTargetHitEvent
+    [MeasurableSpace Omega] [Countable V]
+    (E : SiteExploration V)
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (target : Finset V) :
+    MeasurableSet (E.adaptiveLimitTargetHitEvent answer target) := by
+  have hrepr : E.adaptiveLimitTargetHitEvent answer target =
+      ⋃ t ∈ target, {omega | t ∈ E.toAdaptive.occupiedLimit (answer omega)} := by
+    ext omega
+    simp [adaptiveLimitTargetHitEvent]
+  rw [hrepr]
+  exact target.measurableSet_biUnion fun t _ht ↦
+    E.toAdaptive.measurableSet_mem_occupiedLimit hanswer t
+
+theorem adaptiveTargetHitEvent_subset_adaptiveLimitTargetHitEvent
+    (E : SiteExploration V)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (target : Finset V) (n : ℕ) :
+    E.adaptiveTargetHitEvent answer target n ⊆
+      E.adaptiveLimitTargetHitEvent answer target := by
+  rintro omega ⟨t, htTarget, htOccupied⟩
+  exact ⟨t, htTarget, E.toAdaptive.occupied_subset_occupiedLimit (answer omega) n htOccupied⟩
+
 /-- Every winning replay leaf is a genuine target hit by the actual exploration. -/
 theorem adaptiveDecisionWinEvent_subset_adaptiveTargetHitEvent
     (E : SiteExploration V) (root : V)
@@ -267,6 +298,39 @@ theorem finiteSiteHitsTarget_probability_le_adaptiveTargetHitEvent
     _ ≤ mu.real (E.adaptiveTargetHitEvent answer target E.initial.remaining.card) :=
       measureReal_mono
         (E.adaptiveDecisionWinEvent_subset_adaptiveTargetHitEvent root answer target _)
+
+/-- Limit-set form of the finite target comparison. -/
+theorem finiteSiteHitsTarget_probability_le_adaptiveLimitTargetHitEvent
+    [Fintype V] [MeasurableSpace Omega]
+    (G : SimpleGraph V) (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (mu : Measure Omega) [IsProbabilityMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (V × Bool) → V → Prop)
+    (q : ℝ) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (root : V)
+    (hlower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn
+      mu
+        (prefixedAdaptiveAnswer
+          (rootedSiteExploration G neighbors mem_neighbors root).initial.history answer)
+        admissible q)
+    (target : Finset V)
+    (hquery : ∀ history,
+      admissible history
+        ((rootedSiteExploration G neighbors mem_neighbors root).replayQuery root history)) :
+    finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤
+      mu.real (adaptiveLimitTargetHitEvent
+        (rootedSiteExploration G neighbors mem_neighbors root) answer target) := by
+  let E := rootedSiteExploration G neighbors mem_neighbors root
+  calc
+    finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤
+        mu.real (E.adaptiveTargetHitEvent answer target E.initial.remaining.card) :=
+      finiteSiteHitsTarget_probability_le_adaptiveTargetHitEvent
+        G neighbors mem_neighbors mu hanswer admissible q hq0 hq1 root hlower target hquery
+    _ ≤ mu.real (E.adaptiveLimitTargetHitEvent answer target) :=
+      measureReal_mono
+        (E.adaptiveTargetHitEvent_subset_adaptiveLimitTargetHitEvent answer target _)
 
 end SiteExploration
 

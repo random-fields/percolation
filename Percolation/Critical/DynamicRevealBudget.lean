@@ -107,6 +107,40 @@ theorem accumulatedThreshold_le_add_of_grimmettMarstrandOverlap
   simpa [Nat.cast_add, Nat.cast_mul] using
     S.accumulatedThreshold_le_add_budget (by omega) hS p eta heta e
 
+/-- A coordinate cannot occur in more filtered stages than the total number of stages. -/
+theorem multiplicity_le_stages_length (S : FiniteRevealSchedule iota) (e : iota) :
+    S.multiplicity e ≤ S.stages.length := by
+  unfold multiplicity
+  exact List.length_filter_le _ _
+
+theorem hasOverlapBound_of_length_le
+    (S : FiniteRevealSchedule iota) {b : ℕ} (h : S.stages.length ≤ b) :
+    S.HasOverlapBound b :=
+  fun e => (S.multiplicity_le_stages_length e).trans h
+
+/-- One inlet support followed by one support for every signed outgoing direction. -/
+noncomputable def incidentDirectionSchedule
+    (d : ℕ) (inlet : Finset iota)
+    (outgoing : CubicDirection d → Finset iota) : FiniteRevealSchedule iota where
+  stages := inlet :: (Finset.univ : Finset (CubicDirection d)).toList.map outgoing
+
+omit [DecidableEq iota] in
+@[simp] theorem incidentDirectionSchedule_stages_length
+    (d : ℕ) (inlet : Finset iota)
+    (outgoing : CubicDirection d → Finset iota) :
+    (incidentDirectionSchedule d inlet outgoing).stages.length = 2 * d + 1 := by
+  classical
+  simp [incidentDirectionSchedule, Nat.mul_comm]
+
+/-- The literal source overlap budget: even without using geometry, one inlet plus the `2d`
+signed direction supports can charge an edge at most `2d+1` times. -/
+theorem incidentDirectionSchedule_hasOverlapBound
+    (d : ℕ) (inlet : Finset iota)
+    (outgoing : CubicDirection d → Finset iota) :
+    (incidentDirectionSchedule d inlet outgoing).HasOverlapBound (2 * d + 1) := by
+  apply hasOverlapBound_of_length_le
+  simp
+
 end FiniteRevealSchedule
 
 end Percolation

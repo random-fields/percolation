@@ -1368,4 +1368,10 @@ example {d m n : ℕ} (i : Fin d) (omega : EdgeConfiguration d)
   RestartRevealCellIndex.edgeMultiplicity_ofScheduleExploredRegion
     (m := m) (n := n) i omega S hS he
 
+example {ι : Type*} [DecidableEq ι] (d : ℕ) (inlet : Finset ι)
+    (outgoing : CubicDirection d → Finset ι) :
+    (FiniteRevealSchedule.incidentDirectionSchedule d inlet outgoing).HasOverlapBound
+      (2 * d + 1) :=
+  FiniteRevealSchedule.incidentDirectionSchedule_hasOverlapBound d inlet outgoing
+
 end Percolation

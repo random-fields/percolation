@@ -1,6 +1,7 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
+import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -1244,5 +1245,21 @@ example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
         q root target (rootedSiteExploration G neighbors mem_neighbors root).initial :=
   SiteExploration.finiteBernoulliProbability_finiteSiteHitsTarget_le_rooted_completion
     G neighbors mem_neighbors root target hq0 hq1
+
+example :
+    AdaptiveSiteExploration.adaptiveDecisionWinEvent
+        (fun (_omega : Fin 1) (_history : List (Unit × Bool)) (_v : Unit) => true)
+        (fun _history => ())
+        (fun history => history.any fun entry => entry.2) 1 = Set.univ := by
+  ext omega
+  simp only [AdaptiveSiteExploration.adaptiveDecisionWinEvent,
+    AdaptiveSiteExploration.adaptiveDecisionLeafEvent, Set.mem_iUnion,
+    Set.mem_univ, iff_true]
+  refine ⟨fun _ => true, ?_⟩
+  constructor
+  · change omega ∈ ({_omega : Fin 1 | true = true} ∩ Set.univ)
+    simp
+  · simp [AdaptiveSiteExploration.adaptiveQueryHistory,
+      AdaptiveSiteExploration.adaptiveQueryHistoryFrom]
 
 end Percolation

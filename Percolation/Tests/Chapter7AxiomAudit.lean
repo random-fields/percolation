@@ -3,6 +3,7 @@ import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
+import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.FiniteExplorationTermination
 import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
@@ -409,3 +410,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.SiteExploration.iidAdaptiveDecisionValue_eq_completionHitProbability
 #print axioms Percolation.SiteExploration.completionHitProbability_mul_historyMass_le_adaptiveDecisionWinMass
 #print axioms Percolation.SiteExploration.finiteSiteHitsTarget_probability_le_adaptiveDecisionWinMass
+#print axioms Percolation.AdaptiveSiteExploration.adaptiveDecisionLeafEvent_disjoint_of_ne
+#print axioms Percolation.AdaptiveSiteExploration.measureReal_adaptiveDecisionWinEvent

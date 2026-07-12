@@ -30,6 +30,7 @@ import Percolation.Critical.RootedSiteExploration
 import Percolation.Critical.AdaptiveExploration
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.BlockSuccessComposition
+import Percolation.Critical.DynamicBlockParameters
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -353,3 +354,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.allSuccess_inter_history_gt
 #print axioms Percolation.pow_mul_measureReal_le_of_step
 #print axioms Percolation.pow_mul_measureReal_lt_of_step
+#print axioms Percolation.dynamicBlock_successFactor_gt_siteDensity
+#print axioms Percolation.FiniteRevealSchedule.accumulatedThreshold_le_dynamicBlockBudget

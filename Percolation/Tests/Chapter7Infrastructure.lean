@@ -36,6 +36,7 @@ import Percolation.Critical.RootedSiteExploration
 import Percolation.Critical.AdaptiveExploration
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.BlockSuccessComposition
+import Percolation.Critical.DynamicBlockParameters
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -1097,5 +1098,22 @@ example {Omega iota : Type*} [MeasurableSpace Omega] [Fintype iota] [Nonempty io
     (1 - Fintype.card iota * epsilon) * mu.real H <
       mu.real ((⋂ i, G i) ∩ H) :=
   allSuccess_inter_history_gt G H hG hH epsilon hsuccess
+
+example (eta : ℝ) : dynamicBlockIncrement 3 eta = eta / 14 := by
+  simp [dynamicBlockIncrement]
+  ring
+
+example (pcSite : ℝ) :
+    dynamicBlockRestartError 3 pcSite = (1 - pcSite) / 24 := by
+  norm_num [dynamicBlockRestartError]
+
+example {pcSite : ℝ} (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
+    dynamicBlockSiteDensity pcSite <
+      (1 - 6 * dynamicBlockRestartError 3 pcSite) *
+        (1 - dynamicBlockRestartError 3 pcSite) ^ 6 := by
+  have h := dynamicBlock_successFactor_gt_siteDensity (d := 3) (by norm_num)
+    hsite0 hsite1
+  norm_num at h ⊢
+  exact h
 
 end Percolation

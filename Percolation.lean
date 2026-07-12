@@ -108,6 +108,7 @@ import Percolation.Critical.RootedSiteExploration
 import Percolation.Critical.AdaptiveExploration
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.BlockSuccessComposition
+import Percolation.Critical.DynamicBlockParameters
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

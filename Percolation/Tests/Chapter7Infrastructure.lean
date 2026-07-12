@@ -39,6 +39,7 @@ import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
+import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
@@ -1335,5 +1336,15 @@ example {d m n : ℕ} {p : I} {delta epsilon : ℝ} {C : Type*} [DecidableEq C]
       d C m n p delta epsilon) :
     S.successEvent ⊆ S.cellUnion :=
   S.successEvent_subset_cellUnion
+
+example {d m n : ℕ} (i : Fin d) :
+    Finite (RestartRevealCellIndex d i m n) :=
+  inferInstance
+
+example {d m n : ℕ} {i : Fin d} (c : RestartRevealCellIndex d i m n)
+    (pc eta : ℝ) (hpc : 0 ≤ pc) (heta : 0 ≤ eta) (htotal : pc + eta ≤ 1)
+    (e : CubicEdge d) :
+    (c.dynamicThresholdProfile pc eta hpc heta htotal e : ℝ) ≤ pc + eta :=
+  c.dynamicThresholdProfile_le pc eta hpc heta htotal e
 
 end Percolation

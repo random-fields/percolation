@@ -50,6 +50,18 @@ theorem dynamicBlockBaseDensity_add_half (pc eta : ℝ) :
   simp [dynamicBlockBaseDensity]
   ring
 
+/-- Spending the maximal `2d+1` increments uses exactly the remaining half of the density
+budget. -/
+theorem dynamicBlockBaseDensity_add_maxIncrement (d : ℕ) (pc eta : ℝ) :
+    dynamicBlockBaseDensity pc eta +
+        (2 * d + 1 : ℕ) * dynamicBlockIncrement d eta =
+      pc + eta := by
+  unfold dynamicBlockBaseDensity dynamicBlockIncrement
+  push_cast
+  have hden : (2 * (2 * (d : ℝ) + 1)) ≠ 0 := by positivity
+  field_simp
+  ring
+
 theorem dynamicBlockIncrement_pos {d : ℕ} {eta : ℝ}
     (heta : 0 < eta) : 0 < dynamicBlockIncrement d eta := by
   unfold dynamicBlockIncrement

@@ -3,6 +3,7 @@ import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
+import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.AdaptiveDecisionOutcome
@@ -450,3 +451,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.AdaptiveSiteExploration.PartitionedOrientedRestartStage.success_lower_bound
 #print axioms Percolation.AdaptiveSiteExploration.FinitePartitionedOrientedRestartProgram.hasAdaptiveAnswerLowerBound
 #print axioms Percolation.AdaptiveSiteExploration.FinitePartitionedOrientedRestartProgram.cubicRegion_infinite_probability_pos_dynamicBlock
+#print axioms Percolation.dynamicBlockBaseDensity_add_maxIncrement
+#print axioms Percolation.RestartRevealCellIndex.regionVertices_subset_box
+#print axioms Percolation.RestartRevealCellIndex.edgeMultiplicity_le
+#print axioms Percolation.RestartRevealCellIndex.dynamicThresholdProfile_le

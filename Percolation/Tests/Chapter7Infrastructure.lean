@@ -40,6 +40,7 @@ import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
+import Percolation.Critical.DynamicExploredRegion
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
@@ -1352,5 +1353,9 @@ example {Omega C : Type*} [Fintype C]
     (⋃ c ∈ (Finset.univ : Finset C),
       exactRevealCellEvent history realizedCell c) = history :=
   biUnion_univ_exactRevealCellEvent history realizedCell
+
+example {d m n : ℕ} {omega : EdgeConfiguration d} (hmn : m ≤ n) :
+    cubicMetricBox d cubicOrigin m ⊆ restartExploredRegion d omega m n :=
+  cubicMetricBox_subset_restartExploredRegion hmn
 
 end Percolation

@@ -30,6 +30,7 @@ import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
+import Percolation.Critical.DynamicRevealBudget
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -945,7 +946,8 @@ example :
   let U : (Fin 2 → ℝ) → Finset (Fin 2) := fun _ => Finset.univ
   have hU : ∀ X, U X ⊆ (Finset.univ : Finset (Fin 2)) := fun _ => Finset.subset_univ _
   have hexact : ∀ S ⊆ (Finset.univ : Finset (Fin 2)),
-      MeasurableSet[coordSigma (Fin 2) ((Finset.univ : Set (Fin 2))ᶜ)]
+      MeasurableSet[coordSigma (Fin 2)
+        ((((Finset.univ : Finset (Fin 2)) : Set (Fin 2)))ᶜ)]
         (exactAvailableExitSetEvent U S) := by
     intro S _hS
     by_cases hS : S = Finset.univ
@@ -955,11 +957,20 @@ example :
       simp [exactAvailableExitSetEvent, U]
     · convert MeasurableSet.empty
       ext X
-      simp [exactAvailableExitSetEvent, U, hS]
+      simp [exactAvailableExitSetEvent, U, hS, eq_comm]
   have h := couplingMeasure_real_sprinkledFailure_inter_history_le
     (Finset.univ : Finset (Fin 2)) (fun _ => (0 : I)) (1 / 2 : ℝ) U 1 hU
       (by norm_num) (by norm_num) (by intro e he; norm_num) hexact
-  simpa [U, fewAvailableExitsEvent] using h
+  have h' :
+      (couplingMeasure (Fin 2)).real
+          (sprinkledAvailableExitFailureEvent (fun _ => (0 : I)) (1 / 2 : ℝ)
+            (fun _ => (Finset.univ : Finset (Fin 2))) ∩
+            boundaryClosedHistoryEvent Finset.univ (fun _ => (0 : I))) ≤
+        (1 - (1 / 2 : ℝ)) ^ 2 := by
+    simpa [U, fewAvailableExitsEvent,
+      couplingMeasure_real_boundaryClosedHistoryEvent] using h
+  norm_num at h' ⊢
+  exact h'
 
 example {R K : Finset (Cubic 3)} {n : ℕ} {omega : EdgeConfiguration 3}
     (hKR : Disjoint K R) :
@@ -998,5 +1009,14 @@ example (N : ℕ) (x : Cubic 3) (a : CubicDirection 3) :
     (grimmettMarstrandHalfwayBox 3 N x a : Set (Cubic 3)) ⊆
       grimmettMarstrandThickening 3 Set.univ N :=
   grimmettMarstrandHalfwayBox_subset_thickening (by simp) (by simp)
+
+example :
+    (⟨[{0}, {0, 1}]⟩ : FiniteRevealSchedule (Fin 2)).multiplicity 0 = 2 := by
+  simp [FiniteRevealSchedule.multiplicity]
+
+example (S : FiniteRevealSchedule (Fin 2))
+    (hS : S.HasOverlapBound 7) (p eta : ℝ) (heta : 0 ≤ eta) (e : Fin 2) :
+    S.accumulatedThreshold p (eta / 7) e ≤ p + eta := by
+  simpa using S.accumulatedThreshold_le_add_budget (by norm_num) hS p eta heta e
 
 end Percolation

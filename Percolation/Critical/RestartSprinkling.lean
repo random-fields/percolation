@@ -58,9 +58,12 @@ theorem pairwiseDisjoint_exactAvailableExitSetEvent {iota : Type*}
     (U : (iota → ℝ) → Finset iota) (C : Finset (Finset iota)) :
     Set.PairwiseDisjoint (C : Set (Finset iota)) (exactAvailableExitSetEvent U) := by
   intro S hS T hT hST
+  change Disjoint (exactAvailableExitSetEvent U S) (exactAvailableExitSetEvent U T)
   rw [Set.disjoint_left]
   intro X hXS hXT
-  exact hST ((show U X = S from hXS).symm.trans hXT)
+  change U X = S at hXS
+  change U X = T at hXT
+  exact hST (hXS.symm.trans hXT)
 
 theorem measurableSet_fewAvailableExitsEvent_coordSigma {iota : Type*} [DecidableEq iota]
     (E : Finset iota) (U : (iota → ℝ) → Finset iota) (t : ℕ)
@@ -79,8 +82,10 @@ theorem measurableSet_fewAvailableExitsEvent_coordSigma {iota : Type*} [Decidabl
     · rintro ⟨S, ⟨hSE, hcard⟩, hUS⟩
       simpa [hUS] using hcard
   rw [hevent]
-  exact MeasurableSet.biUnion_finset fun S hS => hexact S (Finset.mem_powerset.mp
-    (Finset.mem_of_mem_filter hS))
+  apply MeasurableSet.biUnion
+    (E.powerset.filter (fun S => S.card ≤ t)).countable_toSet
+  intro S hS
+  exact hexact S (Finset.mem_powerset.mp (Finset.mem_filter.mp hS).1)
 
 theorem measurableSet_boundaryClosedHistoryEvent {iota : Type*}
     (E : Finset iota) (beta : iota → I) :
@@ -172,7 +177,7 @@ theorem coe_incrementedBoundaryThreshold_of_notMem {iota : Type*} [DecidableEq i
 theorem prod_one_sub_incrementedBoundaryThreshold_le
     {iota : Type*} [DecidableEq iota]
     (E S : Finset iota) (hSE : S ⊆ E) (beta : iota → I) (delta : ℝ)
-    (hdelta : 0 ≤ delta) (hdelta1 : delta ≤ 1)
+    (hdelta : 0 ≤ delta)
     (hupper : ∀ e ∈ S, (beta e : ℝ) + delta ≤ 1) :
     (∏ e ∈ E,
         (1 - (incrementedBoundaryThreshold beta delta S hdelta hupper e : ℝ))) ≤
@@ -256,7 +261,7 @@ theorem couplingMeasure_sprinkledFailure_inter_history_inter_exact
         by_cases heS : e ∈ S
         · have h := hbox e heE
           rw [coe_incrementedBoundaryThreshold_of_mem beta delta S hdelta hupper heS] at h
-          linarith
+          exact (le_add_of_nonneg_right hdelta).trans h
         · simpa [coe_incrementedBoundaryThreshold_of_notMem beta delta S hdelta hupper heS]
             using hbox e heE
   rw [hevent, couplingMeasure_pi_inter E (fun _e => measurableSet_Ici) hexact]
@@ -334,7 +339,7 @@ theorem couplingMeasure_real_sprinkledFailure_inter_history_inter_exact_le
     {iota : Type*} [DecidableEq iota]
     (E S : Finset iota) (beta : iota → I) (delta : ℝ)
     (U : (iota → ℝ) → Finset iota)
-    (hSE : S ⊆ E) (hdelta : 0 ≤ delta) (hdelta1 : delta ≤ 1)
+    (hSE : S ⊆ E) (hdelta : 0 ≤ delta)
     (hupper : ∀ e ∈ S, (beta e : ℝ) + delta ≤ 1)
     (hexact : MeasurableSet[coordSigma iota ((E : Set iota)ᶜ)]
       (exactAvailableExitSetEvent U S)) :
@@ -354,7 +359,7 @@ theorem couplingMeasure_real_sprinkledFailure_inter_history_inter_exact_le
       ((1 - delta) ^ S.card * ∏ e ∈ E, (1 - (beta e : ℝ))) *
           (couplingMeasure iota).real (exactAvailableExitSetEvent U S) :=
       mul_le_mul_of_nonneg_right
-        (prod_one_sub_incrementedBoundaryThreshold_le E S hSE beta delta hdelta hdelta1
+        (prod_one_sub_incrementedBoundaryThreshold_le E S hSE beta delta hdelta
           hupper)
         (measureReal_nonneg)
     _ = (1 - delta) ^ S.card *
@@ -412,19 +417,19 @@ theorem couplingMeasure_real_sprinkledFailure_inter_history_le
     · right
       simp only [Set.mem_iUnion, cell, C, largeAvailableExitSets, Finset.mem_filter,
         Finset.mem_powerset]
-      refine ⟨U X, ⟨hU X, Nat.lt_of_not_ge hcard⟩, hX.1, hX.2, rfl⟩
+      refine ⟨U X, ⟨hU X, Nat.lt_of_not_ge hcard⟩, ⟨hX.1, hX.2⟩, rfl⟩
   have hcell : ∀ S ∈ C,
       mu.real (cell S) ≤ (1 - delta) ^ (t + 1) * mu.real (historyCell S) := by
     intro S hSC
     have hSC' := Finset.mem_filter.mp hSC
     have hSE : S ⊆ E := Finset.mem_powerset.mp hSC'.1
     have hpow : (1 - delta) ^ S.card ≤ (1 - delta) ^ (t + 1) := by
-      exact pow_le_pow_of_le_one (sub_nonneg.mpr hdelta1) (sub_le_one _ hdelta)
+      exact pow_le_pow_of_le_one (sub_nonneg.mpr hdelta1) (by linarith)
         (Nat.succ_le_iff.mpr hSC'.2)
     calc
       mu.real (cell S) ≤ (1 - delta) ^ S.card * mu.real (historyCell S) := by
         exact couplingMeasure_real_sprinkledFailure_inter_history_inter_exact_le
-          E S beta delta U hSE hdelta hdelta1 (fun e he => hupper e (hSE he))
+          E S beta delta U hSE hdelta (fun e he => hupper e (hSE he))
             (hexact S hSE)
       _ ≤ (1 - delta) ^ (t + 1) * mu.real (historyCell S) :=
         mul_le_mul_of_nonneg_right hpow measureReal_nonneg
@@ -467,7 +472,7 @@ theorem couplingMeasure_real_sprinkledFailure_inter_history_le
     _ ≤ mu.real (H ∩ fewAvailableExitsEvent U t) +
         mu.real (⋃ S ∈ C, cell S) := measureReal_union_le _ _
     _ ≤ mu.real (H ∩ fewAvailableExitsEvent U t) +
-        (1 - delta) ^ (t + 1) * mu.real H := add_le_add_left hlarge _
+        (1 - delta) ^ (t + 1) * mu.real H := add_le_add_right hlarge _
     _ = (mu.real (fewAvailableExitsEvent U t) + (1 - delta) ^ (t + 1)) *
         mu.real H := by rw [hlow]; ring
 
@@ -489,7 +494,7 @@ theorem measurableSet_sprinkledAvailableExitFailureEvent {iota : Type*} [Decidab
     · rintro ⟨S, _hSE, hfail, _hUS⟩
       exact hfail
   rw [hevent]
-  apply MeasurableSet.biUnion_finset
+  apply Finset.measurableSet_biUnion
   intro S hSE
   have hSE' := Finset.mem_powerset.mp hSE
   have hcell :
@@ -515,8 +520,9 @@ theorem measurableSet_sprinkledAvailableExitEvent {iota : Type*} [DecidableEq io
     (hexact : ∀ S ⊆ E, MeasurableSet[coordSigma iota ((E : Set iota)ᶜ)]
       (exactAvailableExitSetEvent U S)) :
     MeasurableSet (sprinkledAvailableExitEvent beta delta U) := by
-  rw [← sprinkledAvailableExitFailureEvent_eq_compl beta delta U, measurableSet_compl_iff]
-  exact measurableSet_sprinkledAvailableExitFailureEvent E beta delta U hU hexact
+  have hfailure := measurableSet_sprinkledAvailableExitFailureEvent E beta delta U hU hexact
+  rw [sprinkledAvailableExitFailureEvent_eq_compl] at hfailure
+  simpa using hfailure.compl
 
 /-- Strict ratio-free form of the restart estimate.  The hypotheses expose the only geometric
 input still needed for Grimmett's Lemma 7.17: the off-boundary available-exit set is rarely
@@ -555,12 +561,15 @@ theorem sprinkledAvailableExit_inter_history_gt
   have hfailureMeas : MeasurableSet failure :=
     measurableSet_sprinkledAvailableExitFailureEvent E beta delta U hU hexact
   have hpartition : (success ∩ H) ∪ (failure ∩ H) = H := by
+    change (sprinkledAvailableExitEvent beta delta U ∩ H) ∪
+      (sprinkledAvailableExitFailureEvent beta delta U ∩ H) = H
     rw [sprinkledAvailableExitFailureEvent_eq_compl]
-    ext X
-    simp [success, failure]
+    rw [← Set.union_inter_distrib_right, Set.union_compl_self, Set.univ_inter]
   have hdisjoint : Disjoint (success ∩ H) (failure ∩ H) := by
-    rw [sprinkledAvailableExitFailureEvent_eq_compl]
-    exact Set.disjoint_left.2 fun _X hX hX' => hX'.1 hX.1
+    change Disjoint (sprinkledAvailableExitEvent beta delta U ∩ H)
+      (sprinkledAvailableExitFailureEvent beta delta U ∩ H)
+    rw [sprinkledAvailableExitFailureEvent_eq_compl, Set.disjoint_left]
+    exact fun _X hX hX' => hX'.1 hX.1
   have hsum : mu.real (success ∩ H) + mu.real (failure ∩ H) = mu.real H := by
     rw [← measureReal_union hdisjoint (hfailureMeas.inter
       (measurableSet_boundaryClosedHistoryEvent E beta)), hpartition]
@@ -612,15 +621,16 @@ theorem couplingMeasure_real_allAvailableExitsClosed_inter_zeroHistory_inter_exa
       (1 - (p : ℝ)) ^ S.card *
         (couplingMeasure iota).real (exactAvailableExitSetEvent U S) := by
   rw [couplingMeasure_real_sprinkledFailure_inter_history_inter_exact
-    E S (fun _ => (0 : I)) (p : ℝ) U hSE p.2.1 (fun _ _ => p.2.2) hexact]
+    E S (fun _ => (0 : I)) (p : ℝ) U hSE p.2.1
+      (fun _ _ => by simpa using p.2.2) hexact]
   congr 1
   calc
     (∏ e ∈ E,
         (1 - (incrementedBoundaryThreshold (fun _ => (0 : I)) (p : ℝ) S
-          p.2.1 (fun _ _ => p.2.2) e : ℝ))) =
+          p.2.1 (fun _ _ => by simpa using p.2.2) e : ℝ))) =
         ∏ e ∈ S,
           (1 - (incrementedBoundaryThreshold (fun _ => (0 : I)) (p : ℝ) S
-            p.2.1 (fun _ _ => p.2.2) e : ℝ)) := by
+            p.2.1 (fun _ _ => by simpa using p.2.2) e : ℝ)) := by
       symm
       apply Finset.prod_subset hSE
       intro e _heE heS
@@ -628,7 +638,7 @@ theorem couplingMeasure_real_allAvailableExitsClosed_inter_zeroHistory_inter_exa
     _ = ∏ _e ∈ S, (1 - (p : ℝ)) := by
       apply Finset.prod_congr rfl
       intro e heS
-      rw [coe_incrementedBoundaryThreshold_of_mem _ _ _ _ _ heS]
+      simp [coe_incrementedBoundaryThreshold_of_mem _ _ _ _ _ heS]
     _ = (1 - (p : ℝ)) ^ S.card := by simp
 
 /-- Equation (7.22), abstracted from the geometry: if the available set is determined off the
@@ -655,7 +665,7 @@ theorem one_sub_pow_mul_fewAvailableExits_le_allAvailableExitsClosed
     -- The left side of the exact factorization is measurable as a finite box intersected with
     -- the off-boundary cell; use the event identity from its proof directly.
     let beta' := incrementedBoundaryThreshold (fun _ => (0 : I)) (p : ℝ) S
-      p.2.1 (fun _ _ => p.2.2)
+      p.2.1 (fun _ _ => by simpa using p.2.2)
     have hrepr : cell S =
         (E : Set iota).pi (fun e => Set.Ici (beta' e : ℝ)) ∩
           exactAvailableExitSetEvent U S := by
@@ -668,7 +678,9 @@ theorem one_sub_pow_mul_fewAvailableExits_le_allAvailableExitsClosed
         refine ⟨?_, hUS⟩
         intro e heE
         by_cases heS : e ∈ S
-        · rw [coe_incrementedBoundaryThreshold_of_mem]
+        · rw [coe_incrementedBoundaryThreshold_of_mem
+            (fun _ => (0 : I)) (p : ℝ) S p.2.1
+              (fun _ _ => by simpa using p.2.2) heS]
           exact hfail e (by simpa [hUS] using heS)
         · rw [coe_incrementedBoundaryThreshold_of_notMem _ _ _ _ _ heS]
           exact hzero e heE
@@ -682,7 +694,7 @@ theorem one_sub_pow_mul_fewAvailableExits_le_allAvailableExitsClosed
           by_cases heS : e ∈ S
           · have h := hbox e heE
             rw [coe_incrementedBoundaryThreshold_of_mem _ _ _ _ _ heS] at h
-            exact le_trans (by exact_mod_cast p.2.1) h
+            exact le_trans (by simpa using p.2.1) h
           · simpa [coe_incrementedBoundaryThreshold_of_notMem _ _ _ _ _ heS]
               using hbox e heE
     rw [hrepr]
@@ -690,7 +702,7 @@ theorem one_sub_pow_mul_fewAvailableExits_le_allAvailableExitsClosed
       (coordSigma_le _ (exactAvailableExitSetEvent U S) (hexact S hSE))
   have hpair : Set.PairwiseDisjoint (C : Set (Finset iota)) cell :=
     (pairwiseDisjoint_exactAvailableExitSetEvent U C).mono fun _S =>
-      Set.inter_subset_right.trans Set.inter_subset_right
+      Set.inter_subset_right
   have hfewEq : fewAvailableExitsEvent U t =
       ⋃ S ∈ C, exactAvailableExitSetEvent U S := by
     ext X
@@ -715,7 +727,7 @@ theorem one_sub_pow_mul_fewAvailableExits_le_allAvailableExitsClosed
         boundaryClosedHistoryEvent E (fun _ => (0 : I)) := by
     intro X hX
     simp only [Set.mem_iUnion, cell] at hX
-    rcases hX with ⟨S, _hSC, hfail, hzero, _hexact⟩
+    rcases hX with ⟨S, _hSC, ⟨hfail, hzero⟩, _hexact⟩
     exact ⟨hfail, hzero⟩
   rw [hfewSum, Finset.mul_sum]
   calc
@@ -730,7 +742,7 @@ theorem one_sub_pow_mul_fewAvailableExits_le_allAvailableExitsClosed
           E S p U hSE (hexact S hSE)]
         exact mul_le_mul_of_nonneg_right
           (pow_le_pow_of_le_one (sub_nonneg.mpr p.2.2)
-            (sub_le_one _ p.2.1) hdata.2) measureReal_nonneg
+            (by linarith [p.2.1]) hdata.2) measureReal_nonneg
     _ = (couplingMeasure iota).real (⋃ S ∈ C, cell S) := by
       symm
       exact measureReal_biUnion_finset hpair hcellMeas

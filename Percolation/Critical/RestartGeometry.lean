@@ -32,12 +32,12 @@ theorem mem_cubicRegionBoundaryEdgesWithinBox_iff
   simp [cubicRegionBoundaryEdgesWithinBox]
 
 /-- Canonical endpoint of a region-boundary edge lying in `R`. -/
-def cubicRegionBoundaryInsideEndpoint
+noncomputable def cubicRegionBoundaryInsideEndpoint
     {d : ℕ} (R : Finset (Cubic d)) (e : CubicEdge d) : Cubic d :=
   if e.1.out.1 ∈ R then e.1.out.1 else e.1.out.2
 
 /-- Canonical endpoint of a region-boundary edge lying outside `R`. -/
-def cubicRegionBoundaryOutsideEndpoint
+noncomputable def cubicRegionBoundaryOutsideEndpoint
     {d : ℕ} (R : Finset (Cubic d)) (e : CubicEdge d) : Cubic d :=
   if e.1.out.1 ∈ R then e.1.out.2 else e.1.out.1
 
@@ -57,7 +57,7 @@ theorem cubicRegionBoundaryOutsideEndpoint_not_mem
   classical
   rcases (mem_cubicRegionBoundaryEdgesWithinBox_iff.mp he).2 with h | h
   · simpa [cubicRegionBoundaryOutsideEndpoint, h.1] using h.2
-  · simpa [cubicRegionBoundaryOutsideEndpoint, h.2] using h.2
+  · simp [cubicRegionBoundaryOutsideEndpoint, h.2]
 
 theorem cubicRegionBoundaryEndpoints_edge
     {d n : ℕ} {R : Finset (Cubic d)} {e : CubicEdge d}
@@ -85,8 +85,44 @@ theorem mem_cubicRegionExteriorEdgesWithinBox_iff
   classical
   rw [cubicRegionExteriorEdgesWithinBox, Finset.mem_sdiff,
     mem_cubicIncidentEdges_iff_exists_endpoint]
-  push Not
-  rfl
+  constructor
+  · rintro ⟨heBox, hnot⟩
+    exact ⟨heBox, fun x hxe hxR => hnot ⟨x, hxR, hxe⟩⟩
+  · rintro ⟨heBox, hends⟩
+    refine ⟨heBox, ?_⟩
+    rintro ⟨x, hxR, hxe⟩
+    exact hends x hxe hxR
+
+theorem mem_cubicRegionBoundaryEdgesWithinBox_of_endpoints
+    {d n : ℕ} {R : Finset (Cubic d)} {e : CubicEdge d} {x y : Cubic d}
+    (heBox : e ∈ cubicBoxEdges d cubicOrigin n)
+    (hxe : x ∈ (e : Sym2 (Cubic d))) (hye : y ∈ (e : Sym2 (Cubic d)))
+    (hxR : x ∈ R) (hyR : y ∉ R) :
+    e ∈ cubicRegionBoundaryEdgesWithinBox d R n := by
+  rw [mem_cubicRegionBoundaryEdgesWithinBox_iff]
+  refine ⟨heBox, ?_⟩
+  rw [← e.1.out_eq] at hxe hye
+  rw [Sym2.mem_iff] at hxe hye
+  rcases hxe with hxe | hxe <;> rcases hye with hye | hye
+  · subst x; subst y; exact (hyR hxR).elim
+  · subst x; subst y; exact Or.inl ⟨hxR, hyR⟩
+  · subst x; subst y; exact Or.inr ⟨hxR, hyR⟩
+  · subst x; subst y; exact (hyR hxR).elim
+
+theorem cubicRegionBoundaryOutsideEndpoint_eq_of_mem_of_not_mem
+    {d n : ℕ} {R : Finset (Cubic d)} {e : CubicEdge d} {y : Cubic d}
+    (he : e ∈ cubicRegionBoundaryEdgesWithinBox d R n)
+    (hye : y ∈ (e : Sym2 (Cubic d))) (hyR : y ∉ R) :
+    cubicRegionBoundaryOutsideEndpoint R e = y := by
+  classical
+  rw [← e.1.out_eq] at hye
+  rw [Sym2.mem_iff] at hye
+  rcases hye with rfl | rfl
+  · have hnot : e.1.out.1 ∉ R := hyR
+    simp [cubicRegionBoundaryOutsideEndpoint, hnot]
+  · rcases (mem_cubicRegionBoundaryEdgesWithinBox_iff.mp he).2 with h | h
+    · simp [cubicRegionBoundaryOutsideEndpoint, h.1]
+    · exact (hyR h.1).elim
 
 theorem disjoint_cubicRegionExteriorEdgesWithinBox_boundary
     (d : ℕ) (R : Finset (Cubic d)) (n : ℕ) :
@@ -109,9 +145,10 @@ theorem walkIsOpen_diff_regionBoundary_of_exterior
   intro e he
   refine ⟨hopen e he, ?_⟩
   intro heBoundary
-  have heExterior : (⟨e, w.edges_subset_edgeSet he⟩ : CubicEdge d) ∈
+  let f : CubicEdge d := ⟨e, w.edges_subset_edgeSet he⟩
+  have heExterior : f ∈
       cubicRegionExteriorEdgesWithinBox d R n :=
-    hsub ((mem_walkEdgeFinset_iff w e).mpr he)
+    hsub ((mem_walkEdgeFinset_iff w f).mpr he)
   exact Set.disjoint_left.mp
     (disjoint_cubicRegionExteriorEdgesWithinBox_boundary d R n)
       heExterior heBoundary
@@ -157,12 +194,15 @@ theorem IsSeededBoundaryPoint.diff_innerBoxEdges
   refine ⟨hyQ, ⟨hyEdge, ?_⟩, c, hyc, hcLayer, ?_⟩
   · intro heE
     have heBox := hE heE
-    have hstepBox := endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heBox (by
-      simp [cubicStepEdge])
+    have hstepMem : cubicStepFrom y (i, true) ∈
+        (cubicStepEdge y (i, true) : Sym2 (Cubic d)) := by
+      simp [cubicStepEdge]
+    have hstepBox := endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heBox hstepMem
     have hyFace := mem_cubicBoxFace.mp (mem_seededBoundaryQuadrant_iff.mp hyQ).1
     have hyi : y i = (n : ℤ) := by simpa [cubicOrigin] using hyFace.1
     have hcoord := (mem_cubicMetricBox.mp hstepBox) i
-    rw [cubicStepFrom_same, hyi] at hcoord
+    rw [show cubicStepFrom y (i, true) i = y i + 1 by
+      simp [cubicStepFrom, cubicDirectionIncrement], hyi] at hcoord
     simp [cubicOrigin] at hcoord
   · intro e heSeed
     refine ⟨hcSeed heSeed, ?_⟩
@@ -243,12 +283,11 @@ theorem mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit
           rw [mem_walkEdgeFinset_iff]
           simp [e]
         have heBoundary : e ∈ cubicRegionBoundaryEdgesWithinBox d R n := by
-          rw [mem_cubicRegionBoundaryEdgesWithinBox_iff]
-          refine ⟨heBox, ?_⟩
-          change (z ∈ R ∧ v ∉ R) ∨ (v ∈ R ∧ z ∉ R)
-          exact Or.inl ⟨hzR, hvNotR⟩
+          apply mem_cubicRegionBoundaryEdgesWithinBox_of_endpoints heBox
+            (x := z) (y := v) (by simp [e]) (by simp [e]) hzR hvNotR
         have hout : cubicRegionBoundaryOutsideEndpoint R e = v := by
-          simp [cubicRegionBoundaryOutsideEndpoint, e, hzR]
+          exact cubicRegionBoundaryOutsideEndpoint_eq_of_mem_of_not_mem heBoundary
+            (by simp [e]) hvNotR
         have hpExterior : walkEdgeFinset p ⊆ cubicRegionExteriorEdgesWithinBox d R n := by
           intro f hf
           rw [mem_cubicRegionExteriorEdgesWithinBox_iff]
@@ -260,11 +299,8 @@ theorem mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit
           · intro a ha
             apply hqOutside a
             have haSupport : a ∈ p.support := by
-              rw [SimpleGraph.Walk.mem_support_iff]
-              rw [← SimpleGraph.mem_edgeSet] at f
-              exact (p.adj_support_of_mem_edges hf).resolve_left fun haz => by
-                subst a
-                exact (SimpleGraph.loopless _ f)
+              exact SimpleGraph.Walk.mem_support_of_mem_edges
+                ((mem_walkEdgeFinset_iff p f).mp hf) ha
             simpa using haSupport
         have hpOpen : walkIsOpen omega p := by
           intro f hf
@@ -274,7 +310,7 @@ theorem mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit
           exact ⟨heBoundary, y, hyK, by simpa [hout] using
             (show omega ∈ connectionEventIn d (cubicRegionExteriorEdgesWithinBox d R n) v y
               from ⟨p, hpOpen, hpExterior⟩)⟩
-        · exact hqOpen _ (by simp [SimpleGraph.Walk.edges_cons, e])
+        · exact hqOpen _ (by simp [SimpleGraph.Walk.edges_cons])
   · rintro ⟨e, heU, heOpen⟩
     rw [mem_regionAvailableExitEdges_iff] at heU
     rcases heU with ⟨heBoundary, y, hyK, w, hwOpen, hwExterior⟩
@@ -283,7 +319,6 @@ theorem mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit
     have hxR : x ∈ R := cubicRegionBoundaryInsideEndpoint_mem heBoundary
     have hadj : (cubicGraph d).Adj x z := by
       rw [← SimpleGraph.mem_edgeSet]
-      change s(x, z) ∈ (cubicGraph d).edgeSet
       rw [cubicRegionBoundaryEndpoints_edge heBoundary]
       exact e.2
     let q : (cubicGraph d).Walk x y := SimpleGraph.Walk.cons hadj w
@@ -292,8 +327,7 @@ theorem mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit
       simp only [q, SimpleGraph.Walk.edges_cons, List.mem_cons] at hf
       rcases hf with hf | hf
       · have hfe : f = (e : Sym2 (Cubic d)) := by
-          rw [← hf]
-          exact cubicRegionBoundaryEndpoints_edge heBoundary
+          exact hf.trans (cubicRegionBoundaryEndpoints_edge heBoundary)
         simpa [hfe] using heOpen
       · exact hwOpen f hf
     have hqBox : walkEdgeFinset q ⊆ cubicBoxEdges d cubicOrigin n := by
@@ -301,10 +335,9 @@ theorem mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit
       rw [mem_walkEdgeFinset_iff] at hf
       simp only [q, SimpleGraph.Walk.edges_cons, List.mem_cons] at hf
       rcases hf with hf | hf
-      · have hfe : (⟨f, q.edges_subset_edgeSet (by simp [q, hf])⟩ : CubicEdge d) = e := by
+      · have hfe : f = e := by
           apply Subtype.ext
-          rw [← hf]
-          exact cubicRegionBoundaryEndpoints_edge heBoundary
+          exact hf.trans (cubicRegionBoundaryEndpoints_edge heBoundary)
         simpa [hfe] using (mem_cubicRegionBoundaryEdgesWithinBox_iff.mp heBoundary).1
       · exact Finset.sdiff_subset (hwExterior ((mem_walkEdgeFinset_iff w f).mpr hf))
     exact ⟨x, hxR, y, hyK, q, hqOpen, hqBox⟩
@@ -335,9 +368,16 @@ theorem measurableSet_mem_seededRegionAvailableExitEdges
             connectionEventIn d (cubicRegionExteriorEdgesWithinBox d R n)
               (cubicRegionBoundaryOutsideEndpoint R e) y := by
       ext omega
-      simp [seededRegionAvailableExitEdges, mem_regionAvailableExitEdges_iff, he]
+      simp only [Set.mem_setOf_eq, Set.mem_iUnion, Set.mem_inter_iff,
+        seededRegionAvailableExitEdges, mem_regionAvailableExitEdges_iff,
+        mem_seededBoundaryPointFinset_iff, he, true_and]
+      constructor
+      · rintro ⟨y, hySeed, hconn⟩
+        exact ⟨y, hySeed.1, hySeed, hconn⟩
+      · rintro ⟨y, _hyQ, hySeed, hconn⟩
+        exact ⟨y, hySeed, hconn⟩
     rw [hevent]
-    exact MeasurableSet.biUnion_finset fun y _hy =>
+    exact (seededBoundaryQuadrant d i n).measurableSet_biUnion fun y _hy =>
       (measurableSet_isSeededBoundaryPoint d i m n y).inter
         (dependsOn_connectionEventIn d (cubicRegionExteriorEdgesWithinBox d R n)
           (cubicRegionBoundaryOutsideEndpoint R e) y).measurableSet
@@ -367,14 +407,13 @@ theorem measurableSet_seededRegionAvailableExitEdges_eq
       constructor
       · intro hEq
         subst S
-        exact ⟨fun e he => he, fun e heE heNot => heNot⟩
+        exact ⟨fun e he => he, fun e h => h.2⟩
       · rintro ⟨hmem, hnot⟩
-        apply Finset.Subset.antisymm (seededRegionAvailableExitEdges_subset_boundary
-          d i m n R omega) hSE
+        apply Finset.Subset.antisymm
         · intro e heU
           by_contra heS
-          exact hnot e (seededRegionAvailableExitEdges_subset_boundary
-            d i m n R omega heU) heS heU
+          exact hnot e ⟨seededRegionAvailableExitEdges_subset_boundary
+            d i m n R omega heU, heS⟩ heU
         · exact fun e heS => hmem e heS
     rw [hevent]
     exact (MeasurableSet.biInter S.countable_toSet fun e _he =>
@@ -429,7 +468,9 @@ theorem seedConnectionEvent_threshold_subset_sprinkledAvailableExitEvent
   have hdisj : Disjoint ({y} : Finset (Cubic d)) R := by
     rw [Finset.disjoint_left]
     intro z hz hyR
-    simpa using hyNotR hyR
+    rw [Finset.mem_singleton] at hz
+    subst z
+    exact hyNotR hyR
   obtain ⟨e, heAvailable, heOpen⟩ :=
     (mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit hdisj).mp hconn
   rw [mem_regionAvailableExitEdges_iff] at heAvailable
@@ -449,7 +490,7 @@ theorem seedConnectionEvent_threshold_subset_sprinkledAvailableExitEvent
     rw [seededRegionAvailableExitEdges, mem_regionAvailableExitEdges_iff]
     exact ⟨heBoundary, y, mem_seededBoundaryPointFinset_iff.mpr hyCleared,
       w, hwCleared, hwExterior⟩
-  · exact heOpen
+  · simpa [omega, thresholdConfiguration] using heOpen
 
 theorem measurableSet_restartAvailableExitEdges_eq_coordSigma
     (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) (p : I)
@@ -494,9 +535,11 @@ theorem one_sub_p_pow_mul_restartAvailableExit_few_probability_lt
   have hpreimageMass :
       mu.real ((thresholdConfiguration p) ⁻¹' seedConnectionEvent d i m n) =
         (bernoulliBondMeasure d p).real (seedConnectionEvent d i m n) := by
-    rw [Measure.real, ← couplingMeasure_map_thresholdConfiguration (ι := CubicEdge d) p,
-      Measure.map_apply (measurable_thresholdConfiguration p)
-        (measurableSet_seedConnectionEvent d i m n)]
+    dsimp [mu, bernoulliBondMeasure]
+    rw [← couplingMeasure_map_thresholdConfiguration (ι := CubicEdge d) p]
+    simp only [Measure.real]
+    rw [Measure.map_apply (measurable_thresholdConfiguration p)
+      (measurableSet_seedConnectionEvent d i m n)]
   have hsuccessMass :
       mu.real ((thresholdConfiguration p) ⁻¹' seedConnectionEvent d i m n) ≤
         mu.real success := by
@@ -589,7 +632,7 @@ theorem sprinkledRestart_inter_history_gt_of_seedConnection
     have hmul : (1 - (p : ℝ)) ^ t *
         (couplingMeasure (CubicEdge d)).real (fewAvailableExitsEvent U t) <
           epsilon / 2 * (1 - (p : ℝ)) ^ t := hfewMul.trans heta
-    exact (mul_lt_mul_right hpBase).mp (by simpa [mul_comm] using hmul)
+    nlinarith [hmul]
   have hsmall :
       (couplingMeasure (CubicEdge d)).real (fewAvailableExitsEvent U t) +
         (1 - delta) ^ (t + 1) < epsilon := by linarith

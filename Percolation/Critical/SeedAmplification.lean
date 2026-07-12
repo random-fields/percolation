@@ -947,9 +947,8 @@ theorem seedConnection_probability_gt
   obtain ⟨K, hK⟩ := hrEventually.exists
   let ell : ℕ := K * ((8 * m + 5) ^ d)
   have hcontactEventually := hmContacts ell
-  have hlargeEventually : ∀ᶠ n : ℕ in Filter.atTop, 2 * m < n := by
-    filter_upwards [Filter.Ici_mem_atTop (2 * m + 1)] with n hn
-    omega
+  have hlargeEventually : ∀ᶠ n : ℕ in Filter.atTop, 2 * m < n :=
+    Filter.Ioi_mem_atTop (2 * m)
   obtain ⟨n, hnContact, hmn⟩ := (hcontactEventually.and hlargeEventually).exists
   have hmnLe : 2 * m ≤ n := hmn.le
   let A := orthantBoundaryContactCardGeEvent d m n

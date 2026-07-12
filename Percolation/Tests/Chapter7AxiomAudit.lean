@@ -24,6 +24,7 @@ import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
+import Percolation.Critical.DynamicRevealBudget
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -329,3 +330,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.grimmettMarstrandHalfwayBox_subset_endpointBoxes
 #print axioms Percolation.grimmettMarstrandHalfwayBox_subset_thickening
 #print axioms Percolation.exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation
+#print axioms Percolation.FiniteRevealSchedule.accumulatedThreshold_le_of_overlapBound
+#print axioms Percolation.FiniteRevealSchedule.accumulatedThreshold_le_add_of_grimmettMarstrandOverlap

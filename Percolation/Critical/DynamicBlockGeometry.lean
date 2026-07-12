@@ -10,6 +10,8 @@ containment in `4 N F + B(2 N)` directly reviewable.
 
 namespace Percolation
 
+open scoped unitInterval
+
 /-- The two radii selected by Lemma 7.17, with the strict separation used in the source. -/
 structure GrimmettMarstrandBlock (d : ℕ) where
   m : ℕ
@@ -24,11 +26,9 @@ def scale (B : GrimmettMarstrandBlock d) : ℕ :=
 
 theorem m_lt_scale (B : GrimmettMarstrandBlock d) : B.m < B.scale := by
   simp [scale]
-  omega
 
 theorem n_lt_scale (B : GrimmettMarstrandBlock d) : B.n < B.scale := by
   simp [scale]
-  omega
 
 theorem scale_pos (B : GrimmettMarstrandBlock d) : 0 < B.scale := by
   simp [scale]
@@ -40,7 +40,7 @@ def grimmettMarstrandSiteCenter {d : ℕ} (N : ℕ) (x : Cubic d) : Cubic d :=
   cubicScale (4 * (N : ℤ)) x
 
 /-- Site-box `4Nx+B(N)`. -/
-def grimmettMarstrandSiteBox
+noncomputable def grimmettMarstrandSiteBox
     (d N : ℕ) (x : Cubic d) : Finset (Cubic d) :=
   cubicMetricBox d (grimmettMarstrandSiteCenter N x) N
 
@@ -51,12 +51,12 @@ def grimmettMarstrandBondCenter {d : ℕ}
 
 /-- Bond-box joining two site-boxes.  For adjacent `x,y` this is the source's `Nz+B(N)` with
 exactly one coordinate of `z` not divisible by four. -/
-def grimmettMarstrandBondBox
+noncomputable def grimmettMarstrandBondBox
     (d N : ℕ) (x y : Cubic d) : Finset (Cubic d) :=
   cubicMetricBox d (grimmettMarstrandBondCenter N x y) N
 
 /-- Half-way box in a signed coordinate direction from the site indexed by `x`. -/
-def grimmettMarstrandHalfwayBox
+noncomputable def grimmettMarstrandHalfwayBox
     (d N : ℕ) (x : Cubic d) (a : CubicDirection d) : Finset (Cubic d) :=
   grimmettMarstrandBondBox d N x (cubicStepFrom x a)
 
@@ -69,7 +69,9 @@ theorem grimmettMarstrandSiteCenter_eq_thickeningCenter
     {d N : ℕ} (x : Cubic d) :
     grimmettMarstrandSiteCenter N x = cubicScale (2 * ((2 * N : ℕ) : ℤ)) x := by
   funext i
-  simp [grimmettMarstrandSiteCenter, cubicScale]
+  change (4 * (N : ℤ)) * x i = (2 * ((2 * N : ℕ) : ℤ)) * x i
+  have hcast : ((2 * N : ℕ) : ℤ) = 2 * (N : ℤ) := by norm_num
+  rw [hcast]
   ring
 
 theorem grimmettMarstrandSiteBox_subset_thickening
@@ -79,39 +81,11 @@ theorem grimmettMarstrandSiteBox_subset_thickening
   intro z hz
   refine ⟨x, hxF, ?_⟩
   rw [← grimmettMarstrandSiteCenter_eq_thickeningCenter]
-  exact mem_cubicMetricBox_mono (Nat.le_mul_of_pos_left N (by omega)) hz
-
-theorem grimmettMarstrandBondCenter_eq_siteCenter_add_step
-    {d N : ℕ} (x : Cubic d) (a : CubicDirection d) :
-    grimmettMarstrandBondCenter N x (cubicStepFrom x a) =
-      fun i => grimmettMarstrandSiteCenter N x i +
-        (2 * (N : ℤ)) * cubicDirectionIncrement a i := by
-  funext i
-  rcases a with ⟨j, positive⟩
-  by_cases hij : i = j
-  · subst i
-    simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-      cubicScale, cubicDirectionIncrement, positive]
-    ring
-  · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-      cubicScale, cubicDirectionIncrement, hij]
-    ring
-
-theorem grimmettMarstrandBondCenter_eq_otherSiteCenter_sub_step
-    {d N : ℕ} (x : Cubic d) (a : CubicDirection d) :
-    grimmettMarstrandBondCenter N x (cubicStepFrom x a) =
-      fun i => grimmettMarstrandSiteCenter N (cubicStepFrom x a) i -
-        (2 * (N : ℤ)) * cubicDirectionIncrement a i := by
-  funext i
-  rcases a with ⟨j, positive⟩
-  by_cases hij : i = j
-  · subst i
-    simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-      cubicScale, cubicDirectionIncrement, positive]
-    ring
-  · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-      cubicScale, cubicDirectionIncrement, hij]
-    ring
+  change z ∈ cubicMetricBox d (grimmettMarstrandSiteCenter N x) N at hz
+  rw [mem_cubicMetricBox] at hz ⊢
+  intro i
+  have hi := hz i
+  omega
 
 /-- A half-way box is covered by the two radius-`2N` boxes centered at its adjacent site
 indices.  This is the exact coordinate fact behind the final `4NF+B(2N)` containment. -/
@@ -127,61 +101,67 @@ theorem grimmettMarstrandHalfwayBox_subset_endpointBoxes
   by_cases hp : positive
   · by_cases hleft : z j ≤ grimmettMarstrandSiteCenter N x j + 2 * (N : ℤ)
     · left
+      change z ∈ cubicMetricBox d (grimmettMarstrandSiteCenter N x) (2 * N)
       rw [mem_cubicMetricBox]
       intro i
       have hi := hzBox i
       by_cases hij : i = j
       · subst i
-        simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp] at hi ⊢
+        simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp] at hi hleft ⊢
+        ring_nf at hi hleft ⊢
         omega
-      · simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp, hij] at hi ⊢
+      · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp, hij] at hi ⊢
+        ring_nf at hi ⊢
         omega
     · right
+      change z ∈ cubicMetricBox d
+        (grimmettMarstrandSiteCenter N (cubicStepFrom x (j, positive))) (2 * N)
       rw [mem_cubicMetricBox]
       intro i
       have hi := hzBox i
       by_cases hij : i = j
       · subst i
-        simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp] at hi hleft ⊢
+        simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp] at hi hleft ⊢
+        ring_nf at hi hleft ⊢
         omega
-      · simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp, hij] at hi ⊢
+      · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp, hij] at hi ⊢
+        ring_nf at hi ⊢
         omega
   · by_cases hleft : grimmettMarstrandSiteCenter N x j - 2 * (N : ℤ) ≤ z j
     · left
+      change z ∈ cubicMetricBox d (grimmettMarstrandSiteCenter N x) (2 * N)
       rw [mem_cubicMetricBox]
       intro i
       have hi := hzBox i
       by_cases hij : i = j
       · subst i
-        simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp] at hi ⊢
+        simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp] at hi hleft ⊢
+        ring_nf at hi hleft ⊢
         omega
-      · simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp, hij] at hi ⊢
+      · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp, hij] at hi ⊢
+        ring_nf at hi ⊢
         omega
     · right
+      change z ∈ cubicMetricBox d
+        (grimmettMarstrandSiteCenter N (cubicStepFrom x (j, positive))) (2 * N)
       rw [mem_cubicMetricBox]
       intro i
       have hi := hzBox i
       by_cases hij : i = j
       · subst i
-        simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp] at hi hleft ⊢
+        simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp] at hi hleft ⊢
+        ring_nf at hi hleft ⊢
         omega
-      · simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
-          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
-          cubicScale, hp, hij] at hi ⊢
+      · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicStepFrom,
+          cubicScale, cubicDirectionIncrement, hp, hij] at hi ⊢
+        ring_nf at hi ⊢
         omega
 
 theorem grimmettMarstrandHalfwayBox_subset_thickening

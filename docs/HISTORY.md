@@ -990,6 +990,13 @@ Dated milestones and anti-library notes.
     This is an induction kernel: the outer strong induction establishing (7.117) from
     (7.119)--(7.121) is still required before Theorem 7.65 is complete.
 
+92. **Chapter 7 mixed LSS exponent comparison (2026-07-12).** Proved the scalar step that
+    closes the source induction after the neighborhood partition: if the two endpoint bounds
+    (7.114)--(7.115) hold and `|N⁰|+|N¹|≤B`, then `1-δ` is bounded by
+    `(1-a)(1-p)^|N⁰|a^|N¹|`. The proof handles both possible orders of `1-p` and `a` and
+    uses the antitonicity of powers on `[0,1]`; no hidden comparison between those bases is
+    assumed.
+
 ## Axiom Ledger
 
 Empty.

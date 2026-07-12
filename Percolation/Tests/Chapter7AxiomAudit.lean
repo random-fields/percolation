@@ -506,6 +506,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.AdaptiveSiteExploration.measurableSet_finiteAdaptiveOuterHistoryEvent_coordSigma
 #print axioms Percolation.AdaptiveSiteExploration.OuterHistorySupportsFresh.disjoint_outerHistorySupport
 #print axioms Percolation.lss_parameter_selection
+#print axioms Percolation.one_sub_le_lss_mixed_factor
 #print axioms Percolation.siteDilutionLaw_real_mem
 #print axioms Percolation.stochasticallyDominates_siteDilutionLaw
 #print axioms Percolation.hasFiniteSequentialLowerBound_iff_event

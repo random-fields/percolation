@@ -130,4 +130,41 @@ theorem lss_parameter_selection (B : ℕ) (q : I) (hq : (q : ℝ) < 1) :
     · exact min_le_left _ _
     · exact min_le_right _ _
 
+/-- The two endpoint parameter inequalities imply the mixed factor needed after the
+`N⁰/N¹` partition.  This is the final scalar comparison in the proof of (7.117). -/
+theorem one_sub_le_lss_mixed_factor
+    (B nzero none : ℕ) (p : I) {a theta : ℝ}
+    (ha0 : 0 ≤ a) (ha1 : a ≤ 1) (hcard : nzero + none ≤ B)
+    (hzero : 1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B)
+    (hone : 1 - theta ≤ (1 - a) * a ^ B) :
+    1 - theta ≤
+      (1 - a) * (1 - (p : ℝ)) ^ nzero * a ^ none := by
+  have hp0 : 0 ≤ (p : ℝ) := p.2.1
+  have hp1 : (p : ℝ) ≤ 1 := p.2.2
+  have hsub0 : 0 ≤ 1 - (p : ℝ) := by linarith
+  have hsub1 : 1 - (p : ℝ) ≤ 1 := by linarith
+  have honeSub : 0 ≤ 1 - a := by linarith
+  by_cases hpa : 1 - (p : ℝ) ≤ a
+  · calc
+      1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B := hzero
+      _ ≤ (1 - a) * (1 - (p : ℝ)) ^ (nzero + none) := by
+        exact mul_le_mul_of_nonneg_left
+          (pow_le_pow_of_le_one hsub0 hsub1 hcard) honeSub
+      _ = (1 - a) * (1 - (p : ℝ)) ^ nzero *
+          (1 - (p : ℝ)) ^ none := by rw [pow_add]; ring
+      _ ≤ (1 - a) * (1 - (p : ℝ)) ^ nzero * a ^ none := by
+        exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hsub0 hpa none)
+          (mul_nonneg honeSub (pow_nonneg hsub0 nzero))
+  · have hap : a ≤ 1 - (p : ℝ) := le_of_not_ge hpa
+    calc
+      1 - theta ≤ (1 - a) * a ^ B := hone
+      _ ≤ (1 - a) * a ^ (nzero + none) := by
+        exact mul_le_mul_of_nonneg_left
+          (pow_le_pow_of_le_one ha0 ha1 hcard) honeSub
+      _ = (1 - a) * a ^ nzero * a ^ none := by rw [pow_add]; ring
+      _ ≤ (1 - a) * (1 - (p : ℝ)) ^ nzero * a ^ none := by
+        exact mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ ha0 hap nzero) honeSub)
+          (pow_nonneg ha0 none)
+
 end Percolation

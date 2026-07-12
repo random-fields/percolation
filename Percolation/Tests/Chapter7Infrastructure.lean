@@ -271,6 +271,15 @@ example (B : ℕ) (q : I) (hq : (q : ℝ) < 1) :
         1 - (θ : ℝ) ≤ (1 - a) * a ^ B :=
   lss_parameter_selection B q hq
 
+/-- The endpoint parameter bounds control every mixed `N⁰/N¹` exponent. -/
+example (B nzero none : ℕ) (p : I) {a theta : ℝ}
+    (ha0 : 0 ≤ a) (ha1 : a ≤ 1) (hcard : nzero + none ≤ B)
+    (hzero : 1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B)
+    (hone : 1 - theta ≤ (1 - a) * a ^ B) :
+    1 - theta ≤
+      (1 - a) * (1 - (p : ℝ)) ^ nzero * a ^ none :=
+  one_sub_le_lss_mixed_factor B nzero none p ha0 ha1 hcard hzero hone
+
 example {ι : Type*} [Countable ι] (μ : Measure (Set ι))
     [IsProbabilityMeasure μ] (p : I) :
     StochasticallyDominates μ (siteDilutionLaw μ p) :=

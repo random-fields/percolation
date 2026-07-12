@@ -121,6 +121,7 @@ import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.AdaptiveTargetExhaustion
+import Percolation.Critical.AdaptiveRegionShells
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

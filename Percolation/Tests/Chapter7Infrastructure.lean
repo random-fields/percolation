@@ -4,6 +4,7 @@ import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.AdaptiveTargetExhaustion
+import Percolation.Critical.AdaptiveRegionShells
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -1284,5 +1285,9 @@ example {Omega : Type*} [MeasurableSpace Omega]
     (hsub : (⋂ n, A n) ⊆ B) (hlower : ∀ n, c ≤ mu.real (A n)) :
     c ≤ mu.real B :=
   measureReal_limitEvent_ge_of_antitone_exhaustion mu A B c hA hanti hsub hlower
+
+example (d : ℕ) (F : Set (Cubic d)) (root : F) :
+    root ∈ cubicRegionMetricSphere d F root 0 := by
+  simp
 
 end Percolation

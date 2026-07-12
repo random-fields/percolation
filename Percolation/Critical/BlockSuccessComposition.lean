@@ -168,4 +168,42 @@ theorem mul_measureReal_inter_lt_inter_of_indepSet
       simp only [Set.mem_inter_iff]
       tauto
 
+/-! ## Gluing restart estimates over finite reveal cells -/
+
+/-- A ratio-free lower bound may be proved separately on the cells of a finite measurable
+partition and then summed.  This is the probability kernel needed when the explored region and
+its boundary thresholds are random: each reveal cell may choose different restart data, while
+their successful pieces still define one coarse-site event.
+
+The successful pieces need not themselves form a partition of the ambient space.  Their
+disjointness follows from containment in the disjoint reveal cells, so null cells require no
+special case and no conditional probability is divided by their mass. -/
+theorem mul_measureReal_le_partitionedSuccess
+    {Omega C : Type*} [MeasurableSpace Omega] [DecidableEq C]
+    {mu : Measure Omega} [IsFiniteMeasure mu]
+    (cells : Finset C) (cell successfulCell : C → Set Omega)
+    (history : Set Omega) (q : ℝ)
+    (hpartition : history = ⋃ c ∈ cells, cell c)
+    (hpairwise : Set.PairwiseDisjoint (cells : Set C) cell)
+    (hcell : ∀ c ∈ cells, MeasurableSet (cell c))
+    (hsuccess : ∀ c ∈ cells, MeasurableSet (successfulCell c))
+    (hsuccessSubset : ∀ c ∈ cells, successfulCell c ⊆ cell c)
+    (hlower : ∀ c ∈ cells,
+      q * mu.real (cell c) ≤ mu.real (successfulCell c)) :
+    q * mu.real history ≤
+      mu.real (⋃ c ∈ cells, successfulCell c) := by
+  have hsuccessPairwise :
+      Set.PairwiseDisjoint (cells : Set C) successfulCell := by
+    intro c hc c' hc' hcc'
+    apply Set.disjoint_of_subset_right
+        (hsuccessSubset c' hc')
+    apply Set.disjoint_of_subset_left
+        (hsuccessSubset c hc)
+    exact hpairwise hc hc' hcc'
+  rw [hpartition,
+    measureReal_biUnion_finset hpairwise hcell,
+    measureReal_biUnion_finset hsuccessPairwise hsuccess,
+    Finset.mul_sum]
+  exact Finset.sum_le_sum fun c hc => hlower c hc
+
 end Percolation

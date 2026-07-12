@@ -38,6 +38,7 @@ import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.DynamicBlockAnswerLaw
+import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
@@ -1328,5 +1329,11 @@ example {V Omega : Type*}
     AdaptiveSiteExploration.finiteAdaptiveSuccessPrefix stage history v 1 =
       stage history v 0 := by
   simp [AdaptiveSiteExploration.finiteAdaptiveSuccessPrefix]
+
+example {d m n : ℕ} {p : I} {delta epsilon : ℝ} {C : Type*} [DecidableEq C]
+    (S : AdaptiveSiteExploration.PartitionedOrientedRestartStage
+      d C m n p delta epsilon) :
+    S.successEvent ⊆ S.cellUnion :=
+  S.successEvent_subset_cellUnion
 
 end Percolation

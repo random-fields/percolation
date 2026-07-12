@@ -29,6 +29,7 @@ import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.DynamicSteeringSymmetry
+import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
@@ -1169,5 +1170,20 @@ example (x : Cubic 3) (a : CubicDirection 3) {m n : ℕ} {y : Cubic 3}
           (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x a))
           (2 * (m + n + 1)) : Set (Cubic 3)) :=
   orientedSteeredRestartRegion_subset_endpointBoxes x a hmn hy
+
+example :
+    AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
+        (fun (_omega : Fin 1) (_history : List (Fin 1 × Bool)) (_v : Fin 1) => true)
+        [((0 : Fin 1), true)] = Set.univ := by
+  ext omega
+  simp [AdaptiveSiteExploration.adaptiveAnswerHistoryEvent,
+    AdaptiveSiteExploration.adaptiveAnswerHistoryEventFrom]
+
+example {Omega V : Type*} [MeasurableSpace Omega]
+    (success : List (V × Bool) → V → Set Omega)
+    (omega : Omega) (history : List (V × Bool)) (v : V) :
+    AdaptiveSiteExploration.eventAdaptiveAnswer success omega history v = true ↔
+      omega ∈ success history v :=
+  AdaptiveSiteExploration.eventAdaptiveAnswer_eq_true_iff success omega history v
 
 end Percolation

@@ -1,5 +1,6 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.DynamicSteeringSymmetry
+import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -379,3 +380,8 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.orientedSteeredRestartRegion_subset_endpointBoxes
 #print axioms Percolation.thresholdConfiguration_mem_orientedConnectionEventIn
 #print axioms Percolation.orientedSprinkledRestart_inter_history_gt
+#print axioms Percolation.AdaptiveSiteExploration.adaptiveAnswerHistoryEvent_append_singleton
+#print axioms Percolation.AdaptiveSiteExploration.measurableSet_adaptiveAnswerHistoryEvent
+#print axioms Percolation.AdaptiveSiteExploration.measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
+#print axioms Percolation.AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn.false_mass_le
+#print axioms Percolation.AdaptiveSiteExploration.measurableAnswer_eventAdaptiveAnswer

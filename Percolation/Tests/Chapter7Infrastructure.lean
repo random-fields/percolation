@@ -29,6 +29,7 @@ import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.RestartGeometry
+import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -987,5 +988,15 @@ example (i : Fin 3) (p : I) (hpTheta : 0 < theta 3 p)
                 (cubicRegionBoundaryEdgesWithinBox 3 R n) beta) :=
   sprinkledRestart_inter_history_gt 3 (by omega) i p hpTheta hp0 hp1
     hepsilon hdelta hdelta1
+
+example (N : ℕ) (x : Cubic 3) :
+    (grimmettMarstrandSiteBox 3 N x : Set (Cubic 3)) ⊆
+      grimmettMarstrandThickening 3 Set.univ N :=
+  grimmettMarstrandSiteBox_subset_thickening (by simp)
+
+example (N : ℕ) (x : Cubic 3) (a : CubicDirection 3) :
+    (grimmettMarstrandHalfwayBox 3 N x a : Set (Cubic 3)) ⊆
+      grimmettMarstrandThickening 3 Set.univ N :=
+  grimmettMarstrandHalfwayBox_subset_thickening (by simp) (by simp)
 
 end Percolation

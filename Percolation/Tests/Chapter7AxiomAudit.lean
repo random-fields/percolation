@@ -23,6 +23,7 @@ import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.RestartGeometry
+import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -325,3 +326,6 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.one_sub_p_pow_mul_restartAvailableExit_few_probability_lt
 #print axioms Percolation.sprinkledRestart_inter_history_gt
 #print axioms Percolation.sprinkledRestart_conditionalProbability_gt
+#print axioms Percolation.grimmettMarstrandHalfwayBox_subset_endpointBoxes
+#print axioms Percolation.grimmettMarstrandHalfwayBox_subset_thickening
+#print axioms Percolation.exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation

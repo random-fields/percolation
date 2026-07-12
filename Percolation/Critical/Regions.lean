@@ -683,6 +683,17 @@ theorem regionHasInfiniteClusterProbability_pos_of_critical_lt
     exact le_csSup (regionCriticalZeroSet_bddAbove d A) hmem
   exact (not_le_of_gt hp) hle
 
+/-- Positive percolation at density `p` places the region's critical probability at or below
+`p`.  This non-strict adapter is the final order step in dynamic renormalization arguments. -/
+theorem regionCriticalProbability_le_of_hasInfiniteClusterProbability_pos
+    {d : ℕ} {A : Set (Cubic d)} {p : I}
+    (hpos : 0 < regionHasInfiniteClusterProbability d A p) :
+    regionCriticalProbability d A ≤ (p : ℝ) := by
+  by_contra hnot
+  have hp : (p : ℝ) < regionCriticalProbability d A := lt_of_not_ge hnot
+  rw [regionHasInfiniteClusterProbability_eq_zero_of_lt_critical hp] at hpos
+  exact (lt_irrefl 0) hpos
+
 /-- In a connected region, being above its root-free critical probability gives positive
 percolation probability from every vertex of the region. -/
 theorem regionThetaFrom_pos_of_critical_lt_of_connected

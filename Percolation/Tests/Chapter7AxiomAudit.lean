@@ -1,6 +1,7 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
+import Percolation.Critical.AdaptiveAnswerSupport
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
@@ -489,3 +490,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.measurableSet_orientedRestartRevealPastEvent_coordSigma
 #print axioms Percolation.disjoint_orientedRestartRevealPastSupport_restartSupport
 #print axioms Percolation.AdaptiveSiteExploration.PartitionedOrientedRestartStage.cellUnion_ofOrientedScheduleRealization
+#print axioms Percolation.AdaptiveSiteExploration.adaptiveAnswerHistorySupportFrom_append_singleton
+#print axioms Percolation.AdaptiveSiteExploration.HasFiniteAnswerSupports.measurableAnswer
+#print axioms Percolation.AdaptiveSiteExploration.measurableSet_adaptiveAnswerHistoryEvent_coordSigma
+#print axioms Percolation.AdaptiveSiteExploration.HistoryQuerySupportsFresh.disjoint_historySupport

@@ -37,6 +37,7 @@ import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
+import Percolation.Critical.AdaptiveAnswerSupport
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
@@ -1428,5 +1429,25 @@ example {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
       S hS :=
   RestartRevealCellIndex.isScheduleRealizable_realizedScheduleRevealCell
     i beta S hS hmn X
+
+example {V ι : Type*} [DecidableEq ι]
+    (support : List (V × Bool) → V → Finset ι)
+    (history : List (V × Bool)) (v : V) (b : Bool) :
+    AdaptiveSiteExploration.adaptiveAnswerHistorySupport support (history ++ [(v, b)]) =
+      AdaptiveSiteExploration.adaptiveAnswerHistorySupport support history ∪
+        support history v :=
+  AdaptiveSiteExploration.adaptiveAnswerHistorySupport_append_singleton
+    support history v b
+
+example {V ι : Type*} [DecidableEq ι]
+    {answer : (ι → ℝ) → List (V × Bool) → V → Bool}
+    {support : List (V × Bool) → V → Finset ι}
+    (h : AdaptiveSiteExploration.HasFiniteAnswerSupports answer support)
+    (history : List (V × Bool)) :
+    @MeasurableSet (ι → ℝ)
+      (coordSigma ι
+        (AdaptiveSiteExploration.adaptiveAnswerHistorySupport support history : Set ι))
+      (AdaptiveSiteExploration.adaptiveAnswerHistoryEvent answer history) :=
+  AdaptiveSiteExploration.measurableSet_adaptiveAnswerHistoryEvent_coordSigma h history
 
 end Percolation

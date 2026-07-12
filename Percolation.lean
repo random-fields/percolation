@@ -113,6 +113,7 @@ import Percolation.Critical.ExplorationHistory
 import Percolation.Bernoulli.CouplingSymmetry
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
+import Percolation.Critical.AdaptiveAnswerSupport
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells

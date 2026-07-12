@@ -923,6 +923,13 @@ Dated milestones and anti-library notes.
     the random-region semantic gap in Theorem 7.2; proving that global freshness property for the
     actual adaptive coarse history remains.
 
+82. **Chapter 7 adaptive-history support calculus (2026-07-12).** Added the literal finite
+    union of coordinate supports read while replaying an adaptive Boolean history. Pointwise
+    answer-fiber support certificates now imply coordinate-sigma measurability of the complete
+    exact history cell. A recursive freshness predicate proves that if every earlier prefix
+    query is fresh from the current restart, then their whole union is fresh. This reduces the
+    remaining Theorem 7.2 history-law gap to the concrete block-placement disjointness proof.
+
 ## Axiom Ledger
 
 Empty.

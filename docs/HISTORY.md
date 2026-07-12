@@ -1006,6 +1006,15 @@ Dated milestones and anti-library notes.
     the explicit parameter choice (7.114)--(7.115). The remaining Theorem 7.65 work is the
     countable finite-prefix/projective lift, not the finite LSS probability argument.
 
+94. **Chapter 7 countable LSS finite-cylinder lift (2026-07-12).** Introduced a prefix
+    dependency graph that joins two enumerated sites exactly when their original distance is
+    at most `k`; unlike the induced prefix graph, this cannot miss a short path leaving the
+    prefix. Proved that prefix laws are one-dependent on this graph, preserve one-site
+    marginals, and commute exactly with independent dilution. Consequently every increasing
+    finite-cylinder event satisfies the LSS iid lower bound. The remaining headline 7.65
+    obligation is the regularity/monotone-class extension to every bounded increasing
+    measurable observable in the definition of `StochasticallyDominates`.
+
 ## Axiom Ledger
 
 Empty.

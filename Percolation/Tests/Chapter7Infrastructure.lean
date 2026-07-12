@@ -18,6 +18,7 @@ import Percolation.Bernoulli.LSSDilution
 import Percolation.Bernoulli.SequentialDominationEvents
 import Percolation.Bernoulli.LSSDilutionSequential
 import Percolation.Bernoulli.LSSInduction
+import Percolation.Bernoulli.LSSCountable
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.ExplorationLaw
@@ -422,6 +423,19 @@ example {n : ℕ} (G : SimpleGraph (Fin n)) (k B : ℕ)
     StochasticallyDominates μ
       setBer((Set.univ : Set (Fin n)), q) :=
   finite_lssDomination G k B hneighbor q hq μ hμ hmarginal
+
+example {V : Type*} (G : SimpleGraph V) (k : ℕ) (e : ℕ ≃ V) (n : ℕ)
+    (μ : Measure (Set V)) [IsProbabilityMeasure μ]
+    (hμ : KDependent G k μ) :
+    KDependent (enumerationPrefixDependencyGraph G k e n) 1
+      (enumerationPrefixLaw e n μ) :=
+  enumerationPrefixLaw_kDependent G k e n μ hμ
+
+example {V : Type*} (e : ℕ ≃ V) (n : ℕ)
+    (μ : Measure (Set V)) [IsProbabilityMeasure μ] (p : I) :
+    enumerationPrefixLaw e n (siteDilutionLaw μ p) =
+      siteDilutionLaw (enumerationPrefixLaw e n μ) p :=
+  enumerationPrefixLaw_siteDilutionLaw e n μ p
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

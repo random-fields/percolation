@@ -461,6 +461,40 @@ example {V : Type*} [Countable V] [DecidableEq V]
   · intro eta xi hetaxi heta
     exact heta.mono hetaxi
 
+/-- The literal source-facing LSS theorem returns one monotone function with the required
+limit, rather than choosing a new input threshold separately for each target density. -/
+example {V : Type*} [Countable V] [DecidableEq V]
+    (G : SimpleGraph V) (k B : ℕ) (e : ℕ ≃ V)
+    (hneighbor : ∀ n (current : Fin n),
+      (Finset.univ.filter fun x ↦
+        (enumerationPrefixDependencyGraph G k e n).edist current x ≤ 1).card ≤ B) :
+    ∃ pi : I → I,
+      Monotone pi ∧ Filter.Tendsto pi (nhds (1 : I)) (nhds (1 : I)) ∧
+      ∀ (delta : I) (mu : Measure (Set V)), IsProbabilityMeasure mu →
+        KDependent G k mu →
+        (∀ current : V,
+          (delta : ℝ) ≤ mu.real {eta : Set V | current ∈ eta}) →
+        StochasticallyDominates mu setBer((Set.univ : Set V), pi delta) :=
+  exists_lssDominationDensity G k B e hneighbor
+
+example (B : ℕ) : lssDominationDensityUnit B (1 : I) = 1 := by
+  ext
+  exact lssDominationDensityReal_one B
+
+example (B : ℕ) : lssDominationDensityUnit B (0 : I) = 0 :=
+  lssDominationDensityUnit_zero B
+
+example {V : Type*} [Countable V] [DecidableEq V]
+    (e : ℕ ≃ V) (mu : Measure (Set V)) [IsProbabilityMeasure mu]
+    (hmarginal : ∀ v : V, 1 ≤ mu.real {eta : Set V | v ∈ eta}) :
+    StochasticallyDominates mu setBer((Set.univ : Set V), (1 : I)) :=
+  stochasticallyDominates_setBernoulli_one_of_marginals e mu hmarginal
+
+example {V : Type*} [Countable V]
+    (mu : Measure (Set V)) [IsProbabilityMeasure mu] :
+    StochasticallyDominates mu setBer((Set.univ : Set V), (0 : I)) :=
+  stochasticallyDominates_setBernoulli_zero mu
+
 example (d k : ℕ) (e : ℕ ≃ Cubic d) :
     ∀ n (current : Fin n),
       (Finset.univ.filter fun x ↦

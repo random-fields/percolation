@@ -306,7 +306,7 @@ theorem exists_lssFiniteCylinderDominationThreshold
 /-- **Theorem 7.65 (Liggett--Schonmann--Stacey).**  For every target iid density below one,
 there is a marginal threshold below one such that every `k`-dependent site law satisfying
 that threshold dominates the target iid law. -/
-theorem exists_lssDominationDensity
+theorem exists_lssDominationThreshold
     {V : Type*} [Countable V] [DecidableEq V]
     (G : SimpleGraph V) (k B : ℕ) (e : ℕ ≃ V)
     (hneighbor : ∀ n (current : Fin n),

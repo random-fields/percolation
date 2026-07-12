@@ -54,4 +54,26 @@ theorem epsilonGoodBlockLaw_lss_stochasticallyDominates
   rw [epsilonGoodBlockLaw_real_mem_eq_origin]
   exact hmarginal
 
+/-- The literal LSS output function applied to the stationary `3d`-dependent good-block field.
+Only the origin marginal is needed because stationarity supplies all other one-site bounds. -/
+theorem epsilonGoodBlockLaw_lssDominationDensity_stochasticallyDominates
+    (d : ℕ) (hd : 0 < d) (p : I) (ε : ℝ) (n : ℕ) (hn : 1 ≤ n)
+    (delta : I)
+    (hmarginal :
+      (delta : ℝ) ≤ (epsilonGoodBlockLaw d p ε n).real
+        {η : Set (Cubic d) | cubicOrigin ∈ η}) :
+    StochasticallyDominates (epsilonGoodBlockLaw d p ε n)
+      setBer((Set.univ : Set (Cubic d)),
+        lssDominationDensityUnit (3 ^ d * (3 * d + 1) ^ d) delta) := by
+  apply lssDominationDensity_stochasticallyDominates
+    (cubicGraph d) (3 * d) (3 ^ d * (3 * d + 1) ^ d)
+    (cubicNatEquiv d hd)
+    (cubic_enumerationPrefixDependencyGraph_neighbor_card_le
+      d (3 * d) (cubicNatEquiv d hd))
+    delta (epsilonGoodBlockLaw d p ε n)
+    (epsilonGoodBlockLaw_kDependent d p ε hn)
+  intro current
+  rw [epsilonGoodBlockLaw_real_mem_eq_origin]
+  exact hmarginal
+
 end Percolation

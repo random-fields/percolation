@@ -1,4 +1,4 @@
-import Percolation.Bernoulli.LSSCountable
+import Percolation.Bernoulli.LSSDominationFunction
 import Percolation.Critical.Radius
 
 /-!
@@ -11,7 +11,7 @@ the abstract countable LSS construction.
 
 namespace Percolation
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Filter Topology
 open scoped unitInterval
 
 /-- A fixed enumeration of `ℤ^d` in every positive dimension. -/
@@ -125,7 +125,7 @@ theorem exists_cubic_lssFiniteCylinderDominationThreshold
       d k (cubicNatEquiv d hd)) q hq
 
 /-- Source-style threshold form of Theorem 7.65 on `ℤ^d`. -/
-theorem exists_cubic_lssDominationDensity
+theorem exists_cubic_lssDominationThreshold
     (d k : ℕ) (hd : 0 < d) (q : I) (hq : (q : ℝ) < 1) :
     ∃ delta : I, (delta : ℝ) < 1 ∧
       ∀ (mu : Measure (Set (Cubic d))), IsProbabilityMeasure mu →
@@ -134,9 +134,27 @@ theorem exists_cubic_lssDominationDensity
           (delta : ℝ) ≤
             mu.real {original : Set (Cubic d) | current ∈ original}) →
         StochasticallyDominates mu setBer((Set.univ : Set (Cubic d)), q) := by
-  exact exists_lssDominationDensity
+  exact exists_lssDominationThreshold
     (cubicGraph d) k (3 ^ d * (k + 1) ^ d) (cubicNatEquiv d hd)
     (cubic_enumerationPrefixDependencyGraph_neighbor_card_le
       d k (cubicNatEquiv d hd)) q hq
+
+/-- Literal function-valued form of Theorem 7.65 on `ℤ^d`: one monotone output-density
+function works at every input marginal density and tends to one at density one. -/
+theorem exists_cubic_lssDominationDensity
+    (d k : ℕ) (hd : 0 < d) :
+    ∃ pi : I → I,
+      Monotone pi ∧ Tendsto pi (𝓝 (1 : I)) (𝓝 (1 : I)) ∧
+      ∀ (delta : I) (mu : Measure (Set (Cubic d))), IsProbabilityMeasure mu →
+        KDependent (cubicGraph d) k mu →
+        (∀ current : Cubic d,
+          (delta : ℝ) ≤
+            mu.real {original : Set (Cubic d) | current ∈ original}) →
+        StochasticallyDominates mu
+          setBer((Set.univ : Set (Cubic d)), pi delta) := by
+  exact exists_lssDominationDensity
+    (cubicGraph d) k (3 ^ d * (k + 1) ^ d) (cubicNatEquiv d hd)
+    (cubic_enumerationPrefixDependencyGraph_neighbor_card_le
+      d k (cubicNatEquiv d hd))
 
 end Percolation

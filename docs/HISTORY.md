@@ -1048,10 +1048,20 @@ Dated milestones and anti-library notes.
     transported measurably to the compact Boolean product space; inner/outer regularity and two
     finite-subcover arguments insert an increasing finite union of positive cylinders between
     compact and open approximants. This proves the countable sequential criterion (7.64), the
-    full `lss_stochasticallyDominates`, and source-quantified `exists_lssDominationDensity`, with
+    full fixed-target `lss_stochasticallyDominates` and `exists_lssDominationThreshold`, with
     cubic and stationary good-block corollaries. A test applies the theorem to the increasing
     event of infinitely many occupied sites, which cannot have finite support. This work occurred
     after the tracker pause and therefore has no measured theorem telemetry.
+
+100. **Chapter 7 literal function-valued LSS theorem and adversarial repair (2026-07-12).** An
+    independent read-only review correctly rejected the earlier claim that
+    `∀ q < 1, ∃ δ < 1` had the literal quantifier order of Theorem 7.65. The repair constructs
+    one explicit monotone `lssDominationDensityUnit B : I → I`, proves its limit is one at input
+    density one, and proves simultaneous stochastic domination for every input density. The
+    zero-output branch is the universal all-closed comparison; the input-one branch proves that
+    countably many unit marginals concentrate the law on the all-open configuration. The failed
+    first-pass report is preserved unedited in the review record. This repair occurred after the
+    tracker pause and has no measured theorem telemetry.
 
 ## Axiom Ledger
 

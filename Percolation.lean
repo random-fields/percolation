@@ -22,6 +22,7 @@ import Percolation.Bernoulli.SequentialDominationEvents
 import Percolation.Bernoulli.LSSDilutionSequential
 import Percolation.Bernoulli.LSSInduction
 import Percolation.Bernoulli.LSSCountable
+import Percolation.Bernoulli.LSSDominationFunction
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.SequentialDominationRegularity

@@ -1347,4 +1347,10 @@ example {d m n : ℕ} {i : Fin d} (c : RestartRevealCellIndex d i m n)
     (c.dynamicThresholdProfile pc eta hpc heta htotal e : ℝ) ≤ pc + eta :=
   c.dynamicThresholdProfile_le pc eta hpc heta htotal e
 
+example {Omega C : Type*} [Fintype C]
+    (history : Set Omega) (realizedCell : Omega → C) :
+    (⋃ c ∈ (Finset.univ : Finset C),
+      exactRevealCellEvent history realizedCell c) = history :=
+  biUnion_univ_exactRevealCellEvent history realizedCell
+
 end Percolation

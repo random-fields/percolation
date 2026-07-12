@@ -12,7 +12,70 @@ allows later probability arguments to sum over it.
 
 namespace Percolation
 
+open MeasureTheory ProbabilityTheory
 open scoped unitInterval
+
+/-! ## Exact finite reveal fibers -/
+
+/-- The part of `history` on which a finite reveal algorithm returns the exact cell `c`. -/
+def exactRevealCellEvent {Omega C : Type*}
+    (history : Set Omega) (realizedCell : Omega → C) (c : C) : Set Omega :=
+  history ∩ {omega | realizedCell omega = c}
+
+theorem pairwiseDisjoint_exactRevealCellEvent
+    {Omega C : Type*} [DecidableEq C]
+    (cells : Finset C) (history : Set Omega) (realizedCell : Omega → C) :
+    Set.PairwiseDisjoint (cells : Set C)
+      (exactRevealCellEvent history realizedCell) := by
+  intro c _hc c' _hc' hcc'
+  change Disjoint (exactRevealCellEvent history realizedCell c)
+    (exactRevealCellEvent history realizedCell c')
+  rw [Set.disjoint_left]
+  intro omega homega homega'
+  exact hcc' (homega.2.symm.trans homega'.2)
+
+theorem iUnion_exactRevealCellEvent
+    {Omega C : Type*} [Fintype C]
+    (history : Set Omega) (realizedCell : Omega → C) :
+    (⋃ c : C, exactRevealCellEvent history realizedCell c) = history := by
+  ext omega
+  simp [exactRevealCellEvent]
+
+theorem biUnion_univ_exactRevealCellEvent
+    {Omega C : Type*} [Fintype C]
+    (history : Set Omega) (realizedCell : Omega → C) :
+    (⋃ c ∈ (Finset.univ : Finset C), exactRevealCellEvent history realizedCell c) =
+      history := by
+  simpa using iUnion_exactRevealCellEvent history realizedCell
+
+theorem measurableSet_exactRevealCellEvent
+    {Omega C : Type*} [MeasurableSpace Omega]
+    {history : Set Omega} {realizedCell : Omega → C}
+    (hHistory : MeasurableSet history)
+    (hFiber : ∀ c, MeasurableSet {omega | realizedCell omega = c}) (c : C) :
+    MeasurableSet (exactRevealCellEvent history realizedCell c) :=
+  hHistory.inter (hFiber c)
+
+/-- If every realized cell satisfies a decidable validity predicate, filtering the finite cell
+space to valid indices still covers the whole history. -/
+theorem biUnion_filter_exactRevealCellEvent
+    {Omega C : Type*} [Fintype C] [DecidableEq C]
+    (valid : C → Prop) [DecidablePred valid]
+    (history : Set Omega) (realizedCell : Omega → C)
+    (hvalid : ∀ omega ∈ history, valid (realizedCell omega)) :
+    (⋃ c ∈ (Finset.univ.filter valid), exactRevealCellEvent history realizedCell c) =
+      history := by
+  ext omega
+  constructor
+  · intro h
+    simp only [Set.mem_iUnion, exactRevealCellEvent, Set.mem_inter_iff,
+      Set.mem_setOf_eq] at h
+    obtain ⟨c, _hc, hhistory, _hcell⟩ := h
+    exact hhistory
+  · intro hhistory
+    apply Set.mem_iUnion_of_mem (realizedCell omega)
+    apply Set.mem_iUnion_of_mem (by simpa using hvalid omega hhistory)
+    exact ⟨hhistory, rfl⟩
 
 /-- Vertices available to an explored restart region. -/
 abbrev RestartBoxVertex (d n : ℕ) :=
@@ -212,5 +275,80 @@ noncomputable def orientedQuery
   beta := c.thresholdProfile base delta hbase hdelta hupper
 
 end RestartRevealCellIndex
+
+namespace AdaptiveSiteExploration
+
+variable {C : Type*} [Fintype C] [DecidableEq C]
+
+/-- Build one partitioned restart stage from an exact finite reveal algorithm.  The sole
+algorithm-specific semantic equation is `hcell`: on fiber `c`, the current exact history is the
+independent earlier information intersected with the closed boundary of `query c`. -/
+noncomputable def PartitionedOrientedRestartStage.ofFiniteRealization
+    {d m n : ℕ} {p : I} {delta epsilon : ℝ}
+    (history : Set (CubicEdge d → ℝ))
+    (realizedCell : (CubicEdge d → ℝ) → C)
+    (query : C → OrientedRestartQuery d)
+    (pastSupport : C → Finset (CubicEdge d))
+    (past : C → Set (CubicEdge d → ℝ))
+    (hpast : ∀ c, (MeasurableSet[coordSigma (CubicEdge d)
+      (pastSupport c : Set (CubicEdge d))] (past c)))
+    (hfresh : ∀ c, Disjoint (pastSupport c : Set (CubicEdge d))
+      ((query c).restartSupport m n : Set (CubicEdge d)))
+    (hcell : ∀ c,
+      past c ∩ (query c).boundaryHistoryEvent n =
+        exactRevealCellEvent history realizedCell c)
+    (hrestart : ∀ c,
+      (1 - epsilon) *
+          (couplingMeasure (CubicEdge d)).real
+            ((query c).boundaryHistoryEvent n) <
+        (couplingMeasure (CubicEdge d)).real
+          ((query c).successEvent m n p delta ∩
+            (query c).boundaryHistoryEvent n)) :
+    PartitionedOrientedRestartStage d C m n p delta epsilon where
+  cells := Finset.univ
+  query := query
+  pastSupport := pastSupport
+  past := past
+  past_measurable := fun c _hc => hpast c
+  fresh := fun c _hc => hfresh c
+  pairwise_cells := by
+    intro c hc c' hc' hcc'
+    change Disjoint (past c ∩ (query c).boundaryHistoryEvent n)
+      (past c' ∩ (query c').boundaryHistoryEvent n)
+    rw [hcell c, hcell c']
+    exact pairwiseDisjoint_exactRevealCellEvent Finset.univ history realizedCell
+      (Finset.mem_coe.mpr hc) (Finset.mem_coe.mpr hc') hcc'
+  restart_gt := fun c _hc => hrestart c
+
+theorem PartitionedOrientedRestartStage.cellUnion_ofFiniteRealization
+    {d m n : ℕ} {p : I} {delta epsilon : ℝ}
+    (history : Set (CubicEdge d → ℝ))
+    (realizedCell : (CubicEdge d → ℝ) → C)
+    (query : C → OrientedRestartQuery d)
+    (pastSupport : C → Finset (CubicEdge d))
+    (past : C → Set (CubicEdge d → ℝ))
+    (hpast : ∀ c, (MeasurableSet[coordSigma (CubicEdge d)
+      (pastSupport c : Set (CubicEdge d))] (past c)))
+    (hfresh : ∀ c, Disjoint (pastSupport c : Set (CubicEdge d))
+      ((query c).restartSupport m n : Set (CubicEdge d)))
+    (hcell : ∀ c,
+      past c ∩ (query c).boundaryHistoryEvent n =
+        exactRevealCellEvent history realizedCell c)
+    (hrestart : ∀ c,
+      (1 - epsilon) *
+          (couplingMeasure (CubicEdge d)).real
+            ((query c).boundaryHistoryEvent n) <
+        (couplingMeasure (CubicEdge d)).real
+          ((query c).successEvent m n p delta ∩
+            (query c).boundaryHistoryEvent n)) :
+    (PartitionedOrientedRestartStage.ofFiniteRealization history realizedCell query
+      pastSupport past hpast hfresh hcell hrestart).cellUnion = history := by
+  rw [PartitionedOrientedRestartStage.cellUnion]
+  change (⋃ c ∈ (Finset.univ : Finset C),
+    past c ∩ (query c).boundaryHistoryEvent n) = history
+  simp_rw [hcell]
+  exact biUnion_univ_exactRevealCellEvent history realizedCell
+
+end AdaptiveSiteExploration
 
 end Percolation

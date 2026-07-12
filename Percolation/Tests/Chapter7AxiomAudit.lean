@@ -455,3 +455,6 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.RestartRevealCellIndex.regionVertices_subset_box
 #print axioms Percolation.RestartRevealCellIndex.edgeMultiplicity_le
 #print axioms Percolation.RestartRevealCellIndex.dynamicThresholdProfile_le
+#print axioms Percolation.pairwiseDisjoint_exactRevealCellEvent
+#print axioms Percolation.biUnion_filter_exactRevealCellEvent
+#print axioms Percolation.AdaptiveSiteExploration.PartitionedOrientedRestartStage.cellUnion_ofFiniteRealization

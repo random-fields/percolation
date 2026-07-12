@@ -18,6 +18,8 @@ import Percolation.Bernoulli.UpwardDistance
 import Percolation.Bernoulli.StochasticDomination
 import Percolation.Bernoulli.LSSParameters
 import Percolation.Bernoulli.LSSDilution
+import Percolation.Bernoulli.SequentialDominationEvents
+import Percolation.Bernoulli.LSSDilutionSequential
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.TailZeroOne

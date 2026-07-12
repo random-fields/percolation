@@ -15,6 +15,8 @@ import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.LSSParameters
 import Percolation.Bernoulli.LSSDilution
+import Percolation.Bernoulli.SequentialDominationEvents
+import Percolation.Bernoulli.LSSDilutionSequential
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.ExplorationLaw
@@ -278,6 +280,13 @@ example {ι : Type*} [Countable ι] [DecidableEq ι]
     (siteDilutionLaw μ p).real {η : Set ι | x ∈ η} =
       μ.real {η : Set ι | x ∈ η} * (p : ℝ) :=
   siteDilutionLaw_real_mem μ p x
+
+example {n : ℕ} (μ : Measure (Set (Fin n))) [IsProbabilityMeasure μ]
+    (p : I) {a : ℝ}
+    (hY : HasLSSOriginalConditionalLowerBound μ p a)
+    (hZ : HasLSSRetentionFactorization μ p) :
+    HasFiniteSequentialLowerBound (siteDilutionLaw μ p) (a * (p : ℝ)) :=
+  hasFiniteSequentialLowerBound_siteDilutionLaw μ p hY hZ
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

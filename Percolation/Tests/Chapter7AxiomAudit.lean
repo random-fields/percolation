@@ -28,6 +28,8 @@ import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.LSSParameters
 import Percolation.Bernoulli.LSSDilution
+import Percolation.Bernoulli.SequentialDominationEvents
+import Percolation.Bernoulli.LSSDilutionSequential
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
@@ -505,3 +507,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.lss_parameter_selection
 #print axioms Percolation.siteDilutionLaw_real_mem
 #print axioms Percolation.stochasticallyDominates_siteDilutionLaw
+#print axioms Percolation.hasFiniteSequentialLowerBound_iff_event
+#print axioms Percolation.hasFiniteSequentialLowerBound_siteDilutionLaw

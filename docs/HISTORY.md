@@ -950,6 +950,17 @@ Dated milestones and anti-library notes.
     pairs `Y` with the subset `Z^pY`, proving the exact stochastic comparison `Y ≥st Z^pY`
     used before (7.116). The reverse comparison with iid density `ap` remains the LSS induction.
 
+86. **Chapter 7 event form of finite sequential domination (2026-07-12).** Identified the
+    atomic `boolPrefixMass` and `boolPrefixOpenMass` definitions exactly with probabilities of
+    literal finite prefix events. The finite ratio-free criterion (7.64) is now available as an
+    iff in event language, including null histories.
+
+87. **Chapter 7 dilution-to-sequential bridge (2026-07-12).** Encoded (7.117) as a ratio-free
+    lower bound for the original next coordinate after an exact diluted prefix and separated the
+    independent current retention-bit factor. Proved that these two statements imply the finite
+    sequential lower bound for `Z^pY` at density `ap`. The LSS induction must now derive the first
+    premise from `k`-dependence; iid coordinate independence must discharge the second.
+
 ## Axiom Ledger
 
 Empty.

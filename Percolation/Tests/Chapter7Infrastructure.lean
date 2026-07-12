@@ -31,6 +31,8 @@ import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
+import Percolation.Critical.DynamicSteering
+import Percolation.Critical.RootedSiteExploration
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -1018,5 +1020,38 @@ example (S : FiniteRevealSchedule (Fin 2))
     (hS : S.HasOverlapBound 7) (p eta : ℝ) (heta : 0 ≤ eta) (e : Fin 2) :
     S.accumulatedThreshold p (eta / 7) e ≤ p + eta := by
   simpa using S.accumulatedThreshold_le_add_budget (by norm_num) hS p eta heta e
+
+example (i : Fin 3) {m n : ℕ} {y : Cubic 3}
+    (hmn : 2 * m ≤ n) (hy : y ∈ seededBoundaryQuadrant 3 i n) :
+    cubicTranslateRegion cubicOrigin (canonicalBoundarySeedCenter i m n y)
+        (steeredPositiveBoundaryLayerRegion 3 i m n) ⊆
+      (grimmettMarstrandHalfwayBox 3 (m + n + 1) cubicOrigin (i, true) :
+        Set (Cubic 3)) :=
+  translated_steeredBoundaryLayer_subset_halfwayBox i hmn hy
+
+example (i : Fin 3) {m n : ℕ} {y : Cubic 3}
+    (hmn : 2 * m ≤ n) (hy : y ∈ seededBoundaryQuadrant 3 i n) :
+    cubicTranslateRegion cubicOrigin (canonicalBoundarySeedCenter i m n y)
+        (steeredPositiveRestartRegion 3 i m n) ⊆
+      (cubicMetricBox 3 cubicOrigin (2 * (m + n + 1)) : Set (Cubic 3)) ∪
+        (cubicMetricBox 3
+          (grimmettMarstrandSiteCenter (m + n + 1)
+            (cubicStepFrom cubicOrigin (i, true)))
+          (2 * (m + n + 1)) : Set (Cubic 3)) :=
+  translated_steeredRestartRegion_subset_endpointBoxes i hmn hy
+
+example :
+    (rootedSiteExploration (⊥ : SimpleGraph (Fin 1)) (fun _ ↦ ∅)
+      (by simp) 0).initial.WellFormed :=
+  rootedSiteExploration_initial_wellFormed
+    (⊥ : SimpleGraph (Fin 1)) (fun _ ↦ ∅) (by simp) 0
+
+example :
+    (rootedSiteExploration (⊥ : SimpleGraph (Fin 1)) (fun _ ↦ ∅)
+      (by simp) 0).OpenRootedAt 0
+        (rootedSiteExploration (⊥ : SimpleGraph (Fin 1)) (fun _ ↦ ∅)
+          (by simp) 0).initial :=
+  rootedSiteExploration_initial_openRootedAt
+    (⊥ : SimpleGraph (Fin 1)) (fun _ ↦ ∅) (by simp) 0
 
 end Percolation

@@ -25,6 +25,8 @@ import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
+import Percolation.Critical.DynamicSteering
+import Percolation.Critical.RootedSiteExploration
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -332,3 +334,10 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation
 #print axioms Percolation.FiniteRevealSchedule.accumulatedThreshold_le_of_overlapBound
 #print axioms Percolation.FiniteRevealSchedule.accumulatedThreshold_le_add_of_grimmettMarstrandOverlap
+#print axioms Percolation.translated_seedExplorationBox_subset_oldEndpointBox
+#print axioms Percolation.translated_steeredBoundaryLayer_subset_halfwayBox
+#print axioms Percolation.translated_steeredRestartRegion_subset_endpointBoxes
+#print axioms Percolation.mem_cubicRegionNeighborFinset_iff
+#print axioms Percolation.rootedSiteExploration_initial_wellFormed
+#print axioms Percolation.rootedSiteExploration_initial_openRootedAt
+#print axioms Percolation.cubicRegionSiteExploration_infinite_probability_pos

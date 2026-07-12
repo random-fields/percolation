@@ -20,18 +20,19 @@ open scoped ENNReal Finset unitInterval BigOperators
 /-- Independent product measures project along coordinate embeddings. This is the product-measure
 coupling behind dimension monotonicity: sampling all target coordinates and then forgetting the
 coordinates outside an embedded source has the same law as sampling the source directly. -/
-theorem infinitePi_map_precomp_embedding {α β : Type*} (f : α ↪ β)
-    (μ : β → Measure Prop) [∀ b, IsProbabilityMeasure (μ b)] :
-    (Measure.infinitePi μ).map (fun x : β → Prop ↦ fun a : α ↦ x (f a)) =
+theorem infinitePi_map_precomp_embedding
+    {α β gamma : Type*} [MeasurableSpace gamma] (f : α ↪ β)
+    (μ : β → Measure gamma) [∀ b, IsProbabilityMeasure (μ b)] :
+    (Measure.infinitePi μ).map (fun x : β → gamma ↦ fun a : α ↦ x (f a)) =
       Measure.infinitePi (fun a : α ↦ μ (f a)) := by
   classical
   refine Measure.eq_infinitePi (fun a : α ↦ μ (f a)) ?_
   intro s t ht
   rw [Measure.map_apply]
-  · let T : β → Set Prop := fun b ↦ if hb : b ∈ Set.range f then
+  · let T : β → Set gamma := fun b ↦ if hb : b ∈ Set.range f then
         t (Classical.choose hb) else Set.univ
     have hpre :
-        (fun x : β → Prop ↦ fun a : α ↦ x (f a)) ⁻¹'
+        (fun x : β → gamma ↦ fun a : α ↦ x (f a)) ⁻¹'
             Set.pi ((s : Finset α) : Set α) t =
           Set.pi (((s.map f : Finset β) : Set β)) T := by
       ext x

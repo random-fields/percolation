@@ -1,4 +1,5 @@
 import Percolation.Critical.HalfSpaceBricks
+import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -31,6 +32,8 @@ import Percolation.Critical.AdaptiveExploration
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.BlockSuccessComposition
 import Percolation.Critical.DynamicBlockParameters
+import Percolation.Critical.ExplorationHistory
+import Percolation.Bernoulli.CouplingSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -356,3 +359,15 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.pow_mul_measureReal_lt_of_step
 #print axioms Percolation.dynamicBlock_successFactor_gt_siteDensity
 #print axioms Percolation.FiniteRevealSchedule.accumulatedThreshold_le_dynamicBlockBudget
+#print axioms Percolation.AdaptiveSiteExploration.step_historyConsistent
+#print axioms Percolation.AdaptiveSiteExploration.cubicRegion_stateAfter_historyConsistent
+#print axioms Percolation.AdaptiveSiteExploration.historyInletParent_adj
+#print axioms Percolation.AdaptiveSiteExploration.cubicRegion_stateAfter_frontier_has_inlet
+#print axioms Percolation.cubicStepFrom_directionOfAdjacent
+#print axioms Percolation.AdaptiveSiteExploration.cubicStepFrom_historyInletParent_inletDirection
+#print axioms Percolation.infinitePi_map_precomp_embedding
+#print axioms Percolation.couplingMeasure_map_reindex
+#print axioms Percolation.couplingMeasure_real_preimage_cubicGraphIsoReindex
+#print axioms Percolation.cubicDirectionOrientationIso_origin
+#print axioms Percolation.cubicDirectionOrientationIso_positiveStep
+#print axioms Percolation.couplingMeasure_real_orientedTransportEvent

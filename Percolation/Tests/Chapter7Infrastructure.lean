@@ -28,6 +28,7 @@ import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
+import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
@@ -37,6 +38,8 @@ import Percolation.Critical.AdaptiveExploration
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.BlockSuccessComposition
 import Percolation.Critical.DynamicBlockParameters
+import Percolation.Critical.ExplorationHistory
+import Percolation.Bernoulli.CouplingSymmetry
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -1115,5 +1118,38 @@ example {pcSite : ℝ} (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
     hsite0 hsite1
   norm_num at h ⊢
   exact h
+
+example :
+    explorationHistoryAccepted ([(0, true), (1, false), (2, true)] :
+      List (Fin 3 × Bool)) = {0, 2} := by
+  decide
+
+example :
+    explorationHistoryRejected ([(0, true), (1, false), (2, true)] :
+      List (Fin 3 × Bool)) = {1} := by
+  decide
+
+example {alpha : Type*} {A : Set (alpha → ℝ)} (hA : MeasurableSet A) :
+    (couplingMeasure alpha).real
+        (couplingReindex (Equiv.refl alpha) ⁻¹' A) =
+      (couplingMeasure alpha).real A :=
+  couplingMeasure_real_preimage_reindex (Equiv.refl alpha) hA
+
+example (center : Cubic 3) (a : CubicDirection 3) :
+    cubicDirectionOrientationIso center a cubicOrigin = center :=
+  cubicDirectionOrientationIso_origin center a
+
+example (center : Cubic 3) (a : CubicDirection 3) :
+    cubicDirectionOrientationIso center a
+        (cubicStepFrom cubicOrigin (a.1, true)) =
+      cubicStepFrom center a :=
+  cubicDirectionOrientationIso_positiveStep center a
+
+example (center : Cubic 3) (a : CubicDirection 3)
+    {A : Set (CubicEdge 3 → ℝ)} (hA : MeasurableSet A) :
+    (couplingMeasure (CubicEdge 3)).real
+        (orientedCouplingTransportEvent center a A) =
+      (couplingMeasure (CubicEdge 3)).real A :=
+  couplingMeasure_real_orientedTransportEvent center a hA
 
 end Percolation

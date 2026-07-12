@@ -923,7 +923,7 @@ theorem seedConnection_probability_gt
     (d : ℕ) [NeZero d] (hd : 0 < d) (p : I)
     (htheta : 0 < theta d p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
     (i : Fin d) {epsilon : ℝ} (hepsilon : 0 < epsilon) :
-    ∃ m n : ℕ, 2 * m ≤ n ∧
+    ∃ m n : ℕ, 2 * m < n ∧
       1 - epsilon <
         (bernoulliBondMeasure d p).real (seedConnectionEvent d i m n) := by
   let delta : ℝ := epsilon / 2
@@ -947,9 +947,11 @@ theorem seedConnection_probability_gt
   obtain ⟨K, hK⟩ := hrEventually.exists
   let ell : ℕ := K * ((8 * m + 5) ^ d)
   have hcontactEventually := hmContacts ell
-  have hlargeEventually : ∀ᶠ n : ℕ in Filter.atTop, 2 * m ≤ n :=
-    Filter.Ici_mem_atTop (2 * m)
+  have hlargeEventually : ∀ᶠ n : ℕ in Filter.atTop, 2 * m < n := by
+    filter_upwards [Filter.Ici_mem_atTop (2 * m + 1)] with n hn
+    omega
   obtain ⟨n, hnContact, hmn⟩ := (hcontactEventually.and hlargeEventually).exists
+  have hmnLe : 2 * m ≤ n := hmn.le
   let A := orthantBoundaryContactCardGeEvent d m n
     (allPositiveBoxSurfaceOrthantIndex i) ell
   let mu := bernoulliBondMeasure d p
@@ -963,7 +965,7 @@ theorem seedConnection_probability_gt
   have hamp : mu.real (A ∩ (seedConnectionEvent d i m n)ᶜ) ≤
       mu.real A * r ^ K := by
     simpa [A, mu, ell, r, q, M] using
-      orthantContactGe_inter_seedConnection_compl_probability_le p i hmn (K := K)
+      orthantContactGe_inter_seedConnection_compl_probability_le p i hmnLe (K := K)
   have hAmpLt : mu.real (A ∩ (seedConnectionEvent d i m n)ᶜ) < delta := by
     calc
       mu.real (A ∩ (seedConnectionEvent d i m n)ᶜ) ≤ mu.real A * r ^ K := hamp

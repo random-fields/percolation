@@ -22,6 +22,7 @@ import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
+import Percolation.Critical.RestartGeometry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -320,3 +321,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.couplingMeasure_real_sprinkledFailure_inter_history_le
 #print axioms Percolation.sprinkledAvailableExit_inter_history_gt
 #print axioms Percolation.sprinkledAvailableExit_conditionalProbability_gt
+#print axioms Percolation.mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit
+#print axioms Percolation.one_sub_p_pow_mul_restartAvailableExit_few_probability_lt
+#print axioms Percolation.sprinkledRestart_inter_history_gt
+#print axioms Percolation.sprinkledRestart_conditionalProbability_gt

@@ -28,6 +28,7 @@ import Percolation.Critical.BoundaryContacts
 import Percolation.Critical.BoundaryOrthants
 import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
+import Percolation.Critical.RestartGeometry
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -924,7 +925,7 @@ example (i : Fin 3) {m n : ℕ} {y : Cubic 3}
 
 example (p : I) (hp : 0 < theta 3 p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
     (i : Fin 3) {epsilon : ℝ} (hepsilon : 0 < epsilon) :
-    ∃ m n : ℕ, 2 * m ≤ n ∧
+    ∃ m n : ℕ, 2 * m < n ∧
       1 - epsilon <
         (bernoulliBondMeasure 3 p).real (seedConnectionEvent 3 i m n) :=
   seedConnection_probability_gt 3 (by omega) p hp hp0 hp1 i hepsilon
@@ -958,5 +959,33 @@ example :
     (Finset.univ : Finset (Fin 2)) (fun _ => (0 : I)) (1 / 2 : ℝ) U 1 hU
       (by norm_num) (by norm_num) (by intro e he; norm_num) hexact
   simpa [U, fewAvailableExitsEvent] using h
+
+example {R K : Finset (Cubic 3)} {n : ℕ} {omega : EdgeConfiguration 3}
+    (hKR : Disjoint K R) :
+    omega ∈ regionConnectionToFiniteTargetEvent 3 R n K ↔
+      ∃ e ∈ regionAvailableExitEdges 3 R n K omega, e ∈ omega :=
+  mem_regionConnectionToFiniteTargetEvent_iff_exists_open_availableExit hKR
+
+example (i : Fin 3) (p : I) (hpTheta : 0 < theta 3 p)
+    (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
+    {epsilon delta : ℝ} (hepsilon : 0 < epsilon)
+    (hdelta : 0 < delta) (hdelta1 : delta ≤ 1) :
+    ∃ m n : ℕ, 2 * m < n ∧
+      ∀ (R : Finset (Cubic 3)) (beta : CubicEdge 3 → I),
+        cubicMetricBox 3 cubicOrigin m ⊆ R →
+        R ⊆ cubicMetricBox 3 cubicOrigin n →
+        RegionAvoidsSeededBoundaryQuadrant 3 i n R →
+        (∀ e ∈ cubicRegionBoundaryEdgesWithinBox 3 R n,
+          (beta e : ℝ) + delta ≤ 1) →
+        (1 - epsilon) *
+            (couplingMeasure (CubicEdge 3)).real
+              (boundaryClosedHistoryEvent
+                (cubicRegionBoundaryEdgesWithinBox 3 R n) beta) <
+          (couplingMeasure (CubicEdge 3)).real
+            (sprinkledRestartEvent 3 i m n R p beta delta ∩
+              boundaryClosedHistoryEvent
+                (cubicRegionBoundaryEdgesWithinBox 3 R n) beta) :=
+  sprinkledRestart_inter_history_gt 3 (by omega) i p hpTheta hp0 hp1
+    hepsilon hdelta hdelta1
 
 end Percolation

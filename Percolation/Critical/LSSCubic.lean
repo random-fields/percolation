@@ -14,6 +14,13 @@ namespace Percolation
 open MeasureTheory ProbabilityTheory
 open scoped unitInterval
 
+/-- A fixed enumeration of `ℤ^d` in every positive dimension. -/
+noncomputable def cubicNatEquiv (d : ℕ) (hd : 0 < d) : ℕ ≃ Cubic d := by
+  letI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp hd
+  letI : Infinite (Cubic d) := Pi.infinite_of_right
+  letI : Denumerable (Cubic d) := Denumerable.ofEncodableOfInfinite (Cubic d)
+  exact Denumerable.equiv₂ ℕ (Cubic d)
+
 /-- The cubic graph-metric ball covers every vertex at extended distance at most `k`. -/
 theorem mem_cubicMetricBall_of_edist_le
     {d k : ℕ} {x y : Cubic d}
@@ -56,5 +63,20 @@ theorem cubic_lss_finiteCylinder_measureReal_le
     (cubicGraph d) k (3 ^ d * (k + 1) ^ d) e
     (cubic_enumerationPrefixDependencyGraph_neighbor_card_le d k e)
     q hq mu hmu hmarginal hdep hinc
+
+/-- Source-facing positive-dimensional form with the canonical cubic enumeration hidden. -/
+theorem cubic_lss_finiteCylinder_measureReal_le'
+    (d k : ℕ) (hd : 0 < d)
+    (q : I) (hq : (q : ℝ) < 1)
+    (mu : Measure (Set (Cubic d))) [IsProbabilityMeasure mu]
+    (hmu : KDependent (cubicGraph d) k mu)
+    (hmarginal : ∀ current : Cubic d,
+      (lssMarginalThresholdUnit (3 ^ d * (k + 1) ^ d) q hq : ℝ) ≤
+        mu.real {original : Set (Cubic d) | current ∈ original})
+    {R : Finset (Cubic d)} {A : Set (Set (Cubic d))}
+    (hdep : DependsOn R A) (hinc : IsIncreasingEvent A) :
+    setBer((Set.univ : Set (Cubic d)), q).real A ≤ mu.real A :=
+  cubic_lss_finiteCylinder_measureReal_le
+    d k (cubicNatEquiv d hd) q hq mu hmu hmarginal hdep hinc
 
 end Percolation

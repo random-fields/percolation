@@ -1021,6 +1021,13 @@ Dated milestones and anti-library notes.
     `cubic_lss_finiteCylinder_measureReal_le` theorem with no ad hoc prefix-cardinality
     hypothesis. This is the form needed by finite-support good-block crossing events.
 
+96. **Chapter 7 good-block LSS application (2026-07-12).** Combined stationarity of the
+    `ε`-good block field, its proved `3d`-dependence, and the cubic neighborhood bound. A
+    single origin marginal bound now implies iid domination for every increasing
+    finite-cylinder event of the good-block law. This closes the precise LSS input needed by
+    finite coarse crossing events while keeping the still-missing all-observable extension of
+    headline Theorem 7.65 explicit.
+
 ## Axiom Ledger
 
 Empty.

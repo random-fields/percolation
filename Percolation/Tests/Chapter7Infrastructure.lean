@@ -30,6 +30,7 @@ import Percolation.Critical.RegionSymmetry
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.LSSCubic
+import Percolation.Critical.LSSGoodBlocks
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
@@ -444,6 +445,19 @@ example (d k : ℕ) (e : ℕ ≃ Cubic d) :
         (enumerationPrefixDependencyGraph (cubicGraph d) k e n).edist current x ≤ 1).card ≤
         3 ^ d * (k + 1) ^ d :=
   cubic_enumerationPrefixDependencyGraph_neighbor_card_le d k e
+
+example (d : ℕ) (hd : 0 < d) (p q : I) (ε : ℝ) (n : ℕ) (hn : 1 ≤ n)
+    (hq : (q : ℝ) < 1)
+    (hmarginal :
+      (lssMarginalThresholdUnit (3 ^ d * (3 * d + 1) ^ d) q hq : ℝ) ≤
+        (epsilonGoodBlockLaw d p ε n).real
+          {η : Set (Cubic d) | cubicOrigin ∈ η})
+    {R : Finset (Cubic d)} {A : Set (Set (Cubic d))}
+    (hdep : DependsOn R A) (hinc : IsIncreasingEvent A) :
+    setBer((Set.univ : Set (Cubic d)), q).real A ≤
+      (epsilonGoodBlockLaw d p ε n).real A :=
+  epsilonGoodBlockLaw_lss_finiteCylinder_measureReal_le
+    d hd p q ε n hn hq hmarginal hdep hinc
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

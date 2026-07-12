@@ -13,6 +13,7 @@ import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
+import Percolation.Bernoulli.LSSParameters
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.ExplorationLaw
@@ -255,6 +256,16 @@ example {ι : Type*} [Countable ι] {p q : I} (hpq : p ≤ q) :
     StochasticallyDominates setBer((Set.univ : Set ι), q)
       setBer((Set.univ : Set ι), p) :=
   setBernoulli_stochasticallyDominates hpq
+
+/-- The numerical LSS choice is independently testable before the dilution induction. -/
+example (B : ℕ) (q : I) (hq : (q : ℝ) < 1) :
+    let a := lssAuxiliaryDensity (q : ℝ)
+    let δ := lssMarginalThresholdUnit B q hq
+    0 < a ∧ a < 1 ∧ (q : ℝ) ≤ a * a ∧ (δ : ℝ) < 1 ∧
+      ∀ θ : I, δ ≤ θ →
+        1 - (θ : ℝ) ≤ (1 - a) * (1 - a) ^ B ∧
+        1 - (θ : ℝ) ≤ (1 - a) * a ^ B :=
+  lss_parameter_selection B q hq
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

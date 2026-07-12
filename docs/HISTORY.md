@@ -927,15 +927,22 @@ Dated milestones and anti-library notes.
     union of coordinate supports read while replaying an adaptive Boolean history. Pointwise
     answer-fiber support certificates now imply coordinate-sigma measurability of the complete
     exact history cell. A recursive freshness predicate proves that if every earlier prefix
-    query is fresh from the current restart, then their whole union is fresh. This reduces the
-    remaining Theorem 7.2 history-law gap to the concrete block-placement disjointness proof.
+    query is fresh from the current restart, then their whole union is fresh. Later direct
+    source review showed this is a sufficient special case, not the final Theorem 7.2 route:
+    equations (7.31)--(7.34) intentionally reuse some coordinates at larger thresholds.
 
 83. **Chapter 7 multi-restart outer-history support (2026-07-12).** Added the finite union of
     supports read by the first `j` restart stages and combined it with the exact adaptive coarse
     history support. The literal outer event appearing in the partitioned-program equation is
-    measurable on this union. A bundled freshness predicate reduces disjointness of the outer
-    support to disjointness of each earlier restart and each earlier coarse query. No conditional
-    probability or infinite support is introduced.
+    measurable on this union. A bundled freshness predicate proves the genuinely disjoint case.
+    It is not applied to overlapping source stages: those require the current-coordinate interval
+    information to be factored into the reveal cell before an independence argument.
+
+84. **Chapter 7 explicit LSS numerical parameters (2026-07-12).** Formalized the parameter
+    choice behind (7.114)--(7.115). For any desired iid density `q<1` and finite dependence
+    neighbourhood cardinality `B`, the explicit auxiliary choice `a=p=(1+q)/2` has product at
+    least `q`; an explicit marginal threshold strictly below one makes both source inequalities
+    hold uniformly. The probabilistic dilution induction of Theorem 7.65 remains separate.
 
 ## Axiom Ledger
 

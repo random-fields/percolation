@@ -109,6 +109,15 @@ theorem measurableSet_boundaryClosedHistoryEvent_coordSigma {iota : Type*}
   exact MeasurableSet.biInter E.countable_toSet fun e he =>
     measurable_eval_coordSigma he measurableSet_Ici
 
+theorem boundaryClosedHistoryEvent_congr_of_eqOn
+    {iota : Type*} {E : Finset iota} {beta : iota → I}
+    {X Y : iota → ℝ} (hXY : ∀ e ∈ E, X e = Y e) :
+    X ∈ boundaryClosedHistoryEvent E beta ↔
+      Y ∈ boundaryClosedHistoryEvent E beta := by
+  constructor <;> intro h e heE
+  · simpa [hXY e heE] using h e heE
+  · simpa [hXY e heE] using h e heE
+
 /-- Exact mass of the heterogeneous closed-boundary history. -/
 theorem couplingMeasure_boundaryClosedHistoryEvent
     {iota : Type*} (E : Finset iota) (beta : iota → I) :

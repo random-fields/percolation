@@ -37,6 +37,7 @@ import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
+import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
@@ -1308,5 +1309,17 @@ example {Omega : Type*} (d : ℕ) (F : Set (Cubic d)) [LinearOrder F]
         answer (cubicRegionMetricSphere d F root n) :=
   SiteExploration.cubicRegionBall_adaptiveLimitTargetHitEvent_subset
     d F root n answer
+
+example {V Omega : Type*}
+    (success : List (V × Bool) → V → Set Omega)
+    (history : List (V × Bool)) (v : V) :
+    AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
+        (AdaptiveSiteExploration.eventAdaptiveAnswer success)
+        (history ++ [(v, true)]) =
+      AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
+          (AdaptiveSiteExploration.eventAdaptiveAnswer success) history ∩
+        success history v :=
+  AdaptiveSiteExploration.adaptiveAnswerHistoryEvent_eventAdaptiveAnswer_append_true
+    success history v
 
 end Percolation

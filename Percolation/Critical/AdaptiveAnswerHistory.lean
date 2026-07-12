@@ -209,6 +209,56 @@ theorem eventAdaptiveAnswer_eq_false_iff
       omega ∉ success history v := by
   simp [eventAdaptiveAnswer]
 
+/-- Extending an event-generated adaptive history by `true` is exactly intersection with the
+history-indexed success event used for that query.  This is the event-level junction between the
+oriented restart estimate of Lemma 7.17 and the ratio-free hypothesis of Lemma 7.24. -/
+theorem adaptiveAnswerHistoryEvent_eventAdaptiveAnswer_append_true
+    (success : List (V × Bool) → V → Set Omega)
+    (history : List (V × Bool)) (v : V) :
+    adaptiveAnswerHistoryEvent (eventAdaptiveAnswer success)
+        (history ++ [(v, true)]) =
+      adaptiveAnswerHistoryEvent (eventAdaptiveAnswer success) history ∩
+        success history v := by
+  rw [adaptiveAnswerHistoryEvent_append_singleton]
+  ext omega
+  simp
+
+/-- A ratio-free lower bound for every success event on its literal generated history cell
+produces the exact adaptive-answer lower-bound interface consumed by Lemma 7.24. -/
+theorem hasAdaptiveAnswerLowerBoundOn_eventAdaptiveAnswer
+    [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    (success : List (V × Bool) → V → Set Omega)
+    (admissible : List (V × Bool) → V → Prop) (q : ℝ)
+    (hlower : ∀ history v, admissible history v →
+      q * mu.real
+          (adaptiveAnswerHistoryEvent (eventAdaptiveAnswer success) history) ≤
+        mu.real
+          (success history v ∩
+            adaptiveAnswerHistoryEvent (eventAdaptiveAnswer success) history)) :
+    HasAdaptiveAnswerLowerBoundOn mu (eventAdaptiveAnswer success) admissible q := by
+  intro history v hadmissible
+  rw [adaptiveAnswerHistoryEvent_eventAdaptiveAnswer_append_true]
+  rw [Set.inter_comm]
+  exact hlower history v hadmissible
+
+/-- Strict restart estimates imply the weak ratio-free inequalities expected by the exploration
+kernel.  The strict premise is deliberately retained because Lemma 7.17 supplies it directly. -/
+theorem hasAdaptiveAnswerLowerBoundOn_eventAdaptiveAnswer_of_strict
+    [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    (success : List (V × Bool) → V → Set Omega)
+    (admissible : List (V × Bool) → V → Prop) (q : ℝ)
+    (hlower : ∀ history v, admissible history v →
+      q * mu.real
+          (adaptiveAnswerHistoryEvent (eventAdaptiveAnswer success) history) <
+        mu.real
+          (success history v ∩
+            adaptiveAnswerHistoryEvent (eventAdaptiveAnswer success) history)) :
+    HasAdaptiveAnswerLowerBoundOn mu (eventAdaptiveAnswer success) admissible q :=
+  hasAdaptiveAnswerLowerBoundOn_eventAdaptiveAnswer success admissible q fun history v hv ↦
+    (hlower history v hv).le
+
 end AdaptiveSiteExploration
 
 end Percolation

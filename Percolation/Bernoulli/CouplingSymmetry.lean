@@ -91,6 +91,34 @@ theorem measurableSet_cubicGraphIsoCouplingTransportEvent
     MeasurableSet (cubicGraphIsoCouplingTransportEvent phi A) :=
   hA.preimage (measurable_cubicGraphIsoCouplingReindex phi)
 
+/-- Finite coordinate support transports by the edge permutation induced by a graph
+automorphism. -/
+theorem cubicGraphIsoCouplingTransportEvent_congr_of_eqOn_image
+    {d : ℕ} (phi : cubicGraph d ≃g cubicGraph d)
+    {S : Finset (CubicEdge d)} {A : Set (CubicEdge d → ℝ)}
+    (hA : ∀ X Y : CubicEdge d → ℝ, (∀ e ∈ S, X e = Y e) → (X ∈ A ↔ Y ∈ A))
+    {X Y : CubicEdge d → ℝ}
+    (hXY : ∀ e ∈ S.image phi.mapEdgeSet, X e = Y e) :
+    X ∈ cubicGraphIsoCouplingTransportEvent phi A ↔
+      Y ∈ cubicGraphIsoCouplingTransportEvent phi A := by
+  apply hA
+  intro e heS
+  exact hXY (phi.mapEdgeSet e) (Finset.mem_image.mpr ⟨e, heS, rfl⟩)
+
+theorem measurableSet_cubicGraphIsoCouplingTransportEvent_coordSigma
+    {d : ℕ} (phi : cubicGraph d ≃g cubicGraph d)
+    (S : Finset (CubicEdge d)) {A : Set (CubicEdge d → ℝ)}
+    (hAmeas : MeasurableSet A)
+    (hA : ∀ X Y : CubicEdge d → ℝ, (∀ e ∈ S, X e = Y e) → (X ∈ A ↔ Y ∈ A)) :
+    MeasurableSet[coordSigma (CubicEdge d)
+      (S.image phi.mapEdgeSet : Set (CubicEdge d))]
+      (cubicGraphIsoCouplingTransportEvent phi A) := by
+  apply measurableSet_coordSigma_of_eqOn
+    (measurableSet_cubicGraphIsoCouplingTransportEvent phi hAmeas)
+  intro X Y hXY
+  exact cubicGraphIsoCouplingTransportEvent_congr_of_eqOn_image phi hA
+    (fun e he => hXY e he)
+
 theorem cubicGraphIsoCouplingTransportEvent_inter
     {d : ℕ} (phi : cubicGraph d ≃g cubicGraph d)
     (A H : Set (CubicEdge d → ℝ)) :

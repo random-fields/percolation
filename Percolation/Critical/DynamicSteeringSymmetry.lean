@@ -11,6 +11,7 @@ arbitrary block center, while `CouplingSymmetry` preserves the common-uniform pr
 
 namespace Percolation
 
+open MeasureTheory ProbabilityTheory
 open scoped unitInterval
 
 /-- Flip exactly the selected coordinate when the requested direction is negative. -/
@@ -208,6 +209,28 @@ def orientedSprinkledRestartEvent
   orientedCouplingTransportEvent center a
     (sprinkledRestartEvent d a.1 m n R p beta delta)
 
+/-- Literal finite set of uniform-label coordinates read by an oriented restart. -/
+noncomputable def orientedRestartSupport
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d) (m n : ℕ)
+    (R : Finset (Cubic d)) :
+    Finset (CubicEdge d) :=
+  (restartEventSupport d a.1 m n R).image
+    (cubicDirectionOrientationIso center a).mapEdgeSet
+
+theorem measurableSet_orientedSprinkledRestartEvent_coordSigma
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (m n : ℕ) (R : Finset (Cubic d))
+    (p : I) (beta : CubicEdge d → I) (delta : ℝ) :
+    MeasurableSet[coordSigma (CubicEdge d)
+      (orientedRestartSupport center a m n R : Set (CubicEdge d))]
+      (orientedSprinkledRestartEvent center a m n R p beta delta) := by
+  apply measurableSet_cubicGraphIsoCouplingTransportEvent_coordSigma
+    (cubicDirectionOrientationIso center a) (restartEventSupport d a.1 m n R)
+    (measurableSet_sprinkledRestartEvent d a.1 m n R p beta delta)
+  intro X Y hXY
+  exact sprinkledRestartEvent_congr_of_eqOn_restartEventSupport
+    (fun e he => hXY e he)
+
 /-- Oriented copy of the corresponding reference closed-boundary history. -/
 def orientedBoundaryClosedHistoryEvent
     {d : ℕ} (center : Cubic d) (a : CubicDirection d)
@@ -215,6 +238,39 @@ def orientedBoundaryClosedHistoryEvent
     Set (CubicEdge d → ℝ) :=
   orientedCouplingTransportEvent center a
     (boundaryClosedHistoryEvent (cubicRegionBoundaryEdgesWithinBox d R n) beta)
+
+/-- Coordinates of the transported boundary cell used by an oriented restart. -/
+noncomputable def orientedBoundaryHistorySupport
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (n : ℕ) : Finset (CubicEdge d) :=
+  (cubicRegionBoundaryEdgesWithinBox d R n).image
+    (cubicDirectionOrientationIso center a).mapEdgeSet
+
+theorem orientedBoundaryHistorySupport_subset_restartSupport
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) :
+    orientedBoundaryHistorySupport center a R n ⊆
+      orientedRestartSupport center a m n R := by
+  intro e he
+  rw [orientedBoundaryHistorySupport, Finset.mem_image] at he
+  obtain ⟨f, hf, rfl⟩ := he
+  rw [orientedRestartSupport, Finset.mem_image]
+  exact ⟨f,
+    boundary_subset_restartEventSupport d a.1 m n R hf,
+    rfl⟩
+
+theorem measurableSet_orientedBoundaryClosedHistoryEvent_coordSigma
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (n : ℕ) (beta : CubicEdge d → I) :
+    MeasurableSet[coordSigma (CubicEdge d)
+      (orientedBoundaryHistorySupport center a R n : Set (CubicEdge d))]
+      (orientedBoundaryClosedHistoryEvent center a R n beta) := by
+  apply measurableSet_cubicGraphIsoCouplingTransportEvent_coordSigma
+    (cubicDirectionOrientationIso center a)
+    (cubicRegionBoundaryEdgesWithinBox d R n)
+    (measurableSet_boundaryClosedHistoryEvent _ beta)
+  intro X Y hXY
+  exact boundaryClosedHistoryEvent_congr_of_eqOn (fun e he => hXY e he)
 
 /-- Ratio-free restart bounds transport to every block center and signed inlet direction. -/
 theorem orientedSprinkledRestart_inter_history_gt
@@ -253,5 +309,50 @@ theorem orientedSprinkledRestart_inter_history_gt
     couplingMeasure_real_cubicGraphIsoTransportEvent
       (cubicDirectionOrientationIso center a) (hG.inter hH)]
   exact h
+
+/-- A fresh oriented restart keeps its ratio-free lower bound after adjoining any earlier
+history cell supported on disjoint uniform-label coordinates.  This is the exact form consumed
+by an event-generated adaptive answer: the earlier cell may have zero mass. -/
+theorem orientedSprinkledRestart_inter_past_history_ge
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (p : I) (beta : CubicEdge d → I)
+    (delta epsilon : ℝ)
+    (pastSupport : Finset (CubicEdge d)) (past : Set (CubicEdge d → ℝ))
+    (hpast : MeasurableSet[coordSigma (CubicEdge d)
+      (pastSupport : Set (CubicEdge d))] past)
+    (hfresh : Disjoint (pastSupport : Set (CubicEdge d))
+      (orientedRestartSupport center a m n R : Set (CubicEdge d)))
+    (h : (1 - epsilon) *
+        (couplingMeasure (CubicEdge d)).real
+          (orientedBoundaryClosedHistoryEvent center a R n beta) <
+      (couplingMeasure (CubicEdge d)).real
+        (orientedSprinkledRestartEvent center a m n R p beta delta ∩
+          orientedBoundaryClosedHistoryEvent center a R n beta)) :
+    (1 - epsilon) *
+        (couplingMeasure (CubicEdge d)).real
+          (past ∩ orientedBoundaryClosedHistoryEvent center a R n beta) ≤
+      (couplingMeasure (CubicEdge d)).real
+        (orientedSprinkledRestartEvent center a m n R p beta delta ∩
+          (past ∩ orientedBoundaryClosedHistoryEvent center a R n beta)) := by
+  let restartSupport := orientedRestartSupport center a m n R
+  let G := orientedSprinkledRestartEvent center a m n R p beta delta
+  let H := orientedBoundaryClosedHistoryEvent center a R n beta
+  have hG : MeasurableSet[coordSigma (CubicEdge d)
+      (restartSupport : Set (CubicEdge d))] G := by
+    exact measurableSet_orientedSprinkledRestartEvent_coordSigma
+      center a m n R p beta delta
+  have hHsmall : MeasurableSet[coordSigma (CubicEdge d)
+      (orientedBoundaryHistorySupport center a R n : Set (CubicEdge d))] H := by
+    exact measurableSet_orientedBoundaryClosedHistoryEvent_coordSigma
+      center a R n beta
+  have hH : MeasurableSet[coordSigma (CubicEdge d)
+      (restartSupport : Set (CubicEdge d))] H :=
+    (coordSigma_mono fun e he =>
+      orientedBoundaryHistorySupport_subset_restartSupport center a R he) H hHsmall
+  have hpastH : IndepSet past H (couplingMeasure (CubicEdge d)) :=
+    indepSet_of_measurableSet_coordSigma_of_disjoint hfresh hpast hH
+  have hpastGH : IndepSet past (G ∩ H) (couplingMeasure (CubicEdge d)) :=
+    indepSet_of_measurableSet_coordSigma_of_disjoint hfresh hpast (hG.inter hH)
+  exact mul_measureReal_inter_le_inter_of_indepSet hpastH hpastGH h.le
 
 end Percolation

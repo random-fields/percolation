@@ -98,4 +98,74 @@ theorem pow_mul_measureReal_lt_of_step
               (ih (by omega) (fun j hj ↦ hstep j (by omega))) ha
           _ < mu.real (history (k + 1)) := hstep k (by omega)
 
+/-- A ratio-free restart bound remains valid after intersecting with an independent piece of
+the earlier exploration history.  Both independence hypotheses are explicit: the past must be
+independent of the boundary cell itself and of the successful part of that cell.  This is the
+finite-support factorization used when a fresh oriented restart is appended to a dynamic block
+history. -/
+theorem mul_measureReal_inter_le_inter_of_indepSet
+    {Omega : Type*} [MeasurableSpace Omega]
+    {mu : Measure Omega} [IsFiniteMeasure mu]
+    {past history success : Set Omega} {q : ℝ}
+    (hpastHistory : IndepSet past history mu)
+    (hpastSuccessHistory : IndepSet past (success ∩ history) mu)
+    (hlower : q * mu.real history ≤ mu.real (success ∩ history)) :
+    q * mu.real (past ∩ history) ≤
+      mu.real (success ∩ (past ∩ history)) := by
+  have hPastHistory :
+      mu.real (past ∩ history) = mu.real past * mu.real history := by
+    have h := congrArg ENNReal.toReal hpastHistory.measure_inter_eq_mul
+    simpa [Measure.real, ENNReal.toReal_mul] using h
+  have hPastSuccessHistory :
+      mu.real (past ∩ (success ∩ history)) =
+        mu.real past * mu.real (success ∩ history) := by
+    have h := congrArg ENNReal.toReal hpastSuccessHistory.measure_inter_eq_mul
+    simpa [Measure.real, ENNReal.toReal_mul] using h
+  rw [hPastHistory]
+  calc
+    q * (mu.real past * mu.real history) =
+        mu.real past * (q * mu.real history) := by ring
+    _ ≤ mu.real past * mu.real (success ∩ history) :=
+      mul_le_mul_of_nonneg_left hlower (measureReal_nonneg)
+    _ = mu.real (past ∩ (success ∩ history)) := hPastSuccessHistory.symm
+    _ = mu.real (success ∩ (past ∩ history)) := by
+      congr 1
+      ext omega
+      simp only [Set.mem_inter_iff]
+      tauto
+
+/-- Strict form of `mul_measureReal_inter_le_inter_of_indepSet`.  Positivity of the past cell is
+necessary and is stated rather than silently inferred from a conditional-probability notation. -/
+theorem mul_measureReal_inter_lt_inter_of_indepSet
+    {Omega : Type*} [MeasurableSpace Omega]
+    {mu : Measure Omega} [IsFiniteMeasure mu]
+    {past history success : Set Omega} {q : ℝ}
+    (hpastHistory : IndepSet past history mu)
+    (hpastSuccessHistory : IndepSet past (success ∩ history) mu)
+    (hpast : 0 < mu.real past)
+    (hlower : q * mu.real history < mu.real (success ∩ history)) :
+    q * mu.real (past ∩ history) <
+      mu.real (success ∩ (past ∩ history)) := by
+  have hPastHistory :
+      mu.real (past ∩ history) = mu.real past * mu.real history := by
+    have h := congrArg ENNReal.toReal hpastHistory.measure_inter_eq_mul
+    simpa [Measure.real, ENNReal.toReal_mul] using h
+  have hPastSuccessHistory :
+      mu.real (past ∩ (success ∩ history)) =
+        mu.real past * mu.real (success ∩ history) := by
+    have h := congrArg ENNReal.toReal hpastSuccessHistory.measure_inter_eq_mul
+    simpa [Measure.real, ENNReal.toReal_mul] using h
+  rw [hPastHistory]
+  calc
+    q * (mu.real past * mu.real history) =
+        mu.real past * (q * mu.real history) := by ring
+    _ < mu.real past * mu.real (success ∩ history) :=
+      mul_lt_mul_of_pos_left hlower hpast
+    _ = mu.real (past ∩ (success ∩ history)) := hPastSuccessHistory.symm
+    _ = mu.real (success ∩ (past ∩ history)) := by
+      congr 1
+      ext omega
+      simp only [Set.mem_inter_iff]
+      tauto
+
 end Percolation

@@ -153,6 +153,37 @@ theorem walkIsOpen_diff_regionBoundary_of_exterior
     (disjoint_cubicRegionExteriorEdgesWithinBox_boundary d R n)
       heExterior heBoundary
 
+/-- Coordinates used only by the boundary target and its seed, excluding all edges of the
+exploratory box. -/
+noncomputable def seededBoundaryTargetSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) : Finset (CubicEdge d) :=
+  seedConnectionSupport d i m n \ cubicBoxEdges d cubicOrigin n
+
+/-- Exact finite support of one restart after the explored region `R` is frozen: its boundary,
+the as-yet-unexplored exterior box edges, and the target-seed coordinates beyond the box.  In
+particular, already revealed edges strictly inside `R` are not charged again. -/
+noncomputable def restartEventSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) :
+    Finset (CubicEdge d) :=
+  cubicRegionBoundaryEdgesWithinBox d R n ∪
+    cubicRegionExteriorEdgesWithinBox d R n ∪
+      seededBoundaryTargetSupport d i m n
+
+theorem boundary_subset_restartEventSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) :
+    cubicRegionBoundaryEdgesWithinBox d R n ⊆ restartEventSupport d i m n R := by
+  exact Finset.subset_union_left.trans Finset.subset_union_left
+
+theorem exterior_subset_restartEventSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) :
+    cubicRegionExteriorEdgesWithinBox d R n ⊆ restartEventSupport d i m n R := by
+  exact Finset.subset_union_right.trans Finset.subset_union_left
+
+theorem target_subset_restartEventSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) :
+    seededBoundaryTargetSupport d i m n ⊆ restartEventSupport d i m n R :=
+  Finset.subset_union_right
+
 /-- Finite version of the random target set `K(m,n)`. -/
 noncomputable def seededBoundaryPointFinset
     (d : ℕ) (i : Fin d) (m n : ℕ) (omega : EdgeConfiguration d) : Finset (Cubic d) := by
@@ -172,6 +203,72 @@ theorem mem_seededBoundaryPointFinset_iff
   · intro hy
     exact ⟨hy.1, hy⟩
 
+theorem cubicBoxEdges_subset_seedConnectionSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) :
+    cubicBoxEdges d cubicOrigin n ⊆ seedConnectionSupport d i m n := by
+  intro e he
+  rw [seedConnectionSupport]
+  exact Finset.mem_union_left _ (Finset.mem_union_left _ he)
+
+theorem cubicRegionBoundaryEdgesWithinBox_subset_seedConnectionSupport
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) :
+    cubicRegionBoundaryEdgesWithinBox d R n ⊆ seedConnectionSupport d i m n := by
+  intro e he
+  exact cubicBoxEdges_subset_seedConnectionSupport d i m n
+    (mem_cubicRegionBoundaryEdgesWithinBox_iff.mp he).1
+
+/-- The target predicate `y ∈ K(m,n)` is decided by the same finite support as the complete
+seeded connection event. -/
+theorem isSeededBoundaryPoint_congr_of_eqOn_seedConnectionSupport
+    {d m n : ℕ} {i : Fin d} {omega eta : EdgeConfiguration d}
+    (hagree : ∀ e ∈ seedConnectionSupport d i m n, (e ∈ omega ↔ e ∈ eta))
+    (y : Cubic d) :
+    IsSeededBoundaryPoint d i m n omega y ↔
+      IsSeededBoundaryPoint d i m n eta y := by
+  classical
+  constructor
+  · rintro ⟨hyQ, hyedge, c, hyc, hcLayer, hcSeed⟩
+    have hedgeSupport : cubicStepEdge y (i, true) ∈ seedConnectionSupport d i m n := by
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_left
+      apply Finset.mem_union_right
+      exact Finset.mem_image.mpr ⟨y, hyQ, rfl⟩
+    have hcCenter : c ∈ seededBoundaryPossibleCenters d m n :=
+      seedCenter_mem_seededBoundaryPossibleCenters hyQ hyc
+    have hcSeed' : eta ∈ cubicSeedEvent d c m := by
+      intro e he
+      apply (hagree e ?_).mp (hcSeed he)
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_right
+      rw [Finset.mem_biUnion]
+      exact ⟨c, hcCenter, he⟩
+    exact ⟨hyQ, (hagree _ hedgeSupport).mp hyedge, c, hyc, hcLayer, hcSeed'⟩
+  · rintro ⟨hyQ, hyedge, c, hyc, hcLayer, hcSeed⟩
+    have hedgeSupport : cubicStepEdge y (i, true) ∈ seedConnectionSupport d i m n := by
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_left
+      apply Finset.mem_union_right
+      exact Finset.mem_image.mpr ⟨y, hyQ, rfl⟩
+    have hcCenter : c ∈ seededBoundaryPossibleCenters d m n :=
+      seedCenter_mem_seededBoundaryPossibleCenters hyQ hyc
+    have hcSeed' : omega ∈ cubicSeedEvent d c m := by
+      intro e he
+      apply (hagree e ?_).mpr (hcSeed he)
+      rw [seedConnectionSupport]
+      apply Finset.mem_union_right
+      rw [Finset.mem_biUnion]
+      exact ⟨c, hcCenter, he⟩
+    exact ⟨hyQ, (hagree _ hedgeSupport).mpr hyedge, c, hyc, hcLayer, hcSeed'⟩
+
+theorem seededBoundaryPointFinset_congr_of_eqOn_seedConnectionSupport
+    {d m n : ℕ} {i : Fin d} {omega eta : EdgeConfiguration d}
+    (hagree : ∀ e ∈ seedConnectionSupport d i m n, (e ∈ omega ↔ e ∈ eta)) :
+    seededBoundaryPointFinset d i m n omega =
+      seededBoundaryPointFinset d i m n eta := by
+  ext y
+  simp only [mem_seededBoundaryPointFinset_iff]
+  exact isSeededBoundaryPoint_congr_of_eqOn_seedConnectionSupport hagree y
+
 theorem seededBoundaryLayerRegion_disjoint_innerBox
     {d m n : ℕ} {i : Fin d} {z : Cubic d}
     (hz : z ∈ seededBoundaryLayerRegion d i m n) :
@@ -184,6 +281,79 @@ theorem seededBoundaryLayerRegion_disjoint_innerBox
   rw [cubicTranslateAlongCoordinate_same, hyi] at hzCoord
   simp [cubicOrigin] at hzCoord
   omega
+
+theorem cubicStepEdge_mem_seededBoundaryTargetSupport
+    {d m n : ℕ} {i : Fin d} {y : Cubic d}
+    (hy : y ∈ seededBoundaryQuadrant d i n) :
+    cubicStepEdge y (i, true) ∈ seededBoundaryTargetSupport d i m n := by
+  rw [seededBoundaryTargetSupport, Finset.mem_sdiff]
+  refine ⟨?_, ?_⟩
+  · rw [seedConnectionSupport]
+    apply Finset.mem_union_left
+    apply Finset.mem_union_right
+    exact Finset.mem_image.mpr ⟨y, hy, rfl⟩
+  · intro heBox
+    have hstepMem : cubicStepFrom y (i, true) ∈
+        (cubicStepEdge y (i, true) : Sym2 (Cubic d)) := by
+      simp [cubicStepEdge]
+    have hstepBox := endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heBox hstepMem
+    have hyFace := mem_cubicBoxFace.mp (mem_seededBoundaryQuadrant_iff.mp hy).1
+    have hyi : y i = (n : ℤ) := by simpa [cubicOrigin] using hyFace.1
+    have hcoord := (mem_cubicMetricBox.mp hstepBox) i
+    rw [show cubicStepFrom y (i, true) i = y i + 1 by
+      simp [cubicStepFrom, cubicDirectionIncrement], hyi] at hcoord
+    simp [cubicOrigin] at hcoord
+
+theorem seedEdge_mem_seededBoundaryTargetSupport
+    {d m n : ℕ} {i : Fin d} {y c : Cubic d} {e : CubicEdge d}
+    (hy : y ∈ seededBoundaryQuadrant d i n)
+    (hyc : cubicStepFrom y (i, true) ∈ cubicMetricBox d c m)
+    (hcLayer : SeedBoxWithinBoundaryLayer d i m n c)
+    (heSeed : e ∈ cubicBoxEdges d c m) :
+    e ∈ seededBoundaryTargetSupport d i m n := by
+  rw [seededBoundaryTargetSupport, Finset.mem_sdiff]
+  refine ⟨?_, ?_⟩
+  · rw [seedConnectionSupport]
+    apply Finset.mem_union_right
+    rw [Finset.mem_biUnion]
+    exact ⟨c, seedCenter_mem_seededBoundaryPossibleCenters hy hyc, heSeed⟩
+  · intro heBox
+    have hzSeed := endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heSeed
+      (Sym2.out_fst_mem e.1)
+    have hzLayer := hcLayer e.1.out.1 hzSeed
+    exact seededBoundaryLayerRegion_disjoint_innerBox hzLayer
+      (endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heBox
+        (Sym2.out_fst_mem e.1))
+
+/-- The seeded target itself uses only the portion of `seedConnectionSupport` beyond `B(n)`. -/
+theorem isSeededBoundaryPoint_congr_of_eqOn_targetSupport
+    {d m n : ℕ} {i : Fin d} {omega eta : EdgeConfiguration d}
+    (hagree : ∀ e ∈ seededBoundaryTargetSupport d i m n, (e ∈ omega ↔ e ∈ eta))
+    (y : Cubic d) :
+    IsSeededBoundaryPoint d i m n omega y ↔
+      IsSeededBoundaryPoint d i m n eta y := by
+  constructor
+  · rintro ⟨hyQ, hyedge, c, hyc, hcLayer, hcSeed⟩
+    refine ⟨hyQ, (hagree _ (cubicStepEdge_mem_seededBoundaryTargetSupport hyQ)).mp hyedge,
+      c, hyc, hcLayer, ?_⟩
+    intro e heSeed
+    exact (hagree e
+      (seedEdge_mem_seededBoundaryTargetSupport hyQ hyc hcLayer heSeed)).mp (hcSeed heSeed)
+  · rintro ⟨hyQ, hyedge, c, hyc, hcLayer, hcSeed⟩
+    refine ⟨hyQ, (hagree _ (cubicStepEdge_mem_seededBoundaryTargetSupport hyQ)).mpr hyedge,
+      c, hyc, hcLayer, ?_⟩
+    intro e heSeed
+    exact (hagree e
+      (seedEdge_mem_seededBoundaryTargetSupport hyQ hyc hcLayer heSeed)).mpr (hcSeed heSeed)
+
+theorem seededBoundaryPointFinset_congr_of_eqOn_targetSupport
+    {d m n : ℕ} {i : Fin d} {omega eta : EdgeConfiguration d}
+    (hagree : ∀ e ∈ seededBoundaryTargetSupport d i m n, (e ∈ omega ↔ e ∈ eta)) :
+    seededBoundaryPointFinset d i m n omega =
+      seededBoundaryPointFinset d i m n eta := by
+  ext y
+  simp only [mem_seededBoundaryPointFinset_iff]
+  exact isSeededBoundaryPoint_congr_of_eqOn_targetSupport hagree y
 
 theorem IsSeededBoundaryPoint.diff_innerBoxEdges
     {d m n : ℕ} {i : Fin d} {omega : EdgeConfiguration d} {y : Cubic d}
@@ -355,6 +525,69 @@ theorem seededRegionAvailableExitEdges_subset_boundary
       cubicRegionBoundaryEdgesWithinBox d R n :=
   regionAvailableExitEdges_subset_boundary d R n _ omega
 
+/-- The complete finite available-exit set is determined by `seedConnectionSupport`: box edges
+decide the exterior paths and the remaining support coordinates decide the target seeds. -/
+theorem seededRegionAvailableExitEdges_congr_of_eqOn_seedConnectionSupport
+    {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)}
+    {omega eta : EdgeConfiguration d}
+    (hagree : ∀ e ∈ seedConnectionSupport d i m n, (e ∈ omega ↔ e ∈ eta)) :
+    seededRegionAvailableExitEdges d i m n R omega =
+      seededRegionAvailableExitEdges d i m n R eta := by
+  classical
+  have htarget := seededBoundaryPointFinset_congr_of_eqOn_seedConnectionSupport hagree
+  ext e
+  simp only [seededRegionAvailableExitEdges, mem_regionAvailableExitEdges_iff]
+  constructor
+  · rintro ⟨heBoundary, y, hyTarget, hconn⟩
+    refine ⟨heBoundary, y, ?_, ?_⟩
+    · simpa [htarget] using hyTarget
+    · exact (dependsOn_connectionEventIn d
+        (cubicRegionExteriorEdgesWithinBox d R n)
+        (cubicRegionBoundaryOutsideEndpoint R e) y
+        (fun f hf ↦ hagree f <|
+          cubicBoxEdges_subset_seedConnectionSupport d i m n
+            (Finset.sdiff_subset hf))).mp hconn
+  · rintro ⟨heBoundary, y, hyTarget, hconn⟩
+    refine ⟨heBoundary, y, ?_, ?_⟩
+    · simpa [htarget] using hyTarget
+    · exact (dependsOn_connectionEventIn d
+        (cubicRegionExteriorEdgesWithinBox d R n)
+        (cubicRegionBoundaryOutsideEndpoint R e) y
+        (fun f hf ↦ hagree f <|
+          cubicBoxEdges_subset_seedConnectionSupport d i m n
+            (Finset.sdiff_subset hf))).mpr hconn
+
+theorem seededRegionAvailableExitEdges_congr_of_eqOn_restartEventSupport
+    {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)}
+    {omega eta : EdgeConfiguration d}
+    (hagree : ∀ e ∈ restartEventSupport d i m n R, (e ∈ omega ↔ e ∈ eta)) :
+    seededRegionAvailableExitEdges d i m n R omega =
+      seededRegionAvailableExitEdges d i m n R eta := by
+  classical
+  have htarget : seededBoundaryPointFinset d i m n omega =
+      seededBoundaryPointFinset d i m n eta :=
+    seededBoundaryPointFinset_congr_of_eqOn_targetSupport fun e he =>
+      hagree e (target_subset_restartEventSupport d i m n R he)
+  ext e
+  simp only [seededRegionAvailableExitEdges, mem_regionAvailableExitEdges_iff]
+  constructor
+  · rintro ⟨heBoundary, y, hyTarget, hconn⟩
+    refine ⟨heBoundary, y, ?_, ?_⟩
+    · simpa [htarget] using hyTarget
+    · exact (dependsOn_connectionEventIn d
+        (cubicRegionExteriorEdgesWithinBox d R n)
+        (cubicRegionBoundaryOutsideEndpoint R e) y
+        (fun f hf => hagree f
+          (exterior_subset_restartEventSupport d i m n R hf))).mp hconn
+  · rintro ⟨heBoundary, y, hyTarget, hconn⟩
+    refine ⟨heBoundary, y, ?_, ?_⟩
+    · simpa [htarget] using hyTarget
+    · exact (dependsOn_connectionEventIn d
+        (cubicRegionExteriorEdgesWithinBox d R n)
+        (cubicRegionBoundaryOutsideEndpoint R e) y
+        (fun f hf => hagree f
+          (exterior_subset_restartEventSupport d i m n R hf))).mpr hconn
+
 theorem measurableSet_mem_seededRegionAvailableExitEdges
     (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) (e : CubicEdge d) :
     MeasurableSet {omega : EdgeConfiguration d |
@@ -438,6 +671,35 @@ noncomputable def restartAvailableExitEdges
     (X : CubicEdge d → ℝ) : Finset (CubicEdge d) :=
   seededRegionAvailableExitEdges d i m n R
     (clearedThreshold (cubicRegionBoundaryEdgesWithinBox d R n) p X)
+
+/-- Equality on the finite restart support gives the same off-boundary available-exit set. -/
+theorem restartAvailableExitEdges_congr_of_eqOn_seedConnectionSupport
+    {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)} {p : I}
+    {X Y : CubicEdge d → ℝ}
+    (hXY : ∀ e ∈ seedConnectionSupport d i m n, X e = Y e) :
+    restartAvailableExitEdges d i m n R p X =
+      restartAvailableExitEdges d i m n R p Y := by
+  apply seededRegionAvailableExitEdges_congr_of_eqOn_seedConnectionSupport
+  intro e heSupport
+  simp only [clearedThreshold, Set.mem_diff, thresholdConfiguration, Set.mem_setOf_eq,
+    Finset.mem_coe]
+  by_cases heBoundary : e ∈ cubicRegionBoundaryEdgesWithinBox d R n
+  · simp [heBoundary]
+  · simp [heBoundary, hXY e heSupport]
+
+theorem restartAvailableExitEdges_congr_of_eqOn_restartEventSupport
+    {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)} {p : I}
+    {X Y : CubicEdge d → ℝ}
+    (hXY : ∀ e ∈ restartEventSupport d i m n R, X e = Y e) :
+    restartAvailableExitEdges d i m n R p X =
+      restartAvailableExitEdges d i m n R p Y := by
+  apply seededRegionAvailableExitEdges_congr_of_eqOn_restartEventSupport
+  intro e heSupport
+  simp only [clearedThreshold, Set.mem_diff, thresholdConfiguration, Set.mem_setOf_eq,
+    Finset.mem_coe]
+  by_cases heBoundary : e ∈ cubicRegionBoundaryEdgesWithinBox d R n
+  · simp [heBoundary]
+  · simp [heBoundary, hXY e heSupport]
 
 theorem restartAvailableExitEdges_subset_boundary
     (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) (p : I)
@@ -603,6 +865,84 @@ theorem measurableSet_sprinkledRestartEvent
   · exact restartAvailableExitEdges_subset_boundary d i m n R p
   · intro S _hSE
     exact measurableSet_restartAvailableExitEdges_eq_coordSigma d i m n R p S
+
+/-- A reference restart event is a finite cylinder on `seedConnectionSupport`. -/
+theorem sprinkledRestartEvent_congr_of_eqOn_seedConnectionSupport
+    {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)} {p : I}
+    {beta : CubicEdge d → I} {delta : ℝ} {X Y : CubicEdge d → ℝ}
+    (hXY : ∀ e ∈ seedConnectionSupport d i m n, X e = Y e) :
+    X ∈ sprinkledRestartEvent d i m n R p beta delta ↔
+      Y ∈ sprinkledRestartEvent d i m n R p beta delta := by
+  classical
+  let U := restartAvailableExitEdges d i m n R p
+  have hU : U X = U Y :=
+    restartAvailableExitEdges_congr_of_eqOn_seedConnectionSupport hXY
+  constructor
+  · rintro ⟨e, heU, heOpen⟩
+    refine ⟨e, ?_, ?_⟩
+    · simpa [U, hU] using heU
+    · rw [← hXY e]
+      · exact heOpen
+      · exact cubicRegionBoundaryEdgesWithinBox_subset_seedConnectionSupport d i m n R
+          (restartAvailableExitEdges_subset_boundary d i m n R p X heU)
+  · rintro ⟨e, heU, heOpen⟩
+    refine ⟨e, ?_, ?_⟩
+    · simpa [U, hU] using heU
+    · rw [hXY e]
+      · exact heOpen
+      · exact cubicRegionBoundaryEdgesWithinBox_subset_seedConnectionSupport d i m n R
+          (restartAvailableExitEdges_subset_boundary d i m n R p Y heU)
+
+/-- Exact finite-support version, excluding already explored interior edges. -/
+theorem sprinkledRestartEvent_congr_of_eqOn_restartEventSupport
+    {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)} {p : I}
+    {beta : CubicEdge d → I} {delta : ℝ} {X Y : CubicEdge d → ℝ}
+    (hXY : ∀ e ∈ restartEventSupport d i m n R, X e = Y e) :
+    X ∈ sprinkledRestartEvent d i m n R p beta delta ↔
+      Y ∈ sprinkledRestartEvent d i m n R p beta delta := by
+  classical
+  let U := restartAvailableExitEdges d i m n R p
+  have hU : U X = U Y :=
+    restartAvailableExitEdges_congr_of_eqOn_restartEventSupport hXY
+  constructor
+  · rintro ⟨e, heU, heOpen⟩
+    refine ⟨e, ?_, ?_⟩
+    · simpa [U, hU] using heU
+    · rw [← hXY e]
+      · exact heOpen
+      · exact boundary_subset_restartEventSupport d i m n R
+          (restartAvailableExitEdges_subset_boundary d i m n R p X heU)
+  · rintro ⟨e, heU, heOpen⟩
+    refine ⟨e, ?_, ?_⟩
+    · simpa [U, hU] using heU
+    · rw [hXY e]
+      · exact heOpen
+      · exact boundary_subset_restartEventSupport d i m n R
+          (restartAvailableExitEdges_subset_boundary d i m n R p Y heU)
+
+theorem measurableSet_sprinkledRestartEvent_coordSigma
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d))
+    (p : I) (beta : CubicEdge d → I) (delta : ℝ) :
+    MeasurableSet[coordSigma (CubicEdge d)
+      (seedConnectionSupport d i m n : Set (CubicEdge d))]
+      (sprinkledRestartEvent d i m n R p beta delta) := by
+  apply measurableSet_coordSigma_of_eqOn
+    (measurableSet_sprinkledRestartEvent d i m n R p beta delta)
+  intro X Y hXY
+  exact sprinkledRestartEvent_congr_of_eqOn_seedConnectionSupport
+    (fun e he => hXY e he)
+
+theorem measurableSet_sprinkledRestartEvent_restartCoordSigma
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d))
+    (p : I) (beta : CubicEdge d → I) (delta : ℝ) :
+    MeasurableSet[coordSigma (CubicEdge d)
+      (restartEventSupport d i m n R : Set (CubicEdge d))]
+      (sprinkledRestartEvent d i m n R p beta delta) := by
+  apply measurableSet_coordSigma_of_eqOn
+    (measurableSet_sprinkledRestartEvent d i m n R p beta delta)
+  intro X Y hXY
+  exact sprinkledRestartEvent_congr_of_eqOn_restartEventSupport
+    (fun e he => hXY e he)
 
 /-- Quantitative assembly of Lemma 7.17 once `m,n,t,eta` satisfy Grimmett's choices
 (7.18)–(7.20). -/

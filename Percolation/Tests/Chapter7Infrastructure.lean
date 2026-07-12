@@ -1406,4 +1406,27 @@ example {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
         (realizedScheduleRevealCell i beta S hS X0) :=
   exactRevealCellEvent_eq_past_inter_boundary i beta S hS history X0 hmn
 
+example {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (beta : CubicEdge d → I) (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (history : Set (CubicEdge d → ℝ)) (c : RestartRevealCellIndex d a.1 m n)
+    (hc : c.IsScheduleRealizable S hS) :
+    (history ∩ orientedRestartInternalRegionLabelEvent center a
+          c.regionVertices m n beta) ∩
+        orientedBoundaryClosedHistoryEvent center a c.regionVertices n beta =
+      exactRevealCellEvent history
+        (orientedRealizedScheduleRevealCell
+          (m := m) (n := n) center a beta S hS) c :=
+  orientedInternalPast_inter_boundary_eq_exactRevealCellEvent
+    center a beta S hS history c hc
+
+example {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1)) (hmn : m ≤ n)
+    (X : CubicEdge d → ℝ) :
+    (realizedScheduleRevealCell (m := m) (n := n) i beta S hS X).IsScheduleRealizable
+      S hS :=
+  RestartRevealCellIndex.isScheduleRealizable_realizedScheduleRevealCell
+    i beta S hS hmn X
+
 end Percolation

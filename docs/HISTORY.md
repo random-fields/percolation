@@ -915,9 +915,12 @@ Dated milestones and anti-library notes.
     support read by the next restart, both in the reference frame and after signed-direction
     transport. The common-uniform-label event reconstructing the region is measurable on those
     internal coordinates. Its intersection with the closed-boundary event is exactly the full
-    explored-region fiber, and this factorization is packaged for the finite schedule-cell
-    index consumed by `PartitionedOrientedRestartStage.ofFiniteRealization`. This removes a
-    previously explicit semantic gap in Theorem 7.2; selecting globally fresh supports from the
+    explored-region fiber. Impossible finite indices are filtered by a proved realizability
+    predicate, every actual schedule cell is valid, and the factorization is transported to an
+    arbitrary block center and signed direction. The constructor
+    `PartitionedOrientedRestartStage.ofOrientedScheduleRealization` now builds a complete stage
+    from any finitely supported outer history known fresh from the current restart. This removes
+    the random-region semantic gap in Theorem 7.2; proving that global freshness property for the
     actual adaptive coarse history remains.
 
 ## Axiom Ledger

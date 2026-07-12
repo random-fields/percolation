@@ -349,6 +349,79 @@ theorem PartitionedOrientedRestartStage.cellUnion_ofFiniteRealization
   simp_rw [hcell]
   exact biUnion_univ_exactRevealCellEvent history realizedCell
 
+/-- Filtered constructor used when the finite index type contains impossible cells.  Every
+actual realization must satisfy `valid`; Lemma 7.17 data are required only for retained cells. -/
+noncomputable def PartitionedOrientedRestartStage.ofFiniteValidRealization
+    {d m n : ℕ} {p : I} {delta epsilon : ℝ}
+    (valid : C → Prop) [DecidablePred valid]
+    (history : Set (CubicEdge d → ℝ))
+    (realizedCell : (CubicEdge d → ℝ) → C)
+    (query : C → OrientedRestartQuery d)
+    (pastSupport : C → Finset (CubicEdge d))
+    (past : C → Set (CubicEdge d → ℝ))
+    (hpast : ∀ c, valid c → MeasurableSet[coordSigma (CubicEdge d)
+      (pastSupport c : Set (CubicEdge d))] (past c))
+    (hfresh : ∀ c, valid c → Disjoint (pastSupport c : Set (CubicEdge d))
+      ((query c).restartSupport m n : Set (CubicEdge d)))
+    (hcell : ∀ c, valid c → past c ∩ (query c).boundaryHistoryEvent n =
+      exactRevealCellEvent history realizedCell c)
+    (hrestart : ∀ c, valid c →
+      (1 - epsilon) * (couplingMeasure (CubicEdge d)).real
+          ((query c).boundaryHistoryEvent n) <
+        (couplingMeasure (CubicEdge d)).real
+          ((query c).successEvent m n p delta ∩ (query c).boundaryHistoryEvent n)) :
+    PartitionedOrientedRestartStage d C m n p delta epsilon where
+  cells := Finset.univ.filter valid
+  query := query
+  pastSupport := pastSupport
+  past := past
+  past_measurable := fun c hc => hpast c (Finset.mem_filter.mp hc).2
+  fresh := fun c hc => hfresh c (Finset.mem_filter.mp hc).2
+  pairwise_cells := by
+    intro c hc c' hc' hcc'
+    change Disjoint (past c ∩ (query c).boundaryHistoryEvent n)
+      (past c' ∩ (query c').boundaryHistoryEvent n)
+    rw [hcell c (Finset.mem_filter.mp hc).2, hcell c' (Finset.mem_filter.mp hc').2]
+    exact pairwiseDisjoint_exactRevealCellEvent (Finset.univ.filter valid) history realizedCell
+      (Finset.mem_coe.mpr hc) (Finset.mem_coe.mpr hc') hcc'
+  restart_gt := fun c hc => hrestart c (Finset.mem_filter.mp hc).2
+
+theorem PartitionedOrientedRestartStage.cellUnion_ofFiniteValidRealization
+    {d m n : ℕ} {p : I} {delta epsilon : ℝ}
+    (valid : C → Prop) [DecidablePred valid]
+    (history : Set (CubicEdge d → ℝ))
+    (realizedCell : (CubicEdge d → ℝ) → C)
+    (hvalid : ∀ X ∈ history, valid (realizedCell X))
+    (query : C → OrientedRestartQuery d)
+    (pastSupport : C → Finset (CubicEdge d))
+    (past : C → Set (CubicEdge d → ℝ))
+    (hpast : ∀ c, valid c → MeasurableSet[coordSigma (CubicEdge d)
+      (pastSupport c : Set (CubicEdge d))] (past c))
+    (hfresh : ∀ c, valid c → Disjoint (pastSupport c : Set (CubicEdge d))
+      ((query c).restartSupport m n : Set (CubicEdge d)))
+    (hcell : ∀ c, valid c → past c ∩ (query c).boundaryHistoryEvent n =
+      exactRevealCellEvent history realizedCell c)
+    (hrestart : ∀ c, valid c →
+      (1 - epsilon) * (couplingMeasure (CubicEdge d)).real
+          ((query c).boundaryHistoryEvent n) <
+        (couplingMeasure (CubicEdge d)).real
+          ((query c).successEvent m n p delta ∩ (query c).boundaryHistoryEvent n)) :
+    (PartitionedOrientedRestartStage.ofFiniteValidRealization valid history realizedCell
+      query pastSupport past hpast hfresh hcell hrestart).cellUnion = history := by
+  rw [PartitionedOrientedRestartStage.cellUnion]
+  change (⋃ c ∈ Finset.univ.filter valid,
+    past c ∩ (query c).boundaryHistoryEvent n) = history
+  calc
+    (⋃ c ∈ Finset.univ.filter valid,
+        past c ∩ (query c).boundaryHistoryEvent n) =
+        ⋃ c ∈ Finset.univ.filter valid, exactRevealCellEvent history realizedCell c := by
+      apply Set.iUnion_congr
+      intro c
+      apply Set.iUnion_congr
+      intro hc
+      exact hcell c (Finset.mem_filter.mp hc).2
+    _ = history := biUnion_filter_exactRevealCellEvent valid history realizedCell hvalid
+
 end AdaptiveSiteExploration
 
 end Percolation

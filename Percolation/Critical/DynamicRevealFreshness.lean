@@ -170,6 +170,17 @@ theorem measurableSet_restartInternalRegionLabelEvent_coordSigma
   simp only [mem_heterogeneousThresholdConfiguration_iff]
   rw [hXY e he]
 
+theorem restartInternalRegionLabelEvent_congr_of_eqOn
+    {d : ℕ} (R : Finset (Cubic d)) (m n : ℕ) (beta : CubicEdge d → I)
+    {X Y : CubicEdge d → ℝ}
+    (hXY : ∀ e ∈ cubicRegionInternalEdgesWithinBox d R n, X e = Y e) :
+    X ∈ restartInternalRegionLabelEvent R m n beta ↔
+      Y ∈ restartInternalRegionLabelEvent R m n beta := by
+  apply dependsOn_restartInternalRegionEvent d R m n
+  intro e he
+  simp only [mem_heterogeneousThresholdConfiguration_iff]
+  rw [hXY e he]
+
 /-- The measurable internal-region cell is supported on coordinates disjoint from the next
 reference restart. -/
 theorem restartInternalRegionLabelEvent_fresh
@@ -456,5 +467,368 @@ theorem exactRevealCellEvent_eq_past_inter_boundary
   rw [Set.inter_assoc, restartInternalRegionLabelEvent_inter_boundaryClosed R beta hseed]
   exact (exactRevealCellEvent_realizedScheduleRevealCell
     i beta S hS history X0).symm
+
+namespace RestartRevealCellIndex
+
+/-- A candidate cell carries exactly the multiplicity profile of the fixed reveal schedule. -/
+def HasScheduleMultiplicity
+    {d m n : ℕ} {i : Fin d} (c : RestartRevealCellIndex d i m n)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1)) : Prop :=
+  ∀ e, c.multiplicity e = S.boundedMultiplicity hS e.1
+
+/-- Finite validity predicate for schedule cells: the region contains the inlet seed and the
+multiplicity data agree with the fixed schedule. -/
+def IsScheduleRealizable
+    {d m n : ℕ} {i : Fin d} (c : RestartRevealCellIndex d i m n)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1)) : Prop :=
+  cubicMetricBox d cubicOrigin m ⊆ c.regionVertices ∧ c.HasScheduleMultiplicity S hS
+
+theorem isScheduleRealizable_realizedScheduleRevealCell
+    {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1)) (hmn : m ≤ n)
+    (X : CubicEdge d → ℝ) :
+    (realizedScheduleRevealCell (m := m) (n := n) i beta S hS X).IsScheduleRealizable
+      S hS := by
+  constructor
+  · rw [realizedScheduleRevealCell_regionVertices]
+    exact cubicMetricBox_subset_restartExploredRegion hmn
+  · intro e
+    rfl
+
+theorem realizedScheduleRevealCell_eq_iff_of_isScheduleRealizable
+    {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (c : RestartRevealCellIndex d i m n) (hc : c.IsScheduleRealizable S hS)
+    (X : CubicEdge d → ℝ) :
+    realizedScheduleRevealCell (m := m) (n := n) i beta S hS X = c ↔
+      restartExploredRegion d (heterogeneousThresholdConfiguration beta X) m n =
+        c.regionVertices := by
+  constructor
+  · intro h
+    exact congrArg RestartRevealCellIndex.regionVertices h
+  · intro hregion
+    unfold realizedScheduleRevealCell
+    unfold RestartRevealCellIndex.ofScheduleExploredRegion
+    unfold RestartRevealCellIndex.ofExploredRegion
+    cases c with
+    | mk region multiplicity =>
+        simp only [IsScheduleRealizable, HasScheduleMultiplicity] at hc
+        congr 1
+        · exact (Finset.map_injective (Function.Embedding.subtype _)) hregion
+        · funext e
+          exact (hc.2 e).symm
+
+/-- Exact factorization for every cell retained by the realizability filter. -/
+theorem exactRevealCellEvent_eq_internalPast_inter_boundary_of_isScheduleRealizable
+    {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (history : Set (CubicEdge d → ℝ)) (c : RestartRevealCellIndex d i m n)
+    (hc : c.IsScheduleRealizable S hS) :
+    (history ∩ restartInternalRegionLabelEvent c.regionVertices m n beta) ∩
+        boundaryClosedHistoryEvent
+          (cubicRegionBoundaryEdgesWithinBox d c.regionVertices n) beta =
+      exactRevealCellEvent history
+        (realizedScheduleRevealCell (m := m) (n := n) i beta S hS) c := by
+  rw [Set.inter_assoc,
+    restartInternalRegionLabelEvent_inter_boundaryClosed c.regionVertices beta hc.1]
+  ext X
+  simp only [exactRevealCellEvent, Set.mem_inter_iff, Set.mem_setOf_eq]
+  exact and_congr Iff.rfl
+    (realizedScheduleRevealCell_eq_iff_of_isScheduleRealizable i beta S hS c hc X).symm
+
+end RestartRevealCellIndex
+
+/-! ## Adjoining an already-fresh outer history -/
+
+noncomputable def restartRevealPastSupport
+    {d : ℕ} (historySupport : Finset (CubicEdge d))
+    (R : Finset (Cubic d)) (n : ℕ) : Finset (CubicEdge d) :=
+  historySupport ∪ cubicRegionInternalEdgesWithinBox d R n
+
+def restartRevealPastEvent
+    {d : ℕ} (history : Set (CubicEdge d → ℝ))
+    (R : Finset (Cubic d)) (m n : ℕ) (beta : CubicEdge d → I) :
+    Set (CubicEdge d → ℝ) :=
+  history ∩ restartInternalRegionLabelEvent R m n beta
+
+theorem measurableSet_restartRevealPastEvent_coordSigma
+    {d : ℕ} {historySupport : Finset (CubicEdge d)}
+    {history : Set (CubicEdge d → ℝ)}
+    (hHistory : @MeasurableSet (CubicEdge d → ℝ)
+      (coordSigma (CubicEdge d) (historySupport : Set (CubicEdge d))) history)
+    (R : Finset (Cubic d)) (m n : ℕ) (beta : CubicEdge d → I) :
+    @MeasurableSet (CubicEdge d → ℝ)
+      (coordSigma (CubicEdge d)
+        (restartRevealPastSupport historySupport R n : Set (CubicEdge d)))
+      (restartRevealPastEvent history R m n beta) := by
+  apply MeasurableSet.inter
+  · exact (coordSigma_mono fun e he => Finset.mem_union_left _ he) history hHistory
+  · apply (coordSigma_mono fun e he => Finset.mem_union_right _ he)
+    exact measurableSet_restartInternalRegionLabelEvent_coordSigma R m n beta
+
+theorem disjoint_restartRevealPastSupport_restartEventSupport
+    {d : ℕ} {historySupport : Finset (CubicEdge d)}
+    (R : Finset (Cubic d)) (i : Fin d) (m n : ℕ)
+    (hHistoryFresh : Disjoint (historySupport : Set (CubicEdge d))
+      (restartEventSupport d i m n R : Set (CubicEdge d))) :
+    Disjoint (restartRevealPastSupport historySupport R n : Set (CubicEdge d))
+      (restartEventSupport d i m n R : Set (CubicEdge d)) := by
+  rw [Set.disjoint_left]
+  intro e hePast heRestart
+  change e ∈ historySupport ∪ cubicRegionInternalEdgesWithinBox d R n at hePast
+  rw [Finset.mem_union] at hePast
+  rcases hePast with heHistory | heInternal
+  · exact Set.disjoint_left.mp hHistoryFresh heHistory heRestart
+  · exact Set.disjoint_left.mp
+      (disjoint_cubicRegionInternalEdgesWithinBox_restartEventSupport d R i m n)
+        heInternal heRestart
+
+theorem restartRevealPastEvent_inter_boundary_eq_exactRevealCellEvent
+    {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (history : Set (CubicEdge d → ℝ)) (c : RestartRevealCellIndex d i m n)
+    (hc : c.IsScheduleRealizable S hS) :
+    restartRevealPastEvent history c.regionVertices m n beta ∩
+        boundaryClosedHistoryEvent
+          (cubicRegionBoundaryEdgesWithinBox d c.regionVertices n) beta =
+      exactRevealCellEvent history
+        (realizedScheduleRevealCell (m := m) (n := n) i beta S hS) c :=
+  c.exactRevealCellEvent_eq_internalPast_inter_boundary_of_isScheduleRealizable
+    i beta S hS history hc
+
+/-! ## Transport to an arbitrary block center and signed direction -/
+
+noncomputable def orientedRestartInternalSupport
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (n : ℕ) : Finset (CubicEdge d) :=
+  (cubicRegionInternalEdgesWithinBox d R n).image
+    (cubicDirectionOrientationIso center a).mapEdgeSet
+
+def orientedRestartInternalRegionLabelEvent
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (m n : ℕ) (beta : CubicEdge d → I) :
+    Set (CubicEdge d → ℝ) :=
+  orientedCouplingTransportEvent center a
+    (restartInternalRegionLabelEvent R m n beta)
+
+theorem measurableSet_orientedRestartInternalRegionLabelEvent_coordSigma
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (m n : ℕ) (beta : CubicEdge d → I) :
+    @MeasurableSet (CubicEdge d → ℝ)
+      (coordSigma (CubicEdge d)
+        (orientedRestartInternalSupport center a R n : Set (CubicEdge d)))
+      (orientedRestartInternalRegionLabelEvent center a R m n beta) := by
+  apply measurableSet_cubicGraphIsoCouplingTransportEvent_coordSigma
+    (cubicDirectionOrientationIso center a)
+    (cubicRegionInternalEdgesWithinBox d R n)
+    (measurableSet_restartInternalRegionLabelEvent R m n beta)
+  intro X Y hXY
+  exact restartInternalRegionLabelEvent_congr_of_eqOn R m n beta hXY
+
+theorem disjoint_orientedRestartInternalSupport_restartSupport
+    {d : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (m n : ℕ) :
+    Disjoint (orientedRestartInternalSupport center a R n : Set (CubicEdge d))
+      (orientedRestartSupport center a m n R : Set (CubicEdge d)) :=
+  disjoint_orientedInternalEdges_restartSupport center a R m n
+
+/-- Physical-label realization of a reference cell after orienting its restart. -/
+noncomputable def orientedRealizedScheduleRevealCell
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (beta : CubicEdge d → I) (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (X : CubicEdge d → ℝ) : RestartRevealCellIndex d a.1 m n :=
+  realizedScheduleRevealCell a.1 beta S hS
+    (cubicGraphIsoCouplingReindex (cubicDirectionOrientationIso center a) X)
+
+/-- Oriented form of the exact finite-cell factorization, with an arbitrary physical outer
+history left untouched. -/
+theorem orientedInternalPast_inter_boundary_eq_exactRevealCellEvent
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (beta : CubicEdge d → I) (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (history : Set (CubicEdge d → ℝ)) (c : RestartRevealCellIndex d a.1 m n)
+    (hc : c.IsScheduleRealizable S hS) :
+    (history ∩ orientedRestartInternalRegionLabelEvent center a
+          c.regionVertices m n beta) ∩
+        orientedBoundaryClosedHistoryEvent center a c.regionVertices n beta =
+      exactRevealCellEvent history
+        (orientedRealizedScheduleRevealCell
+          (m := m) (n := n) center a beta S hS) c := by
+  have href := c.exactRevealCellEvent_eq_internalPast_inter_boundary_of_isScheduleRealizable
+    a.1 beta S hS (Set.univ : Set (CubicEdge d → ℝ)) hc
+  ext X
+  have hmem := Set.ext_iff.mp href
+    (cubicGraphIsoCouplingReindex (cubicDirectionOrientationIso center a) X)
+  have hfactor :
+      (cubicGraphIsoCouplingReindex (cubicDirectionOrientationIso center a) X ∈
+          restartInternalRegionLabelEvent c.regionVertices m n beta ∧
+        cubicGraphIsoCouplingReindex (cubicDirectionOrientationIso center a) X ∈
+          boundaryClosedHistoryEvent
+            (cubicRegionBoundaryEdgesWithinBox d c.regionVertices n) beta) ↔
+        orientedRealizedScheduleRevealCell
+          (m := m) (n := n) center a beta S hS X = c := by
+    simpa [orientedRealizedScheduleRevealCell, exactRevealCellEvent] using hmem
+  simp only [orientedRestartInternalRegionLabelEvent, orientedBoundaryClosedHistoryEvent,
+    orientedCouplingTransportEvent, cubicGraphIsoCouplingTransportEvent,
+    exactRevealCellEvent, Set.mem_inter_iff, Set.mem_preimage]
+  constructor
+  · rintro ⟨⟨hHistory, hInternal⟩, hBoundary⟩
+    exact ⟨hHistory, hfactor.mp ⟨hInternal, hBoundary⟩⟩
+  · rintro ⟨hHistory, hcell⟩
+    exact ⟨⟨hHistory, (hfactor.mpr hcell).1⟩, (hfactor.mpr hcell).2⟩
+
+noncomputable def orientedRestartRevealPastSupport
+    {d : ℕ} (historySupport : Finset (CubicEdge d))
+    (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (n : ℕ) : Finset (CubicEdge d) :=
+  historySupport ∪ orientedRestartInternalSupport center a R n
+
+def orientedRestartRevealPastEvent
+    {d : ℕ} (history : Set (CubicEdge d → ℝ))
+    (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (m n : ℕ) (beta : CubicEdge d → I) :
+    Set (CubicEdge d → ℝ) :=
+  history ∩ orientedRestartInternalRegionLabelEvent center a R m n beta
+
+theorem measurableSet_orientedRestartRevealPastEvent_coordSigma
+    {d : ℕ} {historySupport : Finset (CubicEdge d)}
+    {history : Set (CubicEdge d → ℝ)}
+    (hHistory : @MeasurableSet (CubicEdge d → ℝ)
+      (coordSigma (CubicEdge d) (historySupport : Set (CubicEdge d))) history)
+    (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (m n : ℕ) (beta : CubicEdge d → I) :
+    @MeasurableSet (CubicEdge d → ℝ)
+      (coordSigma (CubicEdge d)
+        (orientedRestartRevealPastSupport historySupport center a R n :
+          Set (CubicEdge d)))
+      (orientedRestartRevealPastEvent history center a R m n beta) := by
+  apply MeasurableSet.inter
+  · exact (coordSigma_mono fun e he => Finset.mem_union_left _ he) history hHistory
+  · apply (coordSigma_mono fun e he => Finset.mem_union_right _ he)
+    exact measurableSet_orientedRestartInternalRegionLabelEvent_coordSigma
+      center a R m n beta
+
+theorem disjoint_orientedRestartRevealPastSupport_restartSupport
+    {d : ℕ} {historySupport : Finset (CubicEdge d)}
+    (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (m n : ℕ)
+    (hHistoryFresh : Disjoint (historySupport : Set (CubicEdge d))
+      (orientedRestartSupport center a m n R : Set (CubicEdge d))) :
+    Disjoint
+      (orientedRestartRevealPastSupport historySupport center a R n : Set (CubicEdge d))
+      (orientedRestartSupport center a m n R : Set (CubicEdge d)) := by
+  rw [Set.disjoint_left]
+  intro e hePast heRestart
+  change e ∈ historySupport ∪ orientedRestartInternalSupport center a R n at hePast
+  rw [Finset.mem_union] at hePast
+  rcases hePast with heHistory | heInternal
+  · exact Set.disjoint_left.mp hHistoryFresh heHistory heRestart
+  · exact Set.disjoint_left.mp
+      (disjoint_orientedRestartInternalSupport_restartSupport center a R m n)
+        heInternal heRestart
+
+namespace RestartRevealCellIndex
+
+/-- Oriented restart query whose region is supplied by a finite reveal cell. -/
+noncomputable def scheduleOrientedQuery
+    {d m n : ℕ} {a : CubicDirection d}
+    (c : RestartRevealCellIndex d a.1 m n)
+    (center : Cubic d) (beta : CubicEdge d → I) : OrientedRestartQuery d where
+  center := center
+  direction := a
+  region := c.regionVertices
+  beta := beta
+
+@[simp]
+theorem scheduleOrientedQuery_restartSupport
+    {d m n : ℕ} {a : CubicDirection d}
+    (c : RestartRevealCellIndex d a.1 m n)
+    (center : Cubic d) (beta : CubicEdge d → I) :
+    (c.scheduleOrientedQuery center beta).restartSupport m n =
+      orientedRestartSupport center a m n c.regionVertices :=
+  rfl
+
+end RestartRevealCellIndex
+
+namespace AdaptiveSiteExploration
+
+/-- Construct a complete partitioned restart stage from a fixed schedule and an outer history
+whose support is fresh for every realizable region.  All random-region fiber, measurability, and
+internal-coordinate freshness obligations are discharged by the preceding theorems. -/
+noncomputable def PartitionedOrientedRestartStage.ofOrientedScheduleRealization
+    {d m n : ℕ} {p : I} {delta epsilon : ℝ}
+    (center : Cubic d) (a : CubicDirection d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (historySupport : Finset (CubicEdge d))
+    (history : Set (CubicEdge d → ℝ))
+    (hHistory : @MeasurableSet (CubicEdge d → ℝ)
+      (coordSigma (CubicEdge d) (historySupport : Set (CubicEdge d))) history)
+    (hFresh : ∀ c : RestartRevealCellIndex d a.1 m n,
+      c.IsScheduleRealizable S hS →
+        Disjoint (historySupport : Set (CubicEdge d))
+          (orientedRestartSupport center a m n c.regionVertices : Set (CubicEdge d)))
+    (hRestart : ∀ c : RestartRevealCellIndex d a.1 m n,
+      c.IsScheduleRealizable S hS →
+        (1 - epsilon) * (couplingMeasure (CubicEdge d)).real
+            ((c.scheduleOrientedQuery center beta).boundaryHistoryEvent n) <
+          (couplingMeasure (CubicEdge d)).real
+            ((c.scheduleOrientedQuery center beta).successEvent m n p delta ∩
+              (c.scheduleOrientedQuery center beta).boundaryHistoryEvent n)) :
+    PartitionedOrientedRestartStage d (RestartRevealCellIndex d a.1 m n)
+      m n p delta epsilon := by
+  classical
+  exact PartitionedOrientedRestartStage.ofFiniteValidRealization
+    (fun c : RestartRevealCellIndex d a.1 m n => c.IsScheduleRealizable S hS)
+    history (orientedRealizedScheduleRevealCell center a beta S hS)
+    (fun c => c.scheduleOrientedQuery center beta)
+    (fun c => orientedRestartRevealPastSupport historySupport center a c.regionVertices n)
+    (fun c => orientedRestartRevealPastEvent history center a c.regionVertices m n beta)
+    (fun c _hc => measurableSet_orientedRestartRevealPastEvent_coordSigma
+      hHistory center a c.regionVertices m n beta)
+    (fun c hc => disjoint_orientedRestartRevealPastSupport_restartSupport
+      center a c.regionVertices m n (hFresh c hc))
+    (fun c hc => orientedInternalPast_inter_boundary_eq_exactRevealCellEvent
+      center a beta S hS history c hc)
+    hRestart
+
+theorem PartitionedOrientedRestartStage.cellUnion_ofOrientedScheduleRealization
+    {d m n : ℕ} {p : I} {delta epsilon : ℝ}
+    (center : Cubic d) (a : CubicDirection d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (historySupport : Finset (CubicEdge d))
+    (history : Set (CubicEdge d → ℝ))
+    (hHistory : @MeasurableSet (CubicEdge d → ℝ)
+      (coordSigma (CubicEdge d) (historySupport : Set (CubicEdge d))) history)
+    (hmn : m ≤ n)
+    (hFresh : ∀ c : RestartRevealCellIndex d a.1 m n,
+      c.IsScheduleRealizable S hS →
+        Disjoint (historySupport : Set (CubicEdge d))
+          (orientedRestartSupport center a m n c.regionVertices : Set (CubicEdge d)))
+    (hRestart : ∀ c : RestartRevealCellIndex d a.1 m n,
+      c.IsScheduleRealizable S hS →
+        (1 - epsilon) * (couplingMeasure (CubicEdge d)).real
+            ((c.scheduleOrientedQuery center beta).boundaryHistoryEvent n) <
+          (couplingMeasure (CubicEdge d)).real
+            ((c.scheduleOrientedQuery center beta).successEvent m n p delta ∩
+              (c.scheduleOrientedQuery center beta).boundaryHistoryEvent n)) :
+    (PartitionedOrientedRestartStage.ofOrientedScheduleRealization center a beta S hS
+      historySupport history hHistory hFresh hRestart).cellUnion = history := by
+  classical
+  apply PartitionedOrientedRestartStage.cellUnion_ofFiniteValidRealization
+  intro X _hX
+  exact RestartRevealCellIndex.isScheduleRealizable_realizedScheduleRevealCell
+    a.1 beta S hS hmn
+      (cubicGraphIsoCouplingReindex (cubicDirectionOrientationIso center a) X)
+
+end AdaptiveSiteExploration
 
 end Percolation

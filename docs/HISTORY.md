@@ -896,6 +896,20 @@ Dated milestones and anti-library notes.
     records application tests, counterexamples, a 39-declaration axiom audit, a failed first pass
     and repair rerun, and the unavailable local Comparator prerequisite. Standard axioms only.
 
+80. **Grimmett Lemma 7.24, adaptive site exploration (2026-07-12).** Added the rooted
+    site-percolation, finite induced-site, region-shell, history-embedding, and finite/ambient
+    compatibility layers needed to prove the source exploration lemma without a whole-output
+    domination assumption. The public theorems
+    `cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBound` and
+    `cubicRegionSiteExploration_hasInfiniteSiteCluster_probability_pos_of_adaptiveLowerBound`
+    start from an exact ratio-free success lower bound after every post-root history, transport
+    finite Bellman bounds through induced metric balls, and conclude respectively that the
+    explored occupied set and its root component are infinite with positive probability. Null
+    histories require no division, the root-open convention is explicit, the full build passes,
+    and the transitive axiom audit contains only `propext`, `Classical.choice`, and `Quot.sound`.
+    Chapter 7 remains in progress; the concrete Grimmett--Marstrand history law required by
+    Theorem 7.2 is the next target.
+
 ## Axiom Ledger
 
 Empty.

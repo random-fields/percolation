@@ -32,6 +32,9 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   rates, correlation length, tree-graph moment bounds, corrected exponential cluster-size tail,
   exact cluster-size decay rate, and analytic `κ`/`χ` below `p_c`. False printed endpoint/infinite-
   set readings are explicit rejected anti-targets rather than silently strengthened theorems.
+- **[target]** Chapter 7 dynamic and static renormalization. The finite-history foundation and
+  source-facing adaptive exploration Lemma 7.24 are done; Theorems 7.2, 7.35, 7.61, 7.65, and
+  7.68 and their remaining geometric/coalescence prerequisites are still targets.
 - **[target]** Burton-Keane uniqueness of the infinite cluster under standard hypotheses.
 - **[target]** Planar duality for bond percolation on the square lattice.
 - **[target]** `p_c = 1/2` for bond percolation on `Z^2`.

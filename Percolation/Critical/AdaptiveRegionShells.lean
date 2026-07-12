@@ -58,6 +58,21 @@ noncomputable def cubicRegionMetricSphere
     (d : ℕ) (F : Set (Cubic d)) (root : F) (n : ℕ) : Finset F :=
   (cubicMetricSphere d root n).subtype F
 
+/-- Finite ambient Manhattan ball restricted to a cubic region. -/
+noncomputable def cubicRegionMetricBall
+    (d : ℕ) (F : Set (Cubic d)) (root : F) (n : ℕ) : Finset F :=
+  (cubicMetricBall d root n).subtype F
+
+@[simp]
+theorem mem_cubicRegionMetricBall_iff
+    {d : ℕ} {F : Set (Cubic d)} {root z : F} {n : ℕ} :
+    z ∈ cubicRegionMetricBall d F root n ↔
+      cubicL1Dist (root : Cubic d) (z : Cubic d) ≤ n := by
+  classical
+  rw [cubicRegionMetricBall]
+  exact (Finset.mem_subtype (p := F) (s := cubicMetricBall d root n) (a := z)).trans
+    mem_cubicMetricBall_iff_l1Dist_le
+
 @[simp]
 theorem mem_cubicRegionMetricSphere_iff
     {d : ℕ} {F : Set (Cubic d)} {root z : F} {n : ℕ} :
@@ -81,6 +96,64 @@ theorem exists_mem_walk_support_cubicRegionMetricSphere
   refine ⟨w.getVert k, w.getVert_mem_support k, ?_⟩
   rw [mem_cubicRegionMetricSphere_iff]
   simpa [ambientWalk, SimpleGraph.Walk.getVert_map] using hkdist
+
+/-- First-hit prefix of a walk in a cubic region.  The returned walk ends on the prescribed
+Manhattan sphere, stays in the corresponding ball, and uses only vertices of the original
+walk. -/
+theorem exists_cubicRegionWalk_prefix_to_metricSphere
+    {d n : ℕ} {F : Set (Cubic d)} {root u y : F}
+    (w : (cubicRegionGraph d F).Walk u y)
+    (hu : cubicL1Dist (root : Cubic d) (u : Cubic d) ≤ n)
+    (hy : n ≤ cubicL1Dist (root : Cubic d) (y : Cubic d)) :
+    ∃ z : F, ∃ q : (cubicRegionGraph d F).Walk u z,
+      z ∈ cubicRegionMetricSphere d F root n ∧
+        (∀ v ∈ q.support, v ∈ cubicRegionMetricBall d F root n) ∧
+        ∀ v ∈ q.support, v ∈ w.support := by
+  induction w with
+  | @nil u₀ =>
+      have hdist : cubicL1Dist (root : Cubic d) (u₀ : Cubic d) = n :=
+        le_antisymm hu hy
+      refine ⟨u₀, .nil, ?_, ?_, ?_⟩
+      · exact mem_cubicRegionMetricSphere_iff.mpr hdist
+      · intro v hv
+        simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hv
+        subst v
+        exact mem_cubicRegionMetricBall_iff.mpr hdist.le
+      · simp
+  | @cons u₀ u₁ y₀ hu₀u₁ tail ih =>
+      by_cases hlevel : cubicL1Dist (root : Cubic d) (u₀ : Cubic d) = n
+      · refine ⟨u₀, .nil, mem_cubicRegionMetricSphere_iff.mpr hlevel, ?_, ?_⟩
+        · intro v hv
+          simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hv
+          subst v
+          exact mem_cubicRegionMetricBall_iff.mpr hlevel.le
+        · simp
+      · have hu₀lt : cubicL1Dist (root : Cubic d) (u₀ : Cubic d) < n :=
+          lt_of_le_of_ne hu hlevel
+        have hadj : (cubicGraph d).Adj (u₀ : Cubic d) (u₁ : Cubic d) := by
+          exact SimpleGraph.induce_adj.mp hu₀u₁
+        obtain ⟨a, ha⟩ := (cubicGraph_adj_iff_exists_stepFrom _ _).mp hadj
+        have hu₁le : cubicL1Dist (root : Cubic d) (u₁ : Cubic d) ≤ n := by
+          calc
+            cubicL1Dist (root : Cubic d) (u₁ : Cubic d) ≤
+                cubicL1Dist (root : Cubic d) (u₀ : Cubic d) +
+                  cubicL1Dist (u₀ : Cubic d) (u₁ : Cubic d) :=
+              cubicL1Dist_triangle _ _ _
+            _ = cubicL1Dist (root : Cubic d) (u₀ : Cubic d) + 1 := by
+              rw [ha, cubicL1Dist_stepFrom]
+            _ ≤ n := by omega
+        obtain ⟨z, q, hzSphere, hqBall, hqSupport⟩ := ih hu₁le hy
+        refine ⟨z, q.cons hu₀u₁, hzSphere, ?_, ?_⟩
+        · intro v hv
+          simp only [SimpleGraph.Walk.support_cons, List.mem_cons] at hv
+          rcases hv with rfl | hv
+          · exact mem_cubicRegionMetricBall_iff.mpr hu
+          · exact hqBall v hv
+        · intro v hv
+          simp only [SimpleGraph.Walk.support_cons, List.mem_cons] at hv ⊢
+          rcases hv with rfl | hv
+          · exact Or.inl rfl
+          · exact Or.inr (hqSupport v hv)
 
 namespace SiteExploration
 

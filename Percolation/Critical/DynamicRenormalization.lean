@@ -61,6 +61,7 @@ theorem BoundaryThresholdProfile.configuration_mono {d : ℕ}
 
 /-- Finite state of a site exploration.  `frontier` contains sites still eligible to be queried;
 `occupied` and `rejected` contain the two possible recorded outcomes. -/
+@[ext]
 structure SiteExplorationState (V : Type*) [DecidableEq V] where
   occupied : Finset V
   rejected : Finset V

@@ -122,6 +122,12 @@ import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.AdaptiveTargetExhaustion
 import Percolation.Critical.AdaptiveRegionShells
+import Percolation.Critical.RootedSitePercolation
+import Percolation.Critical.FiniteInducedSite
+import Percolation.Critical.RootedSiteShellProbability
+import Percolation.Critical.AdaptiveAnswerEmbedding
+import Percolation.Critical.AdaptiveBallCompatibility
+import Percolation.Critical.AdaptiveSiteExplorationTheorem
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

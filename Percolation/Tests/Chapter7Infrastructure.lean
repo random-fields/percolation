@@ -5,6 +5,7 @@ import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.AdaptiveTargetExhaustion
 import Percolation.Critical.AdaptiveRegionShells
+import Percolation.Critical.AdaptiveSiteExplorationTheorem
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -1289,5 +1290,23 @@ example {Omega : Type*} [MeasurableSpace Omega]
 example (d : ℕ) (F : Set (Cubic d)) (root : F) :
     root ∈ cubicRegionMetricSphere d F root 0 := by
   simp
+
+example (d : ℕ) (F : Set (Cubic d)) (root : F) (n : ℕ)
+    (v : {v : F // v ∈ cubicRegionMetricBall d F root n}) :
+    AdaptiveSiteExploration.mapDecisionHistory
+      (SiteExploration.cubicRegionBallEmbedding d F root n) [(v, true)] =
+        [((v : F), true)] := by
+  rfl
+
+example {Omega : Type*} (d : ℕ) (F : Set (Cubic d)) [LinearOrder F]
+    (root : F) (n : ℕ)
+    (answer : Omega → List (F × Bool) → F → Bool) :
+    (SiteExploration.cubicRegionBallSiteExploration d F root n).adaptiveLimitTargetHitEvent
+        (SiteExploration.cubicRegionBallAdaptiveAnswer d F root n answer)
+        (cubicRegionBallTarget d F root n) ⊆
+      (cubicRegionSiteExploration d F root).adaptiveLimitTargetHitEvent
+        answer (cubicRegionMetricSphere d F root n) :=
+  SiteExploration.cubicRegionBall_adaptiveLimitTargetHitEvent_subset
+    d F root n answer
 
 end Percolation

@@ -544,3 +544,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.cubic_lss_finiteCylinder_measureReal_le
 #print axioms Percolation.cubic_lss_finiteCylinder_measureReal_le'
 #print axioms Percolation.epsilonGoodBlockLaw_lss_finiteCylinder_measureReal_le
+#print axioms Percolation.exists_lssFiniteCylinderDominationThreshold
+#print axioms Percolation.exists_cubic_lssFiniteCylinderDominationThreshold

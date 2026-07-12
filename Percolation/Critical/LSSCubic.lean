@@ -79,4 +79,21 @@ theorem cubic_lss_finiteCylinder_measureReal_le'
   cubic_lss_finiteCylinder_measureReal_le
     d k (cubicNatEquiv d hd) q hq mu hmu hmarginal hdep hinc
 
+/-- Threshold form of finite-cylinder LSS domination on `ℤ^d`. -/
+theorem exists_cubic_lssFiniteCylinderDominationThreshold
+    (d k : ℕ) (hd : 0 < d) (q : I) (hq : (q : ℝ) < 1) :
+    ∃ delta : I, (delta : ℝ) < 1 ∧
+      ∀ (mu : Measure (Set (Cubic d))), IsProbabilityMeasure mu →
+        KDependent (cubicGraph d) k mu →
+        (∀ current : Cubic d,
+          (delta : ℝ) ≤
+            mu.real {original : Set (Cubic d) | current ∈ original}) →
+        ∀ (R : Finset (Cubic d)) (A : Set (Set (Cubic d))),
+          DependsOn R A → IsIncreasingEvent A →
+            setBer((Set.univ : Set (Cubic d)), q).real A ≤ mu.real A := by
+  exact exists_lssFiniteCylinderDominationThreshold
+    (cubicGraph d) k (3 ^ d * (k + 1) ^ d) (cubicNatEquiv d hd)
+    (cubic_enumerationPrefixDependencyGraph_neighbor_card_le
+      d k (cubicNatEquiv d hd)) q hq
+
 end Percolation

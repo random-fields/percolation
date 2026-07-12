@@ -257,4 +257,30 @@ theorem lss_finiteCylinder_measureReal_le
       hdep.measurableSet hinc
   exact hiidDiluted.trans hDilutedOriginal
 
+/-- Source-style threshold formulation of the countable finite-cylinder LSS theorem: for
+every requested iid density below one, a uniform marginal threshold strictly below one
+suffices. -/
+theorem exists_lssFiniteCylinderDominationThreshold
+    {V : Type*} [Countable V] [DecidableEq V]
+    (G : SimpleGraph V) (k B : ℕ) (e : ℕ ≃ V)
+    (hneighbor : ∀ n (current : Fin n),
+      (Finset.univ.filter fun x ↦
+        (enumerationPrefixDependencyGraph G k e n).edist current x ≤ 1).card ≤ B)
+    (q : I) (hq : (q : ℝ) < 1) :
+    ∃ delta : I, (delta : ℝ) < 1 ∧
+      ∀ (mu : Measure (Set V)), IsProbabilityMeasure mu →
+        KDependent G k mu →
+        (∀ current : V,
+          (delta : ℝ) ≤ mu.real {original : Set V | current ∈ original}) →
+        ∀ (R : Finset V) (A : Set (Set V)),
+          DependsOn R A → IsIncreasingEvent A →
+            setBer((Set.univ : Set V), q).real A ≤ mu.real A := by
+  let delta := lssMarginalThresholdUnit B q hq
+  refine ⟨delta, ?_, ?_⟩
+  · exact lssMarginalThreshold_lt_one B q.2.1 hq
+  · intro mu hprob hmu hmarginal R A hdep hinc
+    letI : IsProbabilityMeasure mu := hprob
+    exact lss_finiteCylinder_measureReal_le
+      G k B e hneighbor q hq mu hmu hmarginal hdep hinc
+
 end Percolation

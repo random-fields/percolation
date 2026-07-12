@@ -1028,6 +1028,13 @@ Dated milestones and anti-library notes.
     finite coarse crossing events while keeping the still-missing all-observable extension of
     headline Theorem 7.65 explicit.
 
+97. **Chapter 7 source-style finite-cylinder LSS threshold (2026-07-12).** Repackaged the
+    explicit parameter choice as the source quantifier order: for every requested iid density
+    `q<1`, there exists a marginal threshold `δ<1` which works uniformly for every
+    `k`-dependent law and every increasing finite-cylinder event. A cubic corollary hides both
+    the enumeration and the `3^d(k+1)^d` neighborhood bound. This is not labelled as the full
+    expectation-form Theorem 7.65.
+
 ## Axiom Ledger
 
 Empty.

@@ -119,6 +119,7 @@ import Percolation.Critical.FiniteExplorationTermination
 import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.AdaptiveDecisionOutcome
+import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

@@ -4,6 +4,7 @@ import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.AdaptiveDecisionOutcome
+import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.FiniteExplorationTermination
 import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
@@ -412,3 +413,6 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.SiteExploration.finiteSiteHitsTarget_probability_le_adaptiveDecisionWinMass
 #print axioms Percolation.AdaptiveSiteExploration.adaptiveDecisionLeafEvent_disjoint_of_ne
 #print axioms Percolation.AdaptiveSiteExploration.measureReal_adaptiveDecisionWinEvent
+#print axioms Percolation.SiteExploration.replayState_history_eq_or_frontier_eq_empty
+#print axioms Percolation.SiteExploration.toAdaptive_stateAfter_eq_replayState_of_mem_leaf
+#print axioms Percolation.SiteExploration.finiteSiteHitsTarget_probability_le_adaptiveTargetHitEvent

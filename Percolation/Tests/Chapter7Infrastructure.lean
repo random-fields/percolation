@@ -2,6 +2,7 @@ import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.AdaptiveDecisionOutcome
+import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -1261,5 +1262,10 @@ example :
     simp
   · simp [AdaptiveSiteExploration.adaptiveQueryHistory,
       AdaptiveSiteExploration.adaptiveQueryHistoryFrom]
+
+example (answer : Fin 1 → List (Fin 1 × Bool) → Fin 1 → Bool) (omega : Fin 1) :
+    SiteExploration.prefixedAdaptiveAnswer [((0 : Fin 1), true)] answer omega [] 0 =
+      answer omega [((0 : Fin 1), true)] 0 := by
+  rfl
 
 end Percolation

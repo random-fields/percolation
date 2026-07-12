@@ -14,6 +14,7 @@ import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.LSSParameters
+import Percolation.Bernoulli.LSSDilution
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.ExplorationLaw
@@ -266,6 +267,17 @@ example (B : ℕ) (q : I) (hq : (q : ℝ) < 1) :
         1 - (θ : ℝ) ≤ (1 - a) * (1 - a) ^ B ∧
         1 - (θ : ℝ) ≤ (1 - a) * a ^ B :=
   lss_parameter_selection B q hq
+
+example {ι : Type*} [Countable ι] (μ : Measure (Set ι))
+    [IsProbabilityMeasure μ] (p : I) :
+    StochasticallyDominates μ (siteDilutionLaw μ p) :=
+  stochasticallyDominates_siteDilutionLaw μ p
+
+example {ι : Type*} [Countable ι] [DecidableEq ι]
+    (μ : Measure (Set ι)) [IsProbabilityMeasure μ] (p : I) (x : ι) :
+    (siteDilutionLaw μ p).real {η : Set ι | x ∈ η} =
+      μ.real {η : Set ι | x ∈ η} * (p : ℝ) :=
+  siteDilutionLaw_real_mem μ p x
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

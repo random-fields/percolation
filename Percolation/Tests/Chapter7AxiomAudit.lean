@@ -27,6 +27,7 @@ import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
 import Percolation.Bernoulli.SequentialDominationCountable
 import Percolation.Bernoulli.LSSParameters
+import Percolation.Bernoulli.LSSDilution
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
@@ -502,3 +503,5 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.AdaptiveSiteExploration.measurableSet_finiteAdaptiveOuterHistoryEvent_coordSigma
 #print axioms Percolation.AdaptiveSiteExploration.OuterHistorySupportsFresh.disjoint_outerHistorySupport
 #print axioms Percolation.lss_parameter_selection
+#print axioms Percolation.siteDilutionLaw_real_mem
+#print axioms Percolation.stochasticallyDominates_siteDilutionLaw

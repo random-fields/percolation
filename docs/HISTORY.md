@@ -944,6 +944,12 @@ Dated milestones and anti-library notes.
     least `q`; an explicit marginal threshold strictly below one makes both source inequalities
     hold uniformly. The probabilistic dilution induction of Theorem 7.65 remains separate.
 
+85. **Chapter 7 measurable LSS dilution (2026-07-12).** Defined the law of `Z^pY` as the
+    pushforward of the product of an arbitrary site law and an independent iid Bernoulli law.
+    Its one-site marginal is the original marginal multiplied by `p`. The canonical coupling
+    pairs `Y` with the subset `Z^pY`, proving the exact stochastic comparison `Y ≥st Z^pY`
+    used before (7.116). The reverse comparison with iid density `ap` remains the LSS induction.
+
 ## Axiom Ledger
 
 Empty.

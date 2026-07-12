@@ -1,5 +1,6 @@
 import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.FiniteSiteExplorationCompleteness
+import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -1232,5 +1233,16 @@ example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
         siteOpenCluster G eta root :=
   rootedSiteExploration_stateAfter_card_occupied_eq_siteOpenCluster
     G neighbors mem_neighbors root eta hroot
+
+example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
+    (G : SimpleGraph V) (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (root : V) (target : Finset V) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q ≤ 1) :
+    finiteBernoulliProbability Finset.univ q
+        (SiteExploration.finiteSiteHitsTarget G root target) ≤
+      (rootedSiteExploration G neighbors mem_neighbors root).completionHitProbability
+        q root target (rootedSiteExploration G neighbors mem_neighbors root).initial :=
+  SiteExploration.finiteBernoulliProbability_finiteSiteHitsTarget_le_rooted_completion
+    G neighbors mem_neighbors root target hq0 hq1
 
 end Percolation

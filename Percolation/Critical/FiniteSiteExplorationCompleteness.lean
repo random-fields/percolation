@@ -63,9 +63,9 @@ theorem stateAfter_answersAgree (E : SiteExploration V) (η : Set V)
   | zero => exact hinitial
   | succ n ih => exact E.step_answersAgree η ih
 
-theorem step_frontierClosed (E : SiteExploration V)
+theorem step_frontierClosed (E : SiteExploration V) (answer : V → Bool)
     {s : SiteExplorationState V} (hs : E.FrontierClosed s) :
-    E.FrontierClosed (E.step (configurationAnswer η) s) := by
+    E.FrontierClosed (E.step answer s) := by
   classical
   unfold FrontierClosed at hs ⊢
   unfold SiteExploration.step
@@ -110,12 +110,12 @@ theorem step_frontierClosed (E : SiteExploration V)
             (Finset.mem_union_right _ (Finset.mem_insert_self v s.rejected))
         · exact Finset.mem_union_right _ (Finset.mem_erase.mpr ⟨hzv, hzfront⟩)
 
-theorem stateAfter_frontierClosed (E : SiteExploration V) (η : Set V)
+theorem stateAfter_frontierClosed (E : SiteExploration V) (answer : V → Bool)
     (hinitial : E.FrontierClosed E.initial) (n : ℕ) :
-    E.FrontierClosed (E.stateAfter (configurationAnswer η) n) := by
+    E.FrontierClosed (E.stateAfter answer n) := by
   induction n with
   | zero => exact hinitial
-  | succ n ih => exact E.step_frontierClosed ih
+  | succ n ih => exact E.step_frontierClosed answer ih
 
 theorem mem_occupied_of_open_walk_of_frontier_eq_empty
     (E : SiteExploration V) (η : Set V) {s : SiteExplorationState V}
@@ -198,7 +198,7 @@ theorem rootedSiteExploration_stateAfter_card_occupied_eq_siteOpenCluster
       (rootedSiteExploration_initial_openRootedAt G neighbors mem_neighbors root) _
   · exact E.stateAfter_answersAgree η
       (rootedSiteExploration_initial_answersAgree G neighbors mem_neighbors hroot) _
-  · exact E.stateAfter_frontierClosed η
+  · exact E.stateAfter_frontierClosed (configurationAnswer η)
       (rootedSiteExploration_initial_frontierClosed G neighbors mem_neighbors root) _
   · exact E.stateAfter_card_frontier_eq_empty (configurationAnswer η)
       (rootedSiteExploration_initial_wellFormed G neighbors mem_neighbors root)

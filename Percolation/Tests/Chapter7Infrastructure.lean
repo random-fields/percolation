@@ -3,6 +3,7 @@ import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
+import Percolation.Critical.AdaptiveTargetExhaustion
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
@@ -1275,5 +1276,13 @@ example {V Omega : Type*} [DecidableEq V] [LinearOrder V]
     E.adaptiveTargetHitEvent answer target n ⊆
       E.adaptiveLimitTargetHitEvent answer target :=
   E.adaptiveTargetHitEvent_subset_adaptiveLimitTargetHitEvent answer target n
+
+example {Omega : Type*} [MeasurableSpace Omega]
+    (mu : Measure Omega) [IsFiniteMeasure mu]
+    (A : ℕ → Set Omega) (B : Set Omega) (c : ℝ)
+    (hA : ∀ n, MeasurableSet (A n)) (hanti : Antitone A)
+    (hsub : (⋂ n, A n) ⊆ B) (hlower : ∀ n, c ≤ mu.real (A n)) :
+    c ≤ mu.real B :=
+  measureReal_limitEvent_ge_of_antitone_exhaustion mu A B c hA hanti hsub hlower
 
 end Percolation

@@ -5,6 +5,7 @@ import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
+import Percolation.Critical.AdaptiveTargetExhaustion
 import Percolation.Critical.FiniteExplorationTermination
 import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
@@ -418,3 +419,4 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.SiteExploration.finiteSiteHitsTarget_probability_le_adaptiveTargetHitEvent
 #print axioms Percolation.SiteExploration.measurableSet_adaptiveLimitTargetHitEvent
 #print axioms Percolation.SiteExploration.finiteSiteHitsTarget_probability_le_adaptiveLimitTargetHitEvent
+#print axioms Percolation.measureReal_limitEvent_ge_of_antitone_exhaustion

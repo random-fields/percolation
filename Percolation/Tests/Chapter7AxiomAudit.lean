@@ -27,6 +27,9 @@ import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
 import Percolation.Critical.DynamicSteering
 import Percolation.Critical.RootedSiteExploration
+import Percolation.Critical.AdaptiveExploration
+import Percolation.Critical.DynamicBlockCertificate
+import Percolation.Critical.BlockSuccessComposition
 import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.StaticCoalescence
@@ -341,3 +344,12 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.rootedSiteExploration_initial_wellFormed
 #print axioms Percolation.rootedSiteExploration_initial_openRootedAt
 #print axioms Percolation.cubicRegionSiteExploration_infinite_probability_pos
+#print axioms Percolation.AdaptiveSiteExploration.cubicRegion_initial_openRootedAt
+#print axioms Percolation.AdaptiveSiteExploration.step_openRootedAt
+#print axioms Percolation.AdaptiveSiteExploration.measurable_occupiedLimit
+#print axioms Percolation.AdaptiveSiteExploration.infiniteCluster_probability_pos_of_prefixLowerBound
+#print axioms Percolation.hasInfiniteOpenClusterInVertices_of_infinite_anchor_connections
+#print axioms Percolation.AdaptiveSiteExploration.bondInfiniteCluster_probability_pos_of_prefixLowerBound
+#print axioms Percolation.allSuccess_inter_history_gt
+#print axioms Percolation.pow_mul_measureReal_le_of_step
+#print axioms Percolation.pow_mul_measureReal_lt_of_step

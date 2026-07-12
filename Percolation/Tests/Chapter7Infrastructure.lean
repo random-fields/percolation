@@ -33,6 +33,9 @@ import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRevealBudget
 import Percolation.Critical.DynamicSteering
 import Percolation.Critical.RootedSiteExploration
+import Percolation.Critical.AdaptiveExploration
+import Percolation.Critical.DynamicBlockCertificate
+import Percolation.Critical.BlockSuccessComposition
 import Percolation.Critical.StaticSecondCluster
 import Percolation.Critical.StaticAnnularPeeling
 import Percolation.Critical.StaticLogInset
@@ -1053,5 +1056,46 @@ example :
           (by simp) 0).initial :=
   rootedSiteExploration_initial_openRootedAt
     (⊥ : SimpleGraph (Fin 1)) (fun _ ↦ ∅) (by simp) 0
+
+example {V Omega : Type*} [Countable V] [DecidableEq V] [LinearOrder V]
+    [MeasurableSpace Omega] (E : AdaptiveSiteExploration V)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer) :
+    Measurable fun omega ↦ E.occupiedLimit (answer omega) :=
+  E.measurable_occupiedLimit hanswer
+
+example {V Omega : Type*} [Countable V] [DecidableEq V] [LinearOrder V]
+    [MeasurableSpace Omega] (E : AdaptiveSiteExploration V)
+    (mu : Measure Omega) [IsProbabilityMeasure mu]
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer) (e : ℕ ≃ V)
+    (p : I) (hp : 0 < (p : ℝ)) (root : V)
+    (hinitial : E.OpenRootedAt root E.initial)
+    (hseq : ∀ n, HasFiniteSequentialLowerBound
+      (enumerationPrefixLaw e n (E.occupiedLimitLaw mu answer)) (p : ℝ)) :
+    0 < mu.real {omega |
+      hasInfiniteSiteCluster E.graph (E.occupiedLimit (answer omega))} :=
+  E.infiniteCluster_probability_pos_of_prefixLowerBound
+    mu answer hanswer e p hp root hinitial hseq
+
+example {V : Type*} {d : ℕ} {A : Set (Cubic d)} {omega : EdgeConfiguration d}
+    {S : Set V} (hS : S.Infinite) (anchor : V → Cubic d)
+    (hinj : Set.InjOn anchor S) {root : V} (hroot : root ∈ S)
+    (hA : ∀ v ∈ S, anchor v ∈ A)
+    (hconn : ∀ v ∈ S,
+      omega ∈ connectionEventWithinVertices d A (anchor root) (anchor v)) :
+    hasInfiniteOpenClusterInVertices d A omega :=
+  hasInfiniteOpenClusterInVertices_of_infinite_anchor_connections
+    hS anchor hinj hroot hA hconn
+
+example {Omega iota : Type*} [MeasurableSpace Omega] [Fintype iota] [Nonempty iota]
+    {mu : Measure Omega} [IsFiniteMeasure mu]
+    (G : iota → Set Omega) (H : Set Omega)
+    (hG : ∀ i, MeasurableSet (G i)) (hH : MeasurableSet H)
+    (epsilon : ℝ)
+    (hsuccess : ∀ i, (1 - epsilon) * mu.real H < mu.real (G i ∩ H)) :
+    (1 - Fintype.card iota * epsilon) * mu.real H <
+      mu.real ((⋂ i, G i) ∩ H) :=
+  allSuccess_inter_history_gt G H hG hH epsilon hsuccess
 
 end Percolation

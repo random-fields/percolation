@@ -31,6 +31,7 @@ import Percolation.Critical.SiteSymmetry
 import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.LSSCubic
 import Percolation.Critical.LSSGoodBlocks
+import Percolation.Critical.StaticBlockSliceCrossing
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
@@ -458,6 +459,13 @@ example (d : ℕ) (hd : 0 < d) (p q : I) (ε : ℝ) (n : ℕ) (hn : 1 ≤ n)
       (epsilonGoodBlockLaw d p ε n).real A :=
   epsilonGoodBlockLaw_lss_finiteCylinder_measureReal_le
     d hd p q ε n hn hq hmarginal hdep hinc
+
+example (d : ℕ) (hd : 2 ≤ d) (q : I) (m n : ℕ) :
+    setBer((Set.univ : Set (Cubic d)), q).real
+        (epsilonGoodBlockSliceCrossingEvent d hd m n) =
+      setBer((Set.univ : Set SquareVertex), q).real
+        (siteSquareRectangleCrossingEvent m n) :=
+  setBernoulli_real_epsilonGoodBlockSliceCrossingEvent d hd q m n
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

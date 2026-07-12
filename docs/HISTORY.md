@@ -1035,6 +1035,14 @@ Dated milestones and anti-library notes.
     the enumeration and the `3^d(k+1)^d` neighborhood bound. This is not labelled as the full
     expectation-form Theorem 7.65.
 
+98. **Chapter 7 planar good-block slice crossing (2026-07-12).** Embedded the square lattice
+    into the first two coarse coordinates, proved exact preservation of iid site-crossing
+    probabilities, and applied the good-block LSS theorem to the resulting finite-cylinder
+    event. A deterministic companion maps the witnessed square walk into `ℤ^d` and lifts it
+    through neighboring selected good clusters to an actual open-bond connection between the
+    endpoint block faces. This formalizes the LSS/path-lifting core of (7.73)--(7.74); the
+    exponential site-crossing input (7.70) remains.
+
 ## Axiom Ledger
 
 Empty.

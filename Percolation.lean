@@ -77,6 +77,7 @@ import Percolation.Critical.SausageRenewal
 import Percolation.Critical.LatticeAnimals
 import Percolation.Critical.LSSCubic
 import Percolation.Critical.LSSGoodBlocks
+import Percolation.Critical.StaticBlockSliceCrossing
 import Percolation.Critical.ConcreteAnimals
 import Percolation.Critical.ConcreteClusterSeries
 import Percolation.Critical.ClusterDensityDerivative

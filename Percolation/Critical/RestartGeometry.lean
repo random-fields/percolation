@@ -593,6 +593,17 @@ def sprinkledRestartEvent
     Set (CubicEdge d → ℝ) :=
   sprinkledAvailableExitEvent beta delta (restartAvailableExitEdges d i m n R p)
 
+theorem measurableSet_sprinkledRestartEvent
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d))
+    (p : I) (beta : CubicEdge d → I) (delta : ℝ) :
+    MeasurableSet (sprinkledRestartEvent d i m n R p beta delta) := by
+  let E := cubicRegionBoundaryEdgesWithinBox d R n
+  let U := restartAvailableExitEdges d i m n R p
+  apply measurableSet_sprinkledAvailableExitEvent E beta delta U
+  · exact restartAvailableExitEdges_subset_boundary d i m n R p
+  · intro S _hSE
+    exact measurableSet_restartAvailableExitEdges_eq_coordSigma d i m n R p S
+
 /-- Quantitative assembly of Lemma 7.17 once `m,n,t,eta` satisfy Grimmett's choices
 (7.18)–(7.20). -/
 theorem sprinkledRestart_inter_history_gt_of_seedConnection

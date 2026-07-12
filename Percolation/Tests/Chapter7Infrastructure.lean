@@ -1152,4 +1152,22 @@ example (center : Cubic 3) (a : CubicDirection 3)
       (couplingMeasure (CubicEdge 3)).real A :=
   couplingMeasure_real_orientedTransportEvent center a hA
 
+example (center : Cubic 3) (a : CubicDirection 3) (p : I)
+    (X : CubicEdge 3 → ℝ) :
+    thresholdConfiguration p
+        (cubicGraphIsoCouplingReindex (cubicDirectionOrientationIso center a) X) =
+      cubicGraphIsoConfigurationPullback (cubicDirectionOrientationIso center a)
+        (thresholdConfiguration p X) :=
+  thresholdConfiguration_orientedCouplingReindex center a p X
+
+example (x : Cubic 3) (a : CubicDirection 3) {m n : ℕ} {y : Cubic 3}
+    (hmn : 2 * m ≤ n) (hy : y ∈ seededBoundaryQuadrant 3 a.1 n) :
+    orientedSteeredRestartRegion (m + n + 1) x a m n y ⊆
+      (cubicMetricBox 3 (grimmettMarstrandSiteCenter (m + n + 1) x)
+          (2 * (m + n + 1)) : Set (Cubic 3)) ∪
+        (cubicMetricBox 3
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x a))
+          (2 * (m + n + 1)) : Set (Cubic 3)) :=
+  orientedSteeredRestartRegion_subset_endpointBoxes x a hmn hy
+
 end Percolation

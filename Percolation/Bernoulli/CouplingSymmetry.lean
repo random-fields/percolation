@@ -56,6 +56,16 @@ def cubicGraphIsoCouplingReindex {d : ℕ}
     (X : CubicEdge d → ℝ) : CubicEdge d → ℝ :=
   couplingReindex phi.mapEdgeSet X
 
+/-- Thresholding reindexed common-uniform labels is exactly configuration pullback along the
+same graph automorphism. -/
+theorem thresholdConfiguration_cubicGraphIsoCouplingReindex
+    {d : ℕ} (phi : cubicGraph d ≃g cubicGraph d) (p : I)
+    (X : CubicEdge d → ℝ) :
+    thresholdConfiguration p (cubicGraphIsoCouplingReindex phi X) =
+      cubicGraphIsoConfigurationPullback phi (thresholdConfiguration p X) := by
+  ext e
+  rfl
+
 theorem measurable_cubicGraphIsoCouplingReindex {d : ℕ}
     (phi : cubicGraph d ≃g cubicGraph d) :
     Measurable (cubicGraphIsoCouplingReindex phi) :=

@@ -921,4 +921,11 @@ example (i : Fin 3) {m n : ℕ} {y : Cubic 3}
     SeedBoxWithinBoundaryLayer 3 i m n (canonicalBoundarySeedCenter i m n y) :=
   canonicalBoundarySeedBoxWithinBoundaryLayer i hmn hy
 
+example (p : I) (hp : 0 < theta 3 p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
+    (i : Fin 3) {epsilon : ℝ} (hepsilon : 0 < epsilon) :
+    ∃ m n : ℕ, 2 * m ≤ n ∧
+      1 - epsilon <
+        (bernoulliBondMeasure 3 p).real (seedConnectionEvent 3 i m n) :=
+  seedConnection_probability_gt 3 (by omega) p hp hp0 hp1 i hepsilon
+
 end Percolation

@@ -634,6 +634,107 @@ theorem dilutedConstraintEvent_union_true
       · intro _
         exact ⟨hopenY hxones, hopenZ hxones⟩
 
+/-- Prescribing diluted values on a union is the intersection of the two finite
+constraint events.  No disjointness hypothesis is needed because the prescribed value
+set is shared. -/
+theorem dilutedConstraintEvent_union
+    {ι : Type*} [DecidableEq ι]
+    (A B : Finset ι) (z : Set ι) :
+    dilutedConstraintEvent (A ∪ B) z =
+      dilutedConstraintEvent A z ∩ dilutedConstraintEvent B z := by
+  ext yz
+  simp only [dilutedConstraintEvent, Set.mem_setOf_eq, Set.mem_inter_iff,
+    Finset.mem_union]
+  aesop
+
+/-- Normal form of the `N⁰ ∪ N¹ ∪ M` partition: the auxiliary retention bits on
+`N¹` are the only coordinates factored out of the remaining event. -/
+theorem dilutedConstraintEvent_eq_lss_retention_factor
+    {ι : Type*} [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ) (current : ι)
+    (C : Finset ι) (z : Set ι) :
+    dilutedConstraintEvent C z =
+      (retentionOpenOnProductEvent (lssNearOne G k current C z) ∩
+        originalOpenOnProductEvent (lssNearOne G k current C z)) ∩
+      dilutedConstraintEvent
+        (lssNearZero G k current C z ∪ lssFar G k current C) z := by
+  classical
+  rw [dilutedConstraintEvent_eq_lss_partition G k current C z,
+    dilutedConstraintEvent_union]
+  ext yz
+  simp only [Set.mem_inter_iff]
+  tauto
+
+/-- Ratio-free complement arithmetic: a relative upper bound on failure inside a
+measurable history is equivalent to the corresponding lower bound on success. -/
+theorem mul_measureReal_le_inter_of_compl_inter_le
+    {Ω : Type*} [MeasurableSpace Ω]
+    (mu : Measure Ω) [IsFiniteMeasure mu]
+    (success history : Set Ω) (a : ℝ)
+    (hsuccess : MeasurableSet success) (hhistory : MeasurableSet history)
+    (hfailure : mu.real (successᶜ ∩ history) ≤
+      (1 - a) * mu.real history) :
+    a * mu.real history ≤ mu.real (history ∩ success) := by
+  have hdisjoint : Disjoint (history ∩ success) (successᶜ ∩ history) := by
+    rw [Set.disjoint_left]
+    exact fun _ hopen hclosed ↦ hclosed.1 hopen.2
+  have hunion : (history ∩ success) ∪ (successᶜ ∩ history) = history := by
+    ext omega
+    by_cases h : omega ∈ success <;> simp [h]
+  have hsum : mu.real (history ∩ success) +
+      mu.real (successᶜ ∩ history) = mu.real history := by
+    rw [← measureReal_union hdisjoint
+      (hsuccess.compl.inter hhistory), hunion]
+  linarith
+
+/-- Grimmett's reduced history `A⁰ ∩ A¹ ∩ A`, after the independent
+retention-open bits on `N¹` have been removed. -/
+noncomputable def lssReducedHistoryEvent
+    {ι : Type*} [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ) (current : ι)
+    (C : Finset ι) (z : Set ι) : Set (Set ι × Set ι) :=
+  originalOpenOnProductEvent (lssNearOne G k current C z) ∩
+    dilutedConstraintEvent
+      (lssNearZero G k current C z ∪ lssFar G k current C) z
+
+theorem measurableSet_lssReducedHistoryEvent
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ) (current : ι)
+    (C : Finset ι) (z : Set ι) :
+    MeasurableSet (lssReducedHistoryEvent G k current C z) :=
+  (measurableSet_originalOpenOnProductEvent _).inter
+    (measurableSet_dilutedConstraintEvent _ _)
+
+/-- The failure part of the reduced history can forget all near constraints and is then
+controlled by `k`-dependence.  This is the upper-bound half of (7.119). -/
+theorem productMeasure_real_originalClosed_inter_lssReducedHistoryEvent_le
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu) (p : I)
+    (current : ι) (C : Finset ι) (z : Set ι) (theta : ℝ)
+    (hmarginal : theta ≤ mu.real {original : Set ι | current ∈ original}) :
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+        ({yz : Set ι × Set ι | current ∉ yz.1} ∩
+          lssReducedHistoryEvent G k current C z) ≤
+      (1 - theta) *
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent (lssFar G k current C) z) := by
+  calc
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+          ({yz : Set ι × Set ι | current ∉ yz.1} ∩
+            lssReducedHistoryEvent G k current C z) ≤
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          ({yz : Set ι × Set ι | current ∉ yz.1} ∩
+            dilutedConstraintEvent (lssFar G k current C) z) := by
+      apply measureReal_mono _ (measure_ne_top _ _)
+      intro yz hyz
+      refine ⟨hyz.1, ?_⟩
+      intro x hx
+      exact hyz.2.2 x (Finset.mem_union_right _ hx)
+    _ ≤ _ := productMeasure_real_originalClosed_inter_dilutedConstraint_far_le
+      G k mu hmu p current C z theta hmarginal
+
 /-- General finite-set form of the induction claim (7.117), restricted to histories smaller
 than `J`.  The current coordinate is required to be new, exactly as in the source. -/
 def HasLSSConstraintLowerBoundBelow
@@ -656,7 +757,7 @@ theorem pow_mul_measureReal_dilutedConstraint_le_originalOpen_inter
     (hp : 0 < (p : ℝ)) (ha : 0 ≤ a)
     (hlower : HasLSSConstraintLowerBoundBelow mu p a J)
     (M ones : Finset ι) (z : Set ι)
-    (hdisj : Disjoint M ones) (hcard : M.card + ones.card < J) :
+    (hdisj : Disjoint M ones) (hcard : M.card + ones.card ≤ J) :
     a ^ ones.card *
         (mu.prod setBer((Set.univ : Set ι), p)).real
           (dilutedConstraintEvent M z) ≤
@@ -675,7 +776,7 @@ theorem pow_mul_measureReal_dilutedConstraint_le_originalOpen_inter
       have hcardSmall : M.card + ones.card < J := by
         rw [Finset.card_insert_of_notMem hx] at hcard
         omega
-      have hprev := ih M z hdisjMones hcardSmall
+      have hprev := ih M z hdisjMones hcardSmall.le
       let enlargedValues : Set ι := z ∪ (ones : Set ι)
       have hMonesCard : (M ∪ ones).card < J := by
         rw [Finset.card_union_of_disjoint hdisjMones]
@@ -725,5 +826,445 @@ theorem pow_mul_measureReal_dilutedConstraint_le_originalOpen_inter
               (originalOpenOnProductEvent ones ∩ dilutedConstraintEvent M z) := by
           exact mul_le_mul_of_nonneg_left hprev ha
         _ ≤ _ := hstep
+
+/-- The lower-bound half of (7.119).  Event `B⁰` supplies the independent
+`(1-p)^|N⁰|` factor, while the induction kernel (7.122) supplies `a^|N¹|`. -/
+theorem pow_mul_measureReal_dilutedFar_le_lssReducedHistoryEvent
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (p : I) (a : ℝ) (J : ℕ)
+    (hp : 0 < (p : ℝ)) (ha : 0 ≤ a)
+    (hlower : HasLSSConstraintLowerBoundBelow mu p a J)
+    (current : ι) (C : Finset ι) (z : Set ι)
+    (hcard : C.card ≤ J) :
+    (1 - (p : ℝ)) ^ (lssNearZero G k current C z).card *
+        a ^ (lssNearOne G k current C z).card *
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent (lssFar G k current C) z) ≤
+      (mu.prod setBer((Set.univ : Set ι), p)).real
+        (lssReducedHistoryEvent G k current C z) := by
+  classical
+  let Nzero := lssNearZero G k current C z
+  let None := lssNearOne G k current C z
+  let M := lssFar G k current C
+  have hparts := pairwiseDisjoint_lssNearZero_lssNearOne_lssFar
+    G k current C z
+  have hNzeroM : Disjoint Nzero M := hparts.2.1
+  have hMNone : Disjoint M None := hparts.2.2.symm
+  have hMNoneCard : M.card + None.card ≤ J := by
+    rw [← Finset.card_union_of_disjoint hMNone]
+    apply (Finset.card_le_card ?_).trans hcard
+    intro x hx
+    rw [Finset.mem_union] at hx
+    rcases hx with hxM | hxNone
+    · exact (mem_lssFar G k current C x).mp hxM |>.1
+    · exact (mem_lssNearOne G k current C z x).mp hxNone |>.1
+  have hAone := pow_mul_measureReal_dilutedConstraint_le_originalOpen_inter
+    mu p a J hp ha hlower M None z hMNone hMNoneCard
+  have hretentionNonneg : 0 ≤ (1 - (p : ℝ)) ^ Nzero.card := by
+    exact pow_nonneg (sub_nonneg.mpr p.2.2) _
+  have hscaled :
+      (1 - (p : ℝ)) ^ Nzero.card *
+          (a ^ None.card *
+            (mu.prod setBer((Set.univ : Set ι), p)).real
+              (dilutedConstraintEvent M z)) ≤
+        (1 - (p : ℝ)) ^ Nzero.card *
+          (mu.prod setBer((Set.univ : Set ι), p)).real
+            (originalOpenOnProductEvent None ∩ dilutedConstraintEvent M z) :=
+    mul_le_mul_of_nonneg_left hAone hretentionNonneg
+  have hfactor :=
+    productMeasure_real_retentionClosed_inter_originalOpen_inter_dilutedConstraint
+      mu p Nzero None M z hNzeroM
+  have hsubset :
+      ((retentionClosedOnProductEvent Nzero ∩
+          originalOpenOnProductEvent None) ∩ dilutedConstraintEvent M z) ⊆
+        lssReducedHistoryEvent G k current C z := by
+    rintro yz ⟨⟨hclosed, hopen⟩, hfar⟩
+    refine ⟨hopen, ?_⟩
+    rw [dilutedConstraintEvent_union]
+    exact ⟨retentionClosedOnProductEvent_subset_dilutedConstraintEvent_nearZero
+      G k current C z hclosed, hfar⟩
+  calc
+    (1 - (p : ℝ)) ^ Nzero.card * a ^ None.card *
+          (mu.prod setBer((Set.univ : Set ι), p)).real
+            (dilutedConstraintEvent M z) =
+        (1 - (p : ℝ)) ^ Nzero.card *
+          (a ^ None.card *
+            (mu.prod setBer((Set.univ : Set ι), p)).real
+              (dilutedConstraintEvent M z)) := by ring
+    _ ≤ (1 - (p : ℝ)) ^ Nzero.card *
+          (mu.prod setBer((Set.univ : Set ι), p)).real
+            (originalOpenOnProductEvent None ∩
+              dilutedConstraintEvent M z) := hscaled
+    _ = (mu.prod setBer((Set.univ : Set ι), p)).real
+          ((retentionClosedOnProductEvent Nzero ∩
+            originalOpenOnProductEvent None) ∩
+              dilutedConstraintEvent M z) := hfactor.symm
+    _ ≤ _ := measureReal_mono hsubset (measure_ne_top _ _)
+
+/-- Equation (7.119) on the reduced history, before restoring the independent retention
+bits on `N¹`. -/
+theorem mul_measureReal_lssReducedHistoryEvent_le_originalOpen
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu)
+    (p : I) (a theta : ℝ) (B J : ℕ)
+    (hp : 0 < (p : ℝ)) (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
+    (hzero : 1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B)
+    (hone : 1 - theta ≤ (1 - a) * a ^ B)
+    (hlower : HasLSSConstraintLowerBoundBelow mu p a J)
+    (current : ι) (C : Finset ι) (z : Set ι)
+    (hCcard : C.card ≤ J)
+    (hnearCard : (C.filter fun x ↦ G.edist current x ≤ k).card ≤ B)
+    (hmarginal : theta ≤ mu.real {original : Set ι | current ∈ original}) :
+    a * (mu.prod setBer((Set.univ : Set ι), p)).real
+          (lssReducedHistoryEvent G k current C z) ≤
+      (mu.prod setBer((Set.univ : Set ι), p)).real
+        (lssReducedHistoryEvent G k current C z ∩
+          originalOpenAtProductEvent current) := by
+  let P := mu.prod setBer((Set.univ : Set ι), p)
+  let Nzero := lssNearZero G k current C z
+  let None := lssNearOne G k current C z
+  let M := lssFar G k current C
+  let R := lssReducedHistoryEvent G k current C z
+  have hcard : Nzero.card + None.card ≤ B :=
+    lssNearZero_card_add_lssNearOne_card_le
+      G k current C z B hnearCard
+  have hmixed : 1 - theta ≤
+      (1 - a) * (1 - (p : ℝ)) ^ Nzero.card * a ^ None.card :=
+    one_sub_le_lss_mixed_factor B Nzero.card None.card p
+      ha0 ha1 hcard hzero hone
+  have hRlower := pow_mul_measureReal_dilutedFar_le_lssReducedHistoryEvent
+    G k mu p a J hp ha0 hlower current C z hCcard
+  have hfailureUpper :=
+    productMeasure_real_originalClosed_inter_lssReducedHistoryEvent_le
+      G k mu hmu p current C z theta hmarginal
+  have hfailure : P.real
+      ((originalOpenAtProductEvent current)ᶜ ∩ R) ≤
+        (1 - a) * P.real R := by
+    calc
+      P.real ((originalOpenAtProductEvent current)ᶜ ∩ R) ≤
+          (1 - theta) * P.real (dilutedConstraintEvent M z) := by
+        simpa [P, R, M, originalOpenAtProductEvent] using hfailureUpper
+      _ ≤ ((1 - a) * (1 - (p : ℝ)) ^ Nzero.card *
+            a ^ None.card) * P.real (dilutedConstraintEvent M z) :=
+        mul_le_mul_of_nonneg_right hmixed (measureReal_nonneg)
+      _ = (1 - a) *
+          ((1 - (p : ℝ)) ^ Nzero.card * a ^ None.card *
+            P.real (dilutedConstraintEvent M z)) := by ring
+      _ ≤ (1 - a) * P.real R := by
+        apply mul_le_mul_of_nonneg_left
+        · simpa [P, R, M, Nzero, None] using hRlower
+        · linarith
+  exact mul_measureReal_le_inter_of_compl_inter_le P
+    (originalOpenAtProductEvent current) R a
+    (Set.toFinite _).measurableSet
+    (measurableSet_lssReducedHistoryEvent G k current C z)
+    hfailure
+
+/-- One outer induction step for (7.117).  The exact iid retention factor on `N¹`
+is restored on both sides after applying the reduced-history estimate. -/
+theorem lssConstraintLowerBound_of_lowerBelow
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu)
+    (p : I) (a theta : ℝ) (B J : ℕ)
+    (hp : 0 < (p : ℝ)) (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
+    (hzero : 1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B)
+    (hone : 1 - theta ≤ (1 - a) * a ^ B)
+    (hlower : HasLSSConstraintLowerBoundBelow mu p a J)
+    (current : ι) (C : Finset ι) (z : Set ι)
+    (hcurrent : current ∉ C) (hCcard : C.card ≤ J)
+    (hnearCard : (C.filter fun x ↦ G.edist current x ≤ k).card ≤ B)
+    (hmarginal : theta ≤ mu.real {original : Set ι | current ∈ original}) :
+    a * (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent C z) ≤
+      (mu.prod setBer((Set.univ : Set ι), p)).real
+        (dilutedConstraintEvent C z ∩
+          originalOpenAtProductEvent current) := by
+  classical
+  let P := mu.prod setBer((Set.univ : Set ι), p)
+  let Nzero := lssNearZero G k current C z
+  let None := lssNearOne G k current C z
+  let M := lssFar G k current C
+  let U := Nzero ∪ M
+  let R := lssReducedHistoryEvent G k current C z
+  have hparts := pairwiseDisjoint_lssNearZero_lssNearOne_lssFar
+    G k current C z
+  have hNoneU : Disjoint None U := by
+    rw [Finset.disjoint_union_right]
+    exact ⟨hparts.1.symm, hparts.2.2⟩
+  have hcurrentNone : current ∉ None := by
+    intro h
+    exact hcurrent ((mem_lssNearOne G k current C z current).mp h).1
+  have hReduced := mul_measureReal_lssReducedHistoryEvent_le_originalOpen
+    G k mu hmu p a theta B J hp ha0 ha1 hzero hone hlower
+    current C z hCcard hnearCard hmarginal
+  have hRnorm : R =
+      originalOpenOnProductEvent None ∩ dilutedConstraintEvent U z := by
+    rfl
+  have hRsuccess : R ∩ originalOpenAtProductEvent current =
+      originalOpenOnProductEvent (insert current None) ∩
+        dilutedConstraintEvent U z := by
+    rw [hRnorm]
+    ext yz
+    simp only [originalOpenOnProductEvent, originalOpenAtProductEvent,
+      Set.mem_inter_iff, Set.mem_setOf_eq, Finset.coe_insert,
+      Set.insert_subset_iff]
+    tauto
+  have hReducedNormalized :
+      a * P.real
+          (originalOpenOnProductEvent None ∩ dilutedConstraintEvent U z) ≤
+        P.real
+          (originalOpenOnProductEvent (insert current None) ∩
+            dilutedConstraintEvent U z) := by
+    change a * P.real R ≤
+      P.real (R ∩ originalOpenAtProductEvent current) at hReduced
+    rw [hRsuccess, hRnorm] at hReduced
+    exact hReduced
+  have hscaled := mul_le_mul_of_nonneg_left hReducedNormalized
+    (pow_nonneg p.2.1 None.card)
+  have hfactorHistory :=
+    productMeasure_real_retentionOpen_inter_originalOpen_inter_dilutedConstraint
+      mu p None None U z hNoneU
+  have hfactorSuccess :=
+    productMeasure_real_retentionOpen_inter_originalOpen_inter_dilutedConstraint
+      mu p None (insert current None) U z hNoneU
+  have hhistory : dilutedConstraintEvent C z =
+      (retentionOpenOnProductEvent None ∩
+        originalOpenOnProductEvent None) ∩ dilutedConstraintEvent U z := by
+    simpa [Nzero, None, M, U] using
+      dilutedConstraintEvent_eq_lss_retention_factor G k current C z
+  have hsuccess : dilutedConstraintEvent C z ∩
+        originalOpenAtProductEvent current =
+      (retentionOpenOnProductEvent None ∩
+        originalOpenOnProductEvent (insert current None)) ∩
+          dilutedConstraintEvent U z := by
+    rw [hhistory]
+    ext yz
+    simp only [originalOpenOnProductEvent, originalOpenAtProductEvent,
+      Set.mem_inter_iff, Set.mem_setOf_eq, Finset.coe_insert,
+      Set.insert_subset_iff]
+    tauto
+  calc
+    a * P.real (dilutedConstraintEvent C z) =
+        a * ((p : ℝ) ^ None.card *
+          P.real (originalOpenOnProductEvent None ∩
+            dilutedConstraintEvent U z)) := by rw [hhistory, hfactorHistory]
+    _ = (p : ℝ) ^ None.card *
+          (a * P.real (originalOpenOnProductEvent None ∩
+            dilutedConstraintEvent U z)) := by ring
+    _ ≤ (p : ℝ) ^ None.card *
+          P.real (originalOpenOnProductEvent (insert current None) ∩
+            dilutedConstraintEvent U z) := hscaled
+    _ = P.real (dilutedConstraintEvent C z ∩
+          originalOpenAtProductEvent current) := by
+      rw [hsuccess, hfactorSuccess]
+
+/-- The full finite strong induction (7.117), for arbitrary finite conditioned sets and a
+new current coordinate.  The neighborhood bound is uniform in the current site. -/
+theorem lssConstraintLowerBound
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu)
+    (p : I) (a theta : ℝ) (B : ℕ)
+    (hp : 0 < (p : ℝ)) (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
+    (hzero : 1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B)
+    (hone : 1 - theta ≤ (1 - a) * a ^ B)
+    (hmarginal : ∀ current : ι,
+      theta ≤ mu.real {original : Set ι | current ∈ original})
+    (hneighbor : ∀ current : ι,
+      (Finset.univ.filter fun x ↦ G.edist current x ≤ k).card ≤ B) :
+    ∀ C : Finset ι, ∀ z : Set ι, ∀ current : ι,
+      current ∉ C →
+        a * (mu.prod setBer((Set.univ : Set ι), p)).real
+            (dilutedConstraintEvent C z) ≤
+          (mu.prod setBer((Set.univ : Set ι), p)).real
+            (dilutedConstraintEvent C z ∩
+              originalOpenAtProductEvent current) := by
+  classical
+  suffices h : ∀ n : ℕ, ∀ C : Finset ι, C.card = n →
+      ∀ z : Set ι, ∀ current : ι, current ∉ C →
+        a * (mu.prod setBer((Set.univ : Set ι), p)).real
+            (dilutedConstraintEvent C z) ≤
+          (mu.prod setBer((Set.univ : Set ι), p)).real
+            (dilutedConstraintEvent C z ∩
+              originalOpenAtProductEvent current) by
+    intro C z current hcurrent
+    exact h C.card C rfl z current hcurrent
+  intro n
+  induction n using Nat.strong_induction_on with
+  | h n ih =>
+      intro C hCcard z current hcurrent
+      have hlower : HasLSSConstraintLowerBoundBelow mu p a n := by
+        intro C' z' current' hsmall hcurrent'
+        exact ih C'.card hsmall C' rfl z' current' hcurrent'
+      have hnear :
+          (C.filter fun x ↦ G.edist current x ≤ k).card ≤ B := by
+        apply (Finset.card_le_card ?_).trans (hneighbor current)
+        intro x hx
+        simp only [Finset.mem_filter] at hx ⊢
+        exact ⟨Finset.mem_univ x, hx.2⟩
+      apply lssConstraintLowerBound_of_lowerBelow
+        G k mu hmu p a theta B n hp ha0 ha1 hzero hone hlower
+        current C z hcurrent
+      · omega
+      · exact hnear
+      · exact hmarginal current
+
+/-- The set of coordinates prescribed open by an exact Boolean prefix. -/
+def finiteBoolPrefixTrueSet {n i : ℕ} (hi : i ≤ n)
+    (s : Fin i → Bool) : Set (Fin n) :=
+  Fin.castLE hi '' {j : Fin i | s j = true}
+
+/-- The general finite constraint event specializes exactly to the prefix event used by
+the sequential-domination API. -/
+theorem dilutedProductPrefixEvent_eq_dilutedConstraintEvent
+    {n i : ℕ} (hi : i ≤ n) (s : Fin i → Bool) :
+    dilutedProductPrefixEvent hi s =
+      dilutedConstraintEvent (finiteBoolPrefixCoordinates hi)
+        (finiteBoolPrefixTrueSet hi s) := by
+  classical
+  ext yz
+  simp only [dilutedProductPrefixEvent, finiteBoolPrefixEvent,
+    Set.mem_preimage, Set.mem_setOf_eq, dilutedConstraintEvent,
+    finiteBoolPrefixCoordinates, Finset.mem_filter, Finset.mem_univ, true_and,
+    siteDilutionMap, finiteSetBoolEquiv, Equiv.coe_fn_mk,
+    finiteBoolPrefixTrueSet, Set.mem_image, Set.mem_setOf_eq]
+  constructor
+  · intro h x hx
+    let j : Fin i := ⟨x.1, hx⟩
+    have hxcast : Fin.castLE hi j = x := Fin.ext rfl
+    have hj := congrFun h j
+    simp only [boolPrefix] at hj
+    rw [← hxcast]
+    have himage :
+        (∃ j', s j' = true ∧ Fin.castLE hi j' = Fin.castLE hi j) ↔
+          s j = true := by
+      constructor
+      · rintro ⟨j', hj', hj'eq⟩
+        have hj'eqj : j' = j := Fin.castLE_injective hi hj'eq
+        simpa [hj'eqj] using hj'
+      · intro hjtrue
+        exact ⟨j, hjtrue, rfl⟩
+    rw [himage]
+    constructor
+    · intro hopen
+      have hj' := hj
+      simp [hopen] at hj'
+      exact hj'
+    · intro hjtrue
+      by_contra hopen
+      have hj' := hj
+      simp [hopen, hjtrue] at hj'
+  · intro h
+    funext j
+    simp only [boolPrefix]
+    have hj := h (Fin.castLE hi j) (by simp)
+    cases hs : s j with
+    | false =>
+        have hnot : Fin.castLE hi j ∉ yz.1 ∩ yz.2 := by
+          intro hopen
+          rcases hj.mp hopen with ⟨j', hj', hj'eq⟩
+          have hj'eqj : j' = j := Fin.castLE_injective hi hj'eq
+          subst j'
+          simp [hs] at hj'
+        simp [hnot]
+    | true =>
+        have hopen : Fin.castLE hi j ∈ yz.1 ∩ yz.2 :=
+          hj.mpr ⟨j, hs, rfl⟩
+        simp [hopen]
+
+/-- Specialization of (7.117) to the ordered prefixes used by the finite sequential
+criterion. -/
+theorem hasLSSOriginalConditionalLowerBound_of_kDependent
+    {n : ℕ} (G : SimpleGraph (Fin n)) (k : ℕ)
+    (mu : Measure (Set (Fin n))) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu)
+    (p : I) (a theta : ℝ) (B : ℕ)
+    (hp : 0 < (p : ℝ)) (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
+    (hzero : 1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B)
+    (hone : 1 - theta ≤ (1 - a) * a ^ B)
+    (hmarginal : ∀ current : Fin n,
+      theta ≤ mu.real {original : Set (Fin n) | current ∈ original})
+    (hneighbor : ∀ current : Fin n,
+      (Finset.univ.filter fun x ↦ G.edist current x ≤ k).card ≤ B) :
+    HasLSSOriginalConditionalLowerBound mu p a := by
+  intro i hi s
+  let C := finiteBoolPrefixCoordinates hi.le
+  let z := finiteBoolPrefixTrueSet hi.le s
+  have hcurrent : (⟨i, hi⟩ : Fin n) ∉ C :=
+    current_notMem_finiteBoolPrefixCoordinates hi
+  have hbound := lssConstraintLowerBound
+    G k mu hmu p a theta B hp ha0 ha1 hzero hone hmarginal hneighbor
+    C z ⟨i, hi⟩ hcurrent
+  rw [dilutedProductPrefixEvent_eq_dilutedConstraintEvent]
+  simpa [C, z, originalProductCoordinateOpenEvent,
+    originalOpenAtProductEvent] using hbound
+
+/-- The finite diluted law satisfies the sequential lower bound `a p` under the LSS
+hypotheses. -/
+theorem hasFiniteSequentialLowerBound_siteDilutionLaw_of_kDependent
+    {n : ℕ} (G : SimpleGraph (Fin n)) (k : ℕ)
+    (mu : Measure (Set (Fin n))) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu)
+    (p : I) (a theta : ℝ) (B : ℕ)
+    (hp : 0 < (p : ℝ)) (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
+    (hzero : 1 - theta ≤ (1 - a) * (1 - (p : ℝ)) ^ B)
+    (hone : 1 - theta ≤ (1 - a) * a ^ B)
+    (hmarginal : ∀ current : Fin n,
+      theta ≤ mu.real {original : Set (Fin n) | current ∈ original})
+    (hneighbor : ∀ current : Fin n,
+      (Finset.univ.filter fun x ↦ G.edist current x ≤ k).card ≤ B) :
+    HasFiniteSequentialLowerBound (siteDilutionLaw mu p) (a * (p : ℝ)) :=
+  hasFiniteSequentialLowerBound_siteDilutionLaw_of_original mu p
+    (hasLSSOriginalConditionalLowerBound_of_kDependent
+      G k mu hmu p a theta B hp ha0 ha1 hzero hone hmarginal hneighbor)
+
+/-- Finite-volume LSS domination with the explicit parameter choice from
+(7.114)--(7.115).  This is the complete finite theorem underlying Theorem 7.65. -/
+theorem finite_lssDomination
+    {n : ℕ} (G : SimpleGraph (Fin n)) (k B : ℕ)
+    (hneighbor : ∀ current : Fin n,
+      (Finset.univ.filter fun x ↦ G.edist current x ≤ k).card ≤ B)
+    (q : I) (hq : (q : ℝ) < 1)
+    (mu : Measure (Set (Fin n))) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu)
+    (hmarginal : ∀ current : Fin n,
+      (lssMarginalThresholdUnit B q hq : ℝ) ≤
+        mu.real {original : Set (Fin n) | current ∈ original}) :
+    StochasticallyDominates mu
+      setBer((Set.univ : Set (Fin n)), q) := by
+  let a : ℝ := lssAuxiliaryDensity (q : ℝ)
+  let delta : I := lssMarginalThresholdUnit B q hq
+  obtain ⟨ha0, ha1, hqaa, _hdelta, hparameters⟩ :=
+    lss_parameter_selection B q hq
+  let aI : I := ⟨a, ha0.le, ha1.le⟩
+  let aaI : I := ⟨a * a,
+    mul_nonneg ha0.le ha0.le,
+    (mul_le_mul ha1.le ha1.le ha0.le zero_le_one).trans_eq (mul_one 1)⟩
+  have hendpoint := hparameters delta (le_rfl)
+  have hseq : HasFiniteSequentialLowerBound
+      (siteDilutionLaw mu aI) (aaI : ℝ) := by
+    simpa [aaI, aI, a, delta] using
+      hasFiniteSequentialLowerBound_siteDilutionLaw_of_kDependent
+        G k mu hmu aI a (delta : ℝ) B ha0 ha0.le ha1.le
+        hendpoint.1 hendpoint.2 hmarginal hneighbor
+  have hOriginalDiluted : StochasticallyDominates mu (siteDilutionLaw mu aI) :=
+    stochasticallyDominates_siteDilutionLaw mu aI
+  have hDilutedAA : StochasticallyDominates (siteDilutionLaw mu aI)
+      setBer((Set.univ : Set (Fin n)), aaI) :=
+    finiteSequentialLowerBound_stochasticallyDominates
+      (siteDilutionLaw mu aI) aaI hseq
+  have hAAQ : StochasticallyDominates
+      setBer((Set.univ : Set (Fin n)), aaI)
+      setBer((Set.univ : Set (Fin n)), q) := by
+    apply setBernoulli_stochasticallyDominates
+    exact_mod_cast hqaa
+  exact hOriginalDiluted.trans (hDilutedAA.trans hAAQ)
 
 end Percolation

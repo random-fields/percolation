@@ -394,7 +394,7 @@ example {ι : Type*} [Fintype ι] [DecidableEq ι]
     (hp : 0 < (p : ℝ)) (ha : 0 ≤ a)
     (hlower : HasLSSConstraintLowerBoundBelow μ p a J)
     (M ones : Finset ι) (z : Set ι)
-    (hdisj : Disjoint M ones) (hcard : M.card + ones.card < J) :
+    (hdisj : Disjoint M ones) (hcard : M.card + ones.card ≤ J) :
     a ^ ones.card *
         (μ.prod setBer((Set.univ : Set ι), p)).real
           (dilutedConstraintEvent M z) ≤
@@ -402,6 +402,26 @@ example {ι : Type*} [Fintype ι] [DecidableEq ι]
         (originalOpenOnProductEvent ones ∩ dilutedConstraintEvent M z) :=
   pow_mul_measureReal_dilutedConstraint_le_originalOpen_inter
     μ p a J hp ha hlower M ones z hdisj hcard
+
+example {n i : ℕ} (hi : i ≤ n) (s : Fin i → Bool) :
+    dilutedProductPrefixEvent hi s =
+      dilutedConstraintEvent (finiteBoolPrefixCoordinates hi)
+        (finiteBoolPrefixTrueSet hi s) :=
+  dilutedProductPrefixEvent_eq_dilutedConstraintEvent hi s
+
+/-- Compiling application of the complete finite-volume LSS theorem. -/
+example {n : ℕ} (G : SimpleGraph (Fin n)) (k B : ℕ)
+    (hneighbor : ∀ current : Fin n,
+      (Finset.univ.filter fun x ↦ G.edist current x ≤ k).card ≤ B)
+    (q : I) (hq : (q : ℝ) < 1)
+    (μ : Measure (Set (Fin n))) [IsProbabilityMeasure μ]
+    (hμ : KDependent G k μ)
+    (hmarginal : ∀ current : Fin n,
+      (lssMarginalThresholdUnit B q hq : ℝ) ≤
+        μ.real {original : Set (Fin n) | current ∈ original}) :
+    StochasticallyDominates μ
+      setBer((Set.univ : Set (Fin n)), q) :=
+  finite_lssDomination G k B hneighbor q hq μ hμ hmarginal
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

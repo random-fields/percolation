@@ -997,6 +997,15 @@ Dated milestones and anti-library notes.
     uses the antitonicity of powers on `[0,1]`; no hidden comparison between those bases is
     assumed.
 
+93. **Chapter 7 finite-volume LSS theorem (2026-07-12).** Completed the outer strong
+    induction (7.117). The proof combines the exact `N⁰/N¹/M` partition, `k`-dependent
+    far-field factorization (7.120), retention-zero factor (7.121), original-one induction
+    (7.122), and the mixed exponent comparison, then restores the canceled `N¹` retention
+    bits. Exact Boolean prefixes are identified with the general finite constraint event, so
+    the result feeds the finite sequential criterion and proves `finite_lssDomination` with
+    the explicit parameter choice (7.114)--(7.115). The remaining Theorem 7.65 work is the
+    countable finite-prefix/projective lift, not the finite LSS probability argument.
+
 ## Axiom Ledger
 
 Empty.

@@ -30,6 +30,7 @@ import Percolation.Bernoulli.LSSParameters
 import Percolation.Bernoulli.LSSDilution
 import Percolation.Bernoulli.SequentialDominationEvents
 import Percolation.Bernoulli.LSSDilutionSequential
+import Percolation.Bernoulli.LSSInduction
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Critical.ExplorationLaw
 import Percolation.Critical.StaticBlockTranslation
@@ -512,3 +513,9 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.hasLSSRetentionFactorization
 #print axioms Percolation.hasFiniteSequentialLowerBound_siteDilutionLaw
 #print axioms Percolation.hasFiniteSequentialLowerBound_siteDilutionLaw_of_original
+#print axioms Percolation.pairwiseDisjoint_lssNearZero_lssNearOne_lssFar
+#print axioms Percolation.lssNearZero_union_lssNearOne_union_lssFar
+#print axioms Percolation.lssNearZero_card_add_lssNearOne_card_le
+#print axioms Percolation.dilutedConstraintEvent_eq_lss_partition
+#print axioms Percolation.retentionClosedOnProductEvent_subset_dilutedConstraintEvent_nearZero
+#print axioms Percolation.dependsOn_dilutedConstraint_originalSection

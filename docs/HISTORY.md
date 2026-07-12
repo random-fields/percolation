@@ -967,6 +967,13 @@ Dated milestones and anti-library notes.
     (7.117) alone now yields the finite sequential lower bound for `Z^pY`; the remaining LSS
     probability step is precisely the induction deriving (7.117) from finite-range dependence.
 
+89. **Chapter 7 source-faithful LSS history partition (2026-07-12).** Encoded the exact
+    `N⁰ ∪ N¹ ∪ M` split from (7.119)--(7.122), proved its disjointness and neighborhood
+    cardinal bound, and decomposed every diluted-history cylinder into product-zero, original-one,
+    independent-retention-one, and far-history factors. The proof also formalizes `B⁰ ⊆ A⁰`
+    and the far-coordinate support statement. No conditional-probability claim is attached to
+    this checkpoint; the strong induction and its measure inequalities remain next.
+
 ## Axiom Ledger
 
 Empty.

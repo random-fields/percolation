@@ -17,6 +17,7 @@ import Percolation.Bernoulli.LSSParameters
 import Percolation.Bernoulli.LSSDilution
 import Percolation.Bernoulli.SequentialDominationEvents
 import Percolation.Bernoulli.LSSDilutionSequential
+import Percolation.Bernoulli.LSSInduction
 import Percolation.Bernoulli.TailZeroOne
 import Percolation.Bernoulli.FiniteRangeVariance
 import Percolation.Critical.ExplorationLaw
@@ -299,6 +300,30 @@ example {n : ℕ} (μ : Measure (Set (Fin n))) [IsProbabilityMeasure μ]
     (hY : HasLSSOriginalConditionalLowerBound μ p a) :
     HasFiniteSequentialLowerBound (siteDilutionLaw μ p) (a * (p : ℝ)) :=
   hasFiniteSequentialLowerBound_siteDilutionLaw_of_original μ p hY
+
+/-- The three classes used in (7.119) really partition every finite prior history. -/
+example {ι : Type*} [DecidableEq ι] (G : SimpleGraph ι) (k : ℕ)
+    (current : ι) (C : Finset ι) (z : Set ι) :
+    lssNearZero G k current C z ∪ lssNearOne G k current C z ∪
+        lssFar G k current C = C :=
+  lssNearZero_union_lssNearOne_union_lssFar G k current C z
+
+/-- Endpoint oracle: an empty history has three empty partition classes. -/
+example {ι : Type*} [DecidableEq ι] (G : SimpleGraph ι) (k : ℕ)
+    (current : ι) (z : Set ι) :
+    lssNearZero G k current ∅ z = ∅ ∧
+      lssNearOne G k current ∅ z = ∅ ∧
+      lssFar G k current ∅ = ∅ := by
+  simp [lssNearZero, lssNearOne, lssFar]
+
+example {ι : Type*} [DecidableEq ι] (G : SimpleGraph ι) (k : ℕ)
+    (current : ι) (C : Finset ι) (z : Set ι) :
+    dilutedConstraintEvent C z =
+      (((dilutedConstraintEvent (lssNearZero G k current C z) z ∩
+          originalOpenOnProductEvent (lssNearOne G k current C z)) ∩
+        retentionOpenOnProductEvent (lssNearOne G k current C z)) ∩
+      dilutedConstraintEvent (lssFar G k current C) z) :=
+  dilutedConstraintEvent_eq_lss_partition G k current C z
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

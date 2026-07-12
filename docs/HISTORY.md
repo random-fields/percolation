@@ -910,6 +910,16 @@ Dated milestones and anti-library notes.
     Chapter 7 remains in progress; the concrete Grimmett--Marstrand history law required by
     Theorem 7.2 is the next target.
 
+81. **Chapter 7 dynamic reveal-fiber freshness (2026-07-12).** Added the exact internal-edge
+    support of a frozen explored region and proved it disjoint from the boundary/exterior/seed
+    support read by the next restart, both in the reference frame and after signed-direction
+    transport. The common-uniform-label event reconstructing the region is measurable on those
+    internal coordinates. Its intersection with the closed-boundary event is exactly the full
+    explored-region fiber, and this factorization is packaged for the finite schedule-cell
+    index consumed by `PartitionedOrientedRestartStage.ofFiniteRealization`. This removes a
+    previously explicit semantic gap in Theorem 7.2; selecting globally fresh supports from the
+    actual adaptive coarse history remains.
+
 ## Axiom Ledger
 
 Empty.

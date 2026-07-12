@@ -20,6 +20,16 @@ def heterogeneousThresholdConfiguration {ι : Type*}
     (beta : ι → I) (X : ι → ℝ) : Set ι :=
   {e | X e < (beta e : ℝ)}
 
+theorem measurable_heterogeneousThresholdConfiguration {ι : Type*}
+    (beta : ι → I) :
+    Measurable (heterogeneousThresholdConfiguration beta : (ι → ℝ) → Set ι) := by
+  change Measurable
+    ((fun P : ι → Prop => {i | P i}) ∘
+      fun (X : ι → ℝ) (e : ι) => (X e < (beta e : ℝ) : Prop))
+  refine Measurable.comp (by fun_prop) ?_
+  exact measurable_pi_lambda _ fun e =>
+    (measurable_lt_prop _).comp (measurable_pi_apply e)
+
 @[simp]
 theorem mem_heterogeneousThresholdConfiguration_iff
     {ι : Type*} {beta : ι → I} {X : ι → ℝ} {e : ι} :

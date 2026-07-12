@@ -42,6 +42,7 @@ import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
 import Percolation.Critical.DynamicScheduleCells
+import Percolation.Critical.DynamicRevealFreshness
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
@@ -1373,5 +1374,36 @@ example {ι : Type*} [DecidableEq ι] (d : ℕ) (inlet : Finset ι)
     (FiniteRevealSchedule.incidentDirectionSchedule d inlet outgoing).HasOverlapBound
       (2 * d + 1) :=
   FiniteRevealSchedule.incidentDirectionSchedule_hasOverlapBound d inlet outgoing
+
+example {d m n : ℕ} (R : Finset (Cubic d)) (i : Fin d) :
+    Disjoint (cubicRegionInternalEdgesWithinBox d R n : Set (CubicEdge d))
+      (restartEventSupport d i m n R : Set (CubicEdge d)) :=
+  disjoint_cubicRegionInternalEdgesWithinBox_restartEventSupport d R i m n
+
+example {d m n : ℕ} (R : Finset (Cubic d)) (beta : CubicEdge d → I)
+    (hseed : cubicMetricBox d cubicOrigin m ⊆ R) :
+    restartInternalRegionLabelEvent R m n beta ∩
+        boundaryClosedHistoryEvent
+          (cubicRegionBoundaryEdgesWithinBox d R n) beta =
+      {X | restartExploredRegion d
+        (heterogeneousThresholdConfiguration beta X) m n = R} :=
+  restartInternalRegionLabelEvent_inter_boundaryClosed R beta hseed
+
+example {d m n : ℕ} (i : Fin d) (beta : CubicEdge d → I)
+    (S : FiniteRevealSchedule (CubicEdge d))
+    (hS : S.HasOverlapBound (2 * d + 1))
+    (history : Set (CubicEdge d → ℝ)) (X0 : CubicEdge d → ℝ)
+    (hmn : m ≤ n) :
+    (history ∩ restartInternalRegionLabelEvent
+          (restartExploredRegion d
+            (heterogeneousThresholdConfiguration beta X0) m n) m n beta) ∩
+        boundaryClosedHistoryEvent
+          (cubicRegionBoundaryEdgesWithinBox d
+            (restartExploredRegion d
+              (heterogeneousThresholdConfiguration beta X0) m n) n) beta =
+      exactRevealCellEvent history
+        (realizedScheduleRevealCell (m := m) (n := n) i beta S hS)
+        (realizedScheduleRevealCell i beta S hS X0) :=
+  exactRevealCellEvent_eq_past_inter_boundary i beta S hS history X0 hmn
 
 end Percolation

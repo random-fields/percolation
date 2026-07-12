@@ -930,6 +930,13 @@ Dated milestones and anti-library notes.
     query is fresh from the current restart, then their whole union is fresh. This reduces the
     remaining Theorem 7.2 history-law gap to the concrete block-placement disjointness proof.
 
+83. **Chapter 7 multi-restart outer-history support (2026-07-12).** Added the finite union of
+    supports read by the first `j` restart stages and combined it with the exact adaptive coarse
+    history support. The literal outer event appearing in the partitioned-program equation is
+    measurable on this union. A bundled freshness predicate reduces disjointness of the outer
+    support to disjointness of each earlier restart and each earlier coarse query. No conditional
+    probability or infinite support is introduced.
+
 ## Axiom Ledger
 
 Empty.

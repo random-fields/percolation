@@ -44,6 +44,7 @@ import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
 import Percolation.Critical.DynamicScheduleCells
 import Percolation.Critical.DynamicRevealFreshness
+import Percolation.Critical.DynamicProgramSupport
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
@@ -1449,5 +1450,28 @@ example {V ι : Type*} [DecidableEq ι]
         (AdaptiveSiteExploration.adaptiveAnswerHistorySupport support history : Set ι))
       (AdaptiveSiteExploration.adaptiveAnswerHistoryEvent answer history) :=
   AdaptiveSiteExploration.measurableSet_adaptiveAnswerHistoryEvent_coordSigma h history
+
+example {V ι : Type*} [DecidableEq ι]
+    (stageSupport : List (V × Bool) → V → ℕ → Finset ι)
+    (history : List (V × Bool)) (v : V) (k : ℕ) :
+    AdaptiveSiteExploration.finiteAdaptiveSuccessPrefixSupport
+        stageSupport history v (k + 1) =
+      stageSupport history v k ∪
+        AdaptiveSiteExploration.finiteAdaptiveSuccessPrefixSupport
+          stageSupport history v k :=
+  AdaptiveSiteExploration.finiteAdaptiveSuccessPrefixSupport_succ
+    stageSupport history v k
+
+example {V ι : Type*} [DecidableEq ι]
+    {stageSupport : List (V × Bool) → V → ℕ → Finset ι}
+    {answerSupport : List (V × Bool) → V → Finset ι}
+    {history : List (V × Bool)} {v : V} {j : ℕ} {current : Finset ι}
+    (h : AdaptiveSiteExploration.OuterHistorySupportsFresh
+      stageSupport answerSupport history v j current) :
+    Disjoint
+      (AdaptiveSiteExploration.finiteAdaptiveOuterHistorySupport
+        stageSupport answerSupport history v j : Set ι)
+      (current : Set ι) :=
+  h.disjoint_outerHistorySupport
 
 end Percolation

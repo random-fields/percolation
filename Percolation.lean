@@ -120,6 +120,7 @@ import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
 import Percolation.Critical.DynamicScheduleCells
 import Percolation.Critical.DynamicRevealFreshness
+import Percolation.Critical.DynamicProgramSupport
 import Percolation.Critical.AdaptiveQueryDomination
 import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination

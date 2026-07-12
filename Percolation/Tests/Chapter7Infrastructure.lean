@@ -325,6 +325,52 @@ example {ι : Type*} [DecidableEq ι] (G : SimpleGraph ι) (k : ℕ)
       dilutedConstraintEvent (lssFar G k current C) z) :=
   dilutedConstraintEvent_eq_lss_partition G k current C z
 
+/-- The `B⁰` probability used in (7.121) has the source's exact exponent. -/
+example {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (μ : Measure (Set ι)) [IsProbabilityMeasure μ]
+    (p : I) (C : Finset ι) :
+    (μ.prod setBer((Set.univ : Set ι), p)).real
+        (retentionClosedOnProductEvent C) =
+      (1 - (p : ℝ)) ^ C.card :=
+  prod_setBernoulli_real_retentionClosedOnProductEvent μ p C
+
+/-- Endpoint oracle: at retention density one a nonempty `B⁰` event has zero mass. -/
+example {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (μ : Measure (Set ι)) [IsProbabilityMeasure μ]
+    (C : Finset ι) (hC : C.Nonempty) :
+    (μ.prod setBer((Set.univ : Set ι), (1 : I))).real
+        (retentionClosedOnProductEvent C) = 0 := by
+  rw [prod_setBernoulli_real_retentionClosedOnProductEvent]
+  have hcard : C.card ≠ 0 := Nat.ne_of_gt (Finset.card_pos.mpr hC)
+  simp [hcard]
+
+example {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (μ : Measure (Set ι)) [IsProbabilityMeasure μ]
+    (hμ : KDependent G k μ) (p : I)
+    (current : ι) (C : Finset ι) (z : Set ι) :
+    (μ.prod setBer((Set.univ : Set ι), p)).real
+        ({yz : Set ι × Set ι | current ∉ yz.1} ∩
+          dilutedConstraintEvent (lssFar G k current C) z) =
+      μ.real {original : Set ι | current ∉ original} *
+        (μ.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent (lssFar G k current C) z) :=
+  productMeasure_real_originalClosed_inter_dilutedConstraint_far
+    G k μ hμ p current C z
+
+example {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (μ : Measure (Set ι)) [IsProbabilityMeasure μ]
+    (p : I) (Nzero None M : Finset ι) (z : Set ι)
+    (hdisj : Disjoint Nzero M) :
+    (μ.prod setBer((Set.univ : Set ι), p)).real
+        ((retentionClosedOnProductEvent Nzero ∩
+          originalOpenOnProductEvent None) ∩ dilutedConstraintEvent M z) =
+      (1 - (p : ℝ)) ^ Nzero.card *
+        (μ.prod setBer((Set.univ : Set ι), p)).real
+          (originalOpenOnProductEvent None ∩ dilutedConstraintEvent M z) :=
+  productMeasure_real_retentionClosed_inter_originalOpen_inter_dilutedConstraint
+    μ p Nzero None M z hdisj
+
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :
     G.IsEdgeReachable k u v ↔

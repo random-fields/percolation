@@ -12,6 +12,26 @@ only the condition that the corresponding original sites are open.
 namespace Percolation
 
 open MeasureTheory ProbabilityTheory
+open scoped unitInterval
+
+/-- Finite Fubini with the second coordinate outermost, stated for real probabilities. -/
+theorem measureReal_prod_eq_sum_swap_sections
+    {α β : Type*} [MeasurableSpace α]
+    [Fintype β] [MeasurableSpace β] [MeasurableSingletonClass β]
+    (mu : Measure α) (nu : Measure β)
+    [IsProbabilityMeasure mu] [IsProbabilityMeasure nu]
+    {A : Set (α × β)} (hA : MeasurableSet A) :
+    (mu.prod nu).real A =
+      ∑ y, nu.real {y} * mu.real ((fun x ↦ (x, y)) ⁻¹' A) := by
+  rw [measureReal_def, Measure.prod_apply_symm hA, lintegral_fintype]
+  rw [ENNReal.toReal_sum]
+  · apply Finset.sum_congr rfl
+    intro y _hy
+    rw [ENNReal.toReal_mul]
+    simp only [measureReal_def]
+    ring
+  · intro y _hy
+    exact ENNReal.mul_ne_top (measure_ne_top mu _) (measure_ne_top nu _)
 
 /-- The independently diluted field has the prescribed values `z` on the finite set `C`. -/
 def dilutedConstraintEvent {ι : Type*} (C : Finset ι) (z : Set ι) :
@@ -32,6 +52,61 @@ def retentionOpenOnProductEvent {ι : Type*} (C : Finset ι) :
 def retentionClosedOnProductEvent {ι : Type*} (C : Finset ι) :
     Set (Set ι × Set ι) :=
   {yz | Disjoint (C : Set ι) yz.2}
+
+theorem measurableSet_dilutedConstraintEvent
+    {ι : Type*} [Fintype ι] [MeasurableSpace (Set ι)]
+    [MeasurableSingletonClass (Set ι)] (C : Finset ι) (z : Set ι) :
+    MeasurableSet (dilutedConstraintEvent C z) :=
+  Set.toFinite _ |>.measurableSet
+
+theorem measurableSet_originalOpenOnProductEvent
+    {ι : Type*} [Fintype ι] [MeasurableSpace (Set ι)]
+    [MeasurableSingletonClass (Set ι)] (C : Finset ι) :
+    MeasurableSet (originalOpenOnProductEvent C) :=
+  Set.toFinite _ |>.measurableSet
+
+theorem measurableSet_retentionOpenOnProductEvent
+    {ι : Type*} [Fintype ι] [MeasurableSpace (Set ι)]
+    [MeasurableSingletonClass (Set ι)] (C : Finset ι) :
+    MeasurableSet (retentionOpenOnProductEvent C) :=
+  Set.toFinite _ |>.measurableSet
+
+theorem measurableSet_retentionClosedOnProductEvent
+    {ι : Type*} [Fintype ι] [MeasurableSpace (Set ι)]
+    [MeasurableSingletonClass (Set ι)] (C : Finset ι) :
+    MeasurableSet (retentionClosedOnProductEvent C) :=
+  Set.toFinite _ |>.measurableSet
+
+/-- The auxiliary iid field closes every coordinate in `C` with probability
+`(1-p)^|C|`, including when viewed on the full product space. -/
+theorem prod_setBernoulli_real_retentionClosedOnProductEvent
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (p : I) (C : Finset ι) :
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+        (retentionClosedOnProductEvent C) =
+      (1 - (p : ℝ)) ^ C.card := by
+  have hevent : retentionClosedOnProductEvent C =
+      Set.univ ×ˢ {retained : Set ι | Disjoint (C : Set ι) retained} := by
+    ext yz
+    simp [retentionClosedOnProductEvent]
+  rw [hevent, measureReal_prod_prod, probReal_univ,
+    one_mul, setBernoulli_real_disjoint_finset_univ]
+
+/-- Likewise, retaining every coordinate in `C` contributes `p^|C|`. -/
+theorem prod_setBernoulli_real_retentionOpenOnProductEvent
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (p : I) (C : Finset ι) :
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+        (retentionOpenOnProductEvent C) =
+      (p : ℝ) ^ C.card := by
+  have hevent : retentionOpenOnProductEvent C =
+      Set.univ ×ˢ {retained : Set ι | (C : Set ι) ⊆ retained} := by
+    ext yz
+    simp [retentionOpenOnProductEvent]
+  rw [hevent, measureReal_prod_prod, probReal_univ,
+    one_mul, setBernoulli_real_superset_finset_univ]
 
 /-- Earlier prescribed zeros lying within graph distance `k` of the current site. -/
 noncomputable def lssNearZero {ι : Type*} [DecidableEq ι] (G : SimpleGraph ι) (k : ℕ)
@@ -207,5 +282,219 @@ theorem dependsOn_dilutedConstraint_originalSection
   constructor <;> intro h x hx
   · simpa [hyy' x hx] using h x hx
   · simpa [hyy' x hx] using h x hx
+
+/-- The symmetric section statement for the auxiliary retention field. -/
+theorem dependsOn_dilutedConstraint_retentionSection
+    {ι : Type*} [DecidableEq ι] (C : Finset ι) (z original : Set ι) :
+    DependsOn C {retained | (original, retained) ∈ dilutedConstraintEvent C z} := by
+  intro y y' hyy'
+  simp only [dilutedConstraintEvent, Set.mem_setOf_eq]
+  constructor <;> intro h x hx
+  · simpa [hyy' x hx] using h x hx
+  · simpa [hyy' x hx] using h x hx
+
+theorem dependsOn_retentionClosedEvent
+    {ι : Type*} [DecidableEq ι] (C : Finset ι) :
+    DependsOn C {retained : Set ι | Disjoint (C : Set ι) retained} := by
+  intro y y' hyy'
+  simp only [Set.mem_setOf_eq, Set.disjoint_left]
+  constructor <;> intro h x hxC hx
+  · exact h hxC ((hyy' x hxC).mpr hx)
+  · exact h hxC ((hyy' x hxC).mp hx)
+
+/-- A `DependsOn` certificate is exactly measurability in the corresponding site-coordinate
+sigma-algebra. -/
+theorem DependsOn.measurableSet_siteCoordinateMeasurableSpace
+    {ι : Type*} [DecidableEq ι] {C : Finset ι} {A : Set (Set ι)}
+    (hA : DependsOn C A) :
+    MeasurableSet[siteCoordinateMeasurableSpace ι (C : Set ι)] A := by
+  simpa [siteCoordinateMeasurableSpace, coordinateEvents] using
+    hA.measurableSet_generateFrom_coordinateEvents (Set.Subset.rfl)
+
+/-- Equation (7.120), ratio-free factorization form.  A current original-field bit is
+independent of a diluted history whose original coordinates all lie beyond distance `k`;
+the auxiliary retention configuration may be arbitrary. -/
+theorem productMeasure_real_originalClosed_inter_dilutedConstraint_far
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu) (p : I)
+    (current : ι) (C : Finset ι) (z : Set ι) :
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+        ({yz : Set ι × Set ι | current ∉ yz.1} ∩
+          dilutedConstraintEvent (lssFar G k current C) z) =
+      mu.real {original : Set ι | current ∉ original} *
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent (lssFar G k current C) z) := by
+  classical
+  let M := lssFar G k current C
+  let nu := setBer((Set.univ : Set ι), p)
+  let closed : Set (Set ι) := {original | current ∉ original}
+  let farEvent : Set (Set ι × Set ι) := dilutedConstraintEvent M z
+  have hsep : ∀ x ∈ ({current} : Set ι), ∀ y ∈ (M : Set ι),
+      (k : ℕ∞) < G.edist x y := by
+    intro x hx y hy
+    have hxcurrent : x = current := by simpa using hx
+    subst x
+    exact (mem_lssFar G k current C y).mp hy |>.2
+  have hindep := hmu ({current} : Set ι) (M : Set ι) hsep
+  have hclosed : MeasurableSet[siteCoordinateMeasurableSpace ι ({current} : Set ι)]
+      closed := by
+    apply MeasurableSet.compl
+    apply MeasurableSpace.measurableSet_generateFrom
+    exact ⟨current, Set.mem_singleton current, rfl⟩
+  have hfarEvent : MeasurableSet farEvent :=
+    measurableSet_dilutedConstraintEvent M z
+  have hinter : MeasurableSet
+      ({yz : Set ι × Set ι | current ∉ yz.1} ∩ farEvent) :=
+    (Set.toFinite _).measurableSet
+  change (mu.prod nu).real
+      ({yz : Set ι × Set ι | current ∉ yz.1} ∩ farEvent) =
+    mu.real closed * (mu.prod nu).real farEvent
+  rw [measureReal_prod_eq_sum_swap_sections mu nu hinter,
+    measureReal_prod_eq_sum_swap_sections mu nu hfarEvent,
+    Finset.mul_sum]
+  apply Finset.sum_congr rfl
+  intro retained _hretained
+  let farSection : Set (Set ι) :=
+    {original | (original, retained) ∈ farEvent}
+  have hsection : MeasurableSet[siteCoordinateMeasurableSpace ι (M : Set ι)]
+      farSection := by
+    exact (dependsOn_dilutedConstraint_originalSection M z retained
+      ).measurableSet_siteCoordinateMeasurableSpace
+  have hfactor := (hindep.indepSet_of_measurableSet hclosed hsection).measure_inter_eq_mul
+  have hfactorReal := congrArg ENNReal.toReal hfactor
+  rw [ENNReal.toReal_mul] at hfactorReal
+  change nu.real {retained} * mu.real (closed ∩ farSection) =
+    mu.real closed * (nu.real {retained} * mu.real farSection)
+  rw [show mu.real (closed ∩ farSection) = mu.real closed * mu.real farSection by
+    simpa only [measureReal_def] using hfactorReal]
+  ring
+
+/-- The one-site marginal hypothesis in (7.66) bounds the complementary closed-site mass. -/
+theorem measureReal_originalClosed_le_one_sub_of_le_open
+    {ι : Type*} [DecidableEq ι]
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (current : ι) (theta : ℝ)
+    (hmarginal : theta ≤ mu.real {original : Set ι | current ∈ original}) :
+    mu.real {original : Set ι | current ∉ original} ≤ 1 - theta := by
+  have hopen : MeasurableSet {original : Set ι | current ∈ original} :=
+    measurableSet_mem current
+  have hclosed : {original : Set ι | current ∉ original} =
+      {original : Set ι | current ∈ original}ᶜ := by
+    ext original
+    simp
+  rw [hclosed, measureReal_compl hopen, probReal_univ]
+  linarith
+
+/-- Inequality form of (7.120), ready for substitution into (7.119). -/
+theorem productMeasure_real_originalClosed_inter_dilutedConstraint_far_le
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : SimpleGraph ι) (k : ℕ)
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (hmu : KDependent G k mu) (p : I)
+    (current : ι) (C : Finset ι) (z : Set ι) (theta : ℝ)
+    (hmarginal : theta ≤ mu.real {original : Set ι | current ∈ original}) :
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+        ({yz : Set ι × Set ι | current ∉ yz.1} ∩
+          dilutedConstraintEvent (lssFar G k current C) z) ≤
+      (1 - theta) *
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (dilutedConstraintEvent (lssFar G k current C) z) := by
+  rw [productMeasure_real_originalClosed_inter_dilutedConstraint_far
+    G k mu hmu p current C z]
+  gcongr
+  exact measureReal_originalClosed_le_one_sub_of_le_open mu current theta hmarginal
+
+/-- Equation (7.121), ratio-free form.  Closing the independent retention bits on `N⁰`
+contributes exactly `(1-p)^|N⁰|` to an event whose remaining retention support is disjoint. -/
+theorem productMeasure_real_retentionClosed_inter_originalOpen_inter_dilutedConstraint
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (mu : Measure (Set ι)) [IsProbabilityMeasure mu]
+    (p : I) (Nzero None M : Finset ι) (z : Set ι)
+    (hdisj : Disjoint Nzero M) :
+    (mu.prod setBer((Set.univ : Set ι), p)).real
+        ((retentionClosedOnProductEvent Nzero ∩
+          originalOpenOnProductEvent None) ∩
+          dilutedConstraintEvent M z) =
+      (1 - (p : ℝ)) ^ Nzero.card *
+        (mu.prod setBer((Set.univ : Set ι), p)).real
+          (originalOpenOnProductEvent None ∩ dilutedConstraintEvent M z) := by
+  classical
+  let nu := setBer((Set.univ : Set ι), p)
+  let Bzero : Set (Set ι) :=
+    {retained | Disjoint (Nzero : Set ι) retained}
+  let Aone : Set (Set ι) := {original | (None : Set ι) ⊆ original}
+  let farEvent : Set (Set ι × Set ι) := dilutedConstraintEvent M z
+  have hleft : MeasurableSet
+      ((retentionClosedOnProductEvent Nzero ∩
+        originalOpenOnProductEvent None) ∩ farEvent) :=
+    (Set.toFinite _).measurableSet
+  have hright : MeasurableSet
+      (originalOpenOnProductEvent None ∩ farEvent) :=
+    (Set.toFinite _).measurableSet
+  change (mu.prod nu).real
+      ((retentionClosedOnProductEvent Nzero ∩
+        originalOpenOnProductEvent None) ∩ farEvent) =
+    (1 - (p : ℝ)) ^ Nzero.card *
+      (mu.prod nu).real (originalOpenOnProductEvent None ∩ farEvent)
+  rw [measureReal_prod_eq_sum_sections mu nu hleft,
+    measureReal_prod_eq_sum_sections mu nu hright, Finset.mul_sum]
+  apply Finset.sum_congr rfl
+  intro original _horiginal
+  by_cases hone : original ∈ Aone
+  · change (None : Set ι) ⊆ original at hone
+    let farSection : Set (Set ι) :=
+      {retained | (original, retained) ∈ farEvent}
+    have hBzero : MeasurableSet[MeasurableSpace.generateFrom
+        (coordinateEvents (Nzero : Set ι))] Bzero := by
+      exact (dependsOn_retentionClosedEvent Nzero
+        ).measurableSet_generateFrom_coordinateEvents Set.Subset.rfl
+    have hfarSection : MeasurableSet[MeasurableSpace.generateFrom
+        (coordinateEvents (M : Set ι))] farSection := by
+      exact (dependsOn_dilutedConstraint_retentionSection M z original
+        ).measurableSet_generateFrom_coordinateEvents Set.Subset.rfl
+    have hsetDisj : Disjoint (Nzero : Set ι) (M : Set ι) := by
+      rw [Set.disjoint_left]
+      intro x hxzero hxM
+      exact Finset.disjoint_left.mp hdisj hxzero hxM
+    have hfactor := ((indep_generateFrom_coordinateEvents p hsetDisj
+      ).indepSet_of_measurableSet hBzero hfarSection).measure_inter_eq_mul
+    have hfactorReal := congrArg ENNReal.toReal hfactor
+    rw [ENNReal.toReal_mul] at hfactorReal
+    have hBzeroMass : nu.real Bzero = (1 - (p : ℝ)) ^ Nzero.card := by
+      exact setBernoulli_real_disjoint_finset_univ Nzero p
+    have hleftSection : (Prod.mk original) ⁻¹'
+        ((retentionClosedOnProductEvent Nzero ∩
+          originalOpenOnProductEvent None) ∩ farEvent) =
+        Bzero ∩ farSection := by
+      ext retained
+      simp [retentionClosedOnProductEvent, originalOpenOnProductEvent,
+        Bzero, farSection, hone]
+    have hrightSection : (Prod.mk original) ⁻¹'
+        (originalOpenOnProductEvent None ∩ farEvent) = farSection := by
+      ext retained
+      simp [originalOpenOnProductEvent, farSection, hone]
+    rw [hleftSection, hrightSection]
+    change mu.real {original} * nu.real (Bzero ∩ farSection) =
+      (1 - (p : ℝ)) ^ Nzero.card *
+        (mu.real {original} * nu.real farSection)
+    rw [show nu.real (Bzero ∩ farSection) =
+        nu.real Bzero * nu.real farSection by
+      simpa only [measureReal_def] using hfactorReal,
+      hBzeroMass]
+    ring
+  · change ¬ (None : Set ι) ⊆ original at hone
+    have hleftSection : (Prod.mk original) ⁻¹'
+        ((retentionClosedOnProductEvent Nzero ∩
+          originalOpenOnProductEvent None) ∩ farEvent) = ∅ := by
+      ext retained
+      simp [retentionClosedOnProductEvent, originalOpenOnProductEvent, hone]
+    have hrightSection : (Prod.mk original) ⁻¹'
+        (originalOpenOnProductEvent None ∩ farEvent) = ∅ := by
+      ext retained
+      simp [originalOpenOnProductEvent, hone]
+    rw [hleftSection, hrightSection]
+    simp
 
 end Percolation

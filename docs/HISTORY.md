@@ -974,6 +974,14 @@ Dated milestones and anti-library notes.
     and the far-coordinate support statement. No conditional-probability claim is attached to
     this checkpoint; the strong induction and its measure inequalities remain next.
 
+90. **Chapter 7 LSS far-history and retention-zero factors (2026-07-12).** Proved the
+    ratio-free content of (7.120) directly from `KDependent`: after fixing the auxiliary field,
+    a far diluted-history section reads only coordinates beyond distance `k`, so the current
+    original bit factors exactly. The marginal hypothesis then supplies the `1-δ` bound.
+    Separately, coordinate independence gives the exact `(1-p)^|N⁰|` factor in (7.121), with
+    explicit density-zero and density-one behavior. The `A¹` lower bound (7.122) and the strong
+    induction assembling (7.117) remain.
+
 ## Axiom Ledger
 
 Empty.

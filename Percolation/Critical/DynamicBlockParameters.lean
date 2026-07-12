@@ -10,6 +10,8 @@ This file records the dimension-uniform version of (7.26).  Starting at
 
 namespace Percolation
 
+open scoped unitInterval
+
 /-- Background density used by the dynamic construction. -/
 noncomputable def dynamicBlockBaseDensity (pc eta : ℝ) : ℝ :=
   pc + eta / 2
@@ -25,6 +27,23 @@ noncomputable def dynamicBlockRestartError (d : ℕ) (pcSite : ℝ) : ℝ :=
 /-- Supercritical site density targeted by the block exploration. -/
 noncomputable def dynamicBlockSiteDensity (pcSite : ℝ) : ℝ :=
   (1 + pcSite) / 2
+
+/-- Unit-interval representative of the target coarse-site density. -/
+noncomputable def dynamicBlockSiteDensityUnit (pcSite : ℝ) (hsite0 : 0 ≤ pcSite)
+    (hsite1 : pcSite < 1) : I :=
+  ⟨dynamicBlockSiteDensity pcSite, by
+    constructor
+    · unfold dynamicBlockSiteDensity
+      linarith
+    · unfold dynamicBlockSiteDensity
+      linarith⟩
+
+@[simp]
+theorem dynamicBlockSiteDensityUnit_coe (pcSite : ℝ) (hsite0 : 0 ≤ pcSite)
+    (hsite1 : pcSite < 1) :
+    (dynamicBlockSiteDensityUnit pcSite hsite0 hsite1 : ℝ) =
+      dynamicBlockSiteDensity pcSite :=
+  rfl
 
 theorem dynamicBlockBaseDensity_add_half (pc eta : ℝ) :
     dynamicBlockBaseDensity pc eta + eta / 2 = pc + eta := by
@@ -107,6 +126,36 @@ theorem dynamicBlock_successFactor_gt_siteDensity
     _ = (1 - 2 * d * dynamicBlockRestartError d pcSite) *
         (1 - dynamicBlockRestartError d pcSite) ^ (2 * d) := by
       simp [epsilon]
+
+/-- A uniform sequence of `4d` restart factors also stays strictly above the target site
+density.  This form is convenient for the exact finite-stage answer law. -/
+theorem dynamicBlock_restartPow_gt_siteDensity
+    {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
+    (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
+    dynamicBlockSiteDensity pcSite <
+      (1 - dynamicBlockRestartError d pcSite) ^ (4 * d) := by
+  let epsilon := dynamicBlockRestartError d pcSite
+  have heps0 : 0 ≤ epsilon := (dynamicBlockRestartError_pos hd hsite1).le
+  have heps1 : epsilon ≤ 1 :=
+    (dynamicBlockRestartError_le_one_eighth hd hsite0).trans (by norm_num)
+  have hBernoulli :
+      1 - (2 * d : ℕ) * epsilon ≤ (1 - epsilon) ^ (2 * d) := by
+    simpa [sub_eq_add_neg, mul_neg] using
+      (one_add_mul_le_pow (a := -epsilon) (by linarith) (2 * d))
+  have hBernoulli' :
+      1 - 2 * (d : ℝ) * epsilon ≤ (1 - epsilon) ^ (2 * d) := by
+    simpa [Nat.cast_mul] using hBernoulli
+  calc
+    dynamicBlockSiteDensity pcSite <
+        (1 - 2 * d * epsilon) * (1 - epsilon) ^ (2 * d) := by
+      simpa [epsilon] using dynamicBlock_successFactor_gt_siteDensity hd hsite0 hsite1
+    _ ≤ (1 - epsilon) ^ (2 * d) * (1 - epsilon) ^ (2 * d) := by
+      exact mul_le_mul_of_nonneg_right hBernoulli'
+        (pow_nonneg (sub_nonneg.mpr heps1) _)
+    _ = (1 - epsilon) ^ (4 * d) := by
+      rw [← pow_add]
+      congr 1
+      omega
 
 /-- Exact (7.34) budget: starting at `p_c+eta/2`, all `2d+1` reveal charges remain below
 `p_c+eta`. -/

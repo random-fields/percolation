@@ -147,6 +147,18 @@ def HasAdaptiveAnswerLowerBoundOn
     q * mu.real (adaptiveAnswerHistoryEvent answer history) ≤
       mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, true)]))
 
+theorem HasAdaptiveAnswerLowerBoundOn.mono_density
+    [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    {answer : Omega → List (V × Bool) → V → Bool}
+    {admissible : List (V × Bool) → V → Prop} {q q' : ℝ}
+    (h : HasAdaptiveAnswerLowerBoundOn mu answer admissible q)
+    (hq : q' ≤ q) :
+    HasAdaptiveAnswerLowerBoundOn mu answer admissible q' := by
+  intro history v hadmissible
+  exact (mul_le_mul_of_nonneg_right hq measureReal_nonneg).trans
+    (h history v hadmissible)
+
 theorem HasAdaptiveAnswerLowerBoundOn.conditionalRatio
     [MeasurableSpace Omega]
     {mu : Measure Omega}

@@ -1,4 +1,5 @@
 import Percolation.Critical.AdaptiveAnswerHistory
+import Percolation.Critical.AdaptiveSiteExplorationTheorem
 
 /-!
 # History-indexed oriented restart laws
@@ -49,6 +50,36 @@ theorem measurableSet_successEvent_coordSigma {d : ℕ} (Q : OrientedRestartQuer
     Q.center Q.direction m n Q.region p Q.beta delta
 
 end OrientedRestartQuery
+
+namespace SiteExploration
+
+/-- Turn an answer intended for suffix histories into an oracle on full exploration histories.
+The equality below is the only use needed: once `prior` is installed in the initial state,
+prefixing this oracle recovers the original suffix answer exactly. -/
+def realizePrefixedAdaptiveAnswer {V Omega : Type*}
+    (prior : List (V × Bool))
+    (answer : Omega → List (V × Bool) → V → Bool) :
+    Omega → List (V × Bool) → V → Bool :=
+  fun omega history v => answer omega (history.drop prior.length) v
+
+@[simp]
+theorem prefixedAdaptiveAnswer_realizePrefixedAdaptiveAnswer
+    {V Omega : Type*} (prior : List (V × Bool))
+    (answer : Omega → List (V × Bool) → V → Bool) :
+    prefixedAdaptiveAnswer prior (realizePrefixedAdaptiveAnswer prior answer) = answer := by
+  funext omega history v
+  simp [prefixedAdaptiveAnswer, realizePrefixedAdaptiveAnswer]
+
+theorem measurableAnswer_realizePrefixedAdaptiveAnswer
+    {V Omega : Type*} [MeasurableSpace Omega]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (prior : List (V × Bool)) :
+    AdaptiveSiteExploration.MeasurableAnswer
+      (realizePrefixedAdaptiveAnswer prior answer) :=
+  fun history v => hanswer (history.drop prior.length) v
+
+end SiteExploration
 
 namespace AdaptiveSiteExploration
 
@@ -117,6 +148,238 @@ theorem hasAdaptiveAnswerLowerBound :
     (P.past_measurable history v) (P.fresh history v) (P.restart_gt history v)
 
 end FreshOrientedRestartProtocol
+
+/-! ## Finite multi-restart block answers -/
+
+/-- Intersection of the first `k` history-indexed stage events. -/
+def finiteAdaptiveSuccessPrefix {Omega : Type*}
+    (stage : List (V × Bool) → V → ℕ → Set Omega)
+    (history : List (V × Bool)) (v : V) (k : ℕ) : Set Omega :=
+  ⋂ j ∈ Finset.range k, stage history v j
+
+@[simp]
+theorem finiteAdaptiveSuccessPrefix_zero {Omega : Type*}
+    (stage : List (V × Bool) → V → ℕ → Set Omega)
+    (history : List (V × Bool)) (v : V) :
+    finiteAdaptiveSuccessPrefix stage history v 0 = Set.univ := by
+  simp [finiteAdaptiveSuccessPrefix]
+
+theorem finiteAdaptiveSuccessPrefix_succ {Omega : Type*}
+    (stage : List (V × Bool) → V → ℕ → Set Omega)
+    (history : List (V × Bool)) (v : V) (k : ℕ) :
+    finiteAdaptiveSuccessPrefix stage history v (k + 1) =
+      stage history v k ∩ finiteAdaptiveSuccessPrefix stage history v k := by
+  ext omega
+  simp only [finiteAdaptiveSuccessPrefix, Set.mem_iInter, Finset.mem_range,
+    Set.mem_inter_iff]
+  constructor
+  · intro h
+    exact ⟨h k (by omega), fun j hj => h j (by omega)⟩
+  · rintro ⟨hk, hprefix⟩ j hj
+    by_cases hjk : j = k
+    · simpa [hjk] using hk
+    · exact hprefix j (by omega)
+
+theorem measurableSet_finiteAdaptiveSuccessPrefix
+    {Omega : Type*} [MeasurableSpace Omega]
+    {stage : List (V × Bool) → V → ℕ → Set Omega}
+    (hstage : ∀ history v j, MeasurableSet (stage history v j))
+    (history : List (V × Bool)) (v : V) (k : ℕ) :
+    MeasurableSet (finiteAdaptiveSuccessPrefix stage history v k) := by
+  apply MeasurableSet.biInter (Finset.range k).countable_toSet
+  intro j _hj
+  exact hstage history v j
+
+/-- Boolean answer which accepts a coarse site exactly when all of its first `k` restart stages
+succeed. -/
+noncomputable def finiteAdaptiveSuccessAnswer {Omega : Type*}
+    (stage : List (V × Bool) → V → ℕ → Set Omega) (k : ℕ) :
+    Omega → List (V × Bool) → V → Bool :=
+  eventAdaptiveAnswer fun history v => finiteAdaptiveSuccessPrefix stage history v k
+
+theorem measurableAnswer_finiteAdaptiveSuccessAnswer
+    {Omega : Type*} [MeasurableSpace Omega]
+    {stage : List (V × Bool) → V → ℕ → Set Omega}
+    (hstage : ∀ history v j, MeasurableSet (stage history v j)) (k : ℕ) :
+    MeasurableAnswer (finiteAdaptiveSuccessAnswer stage k) :=
+  measurableAnswer_eventAdaptiveAnswer fun history v =>
+    measurableSet_finiteAdaptiveSuccessPrefix hstage history v k
+
+/-- Finite source-order composition: if adjoining each of `k` restart stages retains a
+ratio-free factor `q` on the literal outer answer history, the all-stage block answer retains
+the factor `q^k`. -/
+theorem hasAdaptiveAnswerLowerBoundOn_finiteAdaptiveSuccessAnswer
+    {Omega : Type*} [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    (stage : List (V × Bool) → V → ℕ → Set Omega) (k : ℕ)
+    (admissible : List (V × Bool) → V → Prop) (q : ℝ) (hq : 0 ≤ q)
+    (hstep : ∀ history v, admissible history v → ∀ j < k,
+      q * mu.real
+          (finiteAdaptiveSuccessPrefix stage history v j ∩
+            adaptiveAnswerHistoryEvent (finiteAdaptiveSuccessAnswer stage k) history) ≤
+        mu.real
+          (finiteAdaptiveSuccessPrefix stage history v (j + 1) ∩
+            adaptiveAnswerHistoryEvent (finiteAdaptiveSuccessAnswer stage k) history)) :
+    HasAdaptiveAnswerLowerBoundOn mu (finiteAdaptiveSuccessAnswer stage k)
+      admissible (q ^ k) := by
+  apply hasAdaptiveAnswerLowerBoundOn_eventAdaptiveAnswer
+  intro history v hadmissible
+  let H := adaptiveAnswerHistoryEvent (finiteAdaptiveSuccessAnswer stage k) history
+  have hpow := pow_mul_measureReal_le_of_step
+    (fun j => finiteAdaptiveSuccessPrefix stage history v j ∩ H) q hq k
+    (fun j hj => hstep history v hadmissible j hj)
+  simpa [finiteAdaptiveSuccessAnswer, H] using hpow
+
+/-- Stage-event family of a history-indexed finite oriented-restart program. -/
+def finiteOrientedRestartStageFamily {d : ℕ}
+    (query : List (V × Bool) → V → ℕ → OrientedRestartQuery d)
+    (m n : ℕ) (p : I) (delta : ℝ) :
+    List (V × Bool) → V → ℕ → Set (CubicEdge d → ℝ) :=
+  fun history v j => (query history v j).successEvent m n p delta
+
+/-- Certificate that every prefix of the finite restart program has the exact
+`independent past ∩ current boundary cell` form required by Lemma 7.17. -/
+structure FiniteFreshOrientedRestartProgram
+    (d : ℕ) (V : Type*) (m n : ℕ) (p : I) (delta epsilon : ℝ) (k : ℕ) where
+  query : List (V × Bool) → V → ℕ → OrientedRestartQuery d
+  pastSupport : List (V × Bool) → V → ℕ → Finset (CubicEdge d)
+  past : List (V × Bool) → V → ℕ → Set (CubicEdge d → ℝ)
+  past_measurable : ∀ history v j, j < k →
+    MeasurableSet[coordSigma (CubicEdge d)
+      (pastSupport history v j : Set (CubicEdge d))] (past history v j)
+  fresh : ∀ history v j, j < k →
+    Disjoint (pastSupport history v j : Set (CubicEdge d))
+      ((query history v j).restartSupport m n : Set (CubicEdge d))
+  prefix_history_eq : ∀ history v j, j < k →
+    finiteAdaptiveSuccessPrefix
+          (finiteOrientedRestartStageFamily query m n p delta) history v j ∩
+        adaptiveAnswerHistoryEvent
+          (finiteAdaptiveSuccessAnswer
+            (finiteOrientedRestartStageFamily query m n p delta) k) history =
+      past history v j ∩ (query history v j).boundaryHistoryEvent n
+  restart_gt : ∀ history v j, j < k →
+    (1 - epsilon) *
+        (couplingMeasure (CubicEdge d)).real
+          ((query history v j).boundaryHistoryEvent n) <
+      (couplingMeasure (CubicEdge d)).real
+        ((query history v j).successEvent m n p delta ∩
+          (query history v j).boundaryHistoryEvent n)
+
+namespace FiniteFreshOrientedRestartProgram
+
+variable {d : ℕ} {m n k : ℕ} {p : I} {delta epsilon : ℝ}
+    (P : FiniteFreshOrientedRestartProgram d V m n p delta epsilon k)
+
+noncomputable def answer :
+    (CubicEdge d → ℝ) → List (V × Bool) → V → Bool :=
+  finiteAdaptiveSuccessAnswer
+    (finiteOrientedRestartStageFamily P.query m n p delta) k
+
+theorem measurableAnswer : MeasurableAnswer P.answer := by
+  apply measurableAnswer_finiteAdaptiveSuccessAnswer
+  intro history v j
+  have h := (P.query history v j).measurableSet_successEvent_coordSigma m n p delta
+  exact (coordSigma_le _) _ h
+
+/-- All `k` certified restarts compose to a block-level lower bound `(1-ε)^k`. -/
+theorem hasAdaptiveAnswerLowerBound (hepsilon : epsilon ≤ 1) :
+    HasAdaptiveAnswerLowerBoundOn (couplingMeasure (CubicEdge d)) P.answer
+      (fun _ _ => True) ((1 - epsilon) ^ k) := by
+  apply hasAdaptiveAnswerLowerBoundOn_finiteAdaptiveSuccessAnswer
+    (finiteOrientedRestartStageFamily P.query m n p delta) k
+      (fun _ _ => True) (1 - epsilon) (sub_nonneg.mpr hepsilon)
+  intro history v _ j hj
+  rw [finiteAdaptiveSuccessPrefix_succ]
+  rw [Set.inter_assoc]
+  rw [P.prefix_history_eq history v j hj]
+  simpa [finiteOrientedRestartStageFamily, OrientedRestartQuery.successEvent,
+    OrientedRestartQuery.boundaryHistoryEvent] using
+    orientedSprinkledRestart_inter_past_history_ge
+    (P.query history v j).center (P.query history v j).direction
+    (P.query history v j).region p (P.query history v j).beta delta epsilon
+    (P.pastSupport history v j) (P.past history v j)
+    (P.past_measurable history v j hj) (P.fresh history v j hj)
+    (P.restart_gt history v j hj)
+
+/-- Full-history oracle installed in the actual rooted exploration. -/
+noncomputable def fullHistoryAnswer (prior : List (V × Bool)) :
+    (CubicEdge d → ℝ) → List (V × Bool) → V → Bool :=
+  SiteExploration.realizePrefixedAdaptiveAnswer prior P.answer
+
+theorem measurableAnswer_fullHistoryAnswer (prior : List (V × Bool)) :
+    MeasurableAnswer (P.fullHistoryAnswer prior) :=
+  SiteExploration.measurableAnswer_realizePrefixedAdaptiveAnswer P.measurableAnswer prior
+
+/-- Direct composition of a finite restart program with source-facing Lemma 7.24. -/
+theorem cubicRegion_infinite_probability_pos
+    (F : Set (Cubic d)) [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected)
+    (P : FiniteFreshOrientedRestartProgram d F m n p delta epsilon k)
+    (q : I) (hq : siteCriticalProbability (cubicRegionGraph d F) < (q : ℝ))
+    (hepsilon : epsilon ≤ 1) (hqEq : (q : ℝ) = (1 - epsilon) ^ k) :
+    0 < (couplingMeasure (CubicEdge d)).real {omega |
+      ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history omega)).Infinite} := by
+  apply SiteExploration.cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBound
+    d F root hF (couplingMeasure (CubicEdge d)) q hq
+      (P.measurableAnswer_fullHistoryAnswer _)
+  simpa [fullHistoryAnswer, hqEq] using P.hasAdaptiveAnswerLowerBound hepsilon
+
+theorem cubicRegion_hasInfiniteSiteCluster_probability_pos
+    (F : Set (Cubic d)) [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected)
+    (P : FiniteFreshOrientedRestartProgram d F m n p delta epsilon k)
+    (q : I) (hq : siteCriticalProbability (cubicRegionGraph d F) < (q : ℝ))
+    (hepsilon : epsilon ≤ 1) (hqEq : (q : ℝ) = (1 - epsilon) ^ k) :
+    0 < (couplingMeasure (CubicEdge d)).real {omega |
+      hasInfiniteSiteCluster (cubicRegionGraph d F)
+        ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+          (P.fullHistoryAnswer
+            (cubicRegionSiteExploration d F root).initial.history omega))} := by
+  apply
+    SiteExploration.cubicRegionSiteExploration_hasInfiniteSiteCluster_probability_pos_of_adaptiveLowerBound
+      d F root hF (couplingMeasure (CubicEdge d)) q hq
+        (P.measurableAnswer_fullHistoryAnswer _)
+  simpa [fullHistoryAnswer, hqEq] using P.hasAdaptiveAnswerLowerBound hepsilon
+
+/-- The source parameter choice `ε=(1-p_c^site)/(8d)` and `4d` sequential restarts gives the
+coarse-site density `(1+p_c^site)/2`. -/
+theorem hasAdaptiveAnswerLowerBound_dynamicBlockSiteDensity
+    {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
+    (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1)
+    (P : FiniteFreshOrientedRestartProgram d V m n p delta
+      (dynamicBlockRestartError d pcSite) (4 * d)) :
+    HasAdaptiveAnswerLowerBoundOn (couplingMeasure (CubicEdge d)) P.answer
+      (fun _ _ => True) (dynamicBlockSiteDensity pcSite) := by
+  apply (P.hasAdaptiveAnswerLowerBound
+    ((dynamicBlockRestartError_le_one_eighth hd hsite0).trans (by norm_num))).mono_density
+  exact (dynamicBlock_restartPow_gt_siteDensity hd hsite0 hsite1).le
+
+/-- A concrete `4d`-stage program on a connected region already implies the positive infinite
+coarse-cluster conclusion needed in Theorem 7.2. -/
+theorem cubicRegion_infinite_probability_pos_dynamicBlock
+    (F : Set (Cubic d)) [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected) (hd : 0 < d)
+    (hsite0 : 0 ≤ siteCriticalProbability (cubicRegionGraph d F))
+    (hsite1 : siteCriticalProbability (cubicRegionGraph d F) < 1)
+    (P : FiniteFreshOrientedRestartProgram d F m n p delta
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      (4 * d)) :
+    0 < (couplingMeasure (CubicEdge d)).real {omega |
+      ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history omega)).Infinite} := by
+  let q := dynamicBlockSiteDensityUnit
+    (siteCriticalProbability (cubicRegionGraph d F)) hsite0 hsite1
+  apply SiteExploration.cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBound
+    d F root hF (couplingMeasure (CubicEdge d)) q
+      (by simpa [q] using dynamicBlockSiteDensity_gt hsite1)
+      (P.measurableAnswer_fullHistoryAnswer _)
+  simpa [fullHistoryAnswer, q] using
+    hasAdaptiveAnswerLowerBound_dynamicBlockSiteDensity hd hsite0 hsite1 P
+
+end FiniteFreshOrientedRestartProgram
 
 end AdaptiveSiteExploration
 

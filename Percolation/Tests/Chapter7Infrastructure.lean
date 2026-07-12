@@ -1322,4 +1322,11 @@ example {V Omega : Type*}
   AdaptiveSiteExploration.adaptiveAnswerHistoryEvent_eventAdaptiveAnswer_append_true
     success history v
 
+example {V Omega : Type*}
+    (stage : List (V × Bool) → V → ℕ → Set Omega)
+    (history : List (V × Bool)) (v : V) :
+    AdaptiveSiteExploration.finiteAdaptiveSuccessPrefix stage history v 1 =
+      stage history v 0 := by
+  simp [AdaptiveSiteExploration.finiteAdaptiveSuccessPrefix]
+
 end Percolation

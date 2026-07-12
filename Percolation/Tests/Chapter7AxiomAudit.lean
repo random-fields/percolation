@@ -508,4 +508,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.siteDilutionLaw_real_mem
 #print axioms Percolation.stochasticallyDominates_siteDilutionLaw
 #print axioms Percolation.hasFiniteSequentialLowerBound_iff_event
+#print axioms Percolation.setBernoulli_real_retentionPrefixSection_inter_current
+#print axioms Percolation.hasLSSRetentionFactorization
 #print axioms Percolation.hasFiniteSequentialLowerBound_siteDilutionLaw
+#print axioms Percolation.hasFiniteSequentialLowerBound_siteDilutionLaw_of_original

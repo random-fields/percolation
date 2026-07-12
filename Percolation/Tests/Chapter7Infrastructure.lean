@@ -288,6 +288,18 @@ example {n : ℕ} (μ : Measure (Set (Fin n))) [IsProbabilityMeasure μ]
     HasFiniteSequentialLowerBound (siteDilutionLaw μ p) (a * (p : ℝ)) :=
   hasFiniteSequentialLowerBound_siteDilutionLaw μ p hY hZ
 
+/-- The current retention bit is fresh automatically; callers of the LSS induction only need
+to establish the original-field lower bound (7.117). -/
+example {n : ℕ} (μ : Measure (Set (Fin n))) [IsProbabilityMeasure μ]
+    (p : I) : HasLSSRetentionFactorization μ p :=
+  hasLSSRetentionFactorization μ p
+
+example {n : ℕ} (μ : Measure (Set (Fin n))) [IsProbabilityMeasure μ]
+    (p : I) {a : ℝ}
+    (hY : HasLSSOriginalConditionalLowerBound μ p a) :
+    HasFiniteSequentialLowerBound (siteDilutionLaw μ p) (a * (p : ℝ)) :=
+  hasFiniteSequentialLowerBound_siteDilutionLaw_of_original μ p hY
+
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :
     G.IsEdgeReachable k u v ↔

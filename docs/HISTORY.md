@@ -961,6 +961,12 @@ Dated milestones and anti-library notes.
     sequential lower bound for `Z^pY` at density `ap`. The LSS induction must now derive the first
     premise from `k`-dependence; iid coordinate independence must discharge the second.
 
+88. **Chapter 7 automatic LSS retention factorization (2026-07-12).** Proved by finite Fubini
+    and coordinate-sigma independence that an exact diluted prefix uses only earlier retention
+    coordinates, so the current retention bit contributes exactly the factor `p`. Consequently
+    (7.117) alone now yields the finite sequential lower bound for `Z^pY`; the remaining LSS
+    probability step is precisely the induction deriving (7.117) from finite-range dependence.
+
 ## Axiom Ledger
 
 Empty.

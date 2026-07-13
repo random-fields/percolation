@@ -1063,6 +1063,29 @@ Dated milestones and anti-library notes.
     first-pass report is preserved unedited in the review record. This repair occurred after the
     tracker pause and has no measured theorem telemetry.
 
+101. **Chapter 7 site-crossing closed-frontier kernel (2026-07-12).** Defined the set of open
+    rectangle vertices reachable from the left face and its corrected internal outer boundary.
+    The boundary includes closed left-face sites when no open site is reachable, so the fully
+    closed configuration is handled rather than producing an empty separator. Every boundary
+    site is proved closed, and every rectangle-confined left-right walk is proved to meet the
+    boundary whenever the site crossing fails. The remaining deterministic part of (7.70) is the
+    planar extraction of a top-bottom star-lattice path from this separator. This post-pause work
+    has no measured telemetry.
+
+102. **Chapter 7 degree-eight star-walk code (2026-07-12).** Constructed the square star lattice
+    as the exact `L∞`-distance-one graph, proved its neighbor set is the radius-one coordinate box
+    with the center erased and hence has degree eight, and fixed a reversible direction-word code
+    for every star walk. The counted self-avoiding length-`n` codes have cardinality at most
+    `8^n`. This is the literal combinatorial factor needed after the top-bottom closed-star-path
+    extraction in (7.70). This post-pause work has no measured telemetry.
+
+103. **Chapter 7 closed-star-path Peierls probability bound (2026-07-12).** For a fixed start,
+    defined the finite union of events that a counted self-avoiding length-`n` star walk is closed.
+    Its support has exactly `n+1` distinct sites, each event has mass `(1-p)^(n+1)`, and the
+    degree-eight code count yields the explicit bound `8^n(1-p)^(n+1)`. The probability half of
+    the high-density site crossing estimate (7.70) is now complete; the top-bottom star-path
+    extraction remains. This post-pause work has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

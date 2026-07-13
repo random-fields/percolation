@@ -9,6 +9,8 @@ import Percolation.Critical.AdaptiveSiteExplorationTheorem
 import Percolation.Critical.SiteExplorationDomination
 import Percolation.Planar.Crossings
 import Percolation.Planar.CrossingMenger
+import Percolation.Planar.SiteCrossingFrontier
+import Percolation.Planar.SiteCrossingPeierls
 import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
 import Percolation.Bernoulli.SequentialDomination
@@ -501,6 +503,36 @@ example (d k : ℕ) (e : ℕ ≃ Cubic d) :
         (enumerationPrefixDependencyGraph (cubicGraph d) k e n).edist current x ≤ 1).card ≤
         3 ^ d * (k + 1) ^ d :=
   cubic_enumerationPrefixDependencyGraph_neighbor_card_le d k e
+
+example (m n : ℕ) :
+    siteRectangleLeftReachableVertices m n (∅ : Set SquareVertex) = ∅ :=
+  siteRectangleLeftReachableVertices_empty m n
+
+example (m n : ℕ) :
+    siteRectangleLeftReachableBoundary m n (∅ : Set SquareVertex) =
+      squareRectangleLeft m n :=
+  siteRectangleLeftReachableBoundary_empty m n
+
+example {m n : ℕ} {eta : Set SquareVertex} {y : SquareVertex}
+    (hy : y ∈ siteRectangleLeftReachableBoundary m n eta) : y ∉ eta :=
+  not_mem_of_mem_siteRectangleLeftReachableBoundary hy
+
+example (x : SquareVertex) : squareStarGraph.degree x = 8 :=
+  squareStarGraph_degree x
+
+example {x y : SquareVertex} (hxy : squareGraph.Adj x y) :
+    squareStarGraph.Adj x y :=
+  squareGraph_adj_imp_squareStarGraph_adj hxy
+
+example (x : SquareVertex) (n : ℕ) :
+    Fintype.card (SquareStarSelfAvoidingCode x n) ≤ 8 ^ n :=
+  card_squareStarSelfAvoidingCode_le x n
+
+example (p : I) (x : SquareVertex) (n : ℕ) :
+    setBer((Set.univ : Set SquareVertex), p).real
+        (closedSquareStarSelfAvoidingWalkEvent x n) ≤
+      (8 : ℝ) ^ n * (1 - (p : ℝ)) ^ (n + 1) :=
+  setBernoulli_real_closedSquareStarSelfAvoidingWalkEvent_le p x n
 
 example (d : ℕ) (hd : 0 < d) (p q : I) (ε : ℝ) (n : ℕ) (hn : 1 ≤ n)
     (hq : (q : ℝ) < 1)

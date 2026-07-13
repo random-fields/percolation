@@ -2,6 +2,8 @@ import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.LSSCubic
 import Percolation.Critical.LSSGoodBlocks
 import Percolation.Critical.StaticBlockSliceCrossing
+import Percolation.Planar.SiteCrossingFrontier
+import Percolation.Planar.SiteCrossingPeierls
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveAnswerSupport
@@ -560,3 +562,7 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.exists_cubic_lssFiniteCylinderDominationThreshold
 #print axioms Percolation.siteCrossingProbability_le_epsilonGoodBlockSliceCrossing
 #print axioms Percolation.exists_connectionEvent_between_faces_of_mem_goodBlockSliceCrossing
+#print axioms Percolation.exists_mem_siteRectangleLeftReachableBoundary_of_not_crossing
+#print axioms Percolation.squareStarGraph_degree
+#print axioms Percolation.card_squareStarSelfAvoidingCode_le
+#print axioms Percolation.setBernoulli_real_closedSquareStarSelfAvoidingWalkEvent_le

@@ -769,6 +769,41 @@ theorem mem_interiorDepth_cubicBoxCrossingEvent_iff_le_max
     ← hasEdgeDisjointCubicBoxCrossings_iff_isEdgeReachableBetweenFinsets,
     hasEdgeDisjointCubicBoxCrossings_iff_le_max hr]
 
+theorem measurableSet_maxEdgeDisjointLeftRightCrossings_le
+    {d r s : ℕ} {i : Fin d} (hr : 1 ≤ r) :
+    MeasurableSet
+      {ω | maxEdgeDisjointLeftRightCrossings d r i ω ≤ s} := by
+  have hset : {ω | maxEdgeDisjointLeftRightCrossings d r i ω ≤ s} =
+      (interiorDepth s (cubicBoxCrossingEvent d r i))ᶜ := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_compl_iff,
+      mem_interiorDepth_cubicBoxCrossingEvent_iff_le_max hr,
+      not_le, Nat.lt_add_one_iff]
+  rw [hset]
+  exact (measurableSet_interiorDepth
+    (measurableSet_cubicBoxCrossingEvent d r i) s).compl
+
+theorem measurableSet_cast_maxEdgeDisjointLeftRightCrossings_ge
+    {d r : ℕ} {i : Fin d} (hr : 1 ≤ r) (t : ℝ) :
+    MeasurableSet
+      {ω | t ≤ (maxEdgeDisjointLeftRightCrossings d r i ω : ℝ)} := by
+  have hset : {ω | t ≤ (maxEdgeDisjointLeftRightCrossings d r i ω : ℝ)} =
+      {ω | ⌈t⌉₊ ≤ maxEdgeDisjointLeftRightCrossings d r i ω} := by
+    ext ω
+    exact (Nat.ceil_le (α := ℝ)).symm
+  rw [hset]
+  cases hceil : ⌈t⌉₊ with
+  | zero => simp
+  | succ s =>
+      have hthreshold : {ω | Nat.succ s ≤
+          maxEdgeDisjointLeftRightCrossings d r i ω} =
+          interiorDepth s (cubicBoxCrossingEvent d r i) := by
+        ext ω
+        exact (mem_interiorDepth_cubicBoxCrossingEvent_iff_le_max hr ω).symm
+      rw [hthreshold]
+      exact measurableSet_interiorDepth
+        (measurableSet_cubicBoxCrossingEvent d r i) s
+
 /-! ### Sprinkling and the quantitative form of equation (7.75) -/
 
 /-- ACCFR sprinkling after the cubic-box Menger identification. -/
@@ -840,5 +875,358 @@ theorem cubicBox_maxCrossings_probability_le_sprinkled_exp_staticTransverse
   have hratio : 0 ≤ (p₂ : ℝ) / ((p₂ : ℝ) - p₁) :=
     div_nonneg p₂.2.1 (sub_nonneg.mpr h12.le)
   exact hsprinkle.trans (mul_le_mul_of_nonneg_left hfail (pow_nonneg hratio s))
+
+/-! ### Comparing the block exponent with the physical surface order -/
+
+theorem div_three_le_staticSeparatedCoordinateCount (K : ℕ) :
+    (K : ℝ) / 3 ≤ ((2 * (K / 3) + 1 : ℕ) : ℝ) := by
+  have hmod : K % 3 < 3 := Nat.mod_lt K (by omega)
+  have hdecomp : K % 3 + 3 * (K / 3) = K := Nat.mod_add_div K 3
+  have hnat : K ≤ 3 * (2 * (K / 3) + 1) := by omega
+  apply (div_le_iff₀ (by norm_num : (0 : ℝ) < 3)).2
+  have hcast : (K : ℝ) ≤
+      3 * (((2 * (K / 3) + 1 : ℕ) : ℝ)) := by
+    exact_mod_cast hnat
+  simpa [mul_comm] using hcast
+
+/-- The number of independent transverse slices times their planar length has the expected
+surface-order lower bound. -/
+theorem staticTransverseScale_ge_radiusPower
+    {d K : ℕ} (hd : 3 ≤ d) :
+    (K : ℝ) * ((2 * (K / 3) + 1) ^ (d - 2) : ℕ) ≥
+      (K : ℝ) ^ (d - 1) / 3 ^ (d - 2) := by
+  have hbase := div_three_le_staticSeparatedCoordinateCount K
+  have hpow : ((K : ℝ) / 3) ^ (d - 2) ≤
+      (((2 * (K / 3) + 1 : ℕ) : ℝ)) ^ (d - 2) :=
+    pow_le_pow_left₀ (by positivity) hbase (d - 2)
+  have hmul := mul_le_mul_of_nonneg_left hpow (Nat.cast_nonneg K)
+  have hdEq : d - 1 = (d - 2) + 1 := by omega
+  calc
+    (K : ℝ) ^ (d - 1) / 3 ^ (d - 2) =
+        (K : ℝ) * ((K : ℝ) / 3) ^ (d - 2) := by
+      rw [hdEq, pow_succ, div_pow]
+      ring
+    _ ≤ (K : ℝ) * (((2 * (K / 3) + 1 : ℕ) : ℝ)) ^ (d - 2) := hmul
+    _ = (K : ℝ) * ((2 * (K / 3) + 1) ^ (d - 2) : ℕ) := by
+      norm_cast
+
+theorem scaledStaticBoxRadius_pow_le
+    {d N K : ℕ} (hK : 1 ≤ K) :
+    ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) ≤
+      (((2 * N : ℕ) : ℝ) ^ (d - 1)) * (K : ℝ) ^ (d - 1) := by
+  have hnat : N * (K + 1) ≤ (2 * N) * K := by
+    nlinarith
+  have hbase : ((N * (K + 1) : ℕ) : ℝ) ≤
+      (((2 * N : ℕ) : ℝ) * (K : ℝ)) := by
+    exact_mod_cast hnat
+  have hp := pow_le_pow_left₀ (Nat.cast_nonneg (N * (K + 1))) hbase (d - 1)
+  simpa [mul_pow] using hp
+
+/-- Uniform comparison used to rewrite the exponential slice bound in terms of the physical
+box radius `N(K+1)`. -/
+theorem scaledStaticBoxRadius_pow_le_constant_mul_staticTransverseScale
+    {d N K : ℕ} (hd : 3 ≤ d) (hK : 1 ≤ K) :
+    ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) ≤
+      (3 : ℝ) ^ (d - 2) * (((2 * N : ℕ) : ℝ) ^ (d - 1)) *
+        ((K : ℝ) * ((2 * (K / 3) + 1) ^ (d - 2) : ℕ)) := by
+  have hscaled := scaledStaticBoxRadius_pow_le (d := d) (N := N) hK
+  have htrans := staticTransverseScale_ge_radiusPower (d := d) (K := K) hd
+  have hthree : (0 : ℝ) < 3 ^ (d - 2) := by positivity
+  have hkpow : (K : ℝ) ^ (d - 1) ≤
+      3 ^ (d - 2) *
+        ((K : ℝ) * ((2 * (K / 3) + 1) ^ (d - 2) : ℕ)) := by
+    simpa [mul_comm, mul_left_comm, mul_assoc] using
+      (div_le_iff₀ hthree).mp htrans
+  calc
+    ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) ≤
+        (((2 * N : ℕ) : ℝ) ^ (d - 1)) * (K : ℝ) ^ (d - 1) := hscaled
+    _ ≤ (((2 * N : ℕ) : ℝ) ^ (d - 1)) *
+        (3 ^ (d - 2) *
+          ((K : ℝ) * ((2 * (K / 3) + 1) ^ (d - 2) : ℕ))) :=
+      mul_le_mul_of_nonneg_left hkpow (by positivity)
+    _ = (3 : ℝ) ^ (d - 2) * (((2 * N : ℕ) : ℝ) ^ (d - 1)) *
+        ((K : ℝ) * ((2 * (K / 3) + 1) ^ (d - 2) : ℕ)) := by ring
+
+/-! ### Optimizing the integer crossing threshold -/
+
+/-- The elementary optimization behind the passage from (7.75) to a surface-order
+exponential estimate.  The factor `4` leaves enough room both for the integer floor and for
+halving the lower-density exponential rate. -/
+theorem pow_mul_exp_neg_le_exp_neg_half_of_cast_le
+    {A a b c x : ℝ} {s : ℕ}
+    (hA : 1 < A) (hc : 0 < c) (hx : 0 ≤ x)
+    (hs : (s : ℝ) ≤ c / (4 * Real.log A) * x)
+    (hdecay : c * x ≤ a * b) :
+    A ^ s * Real.exp (-a * b) ≤ Real.exp (-(c / 2) * x) := by
+  have hApos : 0 < A := zero_lt_one.trans hA
+  have hlog : 0 < Real.log A := Real.log_pos hA
+  have hthresholdLog :
+      (c / (4 * Real.log A) * x) * Real.log A = c * x / 4 := by
+    field_simp [hlog.ne']
+    <;> ring
+  have hslog : (s : ℝ) * Real.log A ≤ c * x / 4 := by
+    calc
+      (s : ℝ) * Real.log A ≤
+          (c / (4 * Real.log A) * x) * Real.log A :=
+        mul_le_mul_of_nonneg_right hs hlog.le
+      _ = c * x / 4 := hthresholdLog
+  have hcx : 0 ≤ c * x := mul_nonneg hc.le hx
+  have hexponent : (s : ℝ) * Real.log A + (-a * b) ≤ -(c / 2) * x := by
+    linarith
+  have hpow : A ^ s = Real.exp ((s : ℝ) * Real.log A) := by
+    calc
+      A ^ s = (Real.exp (Real.log A)) ^ s := by rw [Real.exp_log hApos]
+      _ = Real.exp ((s : ℝ) * Real.log A) :=
+        (Real.exp_nat_mul (Real.log A) s).symm
+  rw [hpow, ← Real.exp_add]
+  exact Real.exp_le_exp.mpr hexponent
+
+/-- The dimension/block-size comparison denominator in the surface-order estimate. -/
+noncomputable def staticManyCrossingsComparisonDenominator (d N : ℕ) : ℝ :=
+  (3 : ℝ) ^ (d - 2) * (((2 * N : ℕ) : ℝ) ^ (d - 1))
+
+/-- The lower-density exponential rate after conversion from the slice scale to the physical
+surface scale. -/
+noncomputable def staticManyCrossingsComparisonRate (d N : ℕ) : ℝ :=
+  siteSquareCrossingPeierlsRate / staticManyCrossingsComparisonDenominator d N
+
+/-- The density of disjoint crossings retained after sprinkling from `p₁` to `p₂`. -/
+noncomputable def staticManyCrossingsDensity (d N : ℕ) (p₁ p₂ : I) : ℝ :=
+  staticManyCrossingsComparisonRate d N /
+    (4 * Real.log ((p₂ : ℝ) / ((p₂ : ℝ) - p₁)))
+
+/-- Half the comparison rate, used as the final surface-order exponential rate. -/
+noncomputable def staticManyCrossingsExponentialRate (d N : ℕ) : ℝ :=
+  staticManyCrossingsComparisonRate d N / 2
+
+theorem staticManyCrossingsComparisonDenominator_pos
+    {d N : ℕ} (hN : 1 ≤ N) :
+    0 < staticManyCrossingsComparisonDenominator d N := by
+  simp only [staticManyCrossingsComparisonDenominator]
+  positivity
+
+theorem staticManyCrossingsComparisonRate_pos
+    {d N : ℕ} (hN : 1 ≤ N) :
+    0 < staticManyCrossingsComparisonRate d N := by
+  exact div_pos siteSquareCrossingPeierlsRate_pos
+    (staticManyCrossingsComparisonDenominator_pos hN)
+
+theorem staticManyCrossings_sprinklingRatio_one_lt
+    {p₁ p₂ : I} (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂) :
+    1 < (p₂ : ℝ) / ((p₂ : ℝ) - p₁) := by
+  have hden : 0 < (p₂ : ℝ) - p₁ := sub_pos.mpr h12
+  apply (one_lt_div hden).2
+  linarith
+
+theorem staticManyCrossingsDensity_pos
+    {d N : ℕ} (hN : 1 ≤ N) {p₁ p₂ : I}
+    (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂) :
+    0 < staticManyCrossingsDensity d N p₁ p₂ := by
+  exact div_pos (staticManyCrossingsComparisonRate_pos hN)
+    (mul_pos (by norm_num)
+      (Real.log_pos (staticManyCrossings_sprinklingRatio_one_lt hp₁ h12)))
+
+theorem staticManyCrossingsExponentialRate_pos
+    {d N : ℕ} (hN : 1 ≤ N) :
+    0 < staticManyCrossingsExponentialRate d N := by
+  exact div_pos (staticManyCrossingsComparisonRate_pos hN) (by norm_num)
+
+/-- A cofinal block-scale threshold beyond which the integer crossing count chosen by the
+sprinkling optimization is nonzero. -/
+noncomputable def staticManyCrossingsBlockThreshold
+    (d N : ℕ) (p₁ p₂ : I) : ℕ :=
+  max 1 ⌈1 / staticManyCrossingsDensity d N p₁ p₂⌉₊
+
+theorem staticManyCrossingsBlockThreshold_pos
+    {d N : ℕ} {p₁ p₂ : I} :
+    1 ≤ staticManyCrossingsBlockThreshold d N p₁ p₂ := by
+  exact le_max_left _ _
+
+/-- The physical surface order of an aligned box dominates the coarse block scale. -/
+theorem blockScale_le_scaledStaticBoxRadius_pow
+    {d N K : ℕ} (hd : 3 ≤ d) (hN : 1 ≤ N) :
+    (K : ℝ) ≤ ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) := by
+  have hbaseNat : K ≤ N * (K + 1) := by nlinarith
+  have hbase : (K : ℝ) ≤ ((N * (K + 1) : ℕ) : ℝ) := by
+    exact_mod_cast hbaseNat
+  have hrOne : (1 : ℝ) ≤ ((N * (K + 1) : ℕ) : ℝ) := by
+    exact_mod_cast (Nat.mul_pos hN (by omega : 0 < K + 1))
+  calc
+    (K : ℝ) ≤ ((N * (K + 1) : ℕ) : ℝ) := hbase
+    _ = ((N * (K + 1) : ℕ) : ℝ) ^ 1 := by ring
+    _ ≤ ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) :=
+      pow_le_pow_right₀ hrOne (by omega)
+
+theorem one_le_staticManyCrossingsDensity_mul_surface_of_threshold_le
+    {d N K : ℕ} (hd : 3 ≤ d) (hN : 1 ≤ N)
+    {p₁ p₂ : I} (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂)
+    (hK : staticManyCrossingsBlockThreshold d N p₁ p₂ ≤ K) :
+    1 ≤ staticManyCrossingsDensity d N p₁ p₂ *
+      ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) := by
+  let β := staticManyCrossingsDensity d N p₁ p₂
+  have hβ : 0 < β := staticManyCrossingsDensity_pos hN hp₁ h12
+  have hceilNat : ⌈1 / β⌉₊ ≤ K :=
+    (le_max_right 1 ⌈1 / β⌉₊).trans hK
+  have hceil : (1 / β : ℝ) ≤ (K : ℝ) := by
+    exact (Nat.le_ceil (1 / β)).trans (by exact_mod_cast hceilNat)
+  have hsurface := blockScale_le_scaledStaticBoxRadius_pow (d := d) (K := K) hd hN
+  calc
+    (1 : ℝ) = β * (1 / β) := by field_simp [hβ.ne']
+    _ ≤ β * (K : ℝ) := mul_le_mul_of_nonneg_left hceil hβ.le
+    _ ≤ β * ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) :=
+      mul_le_mul_of_nonneg_left hsurface hβ.le
+    _ = staticManyCrossingsDensity d N p₁ p₂ *
+        ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) := rfl
+
+/-- The optimized aligned-box form of (7.75).  The hypothesis `hlarge` is precisely the
+non-vacuity condition for the integer threshold; a later cofinality lemma removes it for all
+sufficiently large aligned radii. -/
+theorem cubicBox_maxCrossings_probability_le_exp_surface
+    {d : ℕ} (hd : 3 ≤ d) (p₁ p₂ q : I) (ε : ℝ)
+    (N K : ℕ) (hN : 1 ≤ N) (hK : 1 ≤ K)
+    (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂)
+    (hq : (q : ℝ) < 1)
+    (hqThreshold : siteSquareCrossingPeierlsThreshold < (q : ℝ))
+    (hmarginal :
+      (lssMarginalThresholdUnit
+          (3 ^ d * (3 * d + 1) ^ d) q hq : ℝ) ≤
+        (epsilonGoodBlockLaw d p₁ ε N).real
+          {η : Set (Cubic d) | cubicOrigin ∈ η})
+    (hlarge :
+      1 ≤ staticManyCrossingsDensity d N p₁ p₂ *
+        ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)) :
+    (bernoulliBondMeasure d p₂).real
+        {ω | maxEdgeDisjointLeftRightCrossings d (N * (K + 1))
+          (Fin.castLE (by omega) 0) ω ≤
+            ⌊staticManyCrossingsDensity d N p₁ p₂ *
+              ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)⌋₊} ≤
+      Real.exp (-staticManyCrossingsExponentialRate d N *
+        ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)) := by
+  let X : ℝ := ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)
+  let B : ℝ := (K : ℝ) * ((2 * (K / 3) + 1) ^ (d - 2) : ℕ)
+  let A : ℝ := (p₂ : ℝ) / ((p₂ : ℝ) - p₁)
+  let c : ℝ := staticManyCrossingsComparisonRate d N
+  let s : ℕ := ⌊staticManyCrossingsDensity d N p₁ p₂ * X⌋₊
+  have hA : 1 < A := staticManyCrossings_sprinklingRatio_one_lt hp₁ h12
+  have hc : 0 < c := staticManyCrossingsComparisonRate_pos hN
+  have hX : 0 ≤ X := by positivity
+  have hs : 1 ≤ s := by
+    rw [show s = ⌊staticManyCrossingsDensity d N p₁ p₂ * X⌋₊ by rfl,
+      Nat.one_le_floor_iff]
+    simpa [X] using hlarge
+  have hsCast : (s : ℝ) ≤ c / (4 * Real.log A) * X := by
+    have hfloor : (s : ℝ) ≤ staticManyCrossingsDensity d N p₁ p₂ * X := by
+      apply Nat.floor_le
+      positivity
+    simpa [staticManyCrossingsDensity, c, A] using hfloor
+  have hsurface :=
+    scaledStaticBoxRadius_pow_le_constant_mul_staticTransverseScale
+      (d := d) (N := N) (K := K) hd hK
+  have hD : 0 < staticManyCrossingsComparisonDenominator d N :=
+    staticManyCrossingsComparisonDenominator_pos hN
+  have hXB : X / staticManyCrossingsComparisonDenominator d N ≤ B := by
+    apply (div_le_iff₀ hD).2
+    simpa [X, B, staticManyCrossingsComparisonDenominator, mul_comm, mul_left_comm,
+      mul_assoc] using hsurface
+  have hdecay : c * X ≤ siteSquareCrossingPeierlsRate * B := by
+    calc
+      c * X = siteSquareCrossingPeierlsRate *
+          (X / staticManyCrossingsComparisonDenominator d N) := by
+        simp only [c, staticManyCrossingsComparisonRate]
+        field_simp [hD.ne']
+        <;> ring
+      _ ≤ siteSquareCrossingPeierlsRate * B :=
+        mul_le_mul_of_nonneg_left hXB siteSquareCrossingPeierlsRate_pos.le
+  have hraw := cubicBox_maxCrossings_probability_le_sprinkled_exp_staticTransverse
+    hd p₁ p₂ q ε N K s hN hK hs h12 hq hqThreshold hmarginal
+  refine hraw.trans ?_
+  have hoptimized :=
+    pow_mul_exp_neg_le_exp_neg_half_of_cast_le hA hc hX hsCast hdecay
+  change A ^ s * Real.exp (-siteSquareCrossingPeierlsRate * (K : ℝ) *
+      ((2 * (K / 3) + 1) ^ (d - 2) : ℕ)) ≤
+    Real.exp (-(c / 2) * X)
+  calc
+    A ^ s * Real.exp (-siteSquareCrossingPeierlsRate * (K : ℝ) *
+        ((2 * (K / 3) + 1) ^ (d - 2) : ℕ)) =
+        A ^ s * Real.exp (-siteSquareCrossingPeierlsRate * B) := by
+      congr 2
+      dsimp [B]
+      ring
+    _ ≤ Real.exp (-(c / 2) * X) := hoptimized
+
+/-- Cofinal aligned-radius form of the surface-order many-crossings estimate. -/
+theorem cubicBox_maxCrossings_probability_le_exp_surface_of_threshold_le
+    {d : ℕ} (hd : 3 ≤ d) (p₁ p₂ q : I) (ε : ℝ)
+    (N K : ℕ) (hN : 1 ≤ N)
+    (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂)
+    (hK : staticManyCrossingsBlockThreshold d N p₁ p₂ ≤ K)
+    (hq : (q : ℝ) < 1)
+    (hqThreshold : siteSquareCrossingPeierlsThreshold < (q : ℝ))
+    (hmarginal :
+      (lssMarginalThresholdUnit
+          (3 ^ d * (3 * d + 1) ^ d) q hq : ℝ) ≤
+        (epsilonGoodBlockLaw d p₁ ε N).real
+          {η : Set (Cubic d) | cubicOrigin ∈ η}) :
+    (bernoulliBondMeasure d p₂).real
+        {ω | maxEdgeDisjointLeftRightCrossings d (N * (K + 1))
+          (Fin.castLE (by omega) 0) ω ≤
+            ⌊staticManyCrossingsDensity d N p₁ p₂ *
+              ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)⌋₊} ≤
+      Real.exp (-staticManyCrossingsExponentialRate d N *
+        ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)) := by
+  have hKone : 1 ≤ K :=
+    staticManyCrossingsBlockThreshold_pos.trans hK
+  exact cubicBox_maxCrossings_probability_le_exp_surface
+    hd p₁ p₂ q ε N K hN hKone hp₁ h12 hq hqThreshold hmarginal
+    (one_le_staticManyCrossingsDensity_mul_surface_of_threshold_le
+      hd hN hp₁ h12 hK)
+
+/-- Source-facing aligned-radius form of Theorem 7.68.  The crossing count is coerced to
+`ℝ`, so the statement contains exactly the source threshold `β r^(d-1)` and no undocumented
+floor convention. -/
+theorem maxEdgeDisjointCrossings_probability_ge_aligned
+    {d : ℕ} (hd : 3 ≤ d) (p₁ p₂ q : I) (ε : ℝ)
+    (N K : ℕ) (hN : 1 ≤ N)
+    (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂)
+    (hK : staticManyCrossingsBlockThreshold d N p₁ p₂ ≤ K)
+    (hq : (q : ℝ) < 1)
+    (hqThreshold : siteSquareCrossingPeierlsThreshold < (q : ℝ))
+    (hmarginal :
+      (lssMarginalThresholdUnit
+          (3 ^ d * (3 * d + 1) ^ d) q hq : ℝ) ≤
+        (epsilonGoodBlockLaw d p₁ ε N).real
+          {η : Set (Cubic d) | cubicOrigin ∈ η}) :
+    1 - Real.exp (-staticManyCrossingsExponentialRate d N *
+        ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)) ≤
+      (bernoulliBondMeasure d p₂).real
+        {ω | staticManyCrossingsDensity d N p₁ p₂ *
+            ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) ≤
+          (maxEdgeDisjointLeftRightCrossings d (N * (K + 1))
+            (Fin.castLE (by omega) 0) ω : ℝ)} := by
+  let r := N * (K + 1)
+  let i : Fin d := Fin.castLE (by omega) 0
+  let t := staticManyCrossingsDensity d N p₁ p₂ *
+    ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)
+  let G : Set (EdgeConfiguration d) :=
+    {ω | t ≤ (maxEdgeDisjointLeftRightCrossings d r i ω : ℝ)}
+  let F : Set (EdgeConfiguration d) :=
+    {ω | maxEdgeDisjointLeftRightCrossings d r i ω ≤ ⌊t⌋₊}
+  have hr : 1 ≤ r := by
+    exact Nat.mul_pos hN (by omega)
+  have hGF : Gᶜ ⊆ F := by
+    intro ω hω
+    have hlt : (maxEdgeDisjointLeftRightCrossings d r i ω : ℝ) < t := by
+      simpa only [G, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] using hω
+    exact Nat.le_floor hlt.le
+  have hF := cubicBox_maxCrossings_probability_le_exp_surface_of_threshold_le
+    hd p₁ p₂ q ε N K hN hp₁ h12 hK hq hqThreshold hmarginal
+  have hbad : (bernoulliBondMeasure d p₂).real Gᶜ ≤
+      Real.exp (-staticManyCrossingsExponentialRate d N *
+        ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1)) := by
+    exact (measureReal_mono hGF).trans (by simpa [F, r, i, t] using hF)
+  have hGm : MeasurableSet G := by
+    exact measurableSet_cast_maxEdgeDisjointLeftRightCrossings_ge hr t
+  rw [measureReal_compl hGm, probReal_univ] at hbad
+  simpa [G, r, i, t, add_comm] using hbad
 
 end Percolation

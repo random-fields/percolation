@@ -1110,6 +1110,15 @@ Dated milestones and anti-library notes.
     proportional-threshold and arbitrary-radius optimization for Theorem 7.68 remains. This
     post-pause work has no measured telemetry.
 
+106. **Chapter 7 aligned surface-order many-crossings estimate (2026-07-15).** Optimized the
+    ACCFR factor in (7.75) at the integer threshold
+    `⌊β(N(K+1))^(d-1)⌋`, proved explicit positive density and exponential-rate constants, and
+    converted the result to the literal source event comparing the real-coerced maximum crossing
+    count with `βr^(d-1)`. An explicit cofinal block threshold removes the nonzero-floor side
+    condition. Thus Theorem 7.68 is complete on all sufficiently large aligned radii; deriving
+    its hypotheses from `p>p_c` and treating non-aligned/small radii remain. This post-pause work
+    has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

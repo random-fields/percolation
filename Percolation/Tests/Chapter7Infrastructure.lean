@@ -1830,4 +1830,21 @@ example {V ι : Type*} [DecidableEq ι]
       (current : Set ι) :=
   h.disjoint_outerHistorySupport
 
+example {d N : ℕ} (hN : 1 ≤ N) :
+    0 < staticManyCrossingsExponentialRate d N :=
+  staticManyCrossingsExponentialRate_pos hN
+
+example {d N : ℕ} (hN : 1 ≤ N) {p₁ p₂ : I}
+    (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂) :
+    0 < staticManyCrossingsDensity d N p₁ p₂ :=
+  staticManyCrossingsDensity_pos hN hp₁ h12
+
+example {d N K : ℕ} (hd : 3 ≤ d) (hN : 1 ≤ N)
+    {p₁ p₂ : I} (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂)
+    (hK : staticManyCrossingsBlockThreshold d N p₁ p₂ ≤ K) :
+    1 ≤ staticManyCrossingsDensity d N p₁ p₂ *
+      ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) :=
+  one_le_staticManyCrossingsDensity_mul_surface_of_threshold_le
+    hd hN hp₁ h12 hK
+
 end Percolation

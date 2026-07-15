@@ -3,6 +3,7 @@ import Percolation.Critical.LSSCubic
 import Percolation.Critical.LSSGoodBlocks
 import Percolation.Critical.StaticBlockSliceCrossing
 import Percolation.Critical.StaticManyCrossings
+import Percolation.Critical.StaticManyCrossingsFromSlab
 import Percolation.Planar.SiteCrossingFrontier
 import Percolation.Planar.SiteCrossingPeierls
 import Percolation.Critical.DynamicSteeringSymmetry
@@ -108,6 +109,8 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.mem_interiorDepth_squareRectangleCrossingEvent_iff
 #print axioms Percolation.mem_interiorDepth_squareRectangleCrossingEvent_iff_le_max
 #print axioms Percolation.bernoulliBondMeasure_real_maxCrossings_le_le
+#print axioms Percolation.exists_staticManyCrossings_goodBlockScale_of_quarterSlabCritical_lt
+#print axioms Percolation.exists_maxEdgeDisjointCrossings_probability_ge_aligned_of_quarterSlabCritical_lt
 #print axioms Percolation.dependsOn_largeCrossingClusterEvent
 #print axioms Percolation.dependsOn_secondMacroscopicClusterEvent
 #print axioms Percolation.EdgeMenger.isEdgeReachable_iff_exists_pairwise_edgeDisjoint_paths

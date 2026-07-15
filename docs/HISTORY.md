@@ -1119,6 +1119,15 @@ Dated milestones and anti-library notes.
     its hypotheses from `p>p_c` and treating non-aligned/small radii remain. This post-pause work
     has no measured telemetry.
 
+107. **Chapter 7 quarter-slab-to-many-crossings composition (2026-07-15).** Fixed a site density
+    strictly between the proved Peierls threshold and one, used the conditional good-box limit
+    from Theorem 7.61 to choose an LSS-compatible block scale, and composed it with the aligned
+    surface-order estimate. Thus a single strict finite-quarter-slab critical comparison now
+    yields the literal aligned Theorem 7.68 inequality with automatically chosen positive
+    constants. The remaining probabilistic input is exactly the output expected from Theorem
+    7.2; arbitrary radii still require a separate geometric assembly. This post-pause work has no
+    measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

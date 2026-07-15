@@ -35,6 +35,7 @@ import Percolation.Critical.LSSCubic
 import Percolation.Critical.LSSGoodBlocks
 import Percolation.Critical.StaticBlockSliceCrossing
 import Percolation.Critical.StaticManyCrossings
+import Percolation.Critical.StaticManyCrossingsFromSlab
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
@@ -1846,5 +1847,12 @@ example {d N K : ℕ} (hd : 3 ≤ d) (hN : 1 ≤ N)
       ((N * (K + 1) : ℕ) : ℝ) ^ (d - 1) :=
   one_le_staticManyCrossingsDensity_mul_surface_of_threshold_le
     hd hN hp₁ h12 hK
+
+example :
+    siteSquareCrossingPeierlsThreshold < (staticCrossingSiteDensity : ℝ) :=
+  siteSquareCrossingPeierlsThreshold_lt_staticCrossingSiteDensity
+
+example : (staticCrossingSiteDensity : ℝ) < 1 :=
+  staticCrossingSiteDensity_lt_one
 
 end Percolation

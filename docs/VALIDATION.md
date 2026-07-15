@@ -37,7 +37,9 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   bond-to-site comparison needed by Theorem 7.2 are done. Its exact finite-ball exhaustion and
   strict site-critical adapter are now also proved. Successful restart cells now carry literal
   final-density inlet-to-target bond paths through a full transverse-sign steering frame and
-  retain a deterministic finite target-seed witness; composing the concrete `4d` seed chain remains
+  retain a deterministic finite target-seed witness. The central seed, all `2d` signed root
+  branches, their freshness factorization, and one common pair of Lemma 7.17 radii are now
+  constructed with positive mass; composing the concrete `2d+1` non-root seed chain remains
   before Theorem 7.2. Theorems 7.2, 7.35, 7.61, and 7.68 remain targets.
 - **[target]** Burton-Keane uniqueness of the infinite cluster under standard hypotheses.
 - **[target]** Planar duality for bond percolation on the square lattice.

@@ -134,6 +134,8 @@ import Percolation.Critical.AdaptiveBernoulliExact
 import Percolation.Critical.AdaptiveSetAnswerSupport
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
+import Percolation.Critical.DynamicInitializedProgram
+import Percolation.Critical.DynamicRootInitialization
 import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
 import Percolation.Critical.DynamicRestartCertificate
@@ -161,6 +163,7 @@ import Percolation.Critical.RootedSiteShellProbability
 import Percolation.Critical.AdaptiveAnswerEmbedding
 import Percolation.Critical.AdaptiveBallCompatibility
 import Percolation.Critical.AdaptiveSiteExplorationTheorem
+import Percolation.Critical.AdaptiveOuterConditioning
 import Percolation.Critical.SlabLimitAssembly
 import Percolation.Critical.Seeds
 import Percolation.Critical.DynamicRenormalization

@@ -343,21 +343,21 @@ theorem cubicRegion_hasInfiniteSiteCluster_probability_pos
         (P.measurableAnswer_fullHistoryAnswer _)
   simpa [fullHistoryAnswer, hqEq] using P.hasAdaptiveAnswerLowerBound hepsilon
 
-/-- The source parameter choice `ε=(1-p_c^site)/(8d)` and `4d` sequential restarts gives the
-coarse-site density `(1+p_c^site)/2`. -/
+/-- The source parameter choice `ε=(1-p_c^site)/(8d)` and the `2d+1` extensions used at every
+non-root coarse site give the coarse-site density `(1+p_c^site)/2`. -/
 theorem hasAdaptiveAnswerLowerBound_dynamicBlockSiteDensity
     {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
     (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1)
     (P : FiniteFreshOrientedRestartProgram d V m n p delta
-      (dynamicBlockRestartError d pcSite) (4 * d)) :
+      (dynamicBlockRestartError d pcSite) (2 * d + 1)) :
     HasAdaptiveAnswerLowerBoundOn (couplingMeasure (CubicEdge d)) P.answer
       (fun _ _ => True) (dynamicBlockSiteDensity pcSite) := by
   apply (P.hasAdaptiveAnswerLowerBound
     ((dynamicBlockRestartError_le_one_eighth hd hsite0).trans (by norm_num))).mono_density
-  exact (dynamicBlock_restartPow_gt_siteDensity hd hsite0 hsite1).le
+  exact (dynamicBlock_laterSiteRestartPow_gt_siteDensity hd hsite0 hsite1).le
 
-/-- A concrete `4d`-stage program on a connected region already implies the positive infinite
-coarse-cluster conclusion needed in Theorem 7.2. -/
+/-- A concrete source-counted non-root program on a connected region already implies the
+positive infinite coarse-cluster conclusion needed in Theorem 7.2. -/
 theorem cubicRegion_infinite_probability_pos_dynamicBlock
     (F : Set (Cubic d)) [LinearOrder F] (root : F)
     (hF : (cubicRegionGraph d F).Connected) (hd : 0 < d)
@@ -365,7 +365,7 @@ theorem cubicRegion_infinite_probability_pos_dynamicBlock
     (hsite1 : siteCriticalProbability (cubicRegionGraph d F) < 1)
     (P : FiniteFreshOrientedRestartProgram d F m n p delta
       (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
-      (4 * d)) :
+      (2 * d + 1)) :
     0 < (couplingMeasure (CubicEdge d)).real {omega |
       ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
         (P.fullHistoryAnswer

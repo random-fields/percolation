@@ -78,6 +78,7 @@ import Percolation.Critical.AdaptiveExploration
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.BlockSuccessComposition
 import Percolation.Critical.DynamicBlockParameters
+import Percolation.Critical.DynamicRootInitialization
 import Percolation.Critical.ExplorationHistory
 import Percolation.Bernoulli.CouplingSymmetry
 import Percolation.Critical.StaticSecondCluster
@@ -1502,6 +1503,22 @@ example {pcSite : ℝ} (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
     hsite0 hsite1
   norm_num at h ⊢
   exact h
+
+example {pcSite : ℝ} (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
+    dynamicBlockSiteDensity pcSite <
+      (1 - dynamicBlockRestartError 3 pcSite) ^ 7 := by
+  simpa using dynamicBlock_laterSiteRestartPow_gt_siteDensity
+    (d := 3) (by norm_num) hsite0 hsite1
+
+example (i : Fin 3) :
+    RegionAvoidsSeededBoundaryQuadrant 3 i 3
+      (cubicMetricBox 3 cubicOrigin 1) :=
+  regionAvoidsSeededBoundaryQuadrant_centralBox (by norm_num) i
+
+example (m : ℕ) (p : I) :
+    (couplingMeasure (CubicEdge 3)).real (rootSeedLabelEvent 3 m p) =
+      (p : ℝ) ^ (cubicBoxEdges 3 cubicOrigin m).card :=
+  couplingMeasure_real_rootSeedLabelEvent 3 m p
 
 example :
     explorationHistoryAccepted ([(0, true), (1, false), (2, true)] :

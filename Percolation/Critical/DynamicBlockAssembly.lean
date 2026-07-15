@@ -1,6 +1,6 @@
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.DynamicBlockGeometry
-import Percolation.Critical.DynamicRestartPartition
+import Percolation.Critical.DynamicInitializedProgram
 import Percolation.Critical.BondToSiteCritical
 
 /-!
@@ -45,7 +45,7 @@ theorem regionHasInfiniteClusterProbability_pos_dynamicBlock
     {pRestart : I} {delta : ℝ}
     (P : FinitePartitionedOrientedRestartProgram d F C m n pRestart delta
       (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
-      (4 * d))
+      (2 * d + 1))
     (pBond : I)
     (hconnection : ∀ X v,
       v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
@@ -98,7 +98,7 @@ theorem exists_regionCriticalProbability_thickening_le_add_dynamicBlock
     {pRestart : I} {delta : ℝ}
     (P : FinitePartitionedOrientedRestartProgram d F C m n pRestart delta
       (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
-      (4 * d))
+      (2 * d + 1))
     (pBond : I) {eta : ℝ}
     (hpBond : (pBond : ℝ) ≤ regionCriticalProbability d F + eta)
     (hconnection : ∀ X v,
@@ -125,7 +125,7 @@ theorem exists_regionCriticalProbability_thickening_le_add_dynamicBlock_of_bondC
     {pRestart : I} {delta : ℝ}
     (P : FinitePartitionedOrientedRestartProgram d F C m n pRestart delta
       (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
-      (4 * d))
+      (2 * d + 1))
     (pBond : I) {eta : ℝ}
     (hpBond : (pBond : ℝ) ≤ regionCriticalProbability d F + eta)
     (hconnection : ∀ X v,
@@ -147,5 +147,94 @@ theorem exists_regionCriticalProbability_thickening_le_add_dynamicBlock_of_bondC
   exact hconnection
 
 end AdaptiveSiteExploration.FinitePartitionedOrientedRestartProgram
+
+namespace AdaptiveSiteExploration.InitializedFinitePartitionedRestartProgram
+
+variable {C : Type*} [DecidableEq C]
+
+/-- Source-faithful initialized dynamic-block assembly.  Only configurations in the proved
+positive root event are used; on that event, every accepted coarse center is connected to the
+root center at the final bond density. -/
+theorem regionHasInfiniteClusterProbability_pos_initializedDynamicBlock
+    {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected) (hd : 0 < d) (hN : 0 < N)
+    (hsite1 : siteCriticalProbability (cubicRegionGraph d F) < 1)
+    {pRestart : I} {delta : ℝ}
+    (P : InitializedFinitePartitionedRestartProgram d F C m n pRestart delta
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      (2 * d + 1))
+    (pBond : I)
+    (hconnection : ∀ X, X ∈ P.initialEvent → ∀ v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      thresholdConfiguration pBond X ∈
+        connectionEventWithinVertices d (grimmettMarstrandThickening d F N)
+          (grimmettMarstrandSiteCenter N root)
+          (grimmettMarstrandSiteCenter N v)) :
+    0 < regionHasInfiniteClusterProbability d
+      (grimmettMarstrandThickening d F N) pBond := by
+  let E := (cubicRegionSiteExploration d F root).toAdaptive
+  let answer := P.fullHistoryAnswer
+    (cubicRegionSiteExploration d F root).initial.history
+  have hinfinite :
+      0 < (couplingMeasure (CubicEdge d)).real
+        (P.initialEvent ∩ {X | (E.occupiedLimit (answer X)).Infinite}) := by
+    simpa [E, answer] using P.cubicRegion_infinite_inter_probability_pos_dynamicBlock
+      F root hF hd (siteCriticalProbability_nonneg _) hsite1
+  have hroot : ∀ X, root ∈ E.occupiedLimit (answer X) := by
+    intro X
+    apply E.occupied_subset_occupiedLimit (answer X) 0
+    exact (cubicRegionSiteExploration_initial_openRootedAt d F root).1
+  have hsubset :
+      P.initialEvent ∩ {X | (E.occupiedLimit (answer X)).Infinite} ⊆
+        (thresholdConfiguration pBond) ⁻¹'
+          {ω | hasInfiniteOpenClusterInVertices d
+            (grimmettMarstrandThickening d F N) ω} := by
+    intro X hX
+    apply hasInfiniteOpenClusterInVertices_of_infinite_anchor_connections
+      hX.2 (fun v : F ↦ grimmettMarstrandSiteCenter N v)
+    · intro v _hv w _hw hvw
+      exact Subtype.ext ((grimmettMarstrandSiteCenter_injective hN) hvw)
+    · exact hroot X
+    · intro v hv
+      apply grimmettMarstrandSiteBox_subset_thickening v.2
+      simp [grimmettMarstrandSiteBox, grimmettMarstrandSiteCenter,
+        mem_cubicMetricBox]
+    · intro v hv
+      exact hconnection X hX.1 v (by simpa [E, answer] using hv)
+  rw [← couplingMeasure_real_hasInfiniteOpenClusterInVertices_thresholdConfiguration]
+  exact hinfinite.trans_le (measureReal_mono hsubset)
+
+/-- Order-theoretic Theorem 7.2(a) adapter for the initialized source program. -/
+theorem exists_regionCriticalProbability_thickening_le_add_initializedDynamicBlock
+    {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected) (hd : 2 ≤ d) (hN : 0 < N)
+    (hcrit : regionCriticalProbability d F < 1)
+    {pRestart : I} {delta : ℝ}
+    (P : InitializedFinitePartitionedRestartProgram d F C m n pRestart delta
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      (2 * d + 1))
+    (pBond : I) {eta : ℝ}
+    (hpBond : (pBond : ℝ) ≤ regionCriticalProbability d F + eta)
+    (hconnection : ∀ X, X ∈ P.initialEvent → ∀ v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      thresholdConfiguration pBond X ∈
+        connectionEventWithinVertices d (grimmettMarstrandThickening d F N)
+          (grimmettMarstrandSiteCenter N root)
+          (grimmettMarstrandSiteCenter N v)) :
+    ∃ k : ℕ,
+      regionCriticalProbability d (cubicDilatedThickening d F k) ≤
+        regionCriticalProbability d F + eta := by
+  apply exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation hpBond
+  exact P.regionHasInfiniteClusterProbability_pos_initializedDynamicBlock
+    root hF (by omega) hN
+    (siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one
+      root hd hF hcrit)
+    pBond hconnection
+
+end AdaptiveSiteExploration.InitializedFinitePartitionedRestartProgram
 
 end Percolation

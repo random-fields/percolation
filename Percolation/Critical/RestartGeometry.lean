@@ -1068,6 +1068,85 @@ theorem sprinkledRestart_inter_history_gt
   exact sprinkledRestart_inter_history_gt_of_seedConnection i R p beta delta epsilon eta hp1
     hBmR hAvoid hdelta hdelta1 hupper hseed heta hmiss
 
+/-- Coordinate-uniform ratio-free Lemma 7.17.  A single pair of radii works for every
+coordinate direction; signed directions are obtained by `framedSprinkledRestart_inter_history_gt`.
+This is the form needed by the simultaneous root construction. -/
+theorem sprinkledRestart_inter_history_gt_allCoordinates
+    (d : ℕ) [NeZero d] (hd : 0 < d) (p : I)
+    (htheta : 0 < theta d p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
+    {epsilon delta : ℝ} (hepsilon : 0 < epsilon)
+    (hdelta : 0 < delta) (hdelta1 : delta ≤ 1) :
+    ∃ m n : ℕ, 2 * m < n ∧ m + 1 < n ∧
+      ∀ (i : Fin d) (R : Finset (Cubic d)) (beta : CubicEdge d → I),
+        cubicMetricBox d cubicOrigin m ⊆ R →
+        R ⊆ cubicMetricBox d cubicOrigin n →
+        RegionAvoidsSeededBoundaryQuadrant d i n R →
+        (∀ e ∈ cubicRegionBoundaryEdgesWithinBox d R n,
+          (beta e : ℝ) + delta ≤ 1) →
+        (1 - epsilon) *
+            (couplingMeasure (CubicEdge d)).real
+              (boundaryClosedHistoryEvent
+                (cubicRegionBoundaryEdgesWithinBox d R n) beta) <
+          (couplingMeasure (CubicEdge d)).real
+            (sprinkledRestartEvent d i m n R p beta delta ∩
+              boundaryClosedHistoryEvent
+                (cubicRegionBoundaryEdgesWithinBox d R n) beta) := by
+  let q : ℝ := 1 - delta
+  have hq0 : 0 ≤ q := sub_nonneg.mpr hdelta1
+  have hq1 : q < 1 := by dsimp [q]; linarith
+  have hqTendsto : Filter.Tendsto (fun k : ℕ => q ^ k) Filter.atTop (nhds 0) :=
+    tendsto_pow_atTop_nhds_zero_of_lt_one hq0 hq1
+  have hqEventually : ∀ᶠ k : ℕ in Filter.atTop, q ^ k < epsilon / 2 :=
+    hqTendsto.eventually (Iio_mem_nhds (half_pos hepsilon))
+  obtain ⟨t, ht⟩ := hqEventually.exists
+  have hmiss : (1 - delta) ^ (t + 1) < epsilon / 2 := by
+    have hpow : q ^ (t + 1) ≤ q ^ t :=
+      pow_le_pow_of_le_one hq0 (le_of_lt hq1) (Nat.le_succ t)
+    exact (by simpa [q] using hpow.trans_lt ht)
+  let eta : ℝ := epsilon / 4 * (1 - (p : ℝ)) ^ t
+  have hetaPos : 0 < eta := mul_pos (by positivity) (pow_pos (sub_pos.mpr hp1) t)
+  obtain ⟨m, n, hmn, hmnBoundary, hseed⟩ :=
+    seedConnection_probability_gt_allCoordinates d hd p htheta hp0 hp1 hetaPos
+  refine ⟨m, n, hmn, hmnBoundary, ?_⟩
+  intro i R beta hBmR _hRBn hAvoid hupper
+  have heta : eta < epsilon / 2 * (1 - (p : ℝ)) ^ t := by
+    dsimp [eta]
+    have hbase := pow_pos (sub_pos.mpr hp1) t
+    nlinarith
+  exact sprinkledRestart_inter_history_gt_of_seedConnection i R p beta delta epsilon eta hp1
+    hBmR hAvoid hdelta hdelta1 hupper (hseed i) heta hmiss
+
+/-- Compact name for the all-coordinate, all-admissible-region conclusion of Lemma 7.17 at
+fixed radii.  It is the reusable probabilistic payload carried by a dynamic block package. -/
+def UniformRestartBounds
+    (d m n : ℕ) (p : I) (delta epsilon : ℝ) : Prop :=
+  ∀ (i : Fin d) (R : Finset (Cubic d)) (beta : CubicEdge d → I),
+    cubicMetricBox d cubicOrigin m ⊆ R →
+    R ⊆ cubicMetricBox d cubicOrigin n →
+    RegionAvoidsSeededBoundaryQuadrant d i n R →
+    (∀ e ∈ cubicRegionBoundaryEdgesWithinBox d R n,
+      (beta e : ℝ) + delta ≤ 1) →
+    (1 - epsilon) *
+        (couplingMeasure (CubicEdge d)).real
+          (boundaryClosedHistoryEvent
+            (cubicRegionBoundaryEdgesWithinBox d R n) beta) <
+      (couplingMeasure (CubicEdge d)).real
+        (sprinkledRestartEvent d i m n R p beta delta ∩
+          boundaryClosedHistoryEvent
+            (cubicRegionBoundaryEdgesWithinBox d R n) beta)
+
+/-- Packaged coordinate-uniform Lemma 7.17 with its two geometric radius gaps. -/
+theorem exists_uniformRestartBounds
+    (d : ℕ) [NeZero d] (hd : 0 < d) (p : I)
+    (htheta : 0 < theta d p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
+    {epsilon delta : ℝ} (hepsilon : 0 < epsilon)
+    (hdelta : 0 < delta) (hdelta1 : delta ≤ 1) :
+    ∃ m n : ℕ, 2 * m < n ∧ m + 1 < n ∧
+      UniformRestartBounds d m n p delta epsilon := by
+  simpa only [UniformRestartBounds] using
+    sprinkledRestart_inter_history_gt_allCoordinates
+      d hd p htheta hp0 hp1 hepsilon hdelta hdelta1
+
 /-- Conditional-probability form of Grimmett Lemma 7.17.  Positivity of the heterogeneous
 history is discharged before division. -/
 theorem sprinkledRestart_conditionalProbability_gt

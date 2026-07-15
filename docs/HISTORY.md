@@ -1134,9 +1134,9 @@ Dated milestones and anti-library notes.
     partitioned restart program with the literal thickening. Once the program proves its
     accepted-center open-connection invariant, Lean now supplies root membership, distinct
     anchors, thickening containment, positive bond percolation, and the final critical upper
-    bound of Theorem 7.2(a). The remaining work is the actual `4d`-stage program and its
-    connection invariant, not a measure-theoretic or order-theoretic gap. This post-pause work
-    has no measured telemetry.
+    bound of Theorem 7.2(a). This early unconditioned `4d` adapter was subsequently superseded by
+    the source-counted initialized interface in entry 114. This post-pause work has no measured
+    telemetry.
 
 109. **Chapter 7 upper adaptive Bellman comparison (2026-07-15).** Added the ratio-free dual of
     the adaptive lower-bound kernel: an upper mass bound on every true history extension now
@@ -1184,8 +1184,9 @@ Dated milestones and anti-library notes.
     connection begins at an inlet-seed vertex. Signed-coordinate/translation transport gives the
     literal physical connection used by oriented reveal cells, and those automorphisms map the
     reference box-edge support exactly onto the physical centered box. The remaining work is to
-    compose these per-cell extensions through the concrete `4d` program and identify its final
-    target seed with the neighboring coarse-site seed. Post-pause telemetry remains unmeasured.
+    compose these per-cell extensions through the concrete source-counted program and identify
+    its final target seed with the neighboring coarse-site seed. Post-pause telemetry remains
+    unmeasured.
 
 113. **Source-faithful steering frames and finite seed witnesses (2026-07-15).** Source inspection
     of pp. 159--162 exposed that an exit direction alone is insufficient: the construction also
@@ -1199,8 +1200,36 @@ Dated milestones and anti-library notes.
     the explored-region/multiplicity cell. Thus a subsequent stage can compute its physical seed
     center and compensating sign mask from revealed finite data. Application tests compile and
     the new declarations use only standard axioms. The remaining Theorem 7.2 work is the global
-    `4d` stage schedule, its interval-fiber reuse proof, and the accepted-center path induction.
+    source-counted non-root stage schedule, its interval-fiber reuse proof, and the accepted-center
+    path induction.
     This post-pause work has no measured telemetry.
+
+114. **Source-counted non-root blocks and positive root initialization (2026-07-15).** A direct
+    audit of pp. 156--162 corrected the provisional `4d` narrative. The root has one simultaneous
+    `2d`-branch event with factor `1-2dε` and then `2d` extensions; every later coarse site uses
+    exactly two inlet extensions and `2d-1` fresh branches, hence `2d+1` Lemma 7.17 factors. Added
+    the corresponding strict numerical theorem and changed the reusable non-root program and
+    bond-assembly adapters to that exact count. The root seed/root branches are now represented
+    by a positive measurable outer initialization event. Ratio-free history inequalities inside
+    this event are converted to Lemma 7.24 through an actual conditional probability measure,
+    and the resulting positive initialized infinite exploration is passed to bond percolation and
+    the critical-probability conclusion. No null history is divided by its mass. The concrete root
+    event and non-root interval-fiber schedule remain to be constructed. This post-pause work has
+    no measured telemetry.
+
+115. **Literal common-radius root construction (2026-07-15).** Strengthened seed amplification
+    so one inner/outer radius pair works simultaneously for every coordinate face, and packaged
+    the resulting all-coordinate, all-admissible-region ratio-free Lemma 7.17 bounds. Proved that
+    the central box together with its exterior vertex boundary avoids every target quadrant at
+    these radii. Defined the common-uniform central-seed event and every signed root branch,
+    proved the seed support is disjoint from each framed restart support, and factored each
+    branch inequality through the exact positive seed mass. The `2d` branch intersection now has
+    the source factor `1-2dε`; `exists_dynamicBlockRestartPackage` returns the same radii with
+    both the positive literal root event and the uniform bounds needed by later blocks. Oracle
+    tests and transitive axiom audits compile with only `propext`, `Classical.choice`, and
+    `Quot.sound`. The remaining Theorem 7.2 obligation is the concrete `2d+1` non-root
+    interval-fiber schedule and its accepted-center path induction. This post-pause work has no
+    measured telemetry.
 
 ## Axiom Ledger
 

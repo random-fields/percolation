@@ -183,18 +183,18 @@ theorem measurableAnswer_fullHistoryAnswer (prior : List (V × Bool)) :
     MeasurableAnswer (P.fullHistoryAnswer prior) :=
   SiteExploration.measurableAnswer_realizePrefixedAdaptiveAnswer P.measurableAnswer prior
 
-/-- The source parameter choice turns a concrete `4d`-stage random-region program into the
-uniform lower bound strictly above the region's critical site density. -/
+/-- The source parameter choice turns the concrete `2d+1`-extension program for a non-root
+coarse site into a uniform lower bound strictly above the region's critical site density. -/
 theorem hasAdaptiveAnswerLowerBound_dynamicBlockSiteDensity
     {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
     (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1)
     (P : FinitePartitionedOrientedRestartProgram d V C m n p delta
-      (dynamicBlockRestartError d pcSite) (4 * d)) :
+      (dynamicBlockRestartError d pcSite) (2 * d + 1)) :
     HasAdaptiveAnswerLowerBoundOn (couplingMeasure (CubicEdge d)) P.answer
       (fun _ _ => True) (dynamicBlockSiteDensity pcSite) := by
   apply (P.hasAdaptiveAnswerLowerBound
     ((dynamicBlockRestartError_le_one_eighth hd hsite0).trans (by norm_num))).mono_density
-  exact (dynamicBlock_restartPow_gt_siteDensity hd hsite0 hsite1).le
+  exact (dynamicBlock_laterSiteRestartPow_gt_siteDensity hd hsite0 hsite1).le
 
 /-- A concrete partitioned restart program now plugs directly into source-facing Lemma 7.24. -/
 theorem cubicRegion_infinite_probability_pos_dynamicBlock
@@ -204,7 +204,7 @@ theorem cubicRegion_infinite_probability_pos_dynamicBlock
     (hsite1 : siteCriticalProbability (cubicRegionGraph d F) < 1)
     (P : FinitePartitionedOrientedRestartProgram d F C m n p delta
       (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
-      (4 * d)) :
+      (2 * d + 1)) :
     0 < (couplingMeasure (CubicEdge d)).real {omega |
       ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
         (P.fullHistoryAnswer

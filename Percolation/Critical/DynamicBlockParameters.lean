@@ -139,8 +139,9 @@ theorem dynamicBlock_successFactor_gt_siteDensity
         (1 - dynamicBlockRestartError d pcSite) ^ (2 * d) := by
       simp [epsilon]
 
-/-- A uniform sequence of `4d` restart factors also stays strictly above the target site
-density.  This form is convenient for the exact finite-stage answer law. -/
+/-- A deliberately conservative comparison retained for compatibility with the early abstract
+program interface.  It is not the source stage count: the actual non-root construction uses two
+inlet extensions followed by `2d-1` fresh branches, hence `2d+1` one-restart factors. -/
 theorem dynamicBlock_restartPow_gt_siteDensity
     {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
     (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
@@ -168,6 +169,34 @@ theorem dynamicBlock_restartPow_gt_siteDensity
       rw [← pow_add]
       congr 1
       omega
+
+/-- Source-faithful lower bound for every non-root coarse site.  Grimmett first uses two
+extensions to carry the inlet seed into the new site-box, and then branches in the other
+`2d-1` directions.  Thus exactly `2d+1` applications of Lemma 7.17 suffice. -/
+theorem dynamicBlock_laterSiteRestartPow_gt_siteDensity
+    {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
+    (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
+    dynamicBlockSiteDensity pcSite <
+      (1 - dynamicBlockRestartError d pcSite) ^ (2 * d + 1) := by
+  let epsilon := dynamicBlockRestartError d pcSite
+  have heps0 : 0 ≤ epsilon := (dynamicBlockRestartError_pos hd hsite1).le
+  have heps1 : epsilon ≤ 1 :=
+    (dynamicBlockRestartError_le_one_eighth hd hsite0).trans (by norm_num)
+  have hdCast : (1 : ℝ) ≤ d := by exact_mod_cast hd
+  have hfirst :
+      1 - 2 * (d : ℝ) * epsilon ≤ 1 - epsilon := by
+    nlinarith
+  calc
+    dynamicBlockSiteDensity pcSite <
+        (1 - 2 * d * epsilon) * (1 - epsilon) ^ (2 * d) := by
+      simpa [epsilon] using
+        dynamicBlock_successFactor_gt_siteDensity hd hsite0 hsite1
+    _ ≤ (1 - epsilon) * (1 - epsilon) ^ (2 * d) :=
+      mul_le_mul_of_nonneg_right hfirst (pow_nonneg (sub_nonneg.mpr heps1) _)
+    _ = (1 - epsilon) ^ (2 * d + 1) := by
+      rw [pow_succ']
+    _ = (1 - dynamicBlockRestartError d pcSite) ^ (2 * d + 1) := by
+      rfl
 
 /-- Exact (7.34) budget: starting at `p_c+eta/2`, all `2d+1` reveal charges remain below
 `p_c+eta`. -/

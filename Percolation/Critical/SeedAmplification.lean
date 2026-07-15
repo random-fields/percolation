@@ -916,6 +916,151 @@ theorem exists_uniformInnerRadius_forall_eventually_allPositiveOrthantContactCar
     rwa [← orthantBoundaryContactCardGeEvent_eq_compl] at h
   exact ⟨hmn, by linarith⟩
 
+/-- The inner radius in seed amplification is independent of the selected coordinate face.
+The outer radius may still be chosen after the coordinate and the requested contact count; the
+finite-coordinate consolidation is performed in
+`seedConnection_probability_gt_allCoordinates`. -/
+theorem exists_uniformInnerRadius_allCoordinates_forall_eventually_contactCardGe_probability_gt
+    (d : ℕ) [NeZero d] (hd : 0 < d) (p : I) (htheta : 0 < theta d p)
+    (hp1 : (p : ℝ) < 1) {epsilon : ℝ} (hepsilon : 0 < epsilon) :
+    ∃ m : ℕ, ∀ (i : Fin d) (ell : ℕ), ∀ᶠ n : ℕ in Filter.atTop,
+      m ≤ n ∧
+        1 - epsilon <
+          (bernoulliBondMeasure d p).real
+            (orthantBoundaryContactCardGeEvent d m n
+              (allPositiveBoxSurfaceOrthantIndex i) ell) := by
+  let Q : ℕ := d * 2 ^ d
+  have hQ : Q ≠ 0 :=
+    Nat.mul_ne_zero (Nat.ne_of_gt hd) (pow_ne_zero _ (by omega))
+  have hepsilonPow : 0 < epsilon ^ Q := pow_pos hepsilon Q
+  obtain ⟨m, hm⟩ := exists_centralBoxMeetsInfiniteCluster_probability_gt
+    d p htheta (half_pos hepsilonPow)
+  refine ⟨m, ?_⟩
+  intro i ell
+  have hsmallT := smallNonemptyBoundaryContact_probability_tendsto_zero
+    d m (Q * ell) p hp1
+  have hsmallEventually : ∀ᶠ n : ℕ in Filter.atTop,
+      (bernoulliBondMeasure d p).real
+          (smallNonemptyBoundaryContactEvent d m n (Q * ell)) < epsilon ^ Q / 2 :=
+    hsmallT.eventually (Iio_mem_nhds (half_pos hepsilonPow))
+  have hmnEventually : ∀ᶠ n : ℕ in Filter.atTop, m ≤ n :=
+    Filter.Ici_mem_atTop m
+  filter_upwards [hmnEventually, hsmallEventually] with n hmn hsmall
+  let mu := bernoulliBondMeasure d p
+  have hempty := emptyBoundaryContact_probability_le_one_sub_central d p hmn
+  have hbadUnion := boundaryContactCardLt_probability_le_empty_add_small
+    d m n (Q * ell) p
+  have hfullBad :
+      mu.real (boundaryContactCardLtEvent d m n (Q * ell)) < epsilon ^ Q := by
+    dsimp [mu]
+    linarith
+  have hpow := orthantContactLt_probability_pow_le_fullContactLt
+    (d := d) (m := m) (n := n) (ell := ell) hd p i
+  have hrefPow :
+      (mu.real (orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell)) ^ Q < epsilon ^ Q :=
+    hpow.trans_lt (by simpa [Q, mu] using hfullBad)
+  have hrefBad :
+      mu.real (orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell) < epsilon :=
+    (pow_lt_pow_iff_left₀ measureReal_nonneg (le_of_lt hepsilon) hQ).mp hrefPow
+  have hrefCompl :
+      mu.real (orthantBoundaryContactCardLtEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell) +
+        mu.real (orthantBoundaryContactCardGeEvent d m n
+          (allPositiveBoxSurfaceOrthantIndex i) ell) = 1 := by
+    have h := probReal_add_probReal_compl
+      (μ := mu) (measurableSet_orthantBoundaryContactCardLtEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell)
+    rwa [← orthantBoundaryContactCardGeEvent_eq_compl] at h
+  exact ⟨hmn, by linarith⟩
+
+/-- Coordinate-uniform form of Lemma 7.9.  One pair of radii works simultaneously for all
+positive coordinate faces; signed directions are obtained later by the steering frame. -/
+theorem seedConnection_probability_gt_allCoordinates
+    (d : ℕ) [NeZero d] (hd : 0 < d) (p : I)
+    (htheta : 0 < theta d p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
+    {epsilon : ℝ} (hepsilon : 0 < epsilon) :
+    ∃ m n : ℕ, 2 * m < n ∧ m + 1 < n ∧ ∀ i : Fin d,
+      1 - epsilon <
+        (bernoulliBondMeasure d p).real (seedConnectionEvent d i m n) := by
+  classical
+  let delta : ℝ := epsilon / 2
+  have hdelta : 0 < delta := half_pos hepsilon
+  obtain ⟨m, hmContacts⟩ :=
+    exists_uniformInnerRadius_allCoordinates_forall_eventually_contactCardGe_probability_gt
+      d hd p htheta hp1 hdelta
+  let M : ℕ := 1 + (2 * m + 1) ^ d * (2 * d)
+  let q : ℝ := (p : ℝ) ^ M
+  have hqPos : 0 < q := pow_pos hp0 M
+  have hqLeOne : q ≤ 1 := pow_le_one₀ p.2.1 p.2.2
+  let r : ℝ := 1 - q
+  have hrNonneg : 0 ≤ r := sub_nonneg.mpr hqLeOne
+  have hrLtOne : r < 1 := by dsimp [r]; linarith
+  have hrTendsto : Filter.Tendsto (fun K : ℕ => r ^ K)
+      Filter.atTop (nhds 0) :=
+    tendsto_pow_atTop_nhds_zero_of_lt_one hrNonneg hrLtOne
+  have hrEventually : ∀ᶠ K : ℕ in Filter.atTop, r ^ K < delta :=
+    hrTendsto.eventually (Iio_mem_nhds hdelta)
+  obtain ⟨K, hK⟩ := hrEventually.exists
+  let ell : ℕ := K * ((8 * m + 5) ^ d)
+  have hcontactEventually : ∀ᶠ n : ℕ in Filter.atTop, ∀ i : Fin d,
+      m ≤ n ∧
+        1 - delta <
+          (bernoulliBondMeasure d p).real
+            (orthantBoundaryContactCardGeEvent d m n
+              (allPositiveBoxSurfaceOrthantIndex i) ell) :=
+    Filter.eventually_all.2 fun i ↦ hmContacts i ell
+  have hlargeEventually : ∀ᶠ n : ℕ in Filter.atTop,
+      2 * m < n ∧ m + 1 < n :=
+    (show ∀ᶠ n : ℕ in Filter.atTop, 2 * m < n from
+      Filter.Ioi_mem_atTop (2 * m)).and
+        (show ∀ᶠ n : ℕ in Filter.atTop, m + 1 < n from
+          Filter.Ioi_mem_atTop (m + 1))
+  obtain ⟨n, hnContact, hmn⟩ := (hcontactEventually.and hlargeEventually).exists
+  refine ⟨m, n, hmn.1, hmn.2, ?_⟩
+  intro i
+  have hmnLe : 2 * m ≤ n := hmn.1.le
+  let A := orthantBoundaryContactCardGeEvent d m n
+    (allPositiveBoxSurfaceOrthantIndex i) ell
+  let mu := bernoulliBondMeasure d p
+  have hAhigh : 1 - delta < mu.real A := by
+    simpa [A] using (hnContact i).2
+  have hAcompl : mu.real Aᶜ < delta := by
+    rw [probReal_compl_eq_one_sub
+      (measurableSet_orthantBoundaryContactCardGeEvent d m n
+        (allPositiveBoxSurfaceOrthantIndex i) ell)]
+    linarith
+  have hamp : mu.real (A ∩ (seedConnectionEvent d i m n)ᶜ) ≤
+      mu.real A * r ^ K := by
+    simpa [A, mu, ell, r, q, M] using
+      orthantContactGe_inter_seedConnection_compl_probability_le p i hmnLe (K := K)
+  have hAmpLt : mu.real (A ∩ (seedConnectionEvent d i m n)ᶜ) < delta := by
+    calc
+      mu.real (A ∩ (seedConnectionEvent d i m n)ᶜ) ≤ mu.real A * r ^ K := hamp
+      _ ≤ 1 * r ^ K := by
+        exact mul_le_mul_of_nonneg_right measureReal_le_one (pow_nonneg hrNonneg K)
+      _ < delta := by simpa using hK
+  have hseedComplSubset : (seedConnectionEvent d i m n)ᶜ ⊆
+      Aᶜ ∪ (A ∩ (seedConnectionEvent d i m n)ᶜ) := by
+    intro omega hseed
+    by_cases hAi : omega ∈ A
+    · exact Or.inr ⟨hAi, hseed⟩
+    · exact Or.inl hAi
+  have hseedCompl : mu.real (seedConnectionEvent d i m n)ᶜ < epsilon := by
+    calc
+      mu.real (seedConnectionEvent d i m n)ᶜ ≤
+          mu.real (Aᶜ ∪ (A ∩ (seedConnectionEvent d i m n)ᶜ)) :=
+        measureReal_mono hseedComplSubset (measure_ne_top _ _)
+      _ ≤ mu.real Aᶜ + mu.real (A ∩ (seedConnectionEvent d i m n)ᶜ) :=
+        measureReal_union_le _ _
+      _ < epsilon := by dsimp [delta] at hAcompl hAmpLt ⊢; linarith
+  have hcomplSum :
+      mu.real (seedConnectionEvent d i m n) +
+        mu.real (seedConnectionEvent d i m n)ᶜ = 1 :=
+    probReal_add_probReal_compl (measurableSet_seedConnectionEvent d i m n)
+  linarith
+
 /-- Grimmett Lemma 7.9: in the percolating regime at a nontrivial density, a central box connects
 inside a larger box to a fully open seed on the selected boundary quadrant with arbitrarily high
 probability. -/

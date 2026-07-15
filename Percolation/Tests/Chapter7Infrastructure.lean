@@ -63,6 +63,7 @@ import Percolation.Critical.AdaptiveDecisionTree
 import Percolation.Critical.FiniteExplorationTermination
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
+import Percolation.Critical.DynamicBlockAssembly
 import Percolation.Critical.DynamicRevealBudget
 import Percolation.Critical.DynamicSteering
 import Percolation.Critical.RootedSiteExploration
@@ -1834,6 +1835,10 @@ example {V ι : Type*} [DecidableEq ι]
 example {d N : ℕ} (hN : 1 ≤ N) :
     0 < staticManyCrossingsExponentialRate d N :=
   staticManyCrossingsExponentialRate_pos hN
+
+example {d N : ℕ} (hN : 0 < N) :
+    Function.Injective (grimmettMarstrandSiteCenter (d := d) N) :=
+  grimmettMarstrandSiteCenter_injective hN
 
 example {d N : ℕ} (hN : 1 ≤ N) {p₁ p₂ : I}
     (hp₁ : 0 < (p₁ : ℝ)) (h12 : (p₁ : ℝ) < p₂) :

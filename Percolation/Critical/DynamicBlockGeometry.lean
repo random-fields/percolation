@@ -39,6 +39,15 @@ end GrimmettMarstrandBlock
 def grimmettMarstrandSiteCenter {d : ℕ} (N : ℕ) (x : Cubic d) : Cubic d :=
   cubicScale (4 * (N : ℤ)) x
 
+theorem grimmettMarstrandSiteCenter_injective {d N : ℕ} (hN : 0 < N) :
+    Function.Injective (grimmettMarstrandSiteCenter (d := d) N) := by
+  intro x y hxy
+  funext i
+  have hi := congrFun hxy i
+  simp only [grimmettMarstrandSiteCenter, cubicScale] at hi
+  have hscale : (4 * (N : ℤ)) ≠ 0 := by positivity
+  exact mul_left_cancel₀ hscale hi
+
 /-- Site-box `4Nx+B(N)`. -/
 noncomputable def grimmettMarstrandSiteBox
     (d N : ℕ) (x : Cubic d) : Finset (Cubic d) :=

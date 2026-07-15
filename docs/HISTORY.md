@@ -1128,6 +1128,16 @@ Dated milestones and anti-library notes.
     7.2; arbitrary radii still require a separate geometric assembly. This post-pause work has no
     measured telemetry.
 
+108. **Chapter 7 dynamic-block bond assembly (2026-07-15).** Proved that positive scale makes
+    the `4Nx` site-center map injective, converted infinite-cluster events under the common
+    uniform coupling exactly to their Bernoulli bond probabilities, and composed the concrete
+    partitioned restart program with the literal thickening. Once the program proves its
+    accepted-center open-connection invariant, Lean now supplies root membership, distinct
+    anchors, thickening containment, positive bond percolation, and the final critical upper
+    bound of Theorem 7.2(a). The remaining work is the actual `4d`-stage program and its
+    connection invariant, not a measure-theoretic or order-theoretic gap. This post-pause work
+    has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

@@ -1096,6 +1096,20 @@ Dated milestones and anti-library notes.
     `P_p(A_n) ≥ 1 - exp (-ρ n)` above a concrete `α < 1`, with a positive rate uniform in `p`.
     This post-pause work has no measured telemetry.
 
+105. **Chapter 7 multi-slice crossing and sprinkling kernel (7.72–7.75) (2026-07-15).**
+    Embedded a source-aligned family of planar good-block slices in `B(N(K+1))`, proved their
+    queried bond-coordinate supports pairwise disjoint, and multiplied the single-slice LSS
+    estimate to obtain the ambient-box exponential crossing bound (7.74). Constructed the finite
+    induced open-box graph, proved its edges embed injectively into cubic bond coordinates, and
+    established the exact equivalence between crossing-event Hamming depth `s` and `s+1`
+    edge-disjoint left-right crossings by arbitrary terminal-set Menger. This yields the ACCFR
+    sprinkling product bound (7.75) and a guarded maximum with correct radius-zero and closed-box
+    behavior. Source review exposed a printed-index issue in dimensions above three: divisibility
+    of only one transverse coordinate does not imply disjoint thickened slices, so the formal
+    family separates every transverse coordinate while preserving order `K^(d-2)`. The final
+    proportional-threshold and arbitrary-radius optimization for Theorem 7.68 remains. This
+    post-pause work has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

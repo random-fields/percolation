@@ -34,6 +34,7 @@ import Percolation.Critical.InfiniteClusterDensity
 import Percolation.Critical.LSSCubic
 import Percolation.Critical.LSSGoodBlocks
 import Percolation.Critical.StaticBlockSliceCrossing
+import Percolation.Critical.StaticManyCrossings
 import Percolation.Critical.StaticCoalescence
 import Percolation.Critical.StaticGoodAssembly
 import Percolation.Critical.StaticLargeCrossing
@@ -167,6 +168,33 @@ example {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂) {r : ℕ} (hr : 1 ≤ r)
       ((p₂ : ℝ) / ((p₂ : ℝ) - p₁)) ^ r *
         (1 - (bernoulliBondMeasure 2 p₁).real (squareRectangleCrossingEvent m n)) :=
   bernoulliBondMeasure_real_maxCrossings_le_le h12 hr hm
+
+example (d : ℕ) (i : Fin d) (ω : EdgeConfiguration d) :
+    maxEdgeDisjointLeftRightCrossings d 0 i ω = 0 :=
+  maxEdgeDisjointLeftRightCrossings_zero d i ω
+
+example {d r : ℕ} {i : Fin d} (hr : 1 ≤ r) :
+    maxEdgeDisjointLeftRightCrossings d r i (∅ : EdgeConfiguration d) = 0 :=
+  maxEdgeDisjointLeftRightCrossings_empty hr
+
+example (d r s : ℕ) (i : Fin d) (ω : EdgeConfiguration d) :
+    ω ∈ interiorDepth s (cubicBoxCrossingEvent d r i) ↔
+      EdgeMenger.IsEdgeReachableBetweenFinsets (cubicBoxOpenGraph d r ω) (s + 1)
+        (cubicBoxFaceTerminals d r i false) (cubicBoxFaceTerminals d r i true) :=
+  mem_interiorDepth_cubicBoxCrossingEvent_iff d r s i ω
+
+example {d r s : ℕ} {i : Fin d} (hr : 1 ≤ r) (ω : EdgeConfiguration d) :
+    ω ∈ interiorDepth s (cubicBoxCrossingEvent d r i) ↔
+      s + 1 ≤ maxEdgeDisjointLeftRightCrossings d r i ω :=
+  mem_interiorDepth_cubicBoxCrossingEvent_iff_le_max hr ω
+
+example {d r s : ℕ} {i : Fin d} (hr : 1 ≤ r) (hs : 1 ≤ s)
+    {p₁ p₂ : I} (h12 : (p₁ : ℝ) < p₂) :
+    (bernoulliBondMeasure d p₂).real
+        {ω | maxEdgeDisjointLeftRightCrossings d r i ω ≤ s} ≤
+      ((p₂ : ℝ) / ((p₂ : ℝ) - p₁)) ^ s *
+        (1 - (bernoulliBondMeasure d p₁).real (cubicBoxCrossingEvent d r i)) :=
+  bernoulliBondMeasure_real_cubicBox_maxCrossings_le_le hr hs h12
 
 example (d : ℕ) (F : Set (Cubic d)) (k : ℕ) :
     cubicDilatedThickening d F k = cubicDilatedMinkowskiSum d F k :=

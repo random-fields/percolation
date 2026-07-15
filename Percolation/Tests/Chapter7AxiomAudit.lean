@@ -2,6 +2,7 @@ import Percolation.Critical.HalfSpaceBricks
 import Percolation.Critical.LSSCubic
 import Percolation.Critical.LSSGoodBlocks
 import Percolation.Critical.StaticBlockSliceCrossing
+import Percolation.Critical.StaticManyCrossings
 import Percolation.Planar.SiteCrossingFrontier
 import Percolation.Planar.SiteCrossingPeierls
 import Percolation.Critical.DynamicSteeringSymmetry
@@ -570,3 +571,9 @@ import Percolation.Critical.SlabLimitAssembly
 #print axioms Percolation.exists_closed_squareStar_path_bottom_top_of_not_crossing
 #print axioms Percolation.one_sub_siteSquareRectangleCrossingProbability_le
 #print axioms Percolation.siteSquareCrossingProbability_ge_one_sub_exp
+#print axioms Percolation.mem_interiorDepth_cubicBoxCrossingEvent_iff
+#print axioms Percolation.hasEdgeDisjointCubicBoxCrossings_iff_le_max
+#print axioms Percolation.mem_interiorDepth_cubicBoxCrossingEvent_iff_le_max
+#print axioms Percolation.one_sub_bernoulliBondMeasure_real_cubicBox_maxCrossings_ge_le
+#print axioms Percolation.bernoulliBondMeasure_real_cubicBox_maxCrossings_le_le
+#print axioms Percolation.cubicBox_maxCrossings_probability_le_sprinkled_exp_staticTransverse

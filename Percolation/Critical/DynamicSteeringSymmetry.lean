@@ -66,6 +66,44 @@ theorem cubicDirectionOrientationIso_image_cubicMetricBox
     exact ⟨w,
       (cubicDirectionOrientationIso_mem_cubicMetricBox_iff center a x w).1 hz, rfl⟩
 
+/-- The oriented automorphism maps the internal edge support of the origin box exactly onto the
+same-radius box centered at its physical restart center. -/
+theorem cubicDirectionOrientationIso_image_cubicBoxEdges_eq
+    {d n : ℕ} (center : Cubic d) (a : CubicDirection d) :
+    (cubicBoxEdges d cubicOrigin n).image
+        (cubicDirectionOrientationIso center a).mapEdgeSet =
+      cubicBoxEdges d center n := by
+  classical
+  apply Finset.eq_of_subset_of_card_le
+  · intro e he
+    rw [Finset.mem_image] at he
+    obtain ⟨f, hf, rfl⟩ := he
+    apply mem_cubicBoxEdges_of_endpoints
+    intro z hz
+    change z ∈ Sym2.map (cubicDirectionOrientationIso center a)
+      (f : Sym2 (Cubic d)) at hz
+    rw [Sym2.mem_map] at hz
+    obtain ⟨w, hw, rfl⟩ := hz
+    have hwBox := endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges hf hw
+    have himage :=
+      (cubicDirectionOrientationIso_mem_cubicMetricBox_iff
+        center a cubicOrigin w).2 hwBox
+    simpa [cubicOrigin] using himage
+  · rw [Finset.card_image_of_injective _
+      (cubicDirectionOrientationIso center a).mapEdgeSet.injective]
+    calc
+      (cubicBoxEdges d center n).card =
+          ((cubicBoxEdges d center n).image
+            (cubicTranslationIso center cubicOrigin).mapEdgeSet).card := by
+        rw [Finset.card_image_of_injective _
+          (cubicTranslationIso center cubicOrigin).mapEdgeSet.injective]
+      _ ≤ (cubicBoxEdges d cubicOrigin n).card := by
+        apply Finset.card_le_card
+        intro e he
+        rw [Finset.mem_image] at he
+        obtain ⟨f, hf, rfl⟩ := he
+        exact cubicTranslation_mapEdgeSet_mem_cubicBoxEdges center cubicOrigin hf
+
 @[simp]
 theorem cubicDirectionOrientationIso_origin
     {d : ℕ} (center : Cubic d) (a : CubicDirection d) :

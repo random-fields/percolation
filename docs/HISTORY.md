@@ -1176,6 +1176,32 @@ Dated milestones and anti-library notes.
     Endpoint tests compile and all new transitive axiom audits contain only `propext`,
     `Classical.choice`, and `Quot.sound`. This post-pause work has no measured telemetry.
 
+112. **Pathwise dynamic-restart certificate (2026-07-15).** Proved the deterministic content
+    missing between Lemma 7.17's success event and Theorem 7.2's bond-path invariant. Reachability
+    in an induced finite open box now converts back to a box-supported ambient open walk. A
+    successful threshold increment gives a final-density connection from the explored region to
+    a genuinely seeded target; when the region is the heterogeneous explored component, this
+    connection begins at an inlet-seed vertex. Signed-coordinate/translation transport gives the
+    literal physical connection used by oriented reveal cells, and those automorphisms map the
+    reference box-edge support exactly onto the physical centered box. The remaining work is to
+    compose these per-cell extensions through the concrete `4d` program and identify its final
+    target seed with the neighboring coarse-site seed. Post-pause telemetry remains unmeasured.
+
+113. **Source-faithful steering frames and finite seed witnesses (2026-07-15).** Source inspection
+    of pp. 159--162 exposed that an exit direction alone is insufficient: the construction also
+    reverses selected transverse coordinates. Added full signed restart frames, proved exact
+    transport of box-edge supports, identified the first reversed quadrant with `T*(n)`, and
+    formalized the later inlet-compensating sign condition. Restart events, history cells,
+    ratio-free probability bounds, and pathwise certificates now transport through the complete
+    frame; the old oriented API is proved to be its no-transverse-flip specialization. A finite
+    deterministic witness table now retains both the successful boundary contact and its actual
+    open seed center, depends on no labels beyond `seedConnectionSupport`, and is packaged with
+    the explored-region/multiplicity cell. Thus a subsequent stage can compute its physical seed
+    center and compensating sign mask from revealed finite data. Application tests compile and
+    the new declarations use only standard axioms. The remaining Theorem 7.2 work is the global
+    `4d` stage schedule, its interval-fiber reuse proof, and the accepted-center path induction.
+    This post-pause work has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

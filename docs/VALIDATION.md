@@ -35,8 +35,10 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
 - **[target]** Chapter 7 dynamic and static renormalization. The finite-history foundation and
   source-facing adaptive exploration Lemma 7.24, Theorem 7.65, and the finite directed-edge
   bond-to-site comparison needed by Theorem 7.2 are done. Its exact finite-ball exhaustion and
-  strict site-critical adapter are now also proved; Theorems 7.2, 7.35, 7.61, and 7.68 remain
-  targets.
+  strict site-critical adapter are now also proved. Successful restart cells now carry literal
+  final-density inlet-to-target bond paths through a full transverse-sign steering frame and
+  retain a deterministic finite target-seed witness; composing the concrete `4d` seed chain remains
+  before Theorem 7.2. Theorems 7.2, 7.35, 7.61, and 7.68 remain targets.
 - **[target]** Burton-Keane uniqueness of the infinite cluster under standard hypotheses.
 - **[target]** Planar duality for bond percolation on the square lattice.
 - **[target]** `p_c = 1/2` for bond percolation on `Z^2`.

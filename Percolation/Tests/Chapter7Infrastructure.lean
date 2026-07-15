@@ -58,6 +58,10 @@ import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
+import Percolation.Critical.DynamicRestartCertificate
+import Percolation.Critical.DynamicFramedRestart
+import Percolation.Critical.DynamicSeedWitness
+import Percolation.Critical.DynamicSeededRevealCell
 import Percolation.Critical.DynamicScheduleCells
 import Percolation.Critical.DynamicRevealFreshness
 import Percolation.Critical.DynamicProgramSupport
@@ -1964,5 +1968,82 @@ example :
 
 example : (staticCrossingSiteDensity : ℝ) < 1 :=
   staticCrossingSiteDensity_lt_one
+
+example {d n : ℕ} (center : Cubic d) (a : CubicDirection d) :
+    (cubicBoxEdges d cubicOrigin n).image
+        (cubicDirectionOrientationIso center a).mapEdgeSet =
+      cubicBoxEdges d center n :=
+  cubicDirectionOrientationIso_image_cubicBoxEdges_eq center a
+
+example {d n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) :
+    (cubicBoxEdges d cubicOrigin n).image
+        (cubicRestartFrameIso center a transverseFlip).mapEdgeSet =
+      cubicBoxEdges d center n :=
+  cubicRestartFrameIso_image_cubicBoxEdges_eq center a transverseFlip
+
+example {d n : ℕ} (i : Fin d) :
+    (seededBoundaryQuadrant d i n).image
+        (cubicRestartFrameIso cubicOrigin (i, true)
+          (oppositeTransverseRestartFlip (i, true))) =
+      steeredPositiveBoundaryQuadrant d i n :=
+  cubicRestartFrameIso_image_seededBoundaryQuadrant_eq_steered i
+
+example {d n : ℕ} (i : Fin d) (inletCenter : Cubic d) {z : Cubic d}
+    (hz : z ∈ seededBoundaryQuadrant d i n) :
+    cubicRestartFrameIso cubicOrigin (i, true)
+        (inletCompensatingTransverseFlip (i, true) inletCenter) z ∈
+      inletCompensatingBoundaryRegion d i inletCenter n :=
+  cubicRestartFrameIso_mem_inletCompensatingBoundaryRegion i inletCenter hz
+
+example {d m n : ℕ} (i : Fin d) :
+    Finite (RestartSeedWitnessIndex d i m n) :=
+  inferInstance
+
+example {d m n : ℕ} (i : Fin d) :
+    Finite (SeededRestartRevealCellIndex d i m n) :=
+  inferInstance
+
+example {d m n : ℕ} {i : Fin d} {omega : EdgeConfiguration d}
+    (h : ∃ z ∈ cubicMetricBox d cubicOrigin m,
+      ∃ y ∈ seededBoundaryPointFinset d i m n omega,
+        omega ∈ connectionEventIn d (cubicBoxEdges d cubicOrigin n) z y) :
+    ∃ W : RestartSeedWitnessIndex d i m n,
+      selectedRestartSeedWitness d i m n omega = some W ∧
+        W ∈ restartConnectedSeedWitnesses d i m n omega :=
+  selectedRestartSeedWitness_eq_some_of_inlet_connection h
+
+example {d m n : ℕ} {i : Fin d} (c : SeededRestartRevealCellIndex d i m n)
+    (center : Cubic d) (a : CubicDirection d) (flip : Fin d → Bool)
+    (W : RestartSeedWitnessIndex d i m n) (hW : c.selectedSeed = some W) :
+    c.nextPhysicalSeedCenter center a flip =
+      some (cubicRestartFrameIso center a flip W.seedCenter.1) :=
+  c.nextPhysicalSeedCenter_of_selected center a flip W hW
+
+example {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (R : Finset (Cubic d)) (p : I) (beta : CubicEdge d → I) (delta : ℝ) :
+    framedSprinkledRestartEvent center a (fun _ ↦ false) m n R p beta delta =
+      orientedSprinkledRestartEvent center a m n R p beta delta :=
+  framedSprinkledRestartEvent_noTransverse_eq_oriented
+    center a m n R p beta delta
+
+example {d n : ℕ} {omega : EdgeConfiguration d} {x u v : Cubic d}
+    {hu : u ∈ cubicMetricBox d x n} {hv : v ∈ cubicMetricBox d x n}
+    (hreach : (finiteBoxOpenGraph d omega x n).Reachable ⟨u, hu⟩ ⟨v, hv⟩) :
+    omega ∈ connectionEventIn d (cubicBoxEdges d x n) u v :=
+  mem_connectionEventIn_of_finiteBoxOpenGraph_reachable hreach
+
+example {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)}
+    {p pFinal : I} {beta : CubicEdge d → I} {delta : ℝ}
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hboundaryFinal : ∀ e ∈ cubicRegionBoundaryEdgesWithinBox d R n,
+      (beta e : ℝ) + delta ≤ (pFinal : ℝ))
+    (hAvoid : RegionAvoidsSeededBoundaryQuadrant d i n R) :
+    sprinkledRestartEvent d i m n R p beta delta ⊆
+      {X | thresholdConfiguration pFinal X ∈
+        regionConnectionToFiniteTargetEvent d R n
+          (seededBoundaryPointFinset d i m n (thresholdConfiguration pFinal X))} :=
+  sprinkledRestartEvent_subset_regionConnectionToSeededTarget
+    hpFinal hboundaryFinal hAvoid
 
 end Percolation

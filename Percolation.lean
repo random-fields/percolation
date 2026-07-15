@@ -136,6 +136,11 @@ import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
+import Percolation.Critical.DynamicRestartCertificate
+import Percolation.Critical.DynamicSteeringFrame
+import Percolation.Critical.DynamicFramedRestart
+import Percolation.Critical.DynamicSeedWitness
+import Percolation.Critical.DynamicSeededRevealCell
 import Percolation.Critical.DynamicScheduleCells
 import Percolation.Critical.DynamicRevealFreshness
 import Percolation.Critical.DynamicProgramSupport

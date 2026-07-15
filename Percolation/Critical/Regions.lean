@@ -985,6 +985,17 @@ theorem siteTheta_pos_of_criticalProbability_lt {V : Type*} [Countable V]
     exact le_csSup (siteCriticalZeroSet_bddAbove G) hmem
   exact (not_le_of_gt hp) hle
 
+/-- Positive site percolation at density `p` places the site critical probability at or below
+`p`. -/
+theorem siteCriticalProbability_le_of_siteTheta_pos
+    {V : Type*} [Countable V] {G : SimpleGraph V} {p : I}
+    (hpos : 0 < siteTheta G p) :
+    siteCriticalProbability G ≤ (p : ℝ) := by
+  by_contra hnot
+  have hp : (p : ℝ) < siteCriticalProbability G := lt_of_not_ge hnot
+  rw [siteTheta_eq_zero_of_lt_criticalProbability hp] at hpos
+  exact (lt_irrefl 0) hpos
+
 /-! ### Slabs, half-spaces, and thickened regions -/
 
 /-- Grimmett's slab `ℤ² × [0,k]^(d-2)`. -/

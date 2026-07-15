@@ -1,6 +1,7 @@
 import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.DynamicBlockGeometry
 import Percolation.Critical.DynamicRestartPartition
+import Percolation.Critical.BondToSiteCritical
 
 /-!
 # Dynamic-block bond-percolation assembly
@@ -114,6 +115,36 @@ theorem exists_regionCriticalProbability_thickening_le_add_dynamicBlock
   apply exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation hpBond
   exact P.regionHasInfiniteClusterProbability_pos_dynamicBlock
     root hF hd hN hsite1 pBond hconnection
+
+/-- The dynamic-block assembly with its site-critical hypothesis discharged by the finite
+incoming-green bond-to-site comparison. -/
+theorem exists_regionCriticalProbability_thickening_le_add_dynamicBlock_of_bondCritical_lt_one
+    {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected) (hd : 2 ≤ d) (hN : 0 < N)
+    (hcrit : regionCriticalProbability d F < 1)
+    {pRestart : I} {delta : ℝ}
+    (P : FinitePartitionedOrientedRestartProgram d F C m n pRestart delta
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      (4 * d))
+    (pBond : I) {eta : ℝ}
+    (hpBond : (pBond : ℝ) ≤ regionCriticalProbability d F + eta)
+    (hconnection : ∀ X v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      thresholdConfiguration pBond X ∈
+        connectionEventWithinVertices d (grimmettMarstrandThickening d F N)
+          (grimmettMarstrandSiteCenter N root)
+          (grimmettMarstrandSiteCenter N v)) :
+    ∃ k : ℕ,
+      regionCriticalProbability d (cubicDilatedThickening d F k) ≤
+        regionCriticalProbability d F + eta := by
+  apply P.exists_regionCriticalProbability_thickening_le_add_dynamicBlock
+    root hF (by omega) hN
+    (siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one
+      root hd hF hcrit)
+    pBond hpBond
+  exact hconnection
 
 end AdaptiveSiteExploration.FinitePartitionedOrientedRestartProgram
 

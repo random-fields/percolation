@@ -5,6 +5,7 @@ import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.BondExploration
 import Percolation.Critical.IncomingGreenDomination
+import Percolation.Critical.BondToSiteCritical
 import Percolation.Critical.AdaptiveTargetExhaustion
 import Percolation.Critical.AdaptiveRegionShells
 import Percolation.Critical.AdaptiveSiteExplorationTheorem
@@ -1706,6 +1707,30 @@ example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
         root target E.initial :=
   IncomingGreenDomination.setBernoulli_bondHitsTarget_le_rootedCompletion
     G neighbors mem_neighbors p Delta hdegree root target
+
+example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
+    (G : SimpleGraph V) [DecidableRel G.Adj]
+    (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (root : V) (target : Finset V) (q : ℝ) :
+    finiteBernoulliProbability Finset.univ q
+        (SiteExploration.finiteSiteHitsTarget G root target) =
+      q * (rootedSiteExploration G neighbors mem_neighbors root).completionHitProbability
+        q root target (rootedSiteExploration G neighbors mem_neighbors root).initial :=
+  SiteExploration.finiteBernoulliProbability_finiteSiteHitsTarget_eq_mul_rooted_completion
+    G neighbors mem_neighbors root target q
+
+example (p : I) (Delta : ℕ) :
+    (IncomingGreenDomination.densityI p Delta : ℝ) =
+      1 - (1 - (p : ℝ)) ^ Delta :=
+  rfl
+
+example {d : ℕ} {F : Set (Cubic d)} (root : F)
+    (hd : 2 ≤ d) (hF : (cubicRegionGraph d F).Connected)
+    (hcrit : regionCriticalProbability d F < 1) :
+    siteCriticalProbability (cubicRegionGraph d F) < 1 :=
+  siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one
+    root hd hF hcrit
 
 example {V Omega : Type*} [DecidableEq V] [LinearOrder V]
     (E : SiteExploration V)

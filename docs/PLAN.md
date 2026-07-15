@@ -9,7 +9,7 @@ this into page-anchored JSON in `kg/derived/`.
 |---|---|---|---|---|
 | P1 | Ch. 1.3 | Bond percolation on a graph/lattice; edge configurations | Core/Bernoulli | partial: graphs/probability exist, percolation API absent |
 | P2 | Ch. 1.4 | Critical probability and percolation probability | Critical | absent |
-| P3 | Ch. 1.6 | Site percolation and bond-to-site transformation | Core/Bernoulli | **finite-volume comparison proved**: `setBernoulli_bondHitsTarget_le_rootedCompletion` gives the directed-edge maximum-degree bound; infinite-volume/critical-probability passage remains |
+| P3 | Ch. 1.6 | Site percolation and bond-to-site transformation | Core/Bernoulli | **proved for cubic regions**: the finite directed-edge comparison is exhausted over induced metric balls; `siteTheta_densityI_pos_of_regionCriticalProbability_lt` and `siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one` give the infinite-volume and critical-probability conclusions |
 | P4 | Ch. 2.1 | Increasing events and stochastic order | Bernoulli | **proved**: `IsIncreasingEvent`/`DependsOn` vocabulary, finite-cube transfer pack, Thm 2.1 via the uniform coupling (`Increasing.lean`, `FiniteCube.lean`, `Coupling.lean`) |
 | P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | **proved**: finite-support FKG via four functions theorem (`FKG.lean`) and general increasing measurable events via measure-density approximation (`FKGInfinite.lean`); Thm 2.8 in `Critical/VertexIndependence.lean` |
 | P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | **proved**: BK 2.12/2.14/2.15 by the two-copy method (`BK.lean`), limit form (2.17) (`DisjointConnections.lean`); Reimer 2.19 recorded as anti-target |

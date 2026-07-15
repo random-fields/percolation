@@ -115,6 +115,8 @@ import Percolation.Critical.SeedAmplification
 import Percolation.Critical.RestartSprinkling
 import Percolation.Critical.RestartGeometry
 import Percolation.Critical.DynamicBlockGeometry
+import Percolation.Critical.FiniteInducedBond
+import Percolation.Critical.BondToSiteCritical
 import Percolation.Critical.DynamicBlockAssembly
 import Percolation.Critical.DynamicRevealBudget
 import Percolation.Critical.DynamicSteering

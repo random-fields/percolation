@@ -1163,6 +1163,19 @@ Dated milestones and anti-library notes.
     volume passage to the site critical-probability inequality. This post-pause work has no
     measured telemetry.
 
+111. **Infinite-volume bond-to-site critical comparison (2026-07-15).** Exposed the exact root
+    factor `P(site target hit)=q·P(root-forced completion)` and strengthened the finite theorem to
+    an unconditioned bond-to-site inequality. Removed dummy nonedges, embedded actual induced-ball
+    edges into `CubicEdge d`, and proved that an infinite regional bond cluster crosses every
+    finite metric shell. The matching antitone site-shell exhaustion converts the resulting
+    uniform finite lower bound into a rooted infinite site cluster. This proves
+    `siteTheta_densityI_pos_of_regionCriticalProbability_lt` at
+    `q=1-(1-p)^(2d)` and the strict critical adapter
+    `siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one`. The dynamic-block
+    assembly now discharges its former site-critical premise automatically from `p_c(F)<1`.
+    Endpoint tests compile and all new transitive axiom audits contain only `propext`,
+    `Classical.choice`, and `Quot.sound`. This post-pause work has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

@@ -887,18 +887,19 @@ theorem finiteSiteHitsTarget_insert_root_iff_completionHitsTarget_initial
   simp [finiteSiteHitsTarget, completionHitsTarget, rootedSiteExploration,
     SiteExplorationState.completionOpenSet]
 
-/-- The ordinary iid target-connection mass is at most the completion probability in which the
-exploration's root is forced open. -/
-theorem finiteBernoulliProbability_finiteSiteHitsTarget_le_rooted_completion
+/-- The ordinary iid target-connection mass is the root density times the completion probability
+in which the exploration's root is forced open.  This exact factor is needed when finite
+bond-to-site comparison is passed to infinite volume. -/
+theorem finiteBernoulliProbability_finiteSiteHitsTarget_eq_mul_rooted_completion
     (G : SimpleGraph V) (neighbors : V → Finset V)
     (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
-    (root : V) (target : Finset V) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q ≤ 1) :
-    finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤
-      (rootedSiteExploration G neighbors mem_neighbors root).completionHitProbability
+    (root : V) (target : Finset V) (q : ℝ) :
+    finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) =
+      q * (rootedSiteExploration G neighbors mem_neighbors root).completionHitProbability
         q root target (rootedSiteExploration G neighbors mem_neighbors root).initial := by
   let E := rootedSiteExploration G neighbors mem_neighbors root
-  change finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤
-    E.completionHitProbability q root target E.initial
+  change finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) =
+    q * E.completionHitProbability q root target E.initial
   have hremaining : E.initial.remaining = Finset.univ.erase root := by
     ext z
     simp [E, rootedSiteExploration, SiteExplorationState.remaining,
@@ -956,8 +957,18 @@ theorem finiteBernoulliProbability_finiteSiteHitsTarget_le_rooted_completion
             simp
     _ = q * E.completionHitProbability q root target E.initial := by
       rw [hopen, hclosed, mul_zero, add_zero, completionHitProbability, hremaining]
-    _ ≤ E.completionHitProbability q root target E.initial :=
-      mul_le_of_le_one_left (finiteBernoulliProbability_nonneg hq0 hq1 _) hq1
+
+/-- The ordinary iid target-connection mass is at most the completion probability in which the
+exploration's root is forced open. -/
+theorem finiteBernoulliProbability_finiteSiteHitsTarget_le_rooted_completion
+    (G : SimpleGraph V) (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (root : V) (target : Finset V) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q ≤ 1) :
+    finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤
+      (rootedSiteExploration G neighbors mem_neighbors root).completionHitProbability
+        q root target (rootedSiteExploration G neighbors mem_neighbors root).initial := by
+  rw [finiteBernoulliProbability_finiteSiteHitsTarget_eq_mul_rooted_completion]
+  exact mul_le_of_le_one_left (finiteBernoulliProbability_nonneg hq0 hq1 _) hq1
 
 /-- Finite, ratio-free target-hitting form of Grimmett Lemma 7.24. -/
 theorem finiteSiteHitsTarget_probability_le_adaptiveDecisionWinMass

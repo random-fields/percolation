@@ -62,6 +62,44 @@ theorem rootedInfiniteSiteClusterEvent_subset_cubicRegionSiteConnectionToSphereE
   intro v hv
   exact hwOpen v (hqSupport v hv)
 
+/-- Connections to region spheres form a decreasing family in the radius. -/
+theorem antitone_cubicRegionSiteConnectionToSphereEvent
+    (d : ℕ) (F : Set (Cubic d)) (root : F) :
+    Antitone (cubicRegionSiteConnectionToSphereEvent d F root) := by
+  intro m n hmn eta hn
+  rcases hn with ⟨t, htSphere, w, hwBall, hwOpen⟩
+  have htFar : m ≤ cubicL1Dist (root : Cubic d) (t : Cubic d) := by
+    rw [mem_cubicRegionMetricSphere_iff.mp htSphere]
+    exact hmn
+  obtain ⟨z, q, hzSphere, hqBall, hqSupport⟩ :=
+    exists_cubicRegionWalk_prefix_to_metricSphere w (by simp) htFar
+  exact ⟨z, hzSphere, q, hqBall, fun v hv ↦ hwOpen v (hqSupport v hv)⟩
+
+/-- A site configuration that connects the root to every regional metric sphere has an infinite
+rooted site-open cluster. -/
+theorem iInter_cubicRegionSiteConnectionToSphereEvent_subset_rootedInfinite
+    (d : ℕ) (F : Set (Cubic d)) (root : F) :
+    (⋂ n, cubicRegionSiteConnectionToSphereEvent d F root n) ⊆
+      rootedInfiniteSiteClusterEvent (cubicRegionGraph d F) root := by
+  intro eta hall
+  simp only [Set.mem_iInter] at hall
+  change (siteOpenCluster (cubicRegionGraph d F) eta root).Infinite
+  rw [← Set.not_finite]
+  intro hfinite
+  let S : Set F := siteOpenCluster (cubicRegionGraph d F) eta root
+  have hSfinite : S.Finite := by simpa [S] using hfinite
+  letI : Fintype S := hSfinite.fintype
+  let radius : S → ℕ := fun z ↦
+    cubicL1Dist (root : Cubic d) (((z : S) : F) : Cubic d)
+  have hradius : Function.Surjective radius := by
+    intro n
+    obtain ⟨z, hzSphere, w, _hwBall, hwOpen⟩ := hall n
+    have hzCluster : z ∈ siteOpenCluster (cubicRegionGraph d F) eta root :=
+      ⟨w, hwOpen⟩
+    refine ⟨⟨z, hzCluster⟩, ?_⟩
+    exact mem_cubicRegionMetricSphere_iff.mp hzSphere
+  exact Finite.false (α := ℕ) (Finite.of_surjective radius hradius)
+
 /-- The finite induced ball and its boundary target used in the radius-`n` Bellman problem. -/
 noncomputable def cubicRegionBallTarget
     (d : ℕ) (F : Set (Cubic d)) (root : F) (n : ℕ) :
@@ -131,5 +169,35 @@ theorem exists_pos_forall_finiteBallHitsSphere_of_connected_of_criticalProbabili
       hF p hp root
   exact ⟨c, hc, fun n ↦
     rootedInfiniteSiteCluster_probability_le_finiteBallHitsSphere d F root n p⟩
+
+/-- Converse finite-shell exhaustion: a single lower bound for every finite induced-ball site
+connection passes to the ordinary rooted infinite-cluster probability. -/
+theorem rootedInfiniteSiteCluster_probability_ge_of_finiteBallHitsSphere_lowerBounds
+    (d : ℕ) (F : Set (Cubic d)) (root : F) (p : I) (c : ℝ)
+    (hlower : ∀ n,
+      c ≤ finiteBernoulliProbability Finset.univ (p : ℝ)
+        (SiteExploration.finiteSiteHitsTarget
+          ((cubicRegionGraph d F).induce
+            (cubicRegionMetricBall d F root n : Set F))
+          (cubicRegionBallRoot d F root n)
+          (cubicRegionBallTarget d F root n))) :
+    c ≤ setBer((Set.univ : Set F), p).real
+      (rootedInfiniteSiteClusterEvent (cubicRegionGraph d F) root) := by
+  let A : ℕ → Set (Set F) := cubicRegionSiteConnectionToSphereEvent d F root
+  apply measureReal_limitEvent_ge_of_antitone_exhaustion
+    setBer((Set.univ : Set F), p) A
+      (rootedInfiniteSiteClusterEvent (cubicRegionGraph d F) root) c
+  · intro n
+    exact measurableSet_cubicRegionSiteConnectionToSphereEvent d F root n
+  · exact antitone_cubicRegionSiteConnectionToSphereEvent d F root
+  · exact iInter_cubicRegionSiteConnectionToSphereEvent_subset_rootedInfinite d F root
+  · intro n
+    have heq := finiteBernoulliProbability_induced_siteHitsTarget_eq_ambient
+      (cubicRegionGraph d F) (cubicRegionMetricBall d F root n)
+      (cubicRegionMetricSphere d F root n) root
+      (mem_cubicRegionMetricBall_iff.mpr (by simp)) p
+    exact (hlower n).trans_eq (by
+      simpa [A, cubicRegionBallRoot, cubicRegionBallTarget,
+        cubicRegionSiteConnectionToSphereEvent] using heq)
 
 end Percolation

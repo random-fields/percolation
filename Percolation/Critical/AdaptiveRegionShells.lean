@@ -155,6 +155,67 @@ theorem exists_cubicRegionWalk_prefix_to_metricSphere
           · exact Or.inl rfl
           · exact Or.inr (hqSupport v hv)
 
+/-- Edge-prefix strengthening of `exists_cubicRegionWalk_prefix_to_metricSphere`.  Besides the
+first-hit geometry, the returned walk is an actual initial edge segment of the input walk, so
+bond openness is inherited without any chord argument. -/
+theorem exists_cubicRegionWalk_edgePrefix_to_metricSphere
+    {d n : ℕ} {F : Set (Cubic d)} {root u y : F}
+    (w : (cubicRegionGraph d F).Walk u y)
+    (hu : cubicL1Dist (root : Cubic d) (u : Cubic d) ≤ n)
+    (hy : n ≤ cubicL1Dist (root : Cubic d) (y : Cubic d)) :
+    ∃ z : F, ∃ q : (cubicRegionGraph d F).Walk u z,
+      z ∈ cubicRegionMetricSphere d F root n ∧
+        (∀ v ∈ q.support, v ∈ cubicRegionMetricBall d F root n) ∧
+        (∀ v ∈ q.support, v ∈ w.support) ∧ q.edges <+: w.edges := by
+  induction w with
+  | @nil u₀ =>
+      have hdist : cubicL1Dist (root : Cubic d) (u₀ : Cubic d) = n :=
+        le_antisymm hu hy
+      refine ⟨u₀, .nil, ?_, ?_, ?_, List.nil_prefix⟩
+      · exact mem_cubicRegionMetricSphere_iff.mpr hdist
+      · intro v hv
+        simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hv
+        subst v
+        exact mem_cubicRegionMetricBall_iff.mpr hdist.le
+      · simp
+  | @cons u₀ u₁ y₀ hu₀u₁ tail ih =>
+      by_cases hlevel : cubicL1Dist (root : Cubic d) (u₀ : Cubic d) = n
+      · refine ⟨u₀, .nil, mem_cubicRegionMetricSphere_iff.mpr hlevel, ?_, ?_,
+          List.nil_prefix⟩
+        · intro v hv
+          simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hv
+          subst v
+          exact mem_cubicRegionMetricBall_iff.mpr hlevel.le
+        · simp
+      · have hu₀lt : cubicL1Dist (root : Cubic d) (u₀ : Cubic d) < n :=
+          lt_of_le_of_ne hu hlevel
+        have hadj : (cubicGraph d).Adj (u₀ : Cubic d) (u₁ : Cubic d) := by
+          exact SimpleGraph.induce_adj.mp hu₀u₁
+        obtain ⟨a, ha⟩ := (cubicGraph_adj_iff_exists_stepFrom _ _).mp hadj
+        have hu₁le : cubicL1Dist (root : Cubic d) (u₁ : Cubic d) ≤ n := by
+          calc
+            cubicL1Dist (root : Cubic d) (u₁ : Cubic d) ≤
+                cubicL1Dist (root : Cubic d) (u₀ : Cubic d) +
+                  cubicL1Dist (u₀ : Cubic d) (u₁ : Cubic d) :=
+              cubicL1Dist_triangle _ _ _
+            _ = cubicL1Dist (root : Cubic d) (u₀ : Cubic d) + 1 := by
+              rw [ha, cubicL1Dist_stepFrom]
+            _ ≤ n := by omega
+        obtain ⟨z, q, hzSphere, hqBall, hqSupport, hqPrefix⟩ := ih hu₁le hy
+        refine ⟨z, q.cons hu₀u₁, hzSphere, ?_, ?_, ?_⟩
+        · intro v hv
+          simp only [SimpleGraph.Walk.support_cons, List.mem_cons] at hv
+          rcases hv with rfl | hv
+          · exact mem_cubicRegionMetricBall_iff.mpr hu
+          · exact hqBall v hv
+        · intro v hv
+          simp only [SimpleGraph.Walk.support_cons, List.mem_cons] at hv ⊢
+          rcases hv with rfl | hv
+          · exact Or.inl rfl
+          · exact Or.inr (hqSupport v hv)
+        · simpa only [SimpleGraph.Walk.edges_cons] using
+            (List.cons_prefix_cons.mpr ⟨rfl, hqPrefix⟩)
+
 namespace SiteExploration
 
 /-- For the actual adaptive exploration of a cubic region, hitting an outer Manhattan sphere in

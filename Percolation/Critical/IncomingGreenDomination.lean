@@ -587,6 +587,36 @@ theorem setBernoulli_bondHitsTarget_le_rootedCompletion
   exact setBernoulli_projectedBondHitsTarget_le_rootedCompletion
     G neighbors mem_neighbors p Delta hdegree root target
 
+/-- Unconditioned finite bond-to-site comparison.  The factor
+`1 - (1-p)^Delta` is exactly the probability that the site root is open; retaining it makes the
+finite theorem suitable for exhaustion to an ordinary infinite site cluster. -/
+theorem density_mul_setBernoulli_bondHitsTarget_le_finiteSiteHitsTarget
+    [LinearOrder V] (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (p : I) (Delta : ℕ) (hdegree : ∀ v, G.degree v ≤ Delta)
+    (root : V) (target : Finset V) :
+    density p Delta *
+        setBer((Set.univ : Set (Sym2 V)), p).real
+          (bondHitsTargetEvent G root target) ≤
+      finiteBernoulliProbability Finset.univ (density p Delta)
+        (SiteExploration.finiteSiteHitsTarget G root target) := by
+  let E := rootedSiteExploration G neighbors mem_neighbors root
+  calc
+    density p Delta *
+        setBer((Set.univ : Set (Sym2 V)), p).real
+          (bondHitsTargetEvent G root target) ≤
+        density p Delta * E.completionHitProbability
+          (density p Delta) root target E.initial :=
+      mul_le_mul_of_nonneg_left
+        (setBernoulli_bondHitsTarget_le_rootedCompletion
+          G neighbors mem_neighbors p Delta hdegree root target)
+        (density_nonneg p Delta)
+    _ = finiteBernoulliProbability Finset.univ (density p Delta)
+        (SiteExploration.finiteSiteHitsTarget G root target) := by
+      symm
+      exact SiteExploration.finiteBernoulliProbability_finiteSiteHitsTarget_eq_mul_rooted_completion
+        G neighbors mem_neighbors root target (density p Delta)
+
 end IncomingGreenDomination
 
 end Percolation

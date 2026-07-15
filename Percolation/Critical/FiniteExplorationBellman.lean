@@ -683,6 +683,165 @@ decreasing_by
   · exact hltTrue
   · exact hltFalse
 
+/-- Dual ratio-free finite target comparison.  If every adaptive true answer has conditional
+mass at most `q`, then its finite target-hit mass is at most the iid Bernoulli completion
+probability.  The recursion is specialized to the exploration's decreasing set of undecided
+vertices, so no fixed-depth monotonicity assumption on history-dependent query orders is used. -/
+theorem adaptiveDecisionWinMass_le_completionHitProbability_mul_historyMass
+    {Omega : Type*} [MeasurableSpace Omega]
+    (E : SiteExploration V) (mu : Measure Omega) [IsFiniteMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (V × Bool) → V → Prop)
+    (q : ℝ) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (hupper : AdaptiveSiteExploration.HasAdaptiveAnswerUpperBoundOn
+      mu answer admissible q)
+    (root : V) (target : Finset V)
+    (hquery : ∀ history, admissible history (E.replayQuery root history))
+    (history : List (V × Bool))
+    (hwf : (E.replayState history).WellFormed)
+    (hrooted : E.OpenRootedAt root (E.replayState history))
+    (hclosed : E.FrontierClosed (E.replayState history)) :
+    AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
+        (E.replayHitsTarget target) history
+        (E.replayState history).remaining.card ≤
+      E.completionHitProbability q root target (E.replayState history) *
+        mu.real (AdaptiveSiteExploration.adaptiveAnswerHistoryEvent answer history) := by
+  let s := E.replayState history
+  by_cases hfrontier : s.frontier = ∅
+  · rw [E.completionHitProbability_of_frontier_eq_empty q root target hwf hrooted hclosed
+      hfrontier]
+    rw [E.adaptiveDecisionWinMass_replayHitsTarget_of_frontier_eq_empty
+      mu hanswer root target history hfrontier]
+    by_cases hhit : ∃ t ∈ target, t ∈ (E.replayState history).occupied <;>
+      simp [replayHitsTarget, hhit]
+  · have hfrontierNonempty : s.frontier.Nonempty :=
+      Finset.nonempty_iff_ne_empty.mpr hfrontier
+    let v := s.frontier.min' hfrontierNonempty
+    have hnext : nextVertex s = some v := by
+      simp [SiteExploration.nextVertex, hfrontierNonempty, v]
+    have hvfrontier : v ∈ s.frontier :=
+      SiteExploration.mem_frontier_of_nextVertex_eq_some hnext
+    have hvremaining : v ∈ s.remaining := mem_remaining_of_mem_frontier hwf hvfrontier
+    let historyTrue := history ++ [(E.replayQuery root history, true)]
+    let historyFalse := history ++ [(E.replayQuery root history, false)]
+    have hstateTrue : E.replayState historyTrue = E.acceptState s v :=
+      E.replayState_append_true_eq_acceptState root history hnext
+    have hstateFalse : E.replayState historyFalse = rejectState s v :=
+      E.replayState_append_false_eq_rejectState root history hnext
+    have hstepTrue : E.step (fun _ ↦ true) s = E.acceptState s v :=
+      E.step_eq_acceptState_of_nextVertex_of_answer (fun _ ↦ true) s hnext rfl
+    have hstepFalse : E.step (fun _ ↦ false) s = rejectState s v :=
+      E.step_eq_rejectState_of_nextVertex_of_answer (fun _ ↦ false) s hnext rfl
+    have hwfTrue : (E.replayState historyTrue).WellFormed := by
+      rw [hstateTrue, ← hstepTrue]
+      exact E.step_wellFormed (fun _ ↦ true) hwf
+    have hwfFalse : (E.replayState historyFalse).WellFormed := by
+      rw [hstateFalse, ← hstepFalse]
+      exact E.step_wellFormed (fun _ ↦ false) hwf
+    have hrootedTrue : E.OpenRootedAt root (E.replayState historyTrue) := by
+      rw [hstateTrue, ← hstepTrue]
+      exact E.step_openRootedAt (fun _ ↦ true) root hrooted
+    have hrootedFalse : E.OpenRootedAt root (E.replayState historyFalse) := by
+      rw [hstateFalse, ← hstepFalse]
+      exact E.step_openRootedAt (fun _ ↦ false) root hrooted
+    have hclosedTrue : E.FrontierClosed (E.replayState historyTrue) := by
+      rw [hstateTrue, ← hstepTrue]
+      exact E.step_frontierClosed (fun _ ↦ true) hclosed
+    have hclosedFalse : E.FrontierClosed (E.replayState historyFalse) := by
+      rw [hstateFalse, ← hstepFalse]
+      exact E.step_frontierClosed (fun _ ↦ false) hclosed
+    have hcardTrue : (E.replayState historyTrue).remaining.card + 1 = s.remaining.card := by
+      rw [hstateTrue, remaining_acceptState]
+      exact Finset.card_erase_add_one hvremaining
+    have hcardFalse : (E.replayState historyFalse).remaining.card + 1 = s.remaining.card := by
+      rw [hstateFalse, remaining_rejectState]
+      exact Finset.card_erase_add_one hvremaining
+    have hltTrue : (E.replayState historyTrue).remaining.card <
+        (E.replayState history).remaining.card := by
+      change (E.replayState historyTrue).remaining.card < s.remaining.card
+      omega
+    have hltFalse : (E.replayState historyFalse).remaining.card <
+        (E.replayState history).remaining.card := by
+      change (E.replayState historyFalse).remaining.card < s.remaining.card
+      omega
+    have ihTrue := E.adaptiveDecisionWinMass_le_completionHitProbability_mul_historyMass
+      mu hanswer admissible q hq0 hq1 hupper root target hquery historyTrue
+      hwfTrue hrootedTrue hclosedTrue
+    have ihFalse := E.adaptiveDecisionWinMass_le_completionHitProbability_mul_historyMass
+      mu hanswer admissible q hq0 hq1 hupper root target hquery historyFalse
+      hwfFalse hrootedFalse hclosedFalse
+    let valueTrue := E.completionHitProbability q root target (E.replayState historyTrue)
+    let valueFalse := E.completionHitProbability q root target (E.replayState historyFalse)
+    let massHistory := mu.real
+      (AdaptiveSiteExploration.adaptiveAnswerHistoryEvent answer history)
+    let massTrue := mu.real
+      (AdaptiveSiteExploration.adaptiveAnswerHistoryEvent answer historyTrue)
+    let massFalse := mu.real
+      (AdaptiveSiteExploration.adaptiveAnswerHistoryEvent answer historyFalse)
+    have hvalueTrue0 : 0 ≤ valueTrue :=
+      finiteBernoulliProbability_nonneg hq0 hq1 _
+    have hvalueFalse0 : 0 ≤ valueFalse :=
+      finiteBernoulliProbability_nonneg hq0 hq1 _
+    have hvalue : valueFalse ≤ valueTrue := by
+      dsimp [valueTrue, valueFalse]
+      rw [hstateTrue, hstateFalse]
+      exact E.completionHitProbability_reject_le_accept hq0 hq1 root target s v
+    have hmassHistory0 : 0 ≤ massHistory := measureReal_nonneg
+    have hmassTrue0 : 0 ≤ massTrue := measureReal_nonneg
+    have hmassFalse0 : 0 ≤ massFalse := measureReal_nonneg
+    have hmassPartition : massTrue + massFalse = massHistory := by
+      exact AdaptiveSiteExploration.measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
+        mu hanswer history (E.replayQuery root history)
+    have hmassTrue : massTrue ≤ q * massHistory := by
+      exact hupper history (E.replayQuery root history) (hquery history)
+    have hbranches :
+        AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
+              (E.replayHitsTarget target) historyTrue
+                (E.replayState historyTrue).remaining.card +
+            AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
+              (E.replayHitsTarget target) historyFalse
+                (E.replayState historyFalse).remaining.card ≤
+          valueTrue * massTrue + valueFalse * massFalse := by
+      exact add_le_add ihTrue ihFalse
+    rw [E.completionHitProbability_eq_open_closed q root target hwf hvfrontier]
+    rw [← hcardTrue, AdaptiveSiteExploration.adaptiveDecisionWinMass_succ]
+    rw [← hstateTrue, ← hstateFalse]
+    change _ ≤ (q * valueTrue + (1 - q) * valueFalse) * massHistory
+    have hcards : (E.replayState historyFalse).remaining.card =
+        (E.replayState historyTrue).remaining.card := by omega
+    calc
+      _ ≤ valueTrue * massTrue + valueFalse * massFalse := by
+        simpa [historyTrue, historyFalse, hcards] using hbranches
+      _ ≤ (q * valueTrue + (1 - q) * valueFalse) * massHistory := by
+        nlinarith
+termination_by (E.replayState history).remaining.card
+decreasing_by
+  · exact hltTrue
+  · exact hltFalse
+
+/-- Root form of the upper ratio-free finite target comparison. -/
+theorem adaptiveDecisionWinMass_le_completionHitProbability_initial
+    {Omega : Type*} [MeasurableSpace Omega]
+    (E : SiteExploration V) (mu : Measure Omega) [IsProbabilityMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (V × Bool) → V → Prop)
+    (q : ℝ) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (hupper : AdaptiveSiteExploration.HasAdaptiveAnswerUpperBoundOn
+      mu answer admissible q)
+    (root : V) (target : Finset V)
+    (hquery : ∀ history, admissible history (E.replayQuery root history))
+    (hwf : E.initial.WellFormed) (hrooted : E.OpenRootedAt root E.initial)
+    (hclosed : E.FrontierClosed E.initial) :
+    AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
+        (E.replayHitsTarget target) [] E.initial.remaining.card ≤
+      E.completionHitProbability q root target E.initial := by
+  simpa [replayState, AdaptiveSiteExploration.adaptiveAnswerHistoryEvent,
+    AdaptiveSiteExploration.adaptiveAnswerHistoryEventFrom, probReal_univ] using
+    E.adaptiveDecisionWinMass_le_completionHitProbability_mul_historyMass
+      mu hanswer admissible q hq0 hq1 hupper root target hquery [] hwf hrooted hclosed
+
 /-- Root form of the ratio-free finite target-hitting comparison. -/
 theorem completionHitProbability_initial_le_adaptiveDecisionWinMass
     {Omega : Type*} [MeasurableSpace Omega]

@@ -174,6 +174,65 @@ theorem iidAdaptiveDecisionValue_mul_historyMass_le
           nlinarith
         _ ≤ _ := hbranches
 
+/-- Dual dynamic-programming comparison.  A ratio-free upper bound on every next success makes
+the history-dependent adaptive tree no more likely to win than the iid tree, provided success
+is favorable for the continuation value. -/
+theorem adaptiveDecisionWinMass_le_iidAdaptiveDecisionValue_mul_historyMass
+    [MeasurableSpace Omega]
+    (mu : Measure Omega) [IsFiniteMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : MeasurableAnswer answer)
+    (query : List (V × Bool) → V)
+    (admissible : List (V × Bool) → V → Prop)
+    (q : ℝ) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (hupper : HasAdaptiveAnswerUpperBoundOn mu answer admissible q)
+    (hquery : ∀ history, admissible history (query history))
+    (win : List (V × Bool) → Prop)
+    (hfavorable : IsSuccessFavorable q query win) :
+    ∀ history depth,
+      adaptiveDecisionWinMass mu answer query win history depth ≤
+        iidAdaptiveDecisionValue q query win history depth *
+          mu.real (adaptiveAnswerHistoryEvent answer history) := by
+  intro history depth
+  induction depth generalizing history with
+  | zero =>
+      rw [iidAdaptiveDecisionValue, adaptiveDecisionWinMass_zero]
+      split <;> simp
+  | succ depth ih =>
+      let v := query history
+      let historyTrue := history ++ [(v, true)]
+      let historyFalse := history ++ [(v, false)]
+      let valueTrue := iidAdaptiveDecisionValue q query win historyTrue depth
+      let valueFalse := iidAdaptiveDecisionValue q query win historyFalse depth
+      let massHistory := mu.real (adaptiveAnswerHistoryEvent answer history)
+      let massTrue := mu.real (adaptiveAnswerHistoryEvent answer historyTrue)
+      let massFalse := mu.real (adaptiveAnswerHistoryEvent answer historyFalse)
+      have hvalueTrue0 : 0 ≤ valueTrue :=
+        iidAdaptiveDecisionValue_nonneg hq0 hq1 query win historyTrue depth
+      have hvalueFalse0 : 0 ≤ valueFalse :=
+        iidAdaptiveDecisionValue_nonneg hq0 hq1 query win historyFalse depth
+      have hvalue : valueFalse ≤ valueTrue := hfavorable history depth
+      have hmassHistory0 : 0 ≤ massHistory := measureReal_nonneg
+      have hmassTrue0 : 0 ≤ massTrue := measureReal_nonneg
+      have hmassFalse0 : 0 ≤ massFalse := measureReal_nonneg
+      have hmassPartition : massTrue + massFalse = massHistory := by
+        exact measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
+          mu hanswer history v
+      have hmassTrue : massTrue ≤ q * massHistory := by
+        exact hupper history v (hquery history)
+      have hbranches :
+          adaptiveDecisionWinMass mu answer query win historyTrue depth +
+              adaptiveDecisionWinMass mu answer query win historyFalse depth ≤
+            valueTrue * massTrue + valueFalse * massFalse :=
+        add_le_add (ih historyTrue) (ih historyFalse)
+      rw [iidAdaptiveDecisionValue, adaptiveDecisionWinMass_succ]
+      dsimp [v, historyTrue, historyFalse, valueTrue, valueFalse,
+        massHistory, massTrue, massFalse] at *
+      calc
+        _ ≤ valueTrue * massTrue + valueFalse * massFalse := hbranches
+        _ ≤ (q * valueTrue + (1 - q) * valueFalse) * massHistory := by
+          nlinarith
+
 /-- Root form under a probability measure. -/
 theorem iidAdaptiveDecisionValue_le_winMass
     [MeasurableSpace Omega]
@@ -192,6 +251,25 @@ theorem iidAdaptiveDecisionValue_le_winMass
   simpa [probReal_univ] using
     iidAdaptiveDecisionValue_mul_historyMass_le mu hanswer query admissible q hq0 hq1
       hlower hquery win hfavorable [] depth
+
+/-- Root form of the dual adaptive-tree comparison under a probability measure. -/
+theorem winMass_le_iidAdaptiveDecisionValue
+    [MeasurableSpace Omega]
+    (mu : Measure Omega) [IsProbabilityMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : MeasurableAnswer answer)
+    (query : List (V × Bool) → V)
+    (admissible : List (V × Bool) → V → Prop)
+    (q : ℝ) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (hupper : HasAdaptiveAnswerUpperBoundOn mu answer admissible q)
+    (hquery : ∀ history, admissible history (query history))
+    (win : List (V × Bool) → Prop)
+    (hfavorable : IsSuccessFavorable q query win) (depth : ℕ) :
+    adaptiveDecisionWinMass mu answer query win [] depth ≤
+      iidAdaptiveDecisionValue q query win [] depth := by
+  simpa [probReal_univ] using
+    adaptiveDecisionWinMass_le_iidAdaptiveDecisionValue_mul_historyMass
+      mu hanswer query admissible q hq0 hq1 hupper hquery win hfavorable [] depth
 
 end AdaptiveSiteExploration
 

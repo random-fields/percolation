@@ -244,6 +244,102 @@ theorem adaptiveDecisionWinEvent_subset_adaptiveTargetHitEvent
   rw [hstate]
   exact hwin
 
+/-- Conversely, the actual finite-time target-hit event lies in the winning replay leaf selected
+by the sample.  Together with the preceding theorem this identifies the Bellman outcome event
+exactly, rather than only by a one-sided inclusion. -/
+theorem adaptiveTargetHitEvent_subset_adaptiveDecisionWinEvent
+    (E : SiteExploration V) (root : V)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (target : Finset V) (n : ℕ) :
+    E.adaptiveTargetHitEvent answer target n ⊆
+      AdaptiveSiteExploration.adaptiveDecisionWinEvent
+        (prefixedAdaptiveAnswer E.initial.history answer) (E.replayQuery root)
+        (E.replayHitsTarget target) n := by
+  intro omega hhit
+  let bits := AdaptiveSiteExploration.adaptiveDecisionBits
+    (prefixedAdaptiveAnswer E.initial.history answer) (E.replayQuery root) omega n
+  have hleaf : omega ∈ AdaptiveSiteExploration.adaptiveDecisionLeafEvent
+      (prefixedAdaptiveAnswer E.initial.history answer) (E.replayQuery root) bits :=
+    AdaptiveSiteExploration.mem_adaptiveDecisionLeafEvent_adaptiveDecisionBits
+      _ _ omega n
+  have hstate := E.toAdaptive_stateAfter_eq_replayState_of_mem_leaf root
+    answer bits omega hleaf
+  have hwin : E.replayHitsTarget target
+      (AdaptiveSiteExploration.adaptiveQueryHistory (E.replayQuery root)
+        (List.ofFn bits)) := by
+    change ∃ t ∈ target, t ∈
+      (E.replayState
+        (AdaptiveSiteExploration.adaptiveQueryHistory (E.replayQuery root)
+          (List.ofFn bits))).occupied
+    rw [← hstate]
+    exact hhit
+  exact Set.mem_iUnion.mpr ⟨bits, Set.mem_iUnion.mpr ⟨hwin, hleaf⟩⟩
+
+theorem adaptiveTargetHitEvent_eq_adaptiveDecisionWinEvent
+    (E : SiteExploration V) (root : V)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (target : Finset V) (n : ℕ) :
+    E.adaptiveTargetHitEvent answer target n =
+      AdaptiveSiteExploration.adaptiveDecisionWinEvent
+        (prefixedAdaptiveAnswer E.initial.history answer) (E.replayQuery root)
+        (E.replayHitsTarget target) n :=
+  Set.Subset.antisymm
+    (E.adaptiveTargetHitEvent_subset_adaptiveDecisionWinEvent root answer target n)
+    (E.adaptiveDecisionWinEvent_subset_adaptiveTargetHitEvent root answer target n)
+
+/-- An upper history-wise answer bound controls the probability of the concrete finite-time
+target-hit event by the iid completion probability with the root forced open.  This is the
+event-level counterpart of `adaptiveDecisionWinMass_le_completionHitProbability_initial`.
+
+The bound is ratio-free: null histories require no special conditional-probability convention. -/
+theorem adaptiveTargetHitEvent_probability_le_rooted_completion
+    [Fintype V] [MeasurableSpace Omega]
+    (G : SimpleGraph V) (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (mu : Measure Omega) [IsProbabilityMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (V × Bool) → V → Prop)
+    (q : ℝ) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (root : V)
+    (hupper : AdaptiveSiteExploration.HasAdaptiveAnswerUpperBoundOn
+      mu
+        (prefixedAdaptiveAnswer
+          (rootedSiteExploration G neighbors mem_neighbors root).initial.history answer)
+        admissible q)
+    (target : Finset V)
+    (hquery : ∀ history,
+      admissible history
+        ((rootedSiteExploration G neighbors mem_neighbors root).replayQuery root history)) :
+    mu.real ((rootedSiteExploration G neighbors mem_neighbors root).adaptiveTargetHitEvent
+        answer target
+        (rootedSiteExploration G neighbors mem_neighbors root).initial.remaining.card) ≤
+      (rootedSiteExploration G neighbors mem_neighbors root).completionHitProbability
+        q root target (rootedSiteExploration G neighbors mem_neighbors root).initial := by
+  let E := rootedSiteExploration G neighbors mem_neighbors root
+  have hanswerPrefixed : AdaptiveSiteExploration.MeasurableAnswer
+      (prefixedAdaptiveAnswer E.initial.history answer) :=
+    measurableAnswer_prefixedAdaptiveAnswer hanswer E.initial.history
+  have hwinMeasure :
+      mu.real (AdaptiveSiteExploration.adaptiveDecisionWinEvent
+        (prefixedAdaptiveAnswer E.initial.history answer) (E.replayQuery root)
+          (E.replayHitsTarget target) E.initial.remaining.card) =
+        AdaptiveSiteExploration.adaptiveDecisionWinMass mu
+          (prefixedAdaptiveAnswer E.initial.history answer) (E.replayQuery root)
+          (E.replayHitsTarget target) [] E.initial.remaining.card :=
+    AdaptiveSiteExploration.measureReal_adaptiveDecisionWinEvent
+      mu hanswerPrefixed (E.replayQuery root) (E.replayHitsTarget target)
+        E.initial.remaining.card
+  change mu.real (E.adaptiveTargetHitEvent answer target E.initial.remaining.card) ≤
+    E.completionHitProbability q root target E.initial
+  rw [E.adaptiveTargetHitEvent_eq_adaptiveDecisionWinEvent root answer target,
+    hwinMeasure]
+  exact E.adaptiveDecisionWinMass_le_completionHitProbability_initial
+    mu hanswerPrefixed admissible q hq0 hq1 hupper root target hquery
+    (rootedSiteExploration_initial_wellFormed G neighbors mem_neighbors root)
+    (rootedSiteExploration_initial_openRootedAt G neighbors mem_neighbors root)
+    (rootedSiteExploration_initial_frontierClosed G neighbors mem_neighbors root)
+
 /-- The abstract Bellman comparison now bounds the probability of a concrete finite-time target
 hit in the actual history-dependent exploration. -/
 theorem finiteSiteHitsTarget_probability_le_adaptiveTargetHitEvent

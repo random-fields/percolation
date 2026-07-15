@@ -25,6 +25,17 @@ def adaptiveDecisionLeafEvent
   adaptiveAnswerHistoryEvent answer
     (adaptiveQueryHistory query (List.ofFn bits))
 
+/-- The unique Boolean leaf selected by `omega` in a depth-`n` adaptive query tree. -/
+def adaptiveDecisionBits
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (query : List (V × Bool) → V) (omega : Omega) :
+    ∀ n : ℕ, Fin n → Bool
+  | 0 => Fin.elim0
+  | n + 1 =>
+      let bits := adaptiveDecisionBits answer query omega n
+      let history := adaptiveQueryHistory query (List.ofFn bits)
+      Fin.snoc bits (answer omega history (query history))
+
 theorem adaptiveDecisionLeafEvent_snoc
     (answer : Omega → List (V × Bool) → V → Bool)
     (query : List (V × Bool) → V) {n : ℕ}
@@ -46,6 +57,27 @@ theorem adaptiveDecisionLeafEvent_snoc_subset
       adaptiveDecisionLeafEvent answer query bits := by
   rw [adaptiveDecisionLeafEvent_snoc]
   exact Set.inter_subset_left
+
+/-- Every sample belongs to the unique adaptive leaf obtained by replaying its answers. -/
+theorem mem_adaptiveDecisionLeafEvent_adaptiveDecisionBits
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (query : List (V × Bool) → V) (omega : Omega) :
+    ∀ n, omega ∈ adaptiveDecisionLeafEvent answer query
+      (adaptiveDecisionBits answer query omega n) := by
+  intro n
+  induction n with
+  | zero =>
+      simp [adaptiveDecisionBits, adaptiveDecisionLeafEvent, adaptiveQueryHistory]
+  | succ n ih =>
+      rw [show adaptiveDecisionBits answer query omega (n + 1) =
+          Fin.snoc (adaptiveDecisionBits answer query omega n)
+            (answer omega
+              (adaptiveQueryHistory query
+                (List.ofFn (adaptiveDecisionBits answer query omega n)))
+              (query (adaptiveQueryHistory query
+                (List.ofFn (adaptiveDecisionBits answer query omega n))))) by rfl,
+        adaptiveDecisionLeafEvent_snoc]
+      exact ⟨ih, rfl⟩
 
 theorem adaptiveDecisionLeafEvent_snoc_true_disjoint_false
     (answer : Omega → List (V × Bool) → V → Bool)

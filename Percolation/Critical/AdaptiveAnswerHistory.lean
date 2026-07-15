@@ -147,6 +147,19 @@ def HasAdaptiveAnswerLowerBoundOn
     q * mu.real (adaptiveAnswerHistoryEvent answer history) ≤
       mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, true)]))
 
+/-- Uniform ratio-free upper bound for the next true answer on every admitted history/query.
+This is the dual comparison interface needed when an adaptive exploration is dominated by an
+iid Boolean field.  As with `HasAdaptiveAnswerLowerBoundOn`, null histories require no special
+conditional-probability convention. -/
+def HasAdaptiveAnswerUpperBoundOn
+    [MeasurableSpace Omega]
+    (mu : Measure Omega)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (admissible : List (V × Bool) → V → Prop) (q : ℝ) : Prop :=
+  ∀ history v, admissible history v →
+    mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, true)])) ≤
+      q * mu.real (adaptiveAnswerHistoryEvent answer history)
+
 theorem HasAdaptiveAnswerLowerBoundOn.mono_density
     [MeasurableSpace Omega]
     {mu : Measure Omega}
@@ -172,6 +185,30 @@ theorem HasAdaptiveAnswerLowerBoundOn.conditionalRatio
         mu.real (adaptiveAnswerHistoryEvent answer history) :=
   (le_div_iff₀ hhistory).2 (h history v hadmissible)
 
+theorem HasAdaptiveAnswerUpperBoundOn.mono_density
+    [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    {answer : Omega → List (V × Bool) → V → Bool}
+    {admissible : List (V × Bool) → V → Prop} {q q' : ℝ}
+    (h : HasAdaptiveAnswerUpperBoundOn mu answer admissible q)
+    (hq : q ≤ q') :
+    HasAdaptiveAnswerUpperBoundOn mu answer admissible q' := by
+  intro history v hadmissible
+  exact (h history v hadmissible).trans
+    (mul_le_mul_of_nonneg_right hq measureReal_nonneg)
+
+theorem HasAdaptiveAnswerUpperBoundOn.conditionalRatio
+    [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    {answer : Omega → List (V × Bool) → V → Bool}
+    {admissible : List (V × Bool) → V → Prop} {q : ℝ}
+    (h : HasAdaptiveAnswerUpperBoundOn mu answer admissible q)
+    {history : List (V × Bool)} {v : V} (hadmissible : admissible history v)
+    (hhistory : 0 < mu.real (adaptiveAnswerHistoryEvent answer history)) :
+    mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, true)])) /
+        mu.real (adaptiveAnswerHistoryEvent answer history) ≤ q :=
+  (div_le_iff₀ hhistory).2 (h history v hadmissible)
+
 /-- The lower true-answer bound gives the complementary upper bound for a false extension. -/
 theorem HasAdaptiveAnswerLowerBoundOn.false_mass_le
     [MeasurableSpace Omega]
@@ -183,6 +220,22 @@ theorem HasAdaptiveAnswerLowerBoundOn.false_mass_le
     {history : List (V × Bool)} {v : V} (hadmissible : admissible history v) :
     mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, false)])) ≤
       (1 - q) * mu.real (adaptiveAnswerHistoryEvent answer history) := by
+  have hpartition := measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
+    mu hanswer history v
+  have htrue := h history v hadmissible
+  linarith
+
+/-- The upper true-answer bound gives the complementary lower bound for a false extension. -/
+theorem HasAdaptiveAnswerUpperBoundOn.false_mass_ge
+    [MeasurableSpace Omega]
+    {mu : Measure Omega} [IsFiniteMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : MeasurableAnswer answer)
+    {admissible : List (V × Bool) → V → Prop} {q : ℝ}
+    (h : HasAdaptiveAnswerUpperBoundOn mu answer admissible q)
+    {history : List (V × Bool)} {v : V} (hadmissible : admissible history v) :
+    (1 - q) * mu.real (adaptiveAnswerHistoryEvent answer history) ≤
+      mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, false)])) := by
   have hpartition := measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
     mu hanswer history v
   have htrue := h history v hadmissible

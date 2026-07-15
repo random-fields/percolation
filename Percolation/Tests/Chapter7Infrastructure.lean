@@ -1556,6 +1556,18 @@ example :
     AdaptiveSiteExploration.adaptiveAnswerHistoryEventFrom]
 
 example {Omega V : Type*} [MeasurableSpace Omega]
+    (mu : Measure Omega)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (admissible : List (V × Bool) → V → Prop)
+    {q q' : ℝ}
+    (hupper : AdaptiveSiteExploration.HasAdaptiveAnswerUpperBoundOn
+      mu answer admissible q)
+    (hqq' : q ≤ q') :
+    AdaptiveSiteExploration.HasAdaptiveAnswerUpperBoundOn
+      mu answer admissible q' :=
+  hupper.mono_density hqq'
+
+example {Omega V : Type*} [MeasurableSpace Omega]
     (success : List (V × Bool) → V → Set Omega)
     (omega : Omega) (history : List (V × Bool)) (v : V) :
     AdaptiveSiteExploration.eventAdaptiveAnswer success omega history v = true ↔
@@ -1632,6 +1644,14 @@ example :
   · simp [AdaptiveSiteExploration.adaptiveQueryHistory,
       AdaptiveSiteExploration.adaptiveQueryHistoryFrom]
 
+example {Omega V : Type*}
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (query : List (V × Bool) → V) (omega : Omega) (n : ℕ) :
+    omega ∈ AdaptiveSiteExploration.adaptiveDecisionLeafEvent answer query
+      (AdaptiveSiteExploration.adaptiveDecisionBits answer query omega n) :=
+  AdaptiveSiteExploration.mem_adaptiveDecisionLeafEvent_adaptiveDecisionBits
+    answer query omega n
+
 example (answer : Fin 1 → List (Fin 1 × Bool) → Fin 1 → Bool) (omega : Fin 1) :
     SiteExploration.prefixedAdaptiveAnswer [((0 : Fin 1), true)] answer omega [] 0 =
       answer omega [((0 : Fin 1), true)] 0 := by
@@ -1644,6 +1664,16 @@ example {V Omega : Type*} [DecidableEq V] [LinearOrder V]
     E.adaptiveTargetHitEvent answer target n ⊆
       E.adaptiveLimitTargetHitEvent answer target :=
   E.adaptiveTargetHitEvent_subset_adaptiveLimitTargetHitEvent answer target n
+
+example {V Omega : Type*} [DecidableEq V] [LinearOrder V]
+    (E : SiteExploration V) (root : V)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (target : Finset V) (n : ℕ) :
+    E.adaptiveTargetHitEvent answer target n =
+      AdaptiveSiteExploration.adaptiveDecisionWinEvent
+        (SiteExploration.prefixedAdaptiveAnswer E.initial.history answer)
+        (E.replayQuery root) (E.replayHitsTarget target) n :=
+  E.adaptiveTargetHitEvent_eq_adaptiveDecisionWinEvent root answer target n
 
 example {Omega : Type*} [MeasurableSpace Omega]
     (mu : Measure Omega) [IsFiniteMeasure mu]

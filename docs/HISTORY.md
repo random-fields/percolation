@@ -1138,6 +1138,15 @@ Dated milestones and anti-library notes.
     connection invariant, not a measure-theoretic or order-theoretic gap. This post-pause work
     has no measured telemetry.
 
+109. **Chapter 7 upper adaptive Bellman comparison (2026-07-15).** Added the ratio-free dual of
+    the adaptive lower-bound kernel: an upper mass bound on every true history extension now
+    bounds the entire decision tree by its iid continuation value. Specialized recursion on the
+    strictly decreasing undecided set yields the corresponding finite site-completion theorem.
+    Every sample is proved to select a concrete decision leaf, so the Bellman win event is exactly
+    the actual finite target-hit event, rather than merely a subset. This is the reusable
+    probabilistic half of Grimmett's bond-to-site comparison needed by Theorem 7.2; the directed
+    edge construction remains. This post-pause work has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

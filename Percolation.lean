@@ -161,6 +161,7 @@ import Percolation.Planar.Peierls
 import Percolation.Planar.Crossings
 import Percolation.Planar.SquareStar
 import Percolation.Planar.SiteCrossingFrontier
+import Percolation.Planar.SiteCrossingInterface
 import Percolation.Planar.SiteCrossingPeierls
 import Percolation.Planar.CrossingMenger
 import Percolation.RandomCluster.Basic

@@ -1086,6 +1086,16 @@ Dated milestones and anti-library notes.
     the high-density site crossing estimate (7.70) is now complete; the top-bottom star-path
     extraction remains. This post-pause work has no measured telemetry.
 
+104. **Chapter 7 high-density site-crossing estimate (7.70) (2026-07-15).** Constructed the
+    finite framed primal interface between vertices reachable from the left and its complement,
+    mapped it to the shifted-dual square lattice, and proved the interior-degree and boundary
+    parity statements needed by the handshaking argument. A failed left-right crossing therefore
+    supplies a bottom-top self-avoiding star path of closed sites. Combining this certificate
+    with the degree-eight path count proves the explicit failure bound
+    `(2n+1) * 8^(2n) * (1-p)^(2n+1)` for a square and the source-facing estimate
+    `P_p(A_n) ≥ 1 - exp (-ρ n)` above a concrete `α < 1`, with a positive rate uniform in `p`.
+    This post-pause work has no measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

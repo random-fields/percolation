@@ -534,6 +534,21 @@ example (p : I) (x : SquareVertex) (n : ℕ) :
       (8 : ℝ) ^ n * (1 - (p : ℝ)) ^ (n + 1) :=
   setBernoulli_real_closedSquareStarSelfAvoidingWalkEvent_le p x n
 
+example (p : I) (m n : ℕ) (hn : 0 < n) :
+    1 - siteSquareRectangleCrossingProbability p m n ≤
+      ((m + 1 : ℕ) : ℝ) * (8 : ℝ) ^ (2 * n) *
+        (1 - (p : ℝ)) ^ (2 * n + 1) :=
+  one_sub_siteSquareRectangleCrossingProbability_le p m n hn
+
+example (p : I) (hp : siteSquareCrossingPeierlsThreshold < (p : ℝ))
+    (n : ℕ) (hn : 1 ≤ n) :
+    1 - Real.exp (-siteSquareCrossingPeierlsRate * (n : ℝ)) ≤
+      siteSquareRectangleCrossingProbability p (2 * n) n :=
+  siteSquareCrossingProbability_ge_one_sub_exp p hp n hn
+
+example : 0 < siteSquareCrossingPeierlsRate :=
+  siteSquareCrossingPeierlsRate_pos
+
 example (d : ℕ) (hd : 0 < d) (p q : I) (ε : ℝ) (n : ℕ) (hn : 1 ≤ n)
     (hq : (q : ℝ) < 1)
     (hmarginal :
@@ -553,6 +568,21 @@ example (d : ℕ) (hd : 2 ≤ d) (q : I) (m n : ℕ) :
       setBer((Set.univ : Set SquareVertex), q).real
         (siteSquareRectangleCrossingEvent m n) :=
   setBernoulli_real_epsilonGoodBlockSliceCrossingEvent d hd q m n
+
+example (d : ℕ) (hd : 2 ≤ d) (p q : I) (ε : ℝ)
+    (blockScale K : ℕ) (hblockScale : 1 ≤ blockScale) (hK : 1 ≤ K)
+    (hq : (q : ℝ) < 1)
+    (hqThreshold : siteSquareCrossingPeierlsThreshold < (q : ℝ))
+    (hmarginal :
+      (lssMarginalThresholdUnit
+          (3 ^ d * (3 * d + 1) ^ d) q hq : ℝ) ≤
+        (epsilonGoodBlockLaw d p ε blockScale).real
+          {η : Set (Cubic d) | cubicOrigin ∈ η}) :
+    1 - Real.exp (-siteSquareCrossingPeierlsRate * (K : ℝ)) ≤
+      (epsilonGoodBlockLaw d p ε blockScale).real
+        (epsilonGoodBlockSliceCrossingEvent d hd (2 * K) K) :=
+  epsilonGoodBlockSliceCrossing_probability_ge_one_sub_exp
+    d hd p q ε blockScale K hblockScale hK hq hqThreshold hmarginal
 
 example {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
     (u v : V) (k : ℕ) :

@@ -1,6 +1,6 @@
 import Percolation.Critical.LSSGoodBlocks
 import Percolation.Critical.StaticBlockPath
-import Percolation.Planar.Crossings
+import Percolation.Planar.SiteCrossingPeierls
 
 /-!
 # Planar slice crossings of the static good-block field
@@ -100,6 +100,30 @@ theorem siteCrossingProbability_le_epsilonGoodBlockSliceCrossing
     d (lt_of_lt_of_le (by omega) hd) p q ε blockScale hblockScale hq hmarginal
     (dependsOn_epsilonGoodBlockSliceCrossingEvent d hd m n)
     (isIncreasingEvent_epsilonGoodBlockSliceCrossingEvent d hd m n)
+
+/-- Equation (7.73): once LSS supplies a dominating iid density above the planar Peierls
+threshold, an `ε`-good coarse-site square crossing has exponentially small failure probability. -/
+theorem epsilonGoodBlockSliceCrossing_probability_ge_one_sub_exp
+    (d : ℕ) (hd : 2 ≤ d) (p q : I) (ε : ℝ)
+    (blockScale K : ℕ) (hblockScale : 1 ≤ blockScale) (hK : 1 ≤ K)
+    (hq : (q : ℝ) < 1)
+    (hqThreshold : siteSquareCrossingPeierlsThreshold < (q : ℝ))
+    (hmarginal :
+      (lssMarginalThresholdUnit
+          (3 ^ d * (3 * d + 1) ^ d) q hq : ℝ) ≤
+        (epsilonGoodBlockLaw d p ε blockScale).real
+          {η : Set (Cubic d) | cubicOrigin ∈ η}) :
+    1 - Real.exp (-siteSquareCrossingPeierlsRate * (K : ℝ)) ≤
+      (epsilonGoodBlockLaw d p ε blockScale).real
+        (epsilonGoodBlockSliceCrossingEvent d hd (2 * K) K) := by
+  calc
+    1 - Real.exp (-siteSquareCrossingPeierlsRate * (K : ℝ)) ≤
+        siteSquareRectangleCrossingProbability q (2 * K) K :=
+      siteSquareCrossingProbability_ge_one_sub_exp q hqThreshold K hK
+    _ ≤ (epsilonGoodBlockLaw d p ε blockScale).real
+        (epsilonGoodBlockSliceCrossingEvent d hd (2 * K) K) :=
+      siteCrossingProbability_le_epsilonGoodBlockSliceCrossing
+        d hd p q ε blockScale (2 * K) K hblockScale hq hmarginal
 
 /-- A crossing of good coarse sites in the embedded planar slice lifts to an open bond
 connection between the corresponding endpoint-block faces. -/

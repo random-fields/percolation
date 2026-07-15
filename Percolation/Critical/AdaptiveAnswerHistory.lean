@@ -160,6 +160,37 @@ def HasAdaptiveAnswerUpperBoundOn
     mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, true)])) ≤
       q * mu.real (adaptiveAnswerHistoryEvent answer history)
 
+/-- Exact ratio-free Bernoulli kernel for every admitted adaptive query.  Equality is stated
+after multiplying by the history mass, so it remains meaningful on null histories. -/
+def HasAdaptiveAnswerExactOn
+    [MeasurableSpace Omega]
+    (mu : Measure Omega)
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (admissible : List (V × Bool) → V → Prop) (q : ℝ) : Prop :=
+  ∀ history v, admissible history v →
+    mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, true)])) =
+      q * mu.real (adaptiveAnswerHistoryEvent answer history)
+
+theorem HasAdaptiveAnswerExactOn.lowerBound
+    [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    {answer : Omega → List (V × Bool) → V → Bool}
+    {admissible : List (V × Bool) → V → Prop} {q : ℝ}
+    (h : HasAdaptiveAnswerExactOn mu answer admissible q) :
+    HasAdaptiveAnswerLowerBoundOn mu answer admissible q := by
+  intro history v hadmissible
+  exact (h history v hadmissible).ge
+
+theorem HasAdaptiveAnswerExactOn.upperBound
+    [MeasurableSpace Omega]
+    {mu : Measure Omega}
+    {answer : Omega → List (V × Bool) → V → Bool}
+    {admissible : List (V × Bool) → V → Prop} {q : ℝ}
+    (h : HasAdaptiveAnswerExactOn mu answer admissible q) :
+    HasAdaptiveAnswerUpperBoundOn mu answer admissible q := by
+  intro history v hadmissible
+  exact (h history v hadmissible).le
+
 theorem HasAdaptiveAnswerLowerBoundOn.mono_density
     [MeasurableSpace Omega]
     {mu : Measure Omega}
@@ -236,6 +267,22 @@ theorem HasAdaptiveAnswerUpperBoundOn.false_mass_ge
     {history : List (V × Bool)} {v : V} (hadmissible : admissible history v) :
     (1 - q) * mu.real (adaptiveAnswerHistoryEvent answer history) ≤
       mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, false)])) := by
+  have hpartition := measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
+    mu hanswer history v
+  have htrue := h history v hadmissible
+  linarith
+
+/-- Exact true-extension masses also determine the complementary false-extension mass. -/
+theorem HasAdaptiveAnswerExactOn.false_mass_eq
+    [MeasurableSpace Omega]
+    {mu : Measure Omega} [IsFiniteMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : MeasurableAnswer answer)
+    {admissible : List (V × Bool) → V → Prop} {q : ℝ}
+    (h : HasAdaptiveAnswerExactOn mu answer admissible q)
+    {history : List (V × Bool)} {v : V} (hadmissible : admissible history v) :
+    mu.real (adaptiveAnswerHistoryEvent answer (history ++ [(v, false)])) =
+      (1 - q) * mu.real (adaptiveAnswerHistoryEvent answer history) := by
   have hpartition := measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
     mu hanswer history v
   have htrue := h history v hadmissible

@@ -142,6 +142,19 @@ theorem pairwiseDisjoint_adaptiveDecisionLeafEvent
   intro x _hx y _hy hxy
   exact adaptiveDecisionLeafEvent_disjoint_of_ne answer query x y hxy
 
+/-- A sample can belong only to the leaf obtained by replaying its own adaptive answers. -/
+theorem eq_adaptiveDecisionBits_of_mem_leaf
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (query : List (V × Bool) → V) (omega : Omega) {n : ℕ}
+    (bits : Fin n → Bool)
+    (hmem : omega ∈ adaptiveDecisionLeafEvent answer query bits) :
+    bits = adaptiveDecisionBits answer query omega n := by
+  by_contra hne
+  have hdisjoint := adaptiveDecisionLeafEvent_disjoint_of_ne answer query bits
+    (adaptiveDecisionBits answer query omega n) hne
+  exact Set.disjoint_left.mp hdisjoint hmem
+    (mem_adaptiveDecisionLeafEvent_adaptiveDecisionBits answer query omega n)
+
 /-- Concrete union of the winning leaves at a fixed decision-tree depth. -/
 def adaptiveDecisionWinEvent
     (answer : Omega → List (V × Bool) → V → Bool)
@@ -150,6 +163,27 @@ def adaptiveDecisionWinEvent
   ⋃ bits : Fin n → Bool, ⋃ (_hwin :
       win (adaptiveQueryHistory query (List.ofFn bits))),
     adaptiveDecisionLeafEvent answer query bits
+
+/-- Pointwise semantics of the winning-leaf union: run the actual adaptive answers, replay the
+resulting history, and test the winning predicate there. -/
+theorem mem_adaptiveDecisionWinEvent_iff
+    (answer : Omega → List (V × Bool) → V → Bool)
+    (query : List (V × Bool) → V)
+    (win : List (V × Bool) → Prop) (n : ℕ) (omega : Omega) :
+    omega ∈ adaptiveDecisionWinEvent answer query win n ↔
+      win (adaptiveQueryHistory query
+        (List.ofFn (adaptiveDecisionBits answer query omega n))) := by
+  constructor
+  · intro hmem
+    simp only [adaptiveDecisionWinEvent, Set.mem_iUnion] at hmem
+    obtain ⟨bits, hmem⟩ := hmem
+    obtain ⟨hwin, hleaf⟩ := hmem
+    have hbits := eq_adaptiveDecisionBits_of_mem_leaf answer query omega bits hleaf
+    simpa [hbits] using hwin
+  · intro hwin
+    simp only [adaptiveDecisionWinEvent, Set.mem_iUnion]
+    exact ⟨adaptiveDecisionBits answer query omega n, hwin,
+      mem_adaptiveDecisionLeafEvent_adaptiveDecisionBits answer query omega n⟩
 
 theorem measurableSet_adaptiveDecisionWinEvent
     [MeasurableSpace Omega]

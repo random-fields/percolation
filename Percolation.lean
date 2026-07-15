@@ -128,6 +128,8 @@ import Percolation.Bernoulli.CouplingSymmetry
 import Percolation.Critical.DynamicSteeringSymmetry
 import Percolation.Critical.AdaptiveAnswerHistory
 import Percolation.Critical.AdaptiveAnswerSupport
+import Percolation.Critical.AdaptiveBernoulliExact
+import Percolation.Critical.AdaptiveSetAnswerSupport
 import Percolation.Critical.DynamicBlockAnswerLaw
 import Percolation.Critical.DynamicRestartPartition
 import Percolation.Critical.DynamicRevealCells
@@ -142,6 +144,8 @@ import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
+import Percolation.Critical.BondExploration
+import Percolation.Critical.IncomingGreenDomination
 import Percolation.Critical.AdaptiveTargetExhaustion
 import Percolation.Critical.AdaptiveRegionShells
 import Percolation.Critical.RootedSitePercolation

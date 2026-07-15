@@ -3,6 +3,8 @@ import Percolation.Critical.FiniteSiteExplorationCompleteness
 import Percolation.Critical.FiniteExplorationBellman
 import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
+import Percolation.Critical.BondExploration
+import Percolation.Critical.IncomingGreenDomination
 import Percolation.Critical.AdaptiveTargetExhaustion
 import Percolation.Critical.AdaptiveRegionShells
 import Percolation.Critical.AdaptiveSiteExplorationTheorem
@@ -1656,6 +1658,54 @@ example (answer : Fin 1 → List (Fin 1 × Bool) → Fin 1 → Bool) (omega : Fi
     SiteExploration.prefixedAdaptiveAnswer [((0 : Fin 1), true)] answer omega [] 0 =
       answer omega [((0 : Fin 1), true)] 0 := by
   rfl
+
+example {V : Type*} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (v : V) (k : ℕ) :
+    (IncomingGreenDomination.incomingDartSupport G v k).card = G.degree v :=
+  IncomingGreenDomination.card_incomingDartSupport G v k
+
+example (p : I) : IncomingGreenDomination.density p 0 = 0 := by
+  simp [IncomingGreenDomination.density]
+
+example (Delta : ℕ) : IncomingGreenDomination.density (0 : I) Delta = 0 := by
+  simp [IncomingGreenDomination.density]
+
+example {V : Type*} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (v : V) :
+    Disjoint
+      (IncomingGreenDomination.incomingDartSupport G v 0 :
+        Set (IncomingGreenDomination.Coordinate G))
+      (IncomingGreenDomination.incomingDartSupport G v 1 :
+        Set (IncomingGreenDomination.Coordinate G)) :=
+  IncomingGreenDomination.disjoint_incomingDartSupport_of_ne G (Or.inr (by decide))
+
+example (omega : Set (IncomingGreenDomination.Coordinate
+    (⊥ : SimpleGraph (Fin 1)))) :
+    IncomingGreenDomination.answer (⊥ : SimpleGraph (Fin 1)) omega [] 0 = false := by
+  simp only [IncomingGreenDomination.answer, IncomingGreenDomination.answerSupport,
+    IncomingGreenDomination.vertexOccurrence_nil]
+  apply decide_eq_false_iff_not.mpr
+  simp only [not_not]
+  rw [Set.disjoint_left]
+  intro c hc
+  obtain ⟨d, _hdSnd, _rfl⟩ :=
+    (IncomingGreenDomination.mem_incomingDartSupport_iff
+      (⊥ : SimpleGraph (Fin 1)) 0 0 c).mp hc
+  simpa using d.adj
+
+example {V : Type*} [Fintype V] [DecidableEq V] [LinearOrder V]
+    (G : SimpleGraph V) [DecidableRel G.Adj]
+    (neighbors : V → Finset V)
+    (mem_neighbors : ∀ {x y}, y ∈ neighbors x ↔ G.Adj x y)
+    (p : I) (Delta : ℕ) (hdegree : ∀ v, G.degree v ≤ Delta)
+    (root : V) (target : Finset V) :
+    let E := rootedSiteExploration G neighbors mem_neighbors root
+    setBer((Set.univ : Set (Sym2 V)), p).real
+        (IncomingGreenDomination.bondHitsTargetEvent G root target) ≤
+      E.completionHitProbability (IncomingGreenDomination.density p Delta)
+        root target E.initial :=
+  IncomingGreenDomination.setBernoulli_bondHitsTarget_le_rootedCompletion
+    G neighbors mem_neighbors p Delta hdegree root target
 
 example {V Omega : Type*} [DecidableEq V] [LinearOrder V]
     (E : SiteExploration V)

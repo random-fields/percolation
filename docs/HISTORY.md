@@ -1147,6 +1147,22 @@ Dated milestones and anti-library notes.
     probabilistic half of Grimmett's bond-to-site comparison needed by Theorem 7.2; the directed
     edge construction remains. This post-pause work has no measured telemetry.
 
+110. **Finite bond-to-site transformation for the Chapter 7 dynamic stack (2026-07-15).**
+    Implemented the directed-edge construction behind Grimmett Theorem 1.33 on an arbitrary
+    finite simple graph. A boundary exploration now exactly recovers the root's ordinary bond
+    component, while its independent directed version reaches only vertices in the copy-zero
+    incoming-green site field. Each vertex answer reads a finite block of incoming darts; an
+    occurrence-indexed reserve of independent copies makes every next block fresh even on
+    malformed repeated-query histories. The fresh-block factorization proves the ratio-free
+    upper adaptive law with density `1-(1-p)^Delta`, and the actual rooted exploration is proved
+    state-for-state equal to static site exploration on the physical green field. Consequently
+    `setBernoulli_bondHitsTarget_le_rootedCompletion` gives the complete finite-graph comparison,
+    including exact removal of the enlarged dummy coordinates. Endpoint and repeated-query tests
+    compile, and the transitive axiom audit reports only `propext`, `Classical.choice`, and
+    `Quot.sound`. The remaining Theorem 7.2 prerequisite is the increasing finite-ball/infinite-
+    volume passage to the site critical-probability inequality. This post-pause work has no
+    measured telemetry.
+
 ## Axiom Ledger
 
 Empty.

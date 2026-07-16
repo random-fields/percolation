@@ -19,6 +19,7 @@ deliberately project axioms in `Chapter11External` or `Inhomogeneous`.
 #print axioms Percolation.eventuallySurroundingOpenCircuit_probability_one
 #print axioms Percolation.truncatedTwoPointConnectivity_logRate_tendsto
 #print axioms Percolation.finiteCorrelationLength_eq_half_correlationLength_complement
+#print axioms Percolation.finiteCorrelationLength_pos_lt_top
 #print axioms Percolation.finiteClusterSizeProbability_le_exp_neg_sqrt_of_supercritical
 #print axioms Percolation.tubeConnectivityDecayRate_properties
 #print axioms Percolation.logarithmicProfileRegion_criticalProbability

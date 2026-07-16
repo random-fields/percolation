@@ -99,6 +99,30 @@ axiom finiteCorrelationLength_eq_half_correlationLength_complement
     {p : I} (hpHalf : (1 / 2 : ℝ) < p) (hpOne : (p : ℝ) < 1) :
     finiteCorrelationLength p = (2 : ℝ≥0∞)⁻¹ * correlationLength 2 (σ p)
 
+/-- The positivity and finiteness conclusion included in Grimmett's Theorem 11.24. -/
+theorem finiteCorrelationLength_pos_lt_top
+    {p : I} (hpHalf : (1 / 2 : ℝ) < p) (hpOne : (p : ℝ) < 1) :
+    0 < finiteCorrelationLength p ∧ finiteCorrelationLength p < ⊤ := by
+  rw [finiteCorrelationLength_eq_half_correlationLength_complement hpHalf hpOne]
+  have hσ0 : 0 < ((σ p : I) : ℝ) := by
+    change 0 < 1 - (p : ℝ)
+    linarith
+  have hσpc : ((σ p : I) : ℝ) < cubicCriticalProbability 2 := by
+    rw [cubicCriticalProbability_two_eq_half]
+    change 1 - (p : ℝ) < 1 / 2
+    linarith
+  have hrate : 0 < boxRadiusDecayRate 2 (σ p) :=
+    boxRadiusDecayRate_pos_of_lt_critical 2 (by omega) (σ p) hσ0 hσpc
+  have hcorrelationPos : 0 < correlationLength 2 (σ p) := by
+    rw [correlationLength, ENNReal.inv_pos]
+    exact ENNReal.ofReal_ne_top
+  have hcorrelationTop : correlationLength 2 (σ p) < ⊤ := by
+    rw [correlationLength, ENNReal.inv_lt_top, ENNReal.ofReal_pos]
+    exact hrate
+  constructor
+  · exact ENNReal.mul_pos (by norm_num) hcorrelationPos.ne'
+  · exact ENNReal.mul_lt_top (by norm_num) hcorrelationTop
+
 /-- **Grimmett, Theorem 11.25.**  Supercritical finite clusters have a surface-order
 stretched-exponential size distribution.  The proof encloses a finite cluster by the unique
 dual circuit from Proposition 11.2. -/

@@ -92,6 +92,13 @@ example :
   · norm_num
   · norm_num
 
+example :
+    0 < finiteCorrelationLength threeQuarterDensity ∧
+      finiteCorrelationLength threeQuarterDensity < ⊤ := by
+  apply finiteCorrelationLength_pos_lt_top
+  · norm_num
+  · norm_num
+
 example : ∃ η : ℝ, 0 < η ∧ ∀ n : ℕ,
     finiteClusterSizeProbability 2 threeQuarterDensity n ≤
       Real.exp (-η * Real.sqrt n) := by

@@ -15,35 +15,6 @@ namespace Percolation
 open MeasureTheory ProbabilityTheory
 open scoped unitInterval
 
-/-- If a walk starts in a coordinate box and every traversed edge is an internal box edge, its
-entire support lies in the box. -/
-theorem walk_support_subset_cubicMetricBox_of_edges
-    {d N : ℕ} {c u v : Cubic d}
-    (hu : u ∈ cubicMetricBox d c N) (w : (cubicGraph d).Walk u v)
-    (hw : walkEdgeFinset w ⊆ cubicBoxEdges d c N) :
-    ∀ z ∈ w.support, z ∈ cubicMetricBox d c N := by
-  induction w with
-  | nil => simpa using hu
-  | @cons u y v huy q ih =>
-      intro z hz
-      simp only [SimpleGraph.Walk.support_cons, List.mem_cons] at hz
-      rcases hz with rfl | hz
-      · exact hu
-      · let e : CubicEdge d := ⟨s(u, y), by
-          rw [SimpleGraph.mem_edgeSet]
-          exact huy⟩
-        have hew : e ∈ walkEdgeFinset (SimpleGraph.Walk.cons huy q) := by
-          rw [mem_walkEdgeFinset_iff]
-          simp [e]
-        have hy : y ∈ cubicMetricBox d c N :=
-          endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges (hw hew) (by simp [e])
-        have hq : walkEdgeFinset q ⊆ cubicBoxEdges d c N := by
-          intro f hf
-          apply hw
-          rw [mem_walkEdgeFinset_iff] at hf ⊢
-          simp [hf]
-        exact ih hy hq z hz
-
 /-- An open cubic walk supported in a coordinate box becomes a walk in the induced finite open
 graph. -/
 theorem nonempty_finiteBoxOpenGraph_walk_of_walkIsOpen_of_support

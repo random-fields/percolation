@@ -42,8 +42,13 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   constructed with positive mass; composing the concrete `2d+1` non-root seed chain remains
   before Theorem 7.2. Theorems 7.2, 7.35, 7.61, and 7.68 remain targets.
 - **[target]** Burton-Keane uniqueness of the infinite cluster under standard hypotheses.
-- **[target]** Planar duality for bond percolation on the square lattice.
-- **[target]** `p_c = 1/2` for bond percolation on `Z^2`.
+- **[done mod axioms]** Chapter 11 planar duality interfaces, RSW, two-dimensional tail results,
+  power-law interfaces, and inhomogeneous critical surfaces. Results whose proofs the source
+  delegates to Kesten, Russo, the CLT literature, or the original star–triangle literature are
+  explicit project axioms with a vetting card and transitive audit.
+- **[done mod axioms]** `p_c = 1/2` for bond percolation on `Z^2`, proved in Lean from the exact
+  finite rectangle calculation, RSW/independent barriers, and the explicitly named external
+  planar-topology boundary.
 - **[target]** Random-cluster planar duality and the critical-point formula target
   `p_c(q) = sqrt q / (1 + sqrt q)` under the theorem's valid hypotheses.
 

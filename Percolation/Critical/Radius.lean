@@ -549,6 +549,13 @@ theorem cubicCriticalProbability_le_one (d : ℕ) :
   rintro q ⟨p, _hp, rfl⟩
   exact p.property.2
 
+/-- A density at which the percolation probability vanishes is at most the critical
+probability. -/
+theorem coe_le_cubicCriticalProbability_of_theta_eq_zero {d : ℕ} {p : I}
+    (hp : theta d p = 0) : (p : ℝ) ≤ cubicCriticalProbability d := by
+  rw [cubicCriticalProbability]
+  exact le_csSup (criticalZeroSet_bddAbove d) ⟨p, hp, rfl⟩
+
 /-- The defining supremum for `p_c` implies vanishing of `θ` strictly below `p_c`. -/
 theorem theta_eq_zero_of_lt_criticalProbability {d : ℕ} {p : I}
     (hp : (p : ℝ) < cubicCriticalProbability d) : theta d p = 0 := by

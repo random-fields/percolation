@@ -261,57 +261,6 @@ theorem measurableSet_epsilonGoodBondTranslatedSliceCrossingEvent
   (dependsOn_epsilonGoodBondTranslatedSliceCrossingEvent
     d hd p ε blockScale z m n).measurableSet
 
-/-- Events supported on pairwise-disjoint finite families of bond coordinates are mutually
-independent under the Bernoulli bond law.  Unlike the special open-edge version used for seeds,
-this applies to arbitrary finite-cylinder events and is the independence mechanism in (7.74). -/
-theorem bernoulliBondMeasure_iIndepSet_of_pairwiseDisjoint_dependsOn
-    {d : ℕ} {κ : Type*} [DecidableEq κ]
-    (p : I) (support : κ → Finset (CubicEdge d))
-    (A : κ → Set (EdgeConfiguration d))
-    (hdep : ∀ k, DependsOn (support k) (A k))
-    (hpair : Set.PairwiseDisjoint (Set.univ : Set κ) support) :
-    iIndepSet A (bernoulliBondMeasure d p) := by
-  classical
-  apply (iIndepSet_iff_meas_biInter (fun k ↦ (hdep k).measurableSet)).2
-  intro J
-  induction J using Finset.induction_on with
-  | empty => simp
-  | @insert a J ha ih =>
-      have hdisj : Disjoint (support a : Set (CubicEdge d))
-          (J.biUnion support : Set (CubicEdge d)) := by
-        rw [Set.disjoint_left]
-        intro e hea heJ
-        rw [Finset.coe_biUnion] at heJ
-        obtain ⟨b, hbJ, heb⟩ := Set.mem_iUnion₂.mp heJ
-        exact Finset.disjoint_left.mp
-          (hpair (Set.mem_univ a) (Set.mem_univ b)
-            (fun hab ↦ ha (hab ▸ hbJ))) hea heb
-      have hind := indep_generateFrom_coordinateEvents p hdisj
-      have hAa : MeasurableSet[
-          MeasurableSpace.generateFrom (coordinateEvents (support a : Set (CubicEdge d)))]
-          (A a) :=
-        (hdep a).measurableSet_generateFrom_coordinateEvents (Set.Subset.rfl)
-      have hAJ : MeasurableSet[
-          MeasurableSpace.generateFrom
-            (coordinateEvents (J.biUnion support : Set (CubicEdge d)))]
-          (⋂ k ∈ J, A k) := by
-        apply J.measurableSet_biInter
-        intro k hk
-        apply (hdep k).measurableSet_generateFrom_coordinateEvents
-        intro e he
-        rw [Finset.coe_biUnion]
-        exact Set.mem_iUnion₂.mpr ⟨k, hk, he⟩
-      have hprod :
-          (bernoulliBondMeasure d p) (A a ∩ ⋂ k ∈ J, A k) =
-            (bernoulliBondMeasure d p) (A a) *
-              (bernoulliBondMeasure d p) (⋂ k ∈ J, A k) :=
-        (ProbabilityTheory.indepSet_iff_measure_inter_eq_mul
-          (hdep a).measurableSet
-          (J.measurableSet_biInter fun k _hk ↦ (hdep k).measurableSet)
-          (bernoulliBondMeasure d p)).mp
-            (hind.indepSet_of_measurableSet hAa hAJ)
-      simpa [ha, ih] using hprod
-
 private theorem iIndepSet_compl_staticSlices
     {Ω κ : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     {A : κ → Set Ω} (hA : iIndepSet A μ) :

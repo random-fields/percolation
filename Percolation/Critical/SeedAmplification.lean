@@ -482,31 +482,6 @@ theorem bernoulliBondMeasure_iIndepSet_openEdgeSetEvent_of_pairwiseDisjoint
   exact (Finset.prod_pow_eq_pow_sum J
     (fun k => (support k).card) (p : ℝ)).symm
 
-/-- Mutual independence is unchanged when every event is complemented. -/
-theorem iIndepSet_compl {Omega kappa : Type*} [MeasurableSpace Omega]
-    {mu : Measure Omega} {A : kappa → Set Omega} (hA : iIndepSet A mu) :
-    iIndepSet (fun k => (A k)ᶜ) mu := by
-  rw [iIndepSet_iff_iIndep] at hA ⊢
-  have hgen : ∀ k,
-      MeasurableSpace.generateFrom {(A k)ᶜ} = MeasurableSpace.generateFrom {A k} := by
-    intro k
-    apply le_antisymm
-    · apply MeasurableSpace.generateFrom_le
-      intro s hs
-      rw [Set.mem_singleton_iff] at hs
-      subst s
-      exact (MeasurableSpace.measurableSet_generateFrom (Set.mem_singleton _)).compl
-    · apply MeasurableSpace.generateFrom_le
-      intro s hs
-      rw [Set.mem_singleton_iff] at hs
-      subst s
-      have hcompl : MeasurableSet[MeasurableSpace.generateFrom {(A k)ᶜ}] ((A k)ᶜ) :=
-        MeasurableSpace.measurableSet_generateFrom (Set.mem_singleton _)
-      simpa only [compl_compl] using hcompl.compl
-  convert hA using 1
-  funext k
-  exact hgen k
-
 /-- Uniform success probability of one fresh canonical seed candidate. -/
 theorem canonicalSeedSuccess_probability_ge
     {d m n : ℕ} (p : I) (i : Fin d) (y : Cubic d) :

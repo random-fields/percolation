@@ -1551,9 +1551,24 @@ Dated milestones and anti-library notes.
     budget and the sharper non-root two-endpoint containment; a larger-radius shortcut is invalid
     because changing the thickening radius also changes its dilation centers.
 
+136. **Grimmett Chapter 11 two-dimensional bond percolation (2026-07-16).** Added the literal
+    `[0,n+1] × [0,n]` rectangle and disjoint-crossing maximum, finite self-dual trace weights,
+    the RSW event/gluing/numerical stack, independent annular barriers, and proved
+    `cubicCriticalProbability_two_eq_half`.  Also proved the centered form of Lemma 11.22 and the
+    complete finite-tube decay package of Lemma 11.27.  Added exact source-facing declarations
+    for every named Chapter 11 result, concrete rooted inhomogeneous square/triangular models,
+    semantic application tests, and transitive axiom audits.  In accordance with the user's
+    policy, Kesten/Russo planar topology and the results which the book delegates to outside
+    literature are explicit named project axioms; the chapter is complete modulo those audited
+    boundaries, not assumption-free.  See
+    `audit/topics/topic-11-bond-percolation-two-dimensions.md` and
+    `audit/vetting/chapter-11-external-results.md`.
+
 ## Axiom Ledger
 
-Empty.
+Chapter 11 contains the explicitly cited external-reference axioms listed in
+`AXIOM_AUDIT.md`.  No other project axiom is present.  Their common vetting and discharge plan is
+`audit/vetting/chapter-11-external-results.md`.
 
 ## Anti-Library
 

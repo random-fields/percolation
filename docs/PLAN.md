@@ -22,7 +22,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P13 | Ch. 8 | Burton-Keane uniqueness of the infinite cluster | Critical | absent/deep |
 | P14 | Ch. 9 | Scaling theory and critical exponents, informal interface | Critical | external/interface first |
 | P15 | Ch. 10 | High-dimensional mean-field/lace-expansion statements | Critical | external/interface first |
-| P16 | Ch. 11 | Planar duality and `p_c = 1/2` for square-lattice bond percolation | Planar | absent/deep |
+| P16 | Ch. 11 | Planar duality and `p_c = 1/2` for square-lattice bond percolation | Planar | **complete modulo explicitly cited external-reference axioms**: exact `p_c(ℤ²)=1/2`, half-density rectangle duality, RSW algebra, centered supercritical crossing tails, and tube decay are proved; Proposition 11.2/Kesten topology, Russo lowest crossing, source-facing descendants, the cited CLT, and inhomogeneous critical surfaces are isolated and audited as project axioms; see `audit/topics/topic-11-bond-percolation-two-dimensions.md` |
 | P17 | Ch. 13 | Related processes: continuum, first-passage, electrical networks, random-cluster | Extensions | later |
 
 ## Source RC — Grimmett, *The Random-Cluster Model*

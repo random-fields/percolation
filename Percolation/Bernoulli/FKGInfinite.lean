@@ -177,6 +177,86 @@ theorem DependsOn.measurableSet_generateFrom_coordinateEvents {F : Finset ι} {S
     measurableSet_finiteCylinder_generateFrom hFS
       (Finset.mem_powerset.mp (Finset.mem_filter.mp hs).1)
 
+/-- Events supported on pairwise-disjoint finite coordinate sets are mutually independent under
+the Bernoulli product law. This is the arbitrary finite-cylinder form of coordinate
+independence. -/
+theorem bernoulliBondMeasure_iIndepSet_of_pairwiseDisjoint_dependsOn
+    {d : ℕ} {κ : Type*} [DecidableEq κ]
+    (p : I) (support : κ → Finset (CubicEdge d))
+    (A : κ → Set (EdgeConfiguration d))
+    (hdep : ∀ k, DependsOn (support k) (A k))
+    (hpair : Set.PairwiseDisjoint (Set.univ : Set κ) support) :
+    iIndepSet A (bernoulliBondMeasure d p) := by
+  classical
+  letI : IsProbabilityMeasure (bernoulliBondMeasure d p) := by
+    dsimp [bernoulliBondMeasure]
+    infer_instance
+  apply (iIndepSet_iff_meas_biInter (fun k ↦ (hdep k).measurableSet)).2
+  intro J
+  induction J using Finset.induction_on with
+  | empty => simp
+  | @insert a J ha ih =>
+      have hdisj : Disjoint (support a : Set (CubicEdge d))
+          (J.biUnion support : Set (CubicEdge d)) := by
+        rw [Set.disjoint_left]
+        intro e hea heJ
+        rw [Finset.coe_biUnion] at heJ
+        obtain ⟨b, hbJ, heb⟩ := Set.mem_iUnion₂.mp heJ
+        exact Finset.disjoint_left.mp
+          (hpair (Set.mem_univ a) (Set.mem_univ b)
+            (fun hab ↦ ha (hab ▸ hbJ))) hea heb
+      have hind := indep_generateFrom_coordinateEvents p hdisj
+      have hAa : MeasurableSet[
+          MeasurableSpace.generateFrom (coordinateEvents (support a : Set (CubicEdge d)))]
+          (A a) :=
+        (hdep a).measurableSet_generateFrom_coordinateEvents (Set.Subset.rfl)
+      have hAJ : MeasurableSet[
+          MeasurableSpace.generateFrom
+            (coordinateEvents (J.biUnion support : Set (CubicEdge d)))]
+          (⋂ k ∈ J, A k) := by
+        apply J.measurableSet_biInter
+        intro k hk
+        apply (hdep k).measurableSet_generateFrom_coordinateEvents
+        intro e he
+        rw [Finset.coe_biUnion]
+        exact Set.mem_iUnion₂.mpr ⟨k, hk, he⟩
+      have hprod :
+          (bernoulliBondMeasure d p) (A a ∩ ⋂ k ∈ J, A k) =
+            (bernoulliBondMeasure d p) (A a) *
+              (bernoulliBondMeasure d p) (⋂ k ∈ J, A k) :=
+        (ProbabilityTheory.indepSet_iff_measure_inter_eq_mul
+          (hdep a).measurableSet
+          (J.measurableSet_biInter fun k _hk ↦ (hdep k).measurableSet)
+          (bernoulliBondMeasure d p)).mp
+            (hind.indepSet_of_measurableSet hAa hAJ)
+      simpa [ha, ih] using hprod
+
+/-- Mutual independence is unchanged when every event is complemented. -/
+theorem iIndepSet_compl {Omega κ : Type*} [MeasurableSpace Omega]
+    {mu : Measure Omega} {A : κ → Set Omega} (hA : iIndepSet A mu) :
+    iIndepSet (fun k ↦ (A k)ᶜ) mu := by
+  rw [iIndepSet_iff_iIndep] at hA ⊢
+  have hgen : ∀ k,
+      MeasurableSpace.generateFrom {(A k)ᶜ} =
+        MeasurableSpace.generateFrom {A k} := by
+    intro k
+    apply le_antisymm
+    · apply MeasurableSpace.generateFrom_le
+      intro s hs
+      rw [Set.mem_singleton_iff] at hs
+      subst s
+      exact (MeasurableSpace.measurableSet_generateFrom (Set.mem_singleton _)).compl
+    · apply MeasurableSpace.generateFrom_le
+      intro s hs
+      rw [Set.mem_singleton_iff] at hs
+      subst s
+      have hcompl : MeasurableSet[MeasurableSpace.generateFrom {(A k)ᶜ}] ((A k)ᶜ) :=
+        MeasurableSpace.measurableSet_generateFrom (Set.mem_singleton _)
+      simpa only [compl_compl] using hcompl.compl
+  convert hA using 1
+  funext k
+  exact hgen k
+
 /-- The splice preimage of an event supported on `F` is supported on `F \ E`. -/
 theorem DependsOn.dependsOn_preimage_spliceOn [DecidableEq ι] {E s F : Finset ι}
     (hs : s ⊆ E) {A : Set (Set ι)} (hA : DependsOn F A) :

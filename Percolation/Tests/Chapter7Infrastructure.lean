@@ -60,6 +60,36 @@ import Percolation.Critical.DynamicRevealCells
 import Percolation.Critical.DynamicExploredRegion
 import Percolation.Critical.DynamicRestartCertificate
 import Percolation.Critical.DynamicFramedRestart
+import Percolation.Critical.DynamicFramedRestartPartition
+import Percolation.Critical.DynamicFramedRevealFreshness
+import Percolation.Critical.DynamicRevealIntervals
+import Percolation.Critical.DynamicFramedRevealIntervals
+import Percolation.Critical.DynamicRevealThresholdUpdate
+import Percolation.Critical.DynamicEdgeExploration
+import Percolation.Critical.DynamicSourceSchedule
+import Percolation.Critical.DynamicActiveDirections
+import Percolation.Critical.DynamicRootRadialWitness
+import Percolation.Critical.DynamicRootSteeringGeometry
+import Percolation.Critical.DynamicRootExtensionState
+import Percolation.Critical.DynamicRootMixedCompletion
+import Percolation.Critical.DynamicMixedWitnessState
+import Percolation.Critical.DynamicRootOutgoingSeeds
+import Percolation.Critical.DynamicLaterSiteState
+import Percolation.Critical.DynamicLaterSiteHistory
+import Percolation.Critical.DynamicLaterSiteRuntime
+import Percolation.Critical.DynamicLaterSiteRuntimeHistory
+import Percolation.Critical.DynamicLaterSitePartition
+import Percolation.Critical.DynamicHistoryReplay
+import Percolation.Critical.DynamicHistoryReplayFinite
+import Percolation.Critical.DynamicHistoryReplayStability
+import Percolation.Critical.DynamicHistoryReplayPartition
+import Percolation.Critical.DynamicPartitionSigma
+import Percolation.Critical.DynamicRootEdgeState
+import Percolation.Critical.DynamicRecursiveEdgeState
+import Percolation.Critical.DynamicRootRecursiveState
+import Percolation.Critical.DynamicFramedStateStage
+import Percolation.Critical.DynamicSourceEdgeState
+import Percolation.Critical.DynamicRootSourceState
 import Percolation.Critical.DynamicSeedWitness
 import Percolation.Critical.DynamicSeededRevealCell
 import Percolation.Critical.DynamicScheduleCells
@@ -79,6 +109,7 @@ import Percolation.Critical.DynamicBlockCertificate
 import Percolation.Critical.BlockSuccessComposition
 import Percolation.Critical.DynamicBlockParameters
 import Percolation.Critical.DynamicRootInitialization
+import Percolation.Critical.DynamicRootCompletion
 import Percolation.Critical.ExplorationHistory
 import Percolation.Bernoulli.CouplingSymmetry
 import Percolation.Critical.StaticSecondCluster
@@ -1510,6 +1541,26 @@ example {pcSite : ℝ} (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
   simpa using dynamicBlock_laterSiteRestartPow_gt_siteDensity
     (d := 3) (by norm_num) hsite0 hsite1
 
+example (incoming : CubicDirection 3) :
+    (laterSiteDirectionOrder incoming).length = 7 := by
+  simpa using laterSiteDirectionOrder_length (d := 3) (by norm_num) incoming
+
+example (incoming : CubicDirection 3) :
+    (laterSiteBranchDirections incoming).card = 5 := by
+  simpa using laterSiteBranchDirections_card (d := 3) (by norm_num) incoming
+
+example (incoming : CubicDirection 3) :
+    incoming ∈ laterSiteBranchDirections incoming := by
+  rw [mem_laterSiteBranchDirections_iff]
+  exact (reverseCubicDirection_ne incoming).symm
+
+example (incoming : CubicDirection 3) :
+    reverseCubicDirection incoming ∉ laterSiteBranchDirections incoming := by
+  simp
+
+example : (rootExtensionDirectionOrder 3).length = 6 := by
+  norm_num
+
 example (i : Fin 3) :
     RegionAvoidsSeededBoundaryQuadrant 3 i 3
       (cubicMetricBox 3 cubicOrigin 1) :=
@@ -1519,6 +1570,16 @@ example (m : ℕ) (p : I) :
     (couplingMeasure (CubicEdge 3)).real (rootSeedLabelEvent 3 m p) =
       (p : ℝ) ^ (cubicBoxEdges 3 cubicOrigin m).card :=
   couplingMeasure_real_rootSeedLabelEvent 3 m p
+
+/-- Oracle for the second root factor in (7.33): a concrete extension program must retain one
+factor `1-ε` at each of its six stages in dimension three. -/
+example {C : Type*} [DecidableEq C] {m n : ℕ} {p : I} {delta epsilon : ℝ}
+    (P : AdaptiveSiteExploration.RootExtensionProgram 3 C m n p delta epsilon)
+    (hepsilon : epsilon ≤ 1) :
+    (1 - epsilon) ^ 6 *
+        (couplingMeasure (CubicEdge 3)).real P.radialEvent ≤
+      (couplingMeasure (CubicEdge 3)).real P.completionEvent := by
+  simpa using P.pow_mul_radialEvent_le_completionEvent hepsilon
 
 example :
     explorationHistoryAccepted ([(0, true), (1, false), (2, true)] :
@@ -2062,5 +2123,627 @@ example {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)}
           (seededBoundaryPointFinset d i m n (thresholdConfiguration pFinal X))} :=
   sprinkledRestartEvent_subset_regionConnectionToSeededTarget
     hpFinal hboundaryFinal hAvoid
+
+example {d m n : ℕ} (i : Fin d) {c : Cubic d}
+    (hc : SeedBoxWithinBoundaryLayer d i m n c) :
+    c i = (n + m + 1 : ℕ) :=
+  seedCenter_axis_eq_of_boxWithinBoundaryLayer i hc
+
+example {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (a : CubicDirection d) {omega : EdgeConfiguration d}
+    (hW : (W a).IsRealized omega) :
+    W.postRadialRestartRegion a ⊆
+      (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1)
+            (cubicStepFrom cubicOrigin a))
+          (2 * (m + n + 1)) : Set (Cubic d)) :=
+  W.postRadialRestartRegion_subset_endpointBoxes a hW
+
+example {ι : Type*} [DecidableEq ι]
+    (P : FiniteRevealIntervalProfile ι) (E : Finset ι)
+    (hE : E ⊆ P.closedSupport) :
+    P.event = (P.withoutClosed E).event ∩
+      boundaryClosedHistoryEvent E P.lower :=
+  P.event_eq_withoutClosed_inter_boundaryClosedHistoryEvent E hE
+
+example {d n : ℕ} (Q : FramedRestartQuery d) :
+    Q.boundaryHistoryEvent n =
+      boundaryClosedHistoryEvent (Q.boundarySupport n)
+        Q.physicalBoundaryThreshold :=
+  Q.boundaryHistoryEvent_eq_physical
+
+example {ι : Type*} [DecidableEq ι]
+    (seedEdges nextExplored oldBoundary nextBoundary ambient : Finset ι)
+    (p delta : I)
+    (holdBoundary : Disjoint oldBoundary seedEdges)
+    (hnextBoundary : Disjoint nextBoundary nextExplored) (e : ι) :
+    (firstRadialRevealUpdate seedEdges nextExplored oldBoundary nextBoundary ambient
+        p delta).updatedLower e ≤
+      (firstRadialRevealUpdate seedEdges nextExplored oldBoundary nextBoundary ambient
+        p delta).updatedUpper e :=
+  firstRadial_updatedLower_le_updatedUpper seedEdges nextExplored oldBoundary
+    nextBoundary ambient p delta holdBoundary hnextBoundary e
+
+example {d m n : ℕ} (p incremented : I) (X : CubicEdge d → ℝ) :
+    Disjoint (rootRadialNewBoundaryEdges d m n p incremented X)
+      (rootRadialExploredEdges d m n p incremented X) :=
+  disjoint_rootRadialNewBoundaryEdges_rootRadialExploredEdges d m n p incremented X
+
+example {d m n : ℕ} (p incremented : I) (X : CubicEdge d → ℝ)
+    (e : CubicEdge d) :
+    (rootRadialRevealThresholdUpdate d m n p incremented X).updatedLower e ≤
+      (rootRadialRevealThresholdUpdate d m n p incremented X).updatedUpper e :=
+  rootRadialReveal_updatedLower_le_updatedUpper d m n p incremented X e
+
+example {d m n : ℕ} (hmn : m + 1 ≤ n) (p incremented : I)
+    (X : CubicEdge d → ℝ) (hseed : X ∈ rootSeedLabelEvent d m p) :
+    X ∈ (rootRadialRevealThresholdUpdate d m n p incremented X).updatedProfile.event :=
+  rootRadialExploredEdges_mem_updatedProfile hmn p incremented X hseed
+
+example {d m n : ℕ} (hmn : m + 1 ≤ n) (p incremented : I) (delta : ℝ) :
+    rootRadialEvent d m n p delta ⊆
+      {X | X ∈
+        (rootRadialRevealThresholdUpdate d m n p incremented X).updatedProfile.event} :=
+  rootRadialEvent_subset_updatedProfile hmn p incremented delta
+
+example {d : ℕ}
+    (oldExplored oldBoundary ambient : Finset (CubicEdge d))
+    (lower upper incremented : CubicEdge d → I) (p : I)
+    (X : CubicEdge d → ℝ)
+    (holdBoundary : Disjoint oldBoundary oldExplored)
+    (holdBoundaryAmbient : oldBoundary ⊆ ambient)
+    (hlineBoundary : cubicEdgeBoundaryWithin oldExplored ambient ⊆ oldBoundary)
+    (holdOpen : ∀ e ∈ oldExplored, X e < (upper e : ℝ)) :
+    let exterior := ambient \ (oldExplored ∪ oldBoundary)
+    let nextExplored :=
+      exploredEdgeStepFamily oldExplored oldBoundary exterior p incremented X
+    let nextBoundary := cubicEdgeBoundaryWithin nextExplored ambient
+    let D : RevealThresholdUpdateData (CubicEdge d) :=
+      { oldExplored := oldExplored
+        nextExplored := nextExplored
+        oldBoundary := oldBoundary
+        nextBoundary := nextBoundary
+        ambient := ambient
+        lower := lower
+        upper := upper
+        incremented := incremented
+        density := p }
+    X ∈ D.updatedProfile.event :=
+  exploredEdgeStepFamily_mem_updatedProfile oldExplored oldBoundary ambient lower upper
+    incremented p X holdBoundary holdBoundaryAmbient hlineBoundary holdOpen
+
+example {d : ℕ} (S : FiniteEdgeRevealState d)
+    (p : I) (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    (hcurrent : X ∈ S.profile.event) :
+    X ∈ (S.next p incremented X).profile.event :=
+  S.mem_next_profile p incremented X hcurrent
+
+example {d : ℕ} (S : FiniteEdgeRevealState d) (p : I)
+    (X : CubicEdge d → ℝ) (increments : List (CubicEdge d → I))
+    (hcurrent : X ∈ S.profile.event) :
+    X ∈ (S.run p X increments).profile.event :=
+  S.mem_run_profile p X increments hcurrent
+
+example {d : ℕ} (S : FiniteEdgeRevealState d) :
+    (S.profile.withoutClosed S.boundary).support = S.explored :=
+  S.withoutClosed_boundary_support
+
+example {d : ℕ} (S : FiniteEdgeRevealState d) :
+    S.profile.event =
+      (S.profile.withoutClosed S.boundary).event ∩
+        boundaryClosedHistoryEvent S.boundary S.lower :=
+  S.profile_event_eq_past_inter_boundary
+
+example {d m n : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (Q : FramedRestartQuery d)
+    (hboundary : Q.boundarySupport n = S.boundary ∩ Q.restartSupport m n) :
+    Disjoint (((S.boundary \ Q.boundarySupport n : Finset (CubicEdge d)) :
+      Set (CubicEdge d))) (Q.restartSupport m n : Set (CubicEdge d)) :=
+  AdaptiveSiteExploration.sourceBoundary_sdiff_query_disjoint_restartSupport
+    S Q hboundary
+
+example {d : ℕ} (E ambient : Finset (CubicEdge d)) :
+    cubicEdgeBoundaryWithin E ambient = ambient ∩ cubicEdgeBoundary E :=
+  cubicEdgeBoundaryWithin_eq_inter E ambient
+
+example {d m n : ℕ} (E : Finset (CubicEdge d)) (i : Fin d)
+    (hTargetFresh : Disjoint (cubicEdgeBoundary E)
+      (seededBoundaryTargetSupport d i m n)) :
+    cubicRegionBoundaryEdgesWithinBox d (cubicEdgeEndpointVertices E) n =
+      cubicEdgeBoundary E ∩
+        restartEventSupport d i m n (cubicEdgeEndpointVertices E) :=
+  cubicRegionBoundary_endpointVertices_eq_boundary_inter_restartEventSupport
+    E i hTargetFresh
+
+example {d m n : ℕ} (E : Finset (CubicEdge d)) (i : Fin d)
+    (hVertices : Disjoint (cubicEdgeEndpointVertices E)
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d i m n))) :
+    Disjoint E (restartEventSupport d i m n (cubicEdgeEndpointVertices E)) :=
+  disjoint_explored_restartEventSupport_of_targetEndpointFresh E i hVertices
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d) (center : Cubic d)
+    (a : CubicDirection d) (transverseFlip : Fin d → Bool) (e : CubicEdge d) :
+    (S.framedQuery center a transverseFlip).physicalBoundaryThreshold e = S.lower e :=
+  S.framedQuery_physicalBoundaryThreshold center a transverseFlip e
+
+example {d m n : ℕ} (S : SourceFiniteEdgeRevealState d) (center : Cubic d)
+    (a : CubicDirection d) (transverseFlip : Fin d → Bool)
+    (hTargetFresh :
+      let F := cubicRestartFrameIso center a transverseFlip
+      Disjoint (cubicEdgeBoundary (S.referenceExploredEdges F))
+        (seededBoundaryTargetSupport d a.1 m n)) :
+    (S.framedQuery center a transverseFlip).boundarySupport n =
+      S.boundary ∩ (S.framedQuery center a transverseFlip).restartSupport m n :=
+  S.framedQuery_boundarySupport_eq_boundary_inter_restartSupport
+    center a transverseFlip hTargetFresh
+
+example {d m n : ℕ} (S : SourceFiniteEdgeRevealState d) (center : Cubic d)
+    (a : CubicDirection d) (transverseFlip : Fin d → Bool)
+    (hVertices :
+      let F := cubicRestartFrameIso center a transverseFlip
+      Disjoint (cubicEdgeEndpointVertices (S.referenceExploredEdges F))
+        (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n))) :
+    (S.framedQuery center a transverseFlip).boundarySupport n =
+      S.boundary ∩ (S.framedQuery center a transverseFlip).restartSupport m n :=
+  S.framedQuery_boundarySupport_eq_boundary_inter_restartSupport_of_targetEndpointFresh
+    center a transverseFlip hVertices
+
+example {d m n : ℕ} (S : SourceFiniteEdgeRevealState d) (center : Cubic d)
+    (a : CubicDirection d) (transverseFlip : Fin d → Bool)
+    (hVertices :
+      let F := cubicRestartFrameIso center a transverseFlip
+      Disjoint (cubicEdgeEndpointVertices (S.referenceExploredEdges F))
+        (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n))) :
+    Disjoint (S.explored : Set (CubicEdge d))
+      ((S.framedQuery center a transverseFlip).restartSupport m n :
+        Set (CubicEdge d)) :=
+  S.framedQuery_explored_disjoint_restartSupport_of_targetEndpointFresh
+    center a transverseFlip hVertices
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    (hcurrent : X ∈ S.profile.event)
+    (hnonneg : X ∈ SourceFiniteEdgeRevealState.nonnegativeBoundaryEvent
+      (cubicEdgeBoundary (S.nextExplored stageRegion p incremented X))) :
+    X ∈ (S.next stageRegion p incremented X).profile.event :=
+  S.mem_next_profile_of_mem_nonnegativeBoundaryEvent
+    stageRegion p incremented X hcurrent hnonneg
+
+example {d : ℕ} (E : Finset (CubicEdge d)) :
+    (couplingMeasure (CubicEdge d)).real
+        (SourceFiniteEdgeRevealState.nonnegativeBoundaryEvent E) = 1 :=
+  SourceFiniteEdgeRevealState.couplingMeasure_real_nonnegativeBoundaryEvent E
+
+example {d : ℕ} (beta : CubicEdge d → I) (delta : ℝ) (hdelta : 0 ≤ delta)
+    (hbudget : ∀ e, (beta e : ℝ) + delta ≤ 1) (e : CubicEdge d) :
+    (revealThresholdIncrement beta delta hdelta hbudget e : ℝ) =
+      (beta e : ℝ) + delta :=
+  coe_revealThresholdIncrement beta delta hdelta hbudget e
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n) :
+    cubicEdgeBoundaryWithin (rootInitialExploredEdges d m)
+        (rootRadialEdgeSupport d m n) =
+      rootInitialBoundaryEdges d m n :=
+  rootEdgeLineBoundary_eq_rootInitialBoundaryEdges hm hmn
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (p incremented : I) (delta : ℝ) :
+    rootRadialEvent d m n p delta ⊆
+      {X | X ∈ (rootPostRadialEdgeState d m n p incremented X).profile.event} :=
+  rootRadialEvent_subset_postRadialProfile hm hmn p incremented delta
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n) :
+    activeCubicEdgeBoundary (rootInitialExploredEdges d m)
+        (rootRadialEdgeSupport d m n) =
+      rootInitialBoundaryEdges d m n :=
+  activeCubicEdgeBoundary_rootInitial_eq hm hmn
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (p incremented : I) (X : CubicEdge d → ℝ) :
+    (rootPostRadialSourceEdgeState d m n p incremented X).explored =
+      rootRadialExploredEdges d m n p incremented X :=
+  rootPostRadialSourceEdgeState_explored hm hmn p incremented X
+
+example {d m n : ℕ} (i : Fin d) :
+    seedConnectionSupport d i m n ⊆
+      cubicBoxEdges d cubicOrigin (n + 2 * m + 1) :=
+  seedConnectionSupport_subset_cubicBoxEdges_wide d i m n
+
+example {d m n : ℕ} {i : Fin d} {e : CubicEdge d}
+    (he : e ∈ seededBoundaryTargetSupport d i m n) {z : Cubic d}
+    (hz : z ∈ (e : Sym2 (Cubic d))) :
+    (n : ℤ) ≤ z i :=
+  endpoint_mem_seededBoundaryTargetSupport_coord_ge he hz
+
+example (d m n : ℕ) :
+    rootRadialEdgeSupport d m n ⊆
+      cubicBoxEdges d cubicOrigin (n + 2 * m + 1) :=
+  rootRadialEdgeSupport_subset_wideBox d m n
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hW : (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X)) :
+    let S := rootPostRadialSourceEdgeState d m n p incremented X
+    let F := W.postRadialFrame a
+    Disjoint (cubicEdgeEndpointVertices (S.referenceExploredEdges F))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) :=
+  rootPostRadialSourceEdgeState_targetEndpointFresh hm hmn W a p incremented X hW
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hW : (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X)) :
+    let S := rootPostRadialSourceEdgeState d m n p incremented X
+    let Q := S.framedQuery (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a)
+    Q.boundarySupport n = S.boundary ∩ Q.restartSupport m n :=
+  rootPostRadial_framedQuery_boundarySupport_eq hm hmn W a p incremented X hW
+
+example {d m n : ℕ} {i j : Fin d} (hji : j ≠ i)
+    {x : Cubic d} (hx : x ∈ seededBoundaryLayerRegion d i m n) :
+    -(n : ℤ) ≤ x j ∧ x j ≤ (n : ℤ) :=
+  seededBoundaryLayerRegion_transverse_bounds hji hx
+
+example {d m n : ℕ} {i j : Fin d} (hji : j ≠ i)
+    {R : Finset (Cubic d)} {e : CubicEdge d}
+    (he : e ∈ restartEventSupport d i m n R)
+    {x : Cubic d} (hx : x ∈ (e : Sym2 (Cubic d))) :
+    -(n : ℤ) ≤ x j ∧ x j ≤ (n : ℤ) :=
+  endpoint_mem_restartEventSupport_transverse_bounds hji he hx
+
+example {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a)
+    {R : Finset (Cubic d)} {f : CubicEdge d}
+    (hf : f ∈ restartEventSupport d b.1 m n R)
+    {w z : Cubic d} (hwf : w ∈ (f : Sym2 (Cubic d)))
+    (hframes : W.postRadialFrame a z = W.postRadialFrame b w) :
+    z a.1 < (n : ℤ) :=
+  W.postRadial_referenceCoord_lt_of_ne hm hmn hgeom hab hf hwf hframes
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ) :
+    S.nextExplored stageRegion p incremented X ⊆ S.explored ∪ stageRegion :=
+  S.nextExplored_subset_explored_union_stageRegion stageRegion p incremented X
+
+example {d : ℕ}
+    {allowed sources target : Finset (CubicEdge d)}
+    (hsource : allowed ∩ sources ⊆ target)
+    (hclosed : ∀ e ∈ target, ∀ f ∈ allowed,
+      (cubicEdgeLineGraph d).Adj e f → f ∈ target) :
+    finiteEdgeReachableClosure allowed sources ⊆ target :=
+  finiteEdgeReachableClosure_subset_of_closed hsource hclosed
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X Y : CubicEdge d → ℝ)
+    (hY : Y ∈ (S.next stageRegion p incremented X).profile.event) :
+    S.nextExplored stageRegion p incremented Y =
+      S.nextExplored stageRegion p incremented X :=
+  S.nextExplored_eq_of_mem_next_profile stageRegion p incremented X Y hY
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X Y : CubicEdge d → ℝ)
+    (hY : Y ∈ (S.next stageRegion p incremented X).historyProfile.event) :
+    S.next stageRegion p incremented Y =
+      S.next stageRegion p incremented X :=
+  S.next_eq_of_mem_next_historyProfile stageRegion p incremented X Y hY
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    (hcurrent : X ∈ S.historyProfile.event)
+    (hnonneg : X ∈ SourceFiniteEdgeRevealState.nonnegativeCouplingEvent) :
+    X ∈ (S.next stageRegion p incremented X).historyProfile.event :=
+  S.mem_next_historyProfile stageRegion p incremented X hcurrent hnonneg
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) :
+    (Set.range fun X : CubicEdge d → ℝ ↦
+      S.next stageRegion p incremented X).Finite :=
+  S.finite_range_next stageRegion p incremented
+
+example {d : ℕ} (delta : ℝ) (hdelta : 0 ≤ delta)
+    (S : SourceFiniteEdgeRevealState d) (a : CubicDirection d)
+    (e : CubicEdge d) :
+    S.lower e ≤ budgetedRootExtensionThresholdPolicy delta hdelta S a e :=
+  lower_le_budgetedRootExtensionThresholdPolicy delta hdelta S a e
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hW : ∀ a : CubicDirection d, (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X))
+    {k : ℕ} (hk : k < (rootExtensionDirectionOrder d).length) :
+    let a := (rootExtensionDirectionOrder d)[k]
+    let S := W.runPostRadialExtensions p incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      ((rootExtensionDirectionOrder d).take k)
+    Disjoint (cubicEdgeEndpointVertices
+      (S.referenceExploredEdges (W.postRadialFrame a)))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) :=
+  rootPostRadialExtensions_prefix_targetEndpointFresh
+    hm hmn W p radialIncremented incremented X hW hk
+
+example {ι C : Type*} [Fintype C] (default : C)
+    (profile : C → FiniteRevealIntervalProfile ι) (history : Set (ι → ℝ))
+    (hsub : ∀ c, (profile c).event ⊆ history)
+    (hcover : history ⊆ ⋃ c, (profile c).event)
+    (hpairwise : ∀ c c', c ≠ c' → Disjoint (profile c).event (profile c').event)
+    (c : C) :
+    (profile c).event =
+      exactRevealCellEvent history (realizedIntervalProfileCell default profile) c :=
+  intervalProfile_event_eq_exactRevealCellEvent
+    default profile history hsub hcover hpairwise c
+
+example {d : ℕ} :
+    (couplingMeasure (CubicEdge d)).real
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent = 1 :=
+  SourceFiniteEdgeRevealState.couplingMeasure_real_nonnegativeCouplingEvent
+
+example {d : ℕ} (delta : ℝ) (hdelta : 0 ≤ delta)
+    (S : SourceFiniteEdgeRevealState d) (a : CubicDirection d)
+    (hbudget : S.HasIncrementBudget delta) (e : CubicEdge d) :
+    (budgetedRootExtensionThresholdPolicy delta hdelta S a e : ℝ) =
+      (S.lower e : ℝ) + delta :=
+  coe_budgetedRootExtensionThresholdPolicy_of_hasIncrementBudget
+    delta hdelta S a hbudget e
+
+example {d m n : ℕ} [NeZero d]
+    (W : RootRadialSeedProfile d m n) (p radialIncremented : I)
+    (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hradial : X ∈ rootRadialEvent d m n p delta)
+    (hX : X ∈ SourceFiniteEdgeRevealState.nonnegativeCouplingEvent) :
+    X ∈ (W.completedRootExtensionState p radialIncremented incremented X).profile.event :=
+  rootRadialEvent_mem_completedRootExtensionProfile_of_mem_nonnegativeCouplingEvent
+    W p radialIncremented delta incremented X hradial hX
+
+example {d m n : ℕ} [NeZero d]
+    (W : RootRadialSeedProfile d m n) (p radialIncremented : I)
+    (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hradial : X ∈ rootRadialEvent d m n p delta)
+    (hX : X ∈ SourceFiniteEdgeRevealState.nonnegativeCouplingEvent) :
+    X ∈
+      (W.completedRootExtensionState p radialIncremented incremented X).historyProfile.event :=
+  rootRadialEvent_mem_completedRootExtensionHistoryProfile
+    W p radialIncremented delta incremented X hradial hX
+
+example {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (incremented : RootExtensionThresholdPolicy d) (k : ℕ) :
+    (Set.range fun X : CubicEdge d → ℝ ↦
+      W.rootExtensionPrefixState p radialIncremented incremented id k X).Finite :=
+  W.finite_range_rootExtensionPrefixState p radialIncremented incremented k
+
+example {d m n : ℕ} [NeZero d] (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d) (k : ℕ) :
+    rootRadialEvent d m n p delta ∩
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent ⊆
+      W.rootExtensionPrefixHistory p radialIncremented incremented k :=
+  W.rootRadialEvent_inter_nonnegative_subset_prefixHistory
+    p radialIncremented delta incremented k
+
+example {ι : Type*} [DecidableEq ι]
+    (P : FiniteRevealIntervalProfile ι) (E : Finset ι) (q : I) (A : Finset ι) :
+    (P.refineAtThreshold E q A).event =
+      P.event ∩ {X | FiniteRevealIntervalProfile.labelsBelow E q X = E ∩ A} :=
+  P.refineAtThreshold_event_eq E q A
+
+example {d m n : ℕ} {p radialIncremented : I} {delta : ℝ}
+    (hdelta : delta = (radialIncremented : ℝ)) {X Y : CubicEdge d → ℝ}
+    (hp : FiniteRevealIntervalProfile.labelsBelow
+        (rootRadialEdgeSupport d m n) p X =
+      FiniteRevealIntervalProfile.labelsBelow
+        (rootRadialEdgeSupport d m n) p Y)
+    (hincremented : FiniteRevealIntervalProfile.labelsBelow
+        (rootRadialEdgeSupport d m n) radialIncremented X =
+      FiniteRevealIntervalProfile.labelsBelow
+        (rootRadialEdgeSupport d m n) radialIncremented Y) :
+    X ∈ rootRadialEvent d m n p delta ↔
+      Y ∈ rootRadialEvent d m n p delta :=
+  rootRadialEvent_congr_of_labelsBelow_rootRadialEdgeSupport
+    hdelta hp hincremented
+
+example {d m n : ℕ} [NeZero d] (W : RootRadialSeedProfile d m n)
+    (p radialIncremented pFinal : I) (delta : ℝ)
+    (hdelta : delta = (radialIncremented : ℝ))
+    (incremented : RootExtensionThresholdPolicy d) (k : ℕ) :
+    W.refinedRootExtensionPrefixHistory p radialIncremented pFinal delta incremented k ∩
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent =
+      (rootRadialEvent d m n p delta ∩ W.selectedSeedEvent pFinal) ∩
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent :=
+  W.refinedPrefixHistory_inter_nonnegative_eq
+    p radialIncremented pFinal delta hdelta incremented k
+
+example {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (incremented : RootExtensionThresholdPolicy d) (k : ℕ)
+    (A : Set (CubicEdge d → ℝ))
+    (hcell : ∀ X ∈ A,
+      let c : RootExtensionPrefixStateIndex W p radialIncremented incremented k :=
+        ⟨W.rootExtensionPrefixState p radialIncremented incremented id k X,
+          (W.mem_rootExtensionPrefixStateFinset_iff
+            p radialIncremented incremented k _).mpr ⟨X, rfl⟩⟩
+      c.1.historyProfile.event ⊆ A)
+    (hrealize : ∀ X ∈ A,
+      X ∈ (W.rootExtensionPrefixState
+        p radialIncremented incremented id k X).historyProfile.event) :
+    W.stableRootExtensionPrefixHistory p radialIncremented incremented k A = A :=
+  W.stableRootExtensionPrefixHistory_eq
+    p radialIncremented incremented k A hcell hrealize
+
+example {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (incremented : RootExtensionThresholdPolicy d)
+    (hincremented : ∀ S b e, S.lower e ≤ incremented S b e)
+    (k : ℕ) (X Y : CubicEdge d → ℝ)
+    (hY : Y ∈
+      (W.rootExtensionPrefixState p radialIncremented incremented id k X).historyProfile.event) :
+    Y ∈ rootSeedLabelEvent d m p :=
+  W.rootSeedLabelEvent_of_mem_prefixHistoryProfile
+    p radialIncremented incremented hincremented k X Y hY
+
+example {d : ℕ} {allowed sources : Finset (CubicEdge d)}
+    {u v : Cubic d} (w : (cubicGraph d).Walk u v) {e : CubicEdge d}
+    (he : e ∈ finiteEdgeReachableClosure allowed sources)
+    (hue : u ∈ (e.1 : Sym2 (Cubic d)))
+    (hw : walkEdgeFinset w ⊆ allowed) :
+    walkEdgeFinset w ⊆ finiteEdgeReachableClosure allowed sources :=
+  walkEdgeFinset_subset_finiteEdgeReachableClosure_of_incident w he hue hw
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (p incremented : I) {delta : ℝ} (hdelta : delta = (incremented : ℝ))
+    (X Y : CubicEdge d → ℝ) (hradial : X ∈ rootRadialEvent d m n p delta)
+    (hY : Y ∈
+      (rootPostRadialSourceEdgeState d m n p incremented X).historyProfile.event) :
+    Y ∈ rootRadialEvent d m n p delta :=
+  rootRadialEvent_of_mem_rootPostRadialSourceHistoryProfile
+    hm hmn p incremented hdelta X Y hradial hY
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) {delta : ℝ}
+    (hdelta : delta = (radialIncremented : ℝ))
+    (incremented : RootExtensionThresholdPolicy d)
+    (hincremented : ∀ S b e, S.lower e ≤ incremented S b e)
+    (k : ℕ) (X Y : CubicEdge d → ℝ)
+    (hX : X ∈ rootRadialEvent d m n p delta)
+    (hY : Y ∈
+      (W.rootExtensionPrefixState p radialIncremented incremented id k X).historyProfile.event) :
+    Y ∈ rootRadialEvent d m n p delta :=
+  W.rootRadialEvent_of_mem_prefixHistoryProfile
+    hm hmn p radialIncremented hdelta incremented hincremented k X Y hX hY
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (delta : ℝ)
+    (hdelta : delta = (radialIncremented : ℝ))
+    (incremented : RootExtensionThresholdPolicy d)
+    (hincremented : ∀ S b e, S.lower e ≤ incremented S b e) (k : ℕ) :
+    W.stableRootExtensionPrefixHistory p radialIncremented incremented k
+          (rootRadialEvent d m n p delta) ∩
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent =
+      rootRadialEvent d m n p delta ∩
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent :=
+  W.stablePrefixHistory_inter_nonnegative_eq_rootRadial
+    hm hmn p radialIncremented delta hdelta incremented hincremented k
+
+example {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X Y : CubicEdge d → ℝ) {e : CubicEdge d}
+    (heBoundary : e ∈ S.boundary)
+    (heNext : e ∈ S.nextExplored stageRegion p incremented X)
+    (hY : Y ∈ (S.next stageRegion p incremented X).historyProfile.event) :
+    Y e < (incremented e : ℝ) :=
+  S.label_lt_incremented_of_mem_nextHistoryProfile
+    stageRegion p incremented X Y heBoundary heNext hY
+
+example {d m n : ℕ} (W : RootRadialSeedProfile d m n) (p : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d) (X : CubicEdge d → ℝ)
+    (S : SourceFiniteEdgeRevealState d) (first second : List (CubicDirection d)) :
+    W.runPostRadialExtensionSuccesses p delta incremented X S (first ++ second) ↔
+      W.runPostRadialExtensionSuccesses p delta incremented X S first ∧
+        W.runPostRadialExtensionSuccesses p delta incremented X
+          (W.runPostRadialExtensions p incremented X S first) second :=
+  W.runPostRadialExtensionSuccesses_append
+    p delta incremented X S first second
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (delta : ℝ)
+    (hdelta : 0 ≤ delta) (hradialDelta : delta = (radialIncremented : ℝ))
+    (incremented : RootExtensionThresholdPolicy d)
+    (hincremented : ∀ S b e, S.lower e ≤ incremented S b e)
+    (hadds : W.PolicyAddsOnPrefixes p radialIncremented delta incremented)
+    (hgeom : ∀ a : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1)
+    {k : ℕ} (hk : k ≤ (rootExtensionDirectionOrder d).length) :
+    W.stableRootExtensionPrefixHistory p radialIncremented incremented k
+          (W.rootExtensionPrefixSuccessEvent p radialIncremented delta incremented k) ∩
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent =
+      W.rootExtensionPrefixSuccessEvent p radialIncremented delta incremented k ∩
+        SourceFiniteEdgeRevealState.nonnegativeCouplingEvent :=
+  W.stableHistory_inter_nonnegative_eq_rootExtensionPrefixSuccess
+    hm hmn p radialIncremented delta hdelta hradialDelta incremented
+      hincremented hadds hgeom hk
+
+example {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (delta : ℝ) (hdelta : 0 ≤ delta)
+    (htotal : max (p : ℝ) (radialIncremented : ℝ) +
+      ((rootExtensionDirectionOrder d).length : ℝ) * delta ≤ 1) :
+    W.PolicyAddsOnPrefixes p radialIncremented delta
+      (budgetedRootExtensionThresholdPolicy delta hdelta) :=
+  W.budgetedPolicy_addsOnPrefixes p radialIncremented delta hdelta htotal
+
+example {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (delta epsilon : ℝ)
+    (hdelta : 0 ≤ delta) (hradialDelta : delta = (radialIncremented : ℝ))
+    (hepsilon : epsilon < 1)
+    (htotal : max (p : ℝ) (radialIncremented : ℝ) +
+      ((rootExtensionDirectionOrder d).length : ℝ) * delta ≤ 1)
+    (hgeom : ∀ a : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1)
+    (hroot : 0 < (couplingMeasure (CubicEdge d)).real
+      (rootRadialEvent d m n p delta))
+    (hrestart : ∀ k (_hk : k < (rootExtensionDirectionOrder d).length)
+        (c : StableRootExtensionPrefixStateIndex
+          W p radialIncremented
+            (budgetedRootExtensionThresholdPolicy delta hdelta) k
+            (W.rootExtensionPrefixSuccessEvent p radialIncremented delta
+              (budgetedRootExtensionThresholdPolicy delta hdelta) k)),
+      let a := (rootExtensionDirectionOrder d)[k]
+      let S := c.1.1
+      let Q := S.framedQuery (W.physicalCenter a) a
+        (oppositeTransverseRestartFlip a)
+      (1 - epsilon) * (couplingMeasure (CubicEdge d)).real
+          (Q.boundaryHistoryEvent n) <
+        (couplingMeasure (CubicEdge d)).real
+          (Q.successEvent m n p delta ∩ Q.boundaryHistoryEvent n)) :
+    (1 - epsilon) ^ (2 * d) *
+        (couplingMeasure (CubicEdge d)).real (rootRadialEvent d m n p delta) ≤
+      (couplingMeasure (CubicEdge d)).real
+        (W.rootExtensionPrefixSuccessEvent p radialIncremented delta
+          (budgetedRootExtensionThresholdPolicy delta hdelta) (2 * d)) :=
+  AdaptiveSiteExploration.RootRadialSeedProfile.pow_two_mul_mul_rootRadialEvent_le_budgetedPrefixSuccess
+    hm hmn W p radialIncremented delta epsilon hdelta hradialDelta hepsilon htotal
+      hgeom hroot hrestart
+
+example (d : ℕ) (R : Finset (Cubic d)) (n : ℕ) :
+    cubicRegionBoundaryEdgesWithinBox d
+        (R ∩ cubicMetricBox d cubicOrigin n) n =
+      cubicRegionBoundaryEdgesWithinBox d R n :=
+  cubicRegionBoundaryEdgesWithinBox_inter_cubicMetricBox d R n
+
+example {d m n : ℕ} {i : Fin d} {R : Finset (Cubic d)} {p : I}
+    {beta : CubicEdge d → I} {delta : ℝ} {X : CubicEdge d → ℝ}
+    (hX : X ∈ sprinkledRestartEvent d i m n R p beta delta) :
+    ∃ W : RestartSeedWitnessIndex d i m n,
+      W.IsMixedRestartWitness R p beta delta X := by
+  obtain ⟨W, _hselected, hW⟩ :=
+    selectedMixedRestartSeedWitness_eq_some_of_success hX
+  exact ⟨W, hW⟩
+
+example {d m n : ℕ} {p : I} {delta : ℝ} {X : CubicEdge d → ℝ}
+    (hroot : X ∈ rootRadialEvent d m n p delta) :
+    ∃ W : RootRadialSeedProfile d m n,
+      ∀ a : CubicDirection d,
+        rootRadialMixedSelectedSeed d m n p delta a X = some (W a) := by
+  obtain ⟨W, hW⟩ := exists_rootRadialMixedSeedProfile_of_mem hroot
+  exact ⟨W, fun a ↦ (hW a).1⟩
 
 end Percolation

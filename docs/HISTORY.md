@@ -1217,7 +1217,7 @@ Dated milestones and anti-library notes.
     event and non-root interval-fiber schedule remain to be constructed. This post-pause work has
     no measured telemetry.
 
-115. **Literal common-radius root construction (2026-07-15).** Strengthened seed amplification
+115. **Literal common-radius root radial construction (2026-07-15).** Strengthened seed amplification
     so one inner/outer radius pair works simultaneously for every coordinate face, and packaged
     the resulting all-coordinate, all-admissible-region ratio-free Lemma 7.17 bounds. Proved that
     the central box together with its exterior vertex boundary avoids every target quadrant at
@@ -1225,11 +1225,303 @@ Dated milestones and anti-library notes.
     proved the seed support is disjoint from each framed restart support, and factored each
     branch inequality through the exact positive seed mass. The `2d` branch intersection now has
     the source factor `1-2dε`; `exists_dynamicBlockRestartPackage` returns the same radii with
-    both the positive literal root event and the uniform bounds needed by later blocks. Oracle
+    both the positive literal radial event and the uniform bounds needed by later blocks. Oracle
     tests and transitive axiom audits compile with only `propext`, `Classical.choice`, and
-    `Quot.sound`. The remaining Theorem 7.2 obligation is the concrete `2d+1` non-root
-    interval-fiber schedule and its accepted-center path induction. This post-pause work has no
+    `Quot.sound`. A subsequent line-by-line source check showed that this is only the first root
+    phase; the root still needs `2d` post-radial extensions before it is occupied. This post-pause
+    work has no measured telemetry.
+
+116. **Two-phase root correction and exact completion law (2026-07-15).** Corrected the public
+    vocabulary after checking equations (7.30)--(7.33): the central seed and `2d` radial targets
+    form `rootRadialEvent` with factor `1-2dε`, while the root becomes occupied only after one
+    further extension from each selected radial seed. Added `RootExtensionProgram`, whose exact
+    prefix partitions imply the second factor `(1-ε)^(2d)`, positivity of the completed event,
+    and `CompletedRootBlockPackage` for feeding only that completed event to the initialized
+    exploration. No concrete post-radial interval-fiber stage is assumed by this interface; that
+    construction and the later-site `2d+1` program remain. This post-pause work has no measured
+    telemetry.
+
+117. **Full-frame finite restart partitions (2026-07-15).** A semantic audit found that the
+    earlier partitioned program stored only the signed exit coordinate even though pp. 159--162
+    choose an additional transverse steering mask. Added `PartitionedFramedRestartStage`, its
+    exact and validity-filtered finite-realization constructors, and its null-safe summed
+    Lemma 7.17 bound. The initialized `2d+1` program and the completed-root interface now use
+    full `FramedRestartQuery` data at every stage. The same audit moved the all-transverse `T*`
+    reversal from the simultaneous radial phase to the subsequent root extension, matching the
+    literal order on pp. 157--160. This post-pause work has no measured telemetry.
+
+118. **Source-order schedules and actual-seed steering (2026-07-15).** Encoded the literal
+    post-radial root order of `2d` signed directions and the later-site order of two inlet
+    extensions followed by the `2d-1` non-backtracking branches. Both concrete support lists
+    have the source overlap bound `2d+1`. Added full-frame exact reveal-cell transport, including
+    the explored-region fiber and boundary-history factorization. The radial event now selects
+    a finite witness profile containing one actual seed in every signed direction. A new
+    coordinate theorem derives the axial identity and transverse bounds of an arbitrary selected
+    seed directly from `SeedBoxWithinBoundaryLayer`; consequently every selected seed's `T*`
+    restart—not a canonical substitute—lies in the prescribed two endpoint boxes. The composed
+    certificate supplies all selected seeds, their final-density central connections, and their
+    steering containments simultaneously. The remaining dynamic gap is the algorithm-specific
+    interval-fiber factorization for label coordinates deliberately reused at increased
+    thresholds, followed by the accepted-center path induction. This post-pause work has no
     measured telemetry.
+
+119. **Reused-coordinate interval histories (2026-07-15).** Added
+    `FiniteRevealIntervalProfile`, which records separately the finite edges known
+    `beta`-closed and `gamma`-open, proves the exact decomposition obtained by peeling a
+    current closed boundary from an earlier history, and isolates the residual freshness
+    obligation. `DynamicFramedRevealIntervals` transports the boundary thresholds through a
+    full restart frame and constructs a complete finite framed-stage partition from exact
+    interval fibers. The regression and transitive axiom audits pass with only the standard
+    axioms. Concrete equations (7.31)--(7.32), including their edge-set update and geometric
+    residual-freshness invariant, remain to be instantiated. This post-pause work is recorded
+    as unmeasured rather than assigned reconstructed telemetry.
+
+120. **Literal first edge update and interval realization (2026-07-15).** Instantiated the
+    source edge-line graph, finite reachable closure, `E₁`, `ΔE₁`, `E₂`, and `ΔE₂`. Direct
+    inspection of printed page 158 corrected an OCR reversal in (7.31): an unabsorbed old
+    boundary edge receives `β₁(e)+δ`, while a genuinely new boundary edge receives `p`.
+    Equations (7.31)--(7.32) are now exact first-update declarations, and the closure proof
+    establishes the full semantic interval cell: absorbed exits are open below the incremented
+    threshold, newly explored interior edges are open below `p`, rejected exits are closed at
+    the incremented threshold, and new line-boundary edges are closed at `p`. The root-specific
+    line boundary is proved to lie in the Lemma 7.17 vertex boundary, so every realization of
+    `rootRadialEvent` belongs to the resulting post-radial interval profile. The same proof is
+    generalized to the source's edge-dependent `β_k(e)+δ`: `FiniteEdgeRevealState` derives its
+    boundary from the line graph, proves the two closed-support cases equal the entire successor
+    boundary, and carries realizations through arbitrary finite recursive updates. Regression
+    and transitive axiom audits use only `propext`, `Classical.choice`, and `Quot.sound`.
+    Attaching these recursive states to the concrete post-radial/later-site steering schedules
+    and proving accepted-center induction remain. This post-pause work is unmeasured; no
+    telemetry was reconstructed.
+
+121. **Global-boundary source recursion and framed-stage adapter (2026-07-15).** A second
+    line-by-line audit corrected an overstatement in the preceding entry: the finite helper
+    `FiniteEdgeRevealState` derives a boundary only inside one fixed ambient support, whereas
+    Grimmett's `ΔE_k` is the boundary of `E_k` in the whole cubic edge-line graph and the
+    finite region `E_Z` changes with the stage. Added the literal global `cubicEdgeBoundary`,
+    proved its intersection with a stage region recovers the local boundary, and introduced
+    `SourceFiniteEdgeRevealState`. Its successor reads only active global-boundary exits in the
+    current `E_Z`, preserves zero lower thresholds off all previously exposed coordinates, and
+    carries exact interval realizations through changing regions with explicit probability-one
+    nonnegative-label cylinders. The special root radial exploration is now proved equal to
+    this source successor on its active support. Finally,
+    `PartitionedFramedRestartStage.ofSourceEdgeStateRealization` peels exactly the intersection
+    of the global boundary with a framed query and proves all residual closed constraints fresh
+    automatically. Concrete steering geometry must still identify that intersection and prove
+    the exact realization fibers at every root-extension and later-site stage. Regression tests
+    and transitive axiom audits pass with only `propext`, `Classical.choice`, and `Quot.sound`.
+    This post-pause work is unmeasured; no telemetry was reconstructed.
+
+122. **Endpoint-fresh canonical source stages (2026-07-15).** The source-shaped framed query
+    is now constructed directly from a `SourceFiniteEdgeRevealState`: its random vertex region
+    is the endpoint set of the explored edges pulled back through the steering frame, and its
+    boundary threshold is the state's physical lower threshold under that same frame. Exact
+    edge-line-boundary and exterior-edge arguments prove that the query boundary is precisely
+    `ΔE_k` intersected with the current restart support; internal closed chords are therefore
+    excluded exactly as on printed pp. 159--160. More importantly, a single vertex-level
+    separation condition—no endpoint of the new target-seed support was previously incident to
+    an explored edge—now implies both target-boundary freshness and disjointness of all earlier
+    open edges from the restart. The fully reduced canonical partition constructor consequently
+    asks the steering layer only for this source statement, the exact finite history fiber, and
+    the already-proved Lemma 7.17 probability bound. Regression examples compile and all new
+    transitive audits contain only `propext`, `Classical.choice`, and `Quot.sound`. The remaining
+    dynamic task is to prove this endpoint separation for the concrete source-order placements
+    and construct their exact state fibers. This post-pause work is unmeasured; no telemetry was
+    reconstructed.
+
+123. **Exact target support and first concrete post-radial freshness (2026-07-15).** A source
+    audit found that `seedConnectionSupport` still contained seed boxes around every center in
+    a coarse ambient box, including centers that cannot satisfy the defining
+    `SeedBoxWithinBoundaryLayer` certificate. That set was a valid measurability over-support but
+    was too large for the printed claim that a new target had not been examined. The support now
+    ranges only over `seededBoundaryAdmissibleCenters`; every endpoint in the resulting target
+    support lies on or beyond the selected `n`-face, and every complete restart support lies in
+    `B(n+2m+1)`. The simultaneous root radial support has the same wide-box bound. Combining these
+    exact bounds with the selected seed's axial identity proves that the actual source state
+    immediately after the radial phase has no endpoint incident to the first post-radial target.
+    Consequently its canonical framed query has exactly `Delta E_2` intersected with its restart
+    support as boundary and is disjoint from all already explored radial edges. Regression tests
+    compile, and the transitive audits for all new declarations contain only `propext`,
+    `Classical.choice`, and `Quot.sound`. Sequential separation after earlier root extensions and
+    the exact finite state fibers remain. This post-pause work is unmeasured; no telemetry was
+    reconstructed.
+
+124. **Sequential freshness for all root extensions (2026-07-15).** The restart support now
+    carries its sharp anisotropic geometry: it has the wide `n+2m+1` bound only along its exit
+    axis and remains inside `[-n,n]` in every transverse coordinate. This proves pairwise
+    separation for distinct selected root directions, including the two opposite signs on one
+    axis. Added the literal changing-region recursion through the noduplicated `2d` source
+    order, with a state-dependent threshold policy. An induction over every prefix proves that
+    the next target is endpoint-fresh; hence at every root slot the framed query boundary is
+    exactly the current global `Delta E_k` intersected with its restart support, and no explored
+    open edge is reread. Regression examples compile, and all new transitive axiom audits use
+    only `propext`, `Classical.choice`, and `Quot.sound`. Exact probability-one interval fibers
+    through the completed root run and the later-site accepted-center induction remain. This
+    post-pause work is unmeasured; no telemetry was reconstructed.
+
+125. **Root-schedule interval preservation and exact stage adapter (2026-07-15).** Added an
+    induction that preserves the literal source lower/upper interval profile through the
+    state-dependent `2d` root-extension run. The common-uniform label space now has an explicit
+    measurable event on which every coordinate is nonnegative; its coupling probability is
+    proved to be one by the countable infinite-product formula, so one support hypothesis
+    discharges every random new-boundary side condition. Consequently the radial event
+    initializes the exact completed-root profile on that probability-one support. For every
+    root slot, a new finite-cell constructor takes representative interval fibers and the
+    ratio-free Lemma 7.17 estimate, obtains both freshness obligations from the sequential
+    steering theorem, and proves that its framed cells cover the supplied prefix history
+    exactly. A canonical total threshold policy implements `beta(e)+delta` on budget-valid
+    states without clamping junk values. Regression tests compile, and the new transitive axiom
+    audits contain only `propext`, `Classical.choice`, and `Quot.sound`. Constructing the actual
+    finite realized-cell family for every prefix and the later-site accepted-center induction
+    remain. This post-pause work is unmeasured; no telemetry was reconstructed.
+
+126. **Canonical interval-profile classifier (2026-07-15).** A finite pairwise-disjoint
+    family of interval profiles covering a history now canonically classifies every realization:
+    each profile event is proved equal to the corresponding exact classifier fiber. The root
+    extension constructor uses this theorem directly, so a concrete source stage no longer has
+    to invent a `realizedCell` function or prove all of its fibers separately; it supplies only
+    the finite profile partition and the ratio-free Lemma 7.17 estimates. The resulting stage is
+    proved to retain exactly the complete supplied history. Regression compilation and
+    transitive axiom audits pass with only `propext`, `Classical.choice`, and `Quot.sound`.
+    Establishing finiteness, coverage, and disjointness for the actual root-prefix state family
+    remains substantive work rather than being hidden in a classifier hypothesis. This
+    post-pause work is unmeasured; no telemetry was reconstructed.
+
+127. **Current-state versus accumulated-history interval cells (2026-07-15).** An adversarial
+    review of the source recursion found that the previous `profile` should not be described as
+    the full reveal history: when an old boundary edge is absorbed into the explored set, that
+    current-state profile retains its new upper threshold but no longer states the old lower
+    threshold. Added `SourceFiniteEdgeRevealState.historyProfile`, whose closed support is the
+    union of explored and boundary edges, and proved that one source update preserves this
+    stronger accumulated cell on the probability-one common-uniform support. The ordinary
+    `profile` remains useful and is now proved to be a deterministic Markov cell: every label
+    realization in a successor profile reproduces the same reachable closure and the entire
+    successor state. All source-state framed-partition and root-extension adapters now use
+    `historyProfile`; the fixed-ambient `FiniteEdgeRevealState` adapters correctly continue to
+    use their original profile. Regression examples compile, and the transitive axiom audit for
+    the closure, stability, history-preservation, and completed-root declarations contains only
+    `propext`, `Classical.choice`, and `Quot.sound`. This post-pause work is unmeasured; no
+    telemetry was reconstructed.
+
+128. **Canonical finite partition of reachable root-prefix states (2026-07-15).** Proved that
+    one source update has finite range whenever its input state ranges over a finite set, and
+    iterated this through the literal state-dependent root-extension schedule. Membership in a
+    reachable state's accumulated `historyProfile` now reproduces the entire remaining schedule,
+    so distinct reachable states have disjoint accumulated-history cells. Packaged the resulting
+    finite range as `RootExtensionPrefixStateIndex`, selected canonical representatives, and
+    constructed `rootExtensionPrefixHistory` as the pairwise-disjoint union of all reachable
+    cells. The radial-success event on the probability-one nonnegative coupling support is proved
+    to lie in this union, and `partitionedRootExtensionStageOfReachableHistory` generates the
+    corresponding exact finite classifier and framed stage without user-supplied realization
+    witnesses. Steering geometry was also separated from random realization, since prefix
+    finiteness and freshness depend only on the retained seed-box geometry. Regression tests and
+    the full repository build pass; every new transitive axiom audit contains only `propext`,
+    `Classical.choice`, and `Quot.sound`. The remaining source-fidelity obligation is sharper than
+    mere coverage: prove that the selected radial-success history is itself a union of these
+    accumulated-history cells, or refine the finite index by the selected radial witnesses. Only
+    then may the exact radial history be composed through all root stages and the accepted-center
+    induction. This post-pause work is unmeasured; no telemetry was reconstructed.
+
+129. **Adversarial refinement of the radial-success history (2026-07-15).** Added a generic
+    finite threshold-pattern refinement for interval profiles and proved exact event semantics,
+    realized-cell membership, and disjointness.  Specialized stability theorems show that the
+    radial event and its canonical selected seeds are determined by the background, first
+    increment, and final-density Boolean patterns on the finite radial support.  This yields a
+    finite family of compatible refined cells whose union is exactly the radial-success event
+    with a prescribed selected-seed profile after intersection with the probability-one
+    nonnegative coupling support.  Regression examples compile, the dependency build passes,
+    and every new transitive axiom audit contains only `propext`, `Classical.choice`, and
+    `Quot.sound`.  A second review deliberately tried to feed these cells into the conditional
+    restart constructor and rejected that step: a full radial-support pattern can constrain a
+    later restart coordinate and can raise the closed lower bound on its current boundary, so it
+    is not the residual-fresh source history required by Lemma 7.17.  The refinement remains a
+    valid semantic oracle and counterexample detector.  Added the source-faithful replacement:
+    `stableRootExtensionPrefixHistory` filters the unchanged canonical state cells by semantic
+    containment, proves their exact-union and pairwise-disjointness laws, and constructs the
+    corresponding framed stage while reusing the established boundary thresholds and freshness.
+    The central-seed half of that local theorem is now proved: every realization in the
+    post-radial accumulated cell keeps the original seed open at density `p`, and the property
+    propagates through every root-prefix history cell.  Exact root composition is therefore
+    reduced to preservation of a directional restart witness on each canonical reachable cell.
+    This post-pause work is unmeasured; no telemetry was reconstructed.
+
+130. **Source-faithful radial witness stability on unchanged history cells (2026-07-15).**
+    Proved generic line-graph closure transport along an open cubic walk and through every edge
+    of an entered coordinate box.  Signed root-frame lemmas then classify transported boundary,
+    exterior-walk, outward, and seed edges in the physical simultaneous radial reveal.  Every
+    successful directional radial branch consequently supplies an explicit explored
+    certificate consisting of its last exit, its original exterior walk, its outward edge, and
+    every edge of one target seed.  The accumulated source history keeps the exit open at the
+    first increment and all exterior/seed coordinates open at density `p`, so directional
+    success—and hence the complete radial event—is constant on each unchanged post-radial cell.
+    The result propagates through every root-prefix history.  Finally,
+    `stablePrefixHistory_inter_nonnegative_eq_rootRadial` proves that the unchanged stable-cell
+    union, restricted to the probability-one common-uniform support, is exactly radial success.
+    This closes the semantic stability gate without exposing any extra restart coordinate or
+    strengthening any boundary threshold.  Executable regression cases compile, and transitive
+    audits for the closure, certificate, branch stability, prefix stability, and exact identity
+    contain only `propext`, `Classical.choice`, and `Quot.sound`.  Root completion must now compose
+    these stable framed stages through all `2d` directions before the accepted-center induction.
+    This post-pause work is unmeasured; no telemetry was reconstructed.
+
+131. **Arbitrary root-prefix success stability (2026-07-15).**  Proved a generic successor
+    certificate showing that a successful source-state framed restart remains successful
+    throughout its literal accumulated successor-history cell.  The proof reconstructs the
+    same exit, exterior path, outward edge, and target seed from the interval endpoints and
+    line-graph closure; it does not reveal an extra coordinate.  Defined the recursive semantic
+    predicate `runPostRadialExtensionSuccesses` and proved its append law and stability under an
+    arbitrary accumulated prefix cell.  Consequently `rootExtensionPrefixSuccessEvent k`—the
+    radial event together with success of the first `k` framed restarts—is constant on every
+    canonical `k`-prefix history cell.  Its stable-cell union agrees exactly with that event
+    after intersection with the probability-one nonnegative coupling support, for every `k`.
+    Executable prefix cases and transitive audits pass with only `propext`,
+    `Classical.choice`, and `Quot.sound`; the full repository build is green.  Remaining work is
+    genuinely probabilistic and arithmetic: convert these stage-specific almost-sure
+    partitions into the `(1-ε)^(2d)` measure recurrence, prove `HasIncrementBudget` on reachable
+    states so the canonical policy really adds `δ`, instantiate the cellwise Lemma 7.17 bound,
+    and then perform the accepted-center induction.  This post-pause work is unmeasured; no
+    telemetry was reconstructed.
+
+132. **Measure composition and reachable root-increment budget (2026-07-15).**  Added a
+    probability-one support-transfer lemma and used it to turn the stage-specific stable
+    history partitions into an exact one-step probability recurrence for the semantic root
+    prefix-success events.  Positivity of the preceding event supplies an actual stable cell,
+    so the proof neither assumes a common classifier at every stage nor inserts a junk default
+    state.  Iteration gives the literal `(1 - epsilon)^(2 * d)` lower bound after the `2d` root
+    extensions.  Separately, proved uniform upper bounds on every reachable lower threshold for
+    the canonical clamped policy.  Under the single explicit total-budget inequality, that
+    policy therefore takes its exact `+ delta` branch at every reachable prefix.  The semantic
+    stability and composition interfaces were correspondingly weakened from the false global
+    assertion that every arbitrary state increments exactly to the source-faithful assertion
+    `PolicyAddsOnPrefixes` on reachable states.  The final budgeted composition theorem compiles,
+    and all new transitive axiom audits contain only `propext`, `Classical.choice`, and
+    `Quot.sound`.  The remaining local obligation is to instantiate the cellwise Lemma 7.17
+    inequality.  A source audit found that the canonical query currently records the entire
+    explored endpoint region, which need not lie in the one restart box.  The next proof must
+    crop that region (and prove the restart events invariant under cropping) or otherwise prove
+    the exact admissibility hypotheses; it may not assert the false whole-region containment.
+    Accepted-center induction remains after this local bridge.  This post-pause work is
+    unmeasured; no telemetry was reconstructed.
+
+133. **Reachable final-density replay and random-anchor assembly (2026-07-16).** Completed the
+    pathwise connectivity layer for the concrete root and later-site runtimes. Successful
+    steering slots now preserve a `RootedOpen` invariant: every explored edge is open at the
+    supplied final density and every explored endpoint is connected to one physical anchor.
+    History replay transports this invariant through the actual finite source states and proves
+    that every published outgoing seed is connected to the root. A semantic review rejected the
+    false global premise that the total threshold policy is bounded on arbitrary junk states;
+    the replacement certificates quantify only over prefixes actually reached by the root run
+    and by the realized non-root runtime. The canonical root policy satisfies this prefix bound
+    from the explicit arithmetic budget. The infinite-cluster assembly now accepts random
+    physical anchors selected by the exploration instead of incorrectly identifying them with
+    deterministic coarse-site centers. Finally, every non-initial limiting occupied site is
+    traced to its first successful finite query, and initialized histories are split into the
+    forced root prefix plus the exact realized suffix event. Targeted builds and the transitive
+    Chapter 7 axiom audit pass with only `propext`, `Classical.choice`, and `Quot.sound`. The
+    remaining Theorem 7.2 certificate must prove injectivity and thickening containment for these
+    selected anchors, the concrete non-root `2d+1` overlap budget, and equality between the
+    realized exploration state and the corresponding replay state. This work occurred after the
+    goal tracker was paused and is therefore unmeasured; no telemetry was reconstructed.
 
 ## Axiom Ledger
 

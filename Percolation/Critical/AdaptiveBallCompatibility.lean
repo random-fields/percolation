@@ -422,6 +422,107 @@ theorem map_cubicRegionBall_step_occupied_eq
             AdaptiveSiteExploration.step_occupied_eq, hq, hqLarge]
           simp [hbit, hbitLargeMap, liftCubicRegionBallState]
 
+/-- Before the finite exploration has accepted a boundary target, replaying an arbitrary
+Boolean branch history in the finite ball and then lifting gives exactly the ambient replay of
+the mapped history.  This is the history-level form needed by the Bellman comparison: after a
+target hit no further query estimate is required. -/
+theorem lift_cubicRegionBall_replayState_eq_of_not_hitsTarget
+    (d : ℕ) (F : Set (Cubic d)) [LinearOrder F]
+    (root : F) {n : ℕ} (hn : 0 < n)
+    (history : List
+      ({v : F // v ∈ cubicRegionMetricBall d F root n} × Bool))
+    (hnot : ¬ (cubicRegionBallSiteExploration d F root n).replayHitsTarget
+      (cubicRegionBallTarget d F root n) history) :
+    liftCubicRegionBallState d F root n
+        ((cubicRegionBallSiteExploration d F root n).replayState history) =
+      (cubicRegionSiteExploration d F root).replayState
+        (AdaptiveSiteExploration.mapDecisionHistory
+          (cubicRegionBallEmbedding d F root n) history) := by
+  let Esmall := cubicRegionBallSiteExploration d F root n
+  let Elarge := cubicRegionSiteExploration d F root
+  induction history using List.reverseRecOn with
+  | nil =>
+      simpa [SiteExploration.replayState] using
+        lift_cubicRegionBallSiteExploration_initial_eq d F root hn
+  | append_singleton prior head ih =>
+      rcases head with ⟨v, b⟩
+      have hnotPrior : ¬ Esmall.replayHitsTarget
+          (cubicRegionBallTarget d F root n) prior := by
+        rintro ⟨t, htTarget, htOccupied⟩
+        apply hnot
+        refine ⟨t, htTarget, ?_⟩
+        rw [Esmall.replayState_append_singleton]
+        exact Esmall.occupied_subset_step (fun _ ↦ b) _ htOccupied
+      have ih' := ih hnotPrior
+      have hafter : Disjoint (cubicRegionBallTarget d F root n)
+          ((Esmall.toAdaptive.step (fun _ _ ↦ b)
+            (Esmall.replayState prior)).occupied) := by
+        rw [Finset.disjoint_left]
+        intro t htTarget htOccupied
+        apply hnot
+        refine ⟨t, htTarget, ?_⟩
+        simpa [SiteExploration.replayState_append_singleton,
+          AdaptiveSiteExploration.step, SiteExploration.step] using htOccupied
+      have hstep := lift_cubicRegionBall_step_eq_of_not_hitsTarget
+        d F root n (fun (_ : Unit) _ _ ↦ b) () (Esmall.replayState prior) hafter
+      have hstep' : liftCubicRegionBallState d F root n
+          (Esmall.toAdaptive.step (fun _ _ ↦ b) (Esmall.replayState prior)) =
+          Elarge.toAdaptive.step (fun _ _ ↦ b)
+            (liftCubicRegionBallState d F root n (Esmall.replayState prior)) := by
+        simpa [cubicRegionBallAdaptiveAnswer,
+          AdaptiveSiteExploration.pullbackAdaptiveAnswer, Esmall, Elarge] using hstep
+      rw [Esmall.replayState_append_singleton]
+      change liftCubicRegionBallState d F root n
+          (Esmall.toAdaptive.step (fun _ _ ↦ b) (Esmall.replayState prior)) = _
+      rw [hstep', ih']
+      simp only [AdaptiveSiteExploration.mapDecisionHistory_append,
+        AdaptiveSiteExploration.mapDecisionHistory_singleton]
+      rw [Elarge.replayState_append_singleton]
+      change Elarge.toAdaptive.step (fun _ _ ↦ b) _ =
+        Elarge.step (fun _ ↦ b) _
+      cases b <;> simp [AdaptiveSiteExploration.step, SiteExploration.step,
+        SiteExploration.toAdaptive, Elarge] <;> rfl
+
+/-- Under the same pre-hit hypothesis, the next finite-ball query maps to the actual next
+ambient query. -/
+theorem cubicRegionBallEmbedding_replayQuery_eq_of_not_hitsTarget
+    (d : ℕ) (F : Set (Cubic d)) [LinearOrder F]
+    (root : F) {n : ℕ} (hn : 0 < n)
+    (history : List
+      ({v : F // v ∈ cubicRegionMetricBall d F root n} × Bool))
+    (hfrontier : ((cubicRegionBallSiteExploration d F root n).replayState history
+      ).frontier.Nonempty)
+    (hnot : ¬ (cubicRegionBallSiteExploration d F root n).replayHitsTarget
+      (cubicRegionBallTarget d F root n) history) :
+    cubicRegionBallEmbedding d F root n
+        ((cubicRegionBallSiteExploration d F root n).replayQuery
+          (cubicRegionBallRoot d F root n) history) =
+      (cubicRegionSiteExploration d F root).replayQuery root
+        (AdaptiveSiteExploration.mapDecisionHistory
+          (cubicRegionBallEmbedding d F root n) history) := by
+  let Esmall := cubicRegionBallSiteExploration d F root n
+  let Elarge := cubicRegionSiteExploration d F root
+  let s := Esmall.replayState history
+  let v := s.frontier.min' hfrontier
+  have hsfrontier : s.frontier.Nonempty := by
+    simpa [s, Esmall] using hfrontier
+  have hnextSmall : SiteExploration.nextVertex s = some v := by
+    simp [SiteExploration.nextVertex, hsfrontier, v]
+  have hlift := lift_cubicRegionBall_replayState_eq_of_not_hitsTarget
+    d F root hn history hnot
+  have hnextLift := nextVertex_liftCubicRegionBallState
+    (d := d) (F := F) (root := root) (n := n) s
+  have hnextLarge : SiteExploration.nextVertex
+      (Elarge.replayState
+        (AdaptiveSiteExploration.mapDecisionHistory
+          (cubicRegionBallEmbedding d F root n) history)) =
+        some (cubicRegionBallEmbedding d F root n v) := by
+    rw [← hlift, ← hnextLift, hnextSmall]
+    rfl
+  rw [Esmall.replayQuery_eq_of_nextVertex_eq_some
+      (cubicRegionBallRoot d F root n) history hnextSmall,
+    Elarge.replayQuery_eq_of_nextVertex_eq_some root _ hnextLarge]
+
 /-- At every finite time, either the ambient exploration has already hit the radius-`n` sphere,
 or its state is exactly the lift of the finite-ball state. -/
 theorem cubicRegionBall_hit_or_stateAfter_lift_eq

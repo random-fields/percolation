@@ -139,9 +139,10 @@ theorem dynamicBlock_successFactor_gt_siteDensity
         (1 - dynamicBlockRestartError d pcSite) ^ (2 * d) := by
       simp [epsilon]
 
-/-- A deliberately conservative comparison retained for compatibility with the early abstract
-program interface.  It is not the source stage count: the actual non-root construction uses two
-inlet extensions followed by `2d-1` fresh branches, hence `2d+1` one-restart factors. -/
+/-- Source-faithful success budget for a non-root block.  The two inlet link-ups consume two
+restart applications.  Each of the at most `2d-1` fresh outgoing directions then consumes two
+more applications: one to place a face seed and one to link that seed to the neighbouring
+half-way box.  Thus Grimmett--Marstrand's safe bound is `4d` applications. -/
 theorem dynamicBlock_restartPow_gt_siteDensity
     {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
     (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :
@@ -170,9 +171,10 @@ theorem dynamicBlock_restartPow_gt_siteDensity
       congr 1
       omega
 
-/-- Source-faithful lower bound for every non-root coarse site.  Grimmett first uses two
-extensions to carry the inlet seed into the new site-box, and then branches in the other
-`2d-1` directions.  Thus exactly `2d+1` applications of Lemma 7.17 suffice. -/
+/-- Compatibility inequality for the earlier compressed schedule.  The inequality is true, but
+the literal spatial construction does not use it: a fresh outgoing direction needs both a
+face-seed application and a subsequent half-way-box link-up, so the concrete program uses the
+`4d` theorem above. -/
 theorem dynamicBlock_laterSiteRestartPow_gt_siteDensity
     {d : ℕ} (hd : 0 < d) {pcSite : ℝ}
     (hsite0 : 0 ≤ pcSite) (hsite1 : pcSite < 1) :

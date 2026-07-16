@@ -277,6 +277,24 @@ theorem completionHitProbability_of_frontier_eq_empty
         iff_of_false (heventOn xi hxi) (Set.notMem_empty xi)
     simp [hhit, hzero]
 
+/-- If the explored occupied set already meets the target, every completion hits the target. -/
+theorem completionHitProbability_eq_one_of_target_mem_occupied
+    (E : SiteExploration V) (q : ℝ) (root : V) (target : Finset V)
+    {s : SiteExplorationState V}
+    (hrooted : E.OpenRootedAt root s)
+    (hhit : ∃ t ∈ target, t ∈ s.occupied) :
+    E.completionHitProbability q root target s = 1 := by
+  have hevent : E.completionHitsTarget root target s = Set.univ := by
+    ext xi
+    constructor
+    · intro _
+      trivial
+    · intro _
+      obtain ⟨t, ht, htOccupied⟩ := hhit
+      obtain ⟨w, hw⟩ := hrooted.2.1 t htOccupied
+      exact ⟨t, ht, w, fun z hz ↦ Or.inl (hw z hz)⟩
+  simp [completionHitProbability, hevent]
+
 /-! ### Replaying chronological answer histories -/
 
 /-- Replay a chronological answer history from an arbitrary partial state.  The recorded vertex
@@ -548,6 +566,37 @@ theorem adaptiveDecisionWinMass_replayHitsTarget_of_frontier_eq_empty
           mu hanswer history (E.replayQuery root history)
       · simp
 
+omit [Fintype V] in
+/-- Once a replayed history has hit the target, the winning mass is exactly the mass of that
+history at every remaining decision depth. -/
+theorem adaptiveDecisionWinMass_replayHitsTarget_of_hit
+    {Omega : Type*} [MeasurableSpace Omega]
+    (E : SiteExploration V) (mu : Measure Omega) [IsFiniteMeasure mu]
+    {answer : Omega → List (V × Bool) → V → Bool}
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (root : V) (target : Finset V) (history : List (V × Bool))
+    (hhit : E.replayHitsTarget target history) :
+    ∀ depth,
+      AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
+          (E.replayHitsTarget target) history depth =
+        mu.real (AdaptiveSiteExploration.adaptiveAnswerHistoryEvent answer history) := by
+  intro depth
+  induction depth generalizing history with
+  | zero =>
+      simpa [hhit] using AdaptiveSiteExploration.adaptiveDecisionWinMass_zero
+        mu answer (E.replayQuery root) (E.replayHitsTarget target) history
+  | succ depth ih =>
+      rw [AdaptiveSiteExploration.adaptiveDecisionWinMass_succ]
+      have hit_append (b : Bool) : E.replayHitsTarget target
+          (history ++ [(E.replayQuery root history, b)]) := by
+        obtain ⟨t, ht, htOccupied⟩ := hhit
+        refine ⟨t, ht, ?_⟩
+        rw [E.replayState_append_singleton]
+        exact E.occupied_subset_step (fun _ ↦ b) (E.replayState history) htOccupied
+      rw [ih _ (hit_append true), ih _ (hit_append false)]
+      exact AdaptiveSiteExploration.measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
+        mu hanswer history (E.replayQuery root history)
+
 /-- Ratio-free finite target-hitting comparison for the actual exploration tree.  Unlike the
 generic decision-tree theorem, this result only needs branch favorability at the exhaustion
 depth, where it follows from the Bellman completion probability. -/
@@ -561,7 +610,9 @@ theorem completionHitProbability_mul_historyMass_le_adaptiveDecisionWinMass
     (hlower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn
       mu answer admissible q)
     (root : V) (target : Finset V)
-    (hquery : ∀ history, admissible history (E.replayQuery root history))
+    (hquery : ∀ history, (E.replayState history).frontier.Nonempty →
+      ¬ E.replayHitsTarget target history →
+      admissible history (E.replayQuery root history))
     (history : List (V × Bool))
     (hwf : (E.replayState history).WellFormed)
     (hrooted : E.OpenRootedAt root (E.replayState history))
@@ -656,28 +707,35 @@ theorem completionHitProbability_mul_historyMass_le_adaptiveDecisionWinMass
     have hmassPartition : massTrue + massFalse = massHistory := by
       exact AdaptiveSiteExploration.measureReal_adaptiveAnswerHistoryEvent_append_true_add_false
         mu hanswer history (E.replayQuery root history)
-    have hmassTrue : q * massHistory ≤ massTrue := by
-      exact hlower history (E.replayQuery root history) (hquery history)
-    have hbranches : valueTrue * massTrue + valueFalse * massFalse ≤
-        AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
-            (E.replayHitsTarget target) historyTrue
-              (E.replayState historyTrue).remaining.card +
+    by_cases hhit : E.replayHitsTarget target history
+    · rw [E.completionHitProbability_eq_one_of_target_mem_occupied
+          q root target hrooted hhit,
+        E.adaptiveDecisionWinMass_replayHitsTarget_of_hit
+          mu hanswer root target history hhit]
+      simp
+    · have hmassTrue : q * massHistory ≤ massTrue := by
+        exact hlower history (E.replayQuery root history)
+          (hquery history hfrontierNonempty hhit)
+      have hbranches : valueTrue * massTrue + valueFalse * massFalse ≤
           AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
-            (E.replayHitsTarget target) historyFalse
-              (E.replayState historyFalse).remaining.card := by
-      exact add_le_add ihTrue ihFalse
-    rw [E.completionHitProbability_eq_open_closed q root target hwf hvfrontier]
-    rw [← hcardTrue, AdaptiveSiteExploration.adaptiveDecisionWinMass_succ]
-    rw [← hstateTrue, ← hstateFalse]
-    change (q * valueTrue + (1 - q) * valueFalse) * massHistory ≤ _
-    have hcards : (E.replayState historyFalse).remaining.card =
-        (E.replayState historyTrue).remaining.card := by omega
-    calc
-      (q * valueTrue + (1 - q) * valueFalse) * massHistory ≤
-          valueTrue * massTrue + valueFalse * massFalse := by
-        nlinarith
-      _ ≤ _ := by
-        simpa [historyTrue, historyFalse, hcards] using hbranches
+              (E.replayHitsTarget target) historyTrue
+                (E.replayState historyTrue).remaining.card +
+            AdaptiveSiteExploration.adaptiveDecisionWinMass mu answer (E.replayQuery root)
+              (E.replayHitsTarget target) historyFalse
+                (E.replayState historyFalse).remaining.card := by
+        exact add_le_add ihTrue ihFalse
+      rw [E.completionHitProbability_eq_open_closed q root target hwf hvfrontier]
+      rw [← hcardTrue, AdaptiveSiteExploration.adaptiveDecisionWinMass_succ]
+      rw [← hstateTrue, ← hstateFalse]
+      change (q * valueTrue + (1 - q) * valueFalse) * massHistory ≤ _
+      have hcards : (E.replayState historyFalse).remaining.card =
+          (E.replayState historyTrue).remaining.card := by omega
+      calc
+        (q * valueTrue + (1 - q) * valueFalse) * massHistory ≤
+            valueTrue * massTrue + valueFalse * massFalse := by
+          nlinarith
+        _ ≤ _ := by
+          simpa [historyTrue, historyFalse, hcards] using hbranches
 termination_by (E.replayState history).remaining.card
 decreasing_by
   · exact hltTrue
@@ -853,7 +911,9 @@ theorem completionHitProbability_initial_le_adaptiveDecisionWinMass
     (hlower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn
       mu answer admissible q)
     (root : V) (target : Finset V)
-    (hquery : ∀ history, admissible history (E.replayQuery root history))
+    (hquery : ∀ history, (E.replayState history).frontier.Nonempty →
+      ¬ E.replayHitsTarget target history →
+      admissible history (E.replayQuery root history))
     (hwf : E.initial.WellFormed) (hrooted : E.OpenRootedAt root E.initial)
     (hclosed : E.FrontierClosed E.initial) :
     E.completionHitProbability q root target E.initial ≤
@@ -984,6 +1044,10 @@ theorem finiteSiteHitsTarget_probability_le_adaptiveDecisionWinMass
       mu answer admissible q)
     (root : V) (target : Finset V)
     (hquery : ∀ history,
+      ((rootedSiteExploration G neighbors mem_neighbors root).replayState history
+        ).frontier.Nonempty →
+      ¬ (rootedSiteExploration G neighbors mem_neighbors root).replayHitsTarget
+        target history →
       admissible history
         ((rootedSiteExploration G neighbors mem_neighbors root).replayQuery root history)) :
     finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤

@@ -214,9 +214,11 @@ theorem cubicRegion_infinite_probability_pos_dynamicBlock
   apply SiteExploration.cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBound
     d F root hF (couplingMeasure (CubicEdge d)) q
       (by simpa [q] using dynamicBlockSiteDensity_gt hsite1)
-      (P.measurableAnswer_fullHistoryAnswer _)
-  simpa [fullHistoryAnswer, q] using
-    hasAdaptiveAnswerLowerBound_dynamicBlockSiteDensity hd hsite0 hsite1 P
+      (P.measurableAnswer_fullHistoryAnswer _) (fun _ _ ↦ True)
+  · simpa [fullHistoryAnswer, q] using
+      hasAdaptiveAnswerLowerBound_dynamicBlockSiteDensity hd hsite0 hsite1 P
+  · intro _ _
+    trivial
 
 end FinitePartitionedOrientedRestartProgram
 

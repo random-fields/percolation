@@ -199,6 +199,29 @@ theorem cubicRestartFrameIso_image_seededBoundaryQuadrant_eq_steered
       (cubicRestartFrameIso_mem_steeredPositiveBoundaryQuadrant_iff i w).1 hz,
       rfl⟩
 
+/-- Reversing all transverse coordinates carries the whole layered target `T(m,n)` into the
+opposite layered target `T*(m,n)`, not only its boundary face. -/
+theorem cubicRestartFrameIso_seededBoundaryLayerRegion_subset_steered
+    {d m n : ℕ} (i : Fin d) :
+    cubicGraphIsoRegion
+        (cubicRestartFrameIso cubicOrigin (i, true)
+          (oppositeTransverseRestartFlip (i, true)))
+        (seededBoundaryLayerRegion d i m n) ⊆
+      steeredPositiveBoundaryLayerRegion d i m n := by
+  rintro z ⟨w, ⟨r, hr1, hr2, y, hy, rfl⟩, rfl⟩
+  let F := cubicRestartFrameIso cubicOrigin (i, true)
+    (oppositeTransverseRestartFlip (i, true))
+  refine ⟨r, hr1, hr2, F y,
+    (cubicRestartFrameIso_mem_steeredPositiveBoundaryQuadrant_iff i y).2 hy, ?_⟩
+  ext j
+  by_cases hji : j = i
+  · subst j
+    simp [F, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+      cubicOrigin, cubicTranslateAlongCoordinate]
+  · simp [F, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+      oppositeTransverseRestartFlip, cubicOrigin, hji,
+      cubicTranslateAlongCoordinate_of_ne]
+
 /-- Transverse sign mask from p. 161: if the inlet seed is displaced positively in coordinate
 `j`, reverse the reference quadrant in that coordinate; otherwise retain its positive side. -/
 def inletCompensatingTransverseFlip {d : ℕ}

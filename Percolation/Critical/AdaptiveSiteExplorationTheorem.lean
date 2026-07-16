@@ -36,11 +36,16 @@ theorem finiteBallHitsSphere_probability_le_cubicRegion_adaptiveLimitSphereHit
     (mu : Measure Omega) [IsProbabilityMeasure mu]
     {answer : Omega → List (F × Bool) → F → Bool}
     (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (F × Bool) → F → Prop)
     (q : I)
     (hlower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn mu
       (prefixedAdaptiveAnswer
         (cubicRegionSiteExploration d F root).initial.history answer)
-      (fun _ _ ↦ True) (q : ℝ))
+      admissible (q : ℝ))
+    (hadmissibleQuery : ∀ history,
+      ((cubicRegionSiteExploration d F root).replayState history).frontier.Nonempty →
+      admissible history
+        ((cubicRegionSiteExploration d F root).replayQuery root history))
     (n : ℕ) :
     finiteBernoulliProbability Finset.univ (q : ℝ)
         (finiteSiteHitsTarget
@@ -54,7 +59,7 @@ theorem finiteBallHitsSphere_probability_le_cubicRegion_adaptiveLimitSphereHit
   let smallAnswer := cubicRegionBallAdaptiveAnswer d F root n answer
   have hsmallAnswer : AdaptiveSiteExploration.MeasurableAnswer smallAnswer :=
     AdaptiveSiteExploration.measurableAnswer_pullbackAdaptiveAnswer hanswer f
-  have hpull := hlower.pullback f
+  have hpull := hlower.pullbackAdmissible f
   have hprefix := prefixedAdaptiveAnswer_pullback f
     (cubicRegionBallSiteExploration d F root n).initial.history
     (cubicRegionSiteExploration d F root).initial.history
@@ -62,12 +67,14 @@ theorem finiteBallHitsSphere_probability_le_cubicRegion_adaptiveLimitSphereHit
   have hsmallLower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn mu
       (prefixedAdaptiveAnswer
         (cubicRegionBallSiteExploration d F root n).initial.history smallAnswer)
-      (fun _ _ ↦ True) (q : ℝ) := by
+      (fun history v ↦ admissible
+        (AdaptiveSiteExploration.mapDecisionHistory f history) (f v)) (q : ℝ) := by
     change AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn mu
       (prefixedAdaptiveAnswer
         (cubicRegionBallSiteExploration d F root n).initial.history
         (AdaptiveSiteExploration.pullbackAdaptiveAnswer f answer))
-      (fun _ _ ↦ True) (q : ℝ)
+      (fun history v ↦ admissible
+        (AdaptiveSiteExploration.mapDecisionHistory f history) (f v)) (q : ℝ)
     rw [hprefix]
     exact hpull
   have hfinite := finiteSiteHitsTarget_probability_le_adaptiveLimitTargetHitEvent
@@ -75,9 +82,55 @@ theorem finiteBallHitsSphere_probability_le_cubicRegion_adaptiveLimitSphereHit
       (cubicRegionMetricBall d F root n : Set F))
     (cubicRegionBallNeighborFinset d F root n)
     mem_cubicRegionBallNeighborFinset_iff
-    mu hsmallAnswer (fun _ _ ↦ True) (q : ℝ) q.2.1 q.2.2
+    mu hsmallAnswer (fun history v ↦ admissible
+      (AdaptiveSiteExploration.mapDecisionHistory f history) (f v))
+      (q : ℝ) q.2.1 q.2.2
     (cubicRegionBallRoot d F root n) hsmallLower
-    (cubicRegionBallTarget d F root n) (fun _ ↦ trivial)
+    (cubicRegionBallTarget d F root n) (by
+      intro history hfrontier hnot
+      by_cases hn0 : n = 0
+      · subst n
+        exfalso
+        apply hnot
+        let Esmall := cubicRegionBallSiteExploration d F root 0
+        have hrootOccupiedAll : ∀ h,
+            cubicRegionBallRoot d F root 0 ∈ (Esmall.replayState h).occupied := by
+          intro h
+          induction h using List.reverseRecOn with
+          | nil =>
+              simp [Esmall, SiteExploration.replayState, SiteExploration.replayStateFrom,
+                cubicRegionBallSiteExploration, rootedSiteExploration]
+          | append_singleton prior head ih =>
+              rcases head with ⟨v, b⟩
+              rw [Esmall.replayState_append_singleton]
+              exact Esmall.occupied_subset_step (fun _ ↦ b) _ ih
+        have hrootOccupied := hrootOccupiedAll history
+        exact ⟨cubicRegionBallRoot d F root 0, by
+          simp [cubicRegionBallTarget, mem_finsetTargetSubtype_iff,
+            mem_cubicRegionMetricSphere_iff, cubicRegionBallRoot], hrootOccupied⟩
+      · have hn : 0 < n := Nat.pos_of_ne_zero hn0
+        have hlift := lift_cubicRegionBall_replayState_eq_of_not_hitsTarget
+          d F root hn history hnot
+        have hambientFrontier :
+            ((cubicRegionSiteExploration d F root).replayState
+              (AdaptiveSiteExploration.mapDecisionHistory f history)
+                ).frontier.Nonempty := by
+          rw [← hlift]
+          simpa [liftCubicRegionBallState] using
+            Finset.Nonempty.map (f := cubicRegionBallEmbedding d F root n) hfrontier
+        have hquery := hadmissibleQuery
+          (AdaptiveSiteExploration.mapDecisionHistory f history) hambientFrontier
+        have hqueryEq := cubicRegionBallEmbedding_replayQuery_eq_of_not_hitsTarget
+          d F root hn history hfrontier hnot
+        change admissible (AdaptiveSiteExploration.mapDecisionHistory f history)
+          (f ((cubicRegionBallSiteExploration d F root n).replayQuery
+            (cubicRegionBallRoot d F root n) history))
+        rw [show f ((cubicRegionBallSiteExploration d F root n).replayQuery
+            (cubicRegionBallRoot d F root n) history) =
+            (cubicRegionSiteExploration d F root).replayQuery root
+              (AdaptiveSiteExploration.mapDecisionHistory f history) by
+          simpa [f] using hqueryEq]
+        exact hquery)
   calc
     finiteBernoulliProbability Finset.univ (q : ℝ)
         (finiteSiteHitsTarget
@@ -104,10 +157,15 @@ theorem cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBoun
     (q : I) (hq : siteCriticalProbability (cubicRegionGraph d F) < (q : ℝ))
     {answer : Omega → List (F × Bool) → F → Bool}
     (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (F × Bool) → F → Prop)
     (hlower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn mu
       (prefixedAdaptiveAnswer
         (cubicRegionSiteExploration d F root).initial.history answer)
-      (fun _ _ ↦ True) (q : ℝ)) :
+      admissible (q : ℝ))
+    (hadmissibleQuery : ∀ history,
+      ((cubicRegionSiteExploration d F root).replayState history).frontier.Nonempty →
+      admissible history
+        ((cubicRegionSiteExploration d F root).replayQuery root history)) :
     0 < mu.real {omega |
       ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
         (answer omega)).Infinite} := by
@@ -120,7 +178,7 @@ theorem cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBoun
     intro n
     exact (hcFinite n).trans
       (finiteBallHitsSphere_probability_le_cubicRegion_adaptiveLimitSphereHit
-        d F root mu hanswer q hlower n)
+        d F root mu hanswer admissible q hlower hadmissibleQuery n)
   exact hc.trans_le
     (cubicRegion_occupiedLimit_infinite_probability_ge_of_sphere_lowerBounds
       d F root mu hanswer c hcSphere)
@@ -134,17 +192,22 @@ theorem cubicRegionSiteExploration_hasInfiniteSiteCluster_probability_pos_of_ada
     (q : I) (hq : siteCriticalProbability (cubicRegionGraph d F) < (q : ℝ))
     {answer : Omega → List (F × Bool) → F → Bool}
     (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (F × Bool) → F → Prop)
     (hlower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundOn mu
       (prefixedAdaptiveAnswer
         (cubicRegionSiteExploration d F root).initial.history answer)
-      (fun _ _ ↦ True) (q : ℝ)) :
+      admissible (q : ℝ))
+    (hadmissibleQuery : ∀ history,
+      ((cubicRegionSiteExploration d F root).replayState history).frontier.Nonempty →
+      admissible history
+        ((cubicRegionSiteExploration d F root).replayQuery root history)) :
     0 < mu.real {omega |
       hasInfiniteSiteCluster (cubicRegionGraph d F)
         ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
           (answer omega))} := by
   have hInfinite :=
     cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBound
-      d F root hF mu q hq hanswer hlower
+      d F root hF mu q hq hanswer admissible hlower hadmissibleQuery
   exact hInfinite.trans_le <| measureReal_mono fun omega homega ↦
     (cubicRegionSiteExploration d F root).toAdaptive
       |>.hasInfiniteSiteCluster_occupiedLimit_of_infinite

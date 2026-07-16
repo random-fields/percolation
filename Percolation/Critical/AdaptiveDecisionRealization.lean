@@ -359,6 +359,10 @@ theorem finiteSiteHitsTarget_probability_le_adaptiveTargetHitEvent
         admissible q)
     (target : Finset V)
     (hquery : ∀ history,
+      ((rootedSiteExploration G neighbors mem_neighbors root).replayState history
+        ).frontier.Nonempty →
+      ¬ (rootedSiteExploration G neighbors mem_neighbors root).replayHitsTarget
+        target history →
       admissible history
         ((rootedSiteExploration G neighbors mem_neighbors root).replayQuery root history)) :
     finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤
@@ -413,6 +417,10 @@ theorem finiteSiteHitsTarget_probability_le_adaptiveLimitTargetHitEvent
         admissible q)
     (target : Finset V)
     (hquery : ∀ history,
+      ((rootedSiteExploration G neighbors mem_neighbors root).replayState history
+        ).frontier.Nonempty →
+      ¬ (rootedSiteExploration G neighbors mem_neighbors root).replayHitsTarget
+        target history →
       admissible history
         ((rootedSiteExploration G neighbors mem_neighbors root).replayQuery root history)) :
     finiteBernoulliProbability Finset.univ q (finiteSiteHitsTarget G root target) ≤

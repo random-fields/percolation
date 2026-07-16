@@ -1,0 +1,1012 @@
+import Percolation.Critical.DynamicRootRadialWitness
+import Percolation.Critical.DynamicFramedStateStage
+import Percolation.Critical.DynamicRootSourceState
+import Percolation.Critical.DynamicSteering
+
+/-!
+# Steering geometry from the selected radial seeds
+
+The second root phase must start from the actual seeds selected by the simultaneous radial
+event.  This file proves that the opposite-quadrant restart from each such seed stays inside
+the root site box and its corresponding half-way bond box.  No canonical replacement center
+is introduced.
+-/
+
+namespace Percolation
+
+open scoped unitInterval
+
+/-- Reference positive restart region before the first transverse reversal. -/
+def positiveSeededRestartRegion
+    (d : ℕ) (i : Fin d) (m n : ℕ) : Set (Cubic d) :=
+  (cubicMetricBox d cubicOrigin n : Set (Cubic d)) ∪
+    seededBoundaryLayerRegion d i m n
+
+/-- The local frame of the post-radial extension selected in signed direction `a`. -/
+def RootRadialSeedProfile.postRadialFrame
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n) (a : CubicDirection d) :
+    cubicGraph d ≃g cubicGraph d :=
+  cubicRestartFrameIso (W.physicalCenter a) a
+    (oppositeTransverseRestartFlip a)
+
+/-- Physical region read by one post-radial extension. -/
+def RootRadialSeedProfile.postRadialRestartRegion
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n) (a : CubicDirection d) :
+    Set (Cubic d) :=
+  cubicGraphIsoRegion (W.postRadialFrame a)
+    (positiveSeededRestartRegion d a.1 m n)
+
+/-- Composition identity behind the first steering move: applying the opposite transverse
+frame at the selected physical seed is the same as reversing the reference transverse
+coordinates, translating by the selected reference seed, and then applying the original
+radial orientation. -/
+theorem RootRadialSeedProfile.postRadialFrame_apply
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (a : CubicDirection d) (z : Cubic d) :
+    W.postRadialFrame a z =
+      cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)
+        (cubicTranslate cubicOrigin (W a).seedCenter.1
+          (cubicRestartFrameIso cubicOrigin (a.1, true)
+            (oppositeTransverseRestartFlip (a.1, true)) z)) := by
+  ext j
+  by_cases hja : j = a.1
+  · subst j
+    cases ha : a.2
+    · simp [RootRadialSeedProfile.postRadialFrame,
+        RootRadialSeedProfile.physicalCenter, cubicRestartFrameIso_apply,
+        cubicRestartFrameFlip, cubicTranslate, cubicOrigin, ha]
+      ring
+    · simp [RootRadialSeedProfile.postRadialFrame,
+        RootRadialSeedProfile.physicalCenter, cubicRestartFrameIso_apply,
+        cubicRestartFrameFlip, cubicTranslate, cubicOrigin, ha]
+  · simp [RootRadialSeedProfile.postRadialFrame,
+      RootRadialSeedProfile.physicalCenter, cubicRestartFrameIso_apply,
+      cubicRestartFrameFlip, rootRadialTransverseFlip,
+      oppositeTransverseRestartFlip, cubicTranslate, cubicOrigin, hja]
+
+/-- Complete explored-edge certificate carried by a named mixed-threshold radial witness. -/
+theorem rootRadialMixedWitness_exploredCertificate
+    {d m n : ℕ} (hmn : m ≤ n) (a : CubicDirection d)
+    (p incremented : I) {delta : ℝ} (hdelta : delta = (incremented : ℝ))
+    (X : CubicEdge d → ℝ) (W : RestartSeedWitnessIndex d a.1 m n)
+    (hW : W.IsMixedRestartWitness (cubicMetricBox d cubicOrigin m)
+      p (fun _ ↦ 0) delta
+      (cubicGraphIsoCouplingReindex
+        (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)) X)) :
+    ∃ (e : CubicEdge d)
+        (w : (cubicGraph d).Walk
+          (cubicRegionBoundaryOutsideEndpoint
+            (cubicMetricBox d cubicOrigin m) e) W.boundaryPoint.1),
+      e ∈ cubicRegionBoundaryEdgesWithinBox d
+          (cubicMetricBox d cubicOrigin m) n ∧
+      walkEdgeFinset w ⊆ cubicRegionExteriorEdgesWithinBox d
+        (cubicMetricBox d cubicOrigin m) n ∧
+      (cubicRestartFrameIso cubicOrigin a
+          (rootRadialTransverseFlip a)).mapEdgeSet e ∈
+        rootRadialExploredEdges d m n p incremented X ∧
+      (∀ f ∈ walkEdgeFinset w,
+        (cubicRestartFrameIso cubicOrigin a
+            (rootRadialTransverseFlip a)).mapEdgeSet f ∈
+          rootRadialExploredEdges d m n p incremented X ∧
+        (cubicRestartFrameIso cubicOrigin a
+            (rootRadialTransverseFlip a)).mapEdgeSet f ∈
+          rootRadialExteriorEdges d m n) ∧
+      (cubicRestartFrameIso cubicOrigin a
+          (rootRadialTransverseFlip a)).mapEdgeSet
+          (cubicStepEdge W.boundaryPoint.1 (a.1, true)) ∈
+        rootRadialExploredEdges d m n p incremented X ∧
+      (cubicRestartFrameIso cubicOrigin a
+          (rootRadialTransverseFlip a)).mapEdgeSet
+          (cubicStepEdge W.boundaryPoint.1 (a.1, true)) ∈
+        rootRadialExteriorEdges d m n ∧
+      ∀ f ∈ cubicBoxEdges d W.seedCenter.1 m,
+        (cubicRestartFrameIso cubicOrigin a
+            (rootRadialTransverseFlip a)).mapEdgeSet f ∈
+          rootRadialExploredEdges d m n p incremented X ∧
+        (cubicRestartFrameIso cubicOrigin a
+            (rootRadialTransverseFlip a)).mapEdgeSet f ∈
+          rootRadialExteriorEdges d m n := by
+  classical
+  let R := cubicMetricBox d cubicOrigin m
+  let E := cubicRegionBoundaryEdgesWithinBox d R n
+  let F := cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)
+  let Xref := cubicGraphIsoCouplingReindex F X
+  let B := finiteEdgesBelow (rootInitialBoundaryEdges d m n) incremented X
+  let A := B ∪ finiteEdgesBelow (rootRadialExteriorEdges d m n) p X
+  let C := finiteEdgeReachableClosure A B
+  change W.IsMixedRestartWitness R p (fun _ ↦ 0) delta Xref at hW
+  rcases hW with ⟨hrealized, e, heBoundary, hconnection, heIncrement⟩
+  rcases hrealized with ⟨hoCleared, hentryBox, hcLayer, hcSeed⟩
+  rcases hconnection with ⟨w, hwOpen, hwExterior⟩
+  have hePhysicalBoundary : F.mapEdgeSet e ∈ rootInitialBoundaryEdges d m n :=
+    rootBranch_mapEdgeSet_mem_rootInitialBoundaryEdges a heBoundary
+  have hePhysicalOpen : X (F.mapEdgeSet e) < (incremented : ℝ) := by
+    change Xref e < (incremented : ℝ)
+    simpa [hdelta] using heIncrement
+  have heB : F.mapEdgeSet e ∈ B :=
+    mem_finiteEdgesBelow_iff.mpr ⟨hePhysicalBoundary, hePhysicalOpen⟩
+  have hBA : B ⊆ A := Finset.subset_union_left
+  have heC : F.mapEdgeSet e ∈ C :=
+    sources_subset_finiteEdgeReachableClosure (allowed := A) (sources := B) hBA heB
+  have heExplored : F.mapEdgeSet e ∈
+      rootRadialExploredEdges d m n p incremented X := by
+    change F.mapEdgeSet e ∈ nextExploredEdgeSet (rootInitialExploredEdges d m) A B
+    exact Finset.mem_union_right _ heC
+  have referenceOpen_mem_A : ∀ {f : CubicEdge d},
+      f ∈ restartEventSupport d a.1 m n R → f ∉ E → Xref f < (p : ℝ) →
+        F.mapEdgeSet f ∈ A := by
+    intro f hfSupport hfNotBoundary hfOpen
+    apply Finset.mem_union_right
+    rw [mem_finiteEdgesBelow_iff]
+    refine ⟨rootBranch_mapEdgeSet_mem_rootRadialExteriorEdges_of_restartSupport
+      hmn a hfSupport ?_, hfOpen⟩
+    simpa [R, E] using hfNotBoundary
+  let y : Cubic d := W.boundaryPoint.1
+  let o : CubicEdge d := cubicStepEdge y (a.1, true)
+  have hoTarget : o ∈ seededBoundaryTargetSupport d a.1 m n :=
+    cubicStepEdge_mem_seededBoundaryTargetSupport W.boundaryPoint.2
+  have hoSupport : o ∈ restartEventSupport d a.1 m n R :=
+    target_subset_restartEventSupport d a.1 m n R hoTarget
+  have hoOpen : Xref o < (p : ℝ) := hoCleared.1
+  have hoNotBoundary : o ∉ E := hoCleared.2
+  have hoA : F.mapEdgeSet o ∈ A :=
+    referenceOpen_mem_A hoSupport hoNotBoundary hoOpen
+  let step : (cubicGraph d).Walk y (cubicStepFrom y (a.1, true)) :=
+    SimpleGraph.Walk.cons (cubicGraph_adj_stepFrom y (a.1, true)) SimpleGraph.Walk.nil
+  let q : (cubicGraph d).Walk
+      (cubicRegionBoundaryOutsideEndpoint R e) (cubicStepFrom y (a.1, true)) :=
+    w.append step
+  let qPhysical := q.map F.toHom
+  have hqPhysicalAllowed : walkEdgeFinset qPhysical ⊆ A := by
+    intro g hg
+    rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_map] at hg
+    obtain ⟨fSym, hfq, hfg⟩ := List.mem_map.mp hg
+    let f : CubicEdge d := ⟨fSym, q.edges_subset_edgeSet hfq⟩
+    have hmap : F.mapEdgeSet f = g := by
+      apply Subtype.ext
+      exact hfg
+    rw [← hmap]
+    change fSym ∈ (w.append step).edges at hfq
+    rw [SimpleGraph.Walk.edges_append] at hfq
+    rcases List.mem_append.mp hfq with hfw | hfstep
+    · have hfExterior : f ∈ cubicRegionExteriorEdgesWithinBox d R n :=
+        hwExterior ((mem_walkEdgeFinset_iff w f).mpr hfw)
+      have hfCleared := hwOpen f.1 hfw
+      exact referenceOpen_mem_A
+        (exterior_subset_restartEventSupport d a.1 m n R hfExterior)
+        hfCleared.2 hfCleared.1
+    · have hfo : f = o := by
+        apply Subtype.ext
+        simpa [step, o] using hfstep
+      simpa [hfo] using hoA
+  have heStart : F (cubicRegionBoundaryOutsideEndpoint R e) ∈
+      (F.mapEdgeSet e : Sym2 (Cubic d)) := by
+    change F (cubicRegionBoundaryOutsideEndpoint R e) ∈
+      Sym2.map F (e : Sym2 (Cubic d))
+    apply Sym2.mem_map.mpr
+    refine ⟨cubicRegionBoundaryOutsideEndpoint R e, ?_, rfl⟩
+    rw [← cubicRegionBoundaryEndpoints_edge heBoundary]
+    simp
+  have hqClosure : walkEdgeFinset qPhysical ⊆ C :=
+    walkEdgeFinset_subset_finiteEdgeReachableClosure_of_incident
+      qPhysical heC heStart hqPhysicalAllowed
+  have hoPhysicalWalk : F.mapEdgeSet o ∈ walkEdgeFinset qPhysical := by
+    rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_map]
+    apply List.mem_map.mpr
+    refine ⟨(o : Sym2 (Cubic d)), ?_, rfl⟩
+    change (o : Sym2 (Cubic d)) ∈ (w.append step).edges
+    rw [SimpleGraph.Walk.edges_append]
+    apply List.mem_append_right
+    simp only [step, SimpleGraph.Walk.edges_cons, SimpleGraph.Walk.edges_nil,
+      List.mem_singleton]
+    rfl
+  have hoC : F.mapEdgeSet o ∈ C := hqClosure hoPhysicalWalk
+  have hoExplored : F.mapEdgeSet o ∈
+      rootRadialExploredEdges d m n p incremented X := by
+    change F.mapEdgeSet o ∈ nextExploredEdgeSet (rootInitialExploredEdges d m) A B
+    exact Finset.mem_union_right _ hoC
+  have hoExterior : F.mapEdgeSet o ∈ rootRadialExteriorEdges d m n :=
+    rootBranch_mapEdgeSet_mem_rootRadialExteriorEdges_of_restartSupport
+      hmn a hoSupport (by simpa [R, E] using hoNotBoundary)
+  have hseedAllowed : (cubicBoxEdges d W.seedCenter.1 m).image F.mapEdgeSet ⊆ A := by
+    intro g hg
+    obtain ⟨f, hfSeed, rfl⟩ := Finset.mem_image.mp hg
+    have hfTarget := seedEdge_mem_seededBoundaryTargetSupport
+      W.boundaryPoint.2 hentryBox hcLayer hfSeed
+    have hfCleared := hcSeed hfSeed
+    exact referenceOpen_mem_A
+      (target_subset_restartEventSupport d a.1 m n R hfTarget)
+      hfCleared.2 hfCleared.1
+  have hentry : F (cubicStepFrom y (a.1, true)) ∈
+      (F.mapEdgeSet o : Sym2 (Cubic d)) := by
+    change F (cubicStepFrom y (a.1, true)) ∈ Sym2.map F (o : Sym2 (Cubic d))
+    apply Sym2.mem_map.mpr
+    exact ⟨cubicStepFrom y (a.1, true), by simp [o, cubicStepEdge], rfl⟩
+  have hentryPhysicalBox : F (cubicStepFrom y (a.1, true)) ∈
+      cubicMetricBox d (F W.seedCenter.1) m :=
+    (cubicRestartFrameIso_mem_cubicMetricBox_iff
+      cubicOrigin a (rootRadialTransverseFlip a) W.seedCenter.1
+      (cubicStepFrom y (a.1, true))).2 hentryBox
+  have hseedClosure : cubicBoxEdges d (F W.seedCenter.1) m ⊆ C := by
+    apply cubicBoxEdges_subset_finiteEdgeReachableClosure_of_incident
+      hoC hentry hentryPhysicalBox
+    intro g hg
+    obtain ⟨f, rfl⟩ := F.mapEdgeSet.surjective g
+    apply hseedAllowed
+    apply Finset.mem_image.mpr
+    refine ⟨f, ?_, rfl⟩
+    apply mem_cubicBoxEdges_of_endpoints
+    intro z hz
+    apply (cubicRestartFrameIso_mem_cubicMetricBox_iff
+      cubicOrigin a (rootRadialTransverseFlip a) W.seedCenter.1 z).1
+    apply endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges hg
+    change F z ∈ Sym2.map F (f : Sym2 (Cubic d))
+    exact Sym2.mem_map.mpr ⟨z, hz, rfl⟩
+  refine ⟨e, w, heBoundary, hwExterior, heExplored, ?_, hoExplored, hoExterior, ?_⟩
+  · intro f hfw
+    have hfPhysicalWalk : F.mapEdgeSet f ∈ walkEdgeFinset qPhysical := by
+      rw [mem_walkEdgeFinset_iff, SimpleGraph.Walk.edges_map]
+      apply List.mem_map.mpr
+      refine ⟨(f : Sym2 (Cubic d)), ?_, rfl⟩
+      change (f : Sym2 (Cubic d)) ∈ (w.append step).edges
+      rw [SimpleGraph.Walk.edges_append]
+      exact List.mem_append_left _ ((mem_walkEdgeFinset_iff w f).mp hfw)
+    have hfC := hqClosure hfPhysicalWalk
+    refine ⟨?_, rootBranch_mapEdgeSet_mem_rootRadialExteriorEdges a (hwExterior hfw)⟩
+    change F.mapEdgeSet f ∈ nextExploredEdgeSet (rootInitialExploredEdges d m) A B
+    exact Finset.mem_union_right _ hfC
+  · intro f hfSeed
+    have hfPhysicalBox : F.mapEdgeSet f ∈ cubicBoxEdges d (F W.seedCenter.1) m := by
+      apply mem_cubicBoxEdges_of_endpoints
+      intro z hz
+      change z ∈ Sym2.map F (f : Sym2 (Cubic d)) at hz
+      obtain ⟨u, huf, rfl⟩ := Sym2.mem_map.mp hz
+      exact (cubicRestartFrameIso_mem_cubicMetricBox_iff
+        cubicOrigin a (rootRadialTransverseFlip a) W.seedCenter.1 u).2
+          (endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges hfSeed huf)
+    refine ⟨?_, ?_⟩
+    · change F.mapEdgeSet f ∈ nextExploredEdgeSet (rootInitialExploredEdges d m) A B
+      exact Finset.mem_union_right _ (hseedClosure hfPhysicalBox)
+    · have hfTarget := seedEdge_mem_seededBoundaryTargetSupport
+        W.boundaryPoint.2 hentryBox hcLayer hfSeed
+      exact rootBranch_mapEdgeSet_mem_rootRadialExteriorEdges_of_restartSupport
+        hmn a (target_subset_restartEventSupport d a.1 m n R hfTarget)
+        (by exact (hcSeed hfSeed).2)
+
+/-- A seed named by the literal mixed-threshold radial witness is contained in the actual
+source explored closure. -/
+theorem rootRadialMixedWitness_seedBox_subset_explored
+    {d m n : ℕ} (hmn : m ≤ n) (a : CubicDirection d)
+    (p incremented : I) {delta : ℝ} (hdelta : delta = (incremented : ℝ))
+    (X : CubicEdge d → ℝ) (W : RestartSeedWitnessIndex d a.1 m n)
+    (hW : W.IsMixedRestartWitness (cubicMetricBox d cubicOrigin m)
+      p (fun _ ↦ 0) delta
+      (cubicGraphIsoCouplingReindex
+        (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)) X)) :
+    cubicBoxEdges d
+        (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)
+          W.seedCenter.1) m ⊆
+      rootRadialExploredEdges d m n p incremented X := by
+  classical
+  obtain ⟨_e, _w, _he, _hw, _heExplored, _hwExplored,
+      _hoExplored, _hoExterior, hseed⟩ :=
+    rootRadialMixedWitness_exploredCertificate
+      hmn a p incremented hdelta X W hW
+  intro g hg
+  let F := cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)
+  obtain ⟨f, rfl⟩ := F.mapEdgeSet.surjective g
+  apply (hseed f ?_).1
+  apply mem_cubicBoxEdges_of_endpoints
+  intro z hz
+  apply (cubicRestartFrameIso_mem_cubicMetricBox_iff
+    cubicOrigin a (rootRadialTransverseFlip a) W.seedCenter.1 z).1
+  apply endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges hg
+  change F z ∈ Sym2.map F (f : Sym2 (Cubic d))
+  exact Sym2.mem_map.mpr ⟨z, hz, rfl⟩
+
+/-- The canonical post-radial query really starts from the seed selected by the preceding
+mixed-threshold branch: its reference region contains the complete inlet box `B(m)`. -/
+theorem RootRadialSeedProfile.cubicMetricBox_subset_postRadialQuery_region_of_mixedWitness
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) {delta : ℝ} (hdelta : delta = (incremented : ℝ))
+    (X : CubicEdge d → ℝ)
+    (hW : (W a).IsMixedRestartWitness (cubicMetricBox d cubicOrigin m)
+      p (fun _ ↦ 0) delta
+      (cubicGraphIsoCouplingReindex
+        (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)) X)) :
+    let S := rootPostRadialSourceEdgeState d m n p incremented X
+    let Q := S.framedQuery (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a)
+    cubicMetricBox d cubicOrigin m ⊆ Q.region := by
+  classical
+  let S := rootPostRadialSourceEdgeState d m n p incremented X
+  let F := W.postRadialFrame a
+  let Q := S.framedQuery (W.physicalCenter a) a
+    (oppositeTransverseRestartFlip a)
+  dsimp only
+  intro z hz
+  have hzEndpoint : z ∈ cubicEdgeEndpointVertices (cubicBoxEdges d cubicOrigin m) :=
+    cubicMetricBox_subset_cubicEdgeEndpointVertices_cubicBoxEdges hm hz
+  obtain ⟨f, hfBox, hzf⟩ := mem_cubicEdgeEndpointVertices_iff.mp hzEndpoint
+  have hfPhysicalBox : F.mapEdgeSet f ∈
+      cubicBoxEdges d (W.physicalCenter a) m := by
+    have hfImage : F.mapEdgeSet f ∈
+        (cubicBoxEdges d cubicOrigin m).image F.mapEdgeSet :=
+      Finset.mem_image.mpr ⟨f, hfBox, rfl⟩
+    rw [show (cubicBoxEdges d cubicOrigin m).image F.mapEdgeSet =
+        cubicBoxEdges d (W.physicalCenter a) m by
+      simpa [F, RootRadialSeedProfile.postRadialFrame] using
+        cubicRestartFrameIso_image_cubicBoxEdges_eq
+          (n := m) (W.physicalCenter a) a (oppositeTransverseRestartFlip a)] at hfImage
+    exact hfImage
+  have hfExplored : F.mapEdgeSet f ∈ S.explored := by
+    change F.mapEdgeSet f ∈
+      (rootPostRadialSourceEdgeState d m n p incremented X).explored
+    rw [rootPostRadialSourceEdgeState_explored hm hmn p incremented X]
+    have hmn' : m ≤ n := by omega
+    apply rootRadialMixedWitness_seedBox_subset_explored
+      hmn' a p incremented hdelta X (W a) hW
+    simpa [RootRadialSeedProfile.physicalCenter] using hfPhysicalBox
+  have hfReference : f ∈ S.referenceExploredEdges F := by
+    rw [SourceFiniteEdgeRevealState.referenceExploredEdges, Finset.mem_image]
+    refine ⟨F.mapEdgeSet f, hfExplored, ?_⟩
+    change F.mapEdgeSet.symm (F.mapEdgeSet f) = f
+    exact F.mapEdgeSet.symm_apply_apply f
+  change z ∈ cubicEdgeEndpointVertices (S.referenceExploredEdges F)
+  exact mem_cubicEdgeEndpointVertices_iff.mpr ⟨f, hfReference, hzf⟩
+
+/-- A named mixed-threshold radial witness is constant throughout its unchanged post-radial
+accumulated-history cell. -/
+theorem rootRadialMixedWitness_of_mem_rootPostRadialSourceHistoryProfile
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (a : CubicDirection d) (p incremented : I) {delta : ℝ}
+    (hdelta : delta = (incremented : ℝ))
+    (X Y : CubicEdge d → ℝ) (W : RestartSeedWitnessIndex d a.1 m n)
+    (hW : W.IsMixedRestartWitness (cubicMetricBox d cubicOrigin m)
+      p (fun _ ↦ 0) delta
+      (cubicGraphIsoCouplingReindex
+        (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)) X))
+    (hY : Y ∈
+      (rootPostRadialSourceEdgeState d m n p incremented X).historyProfile.event) :
+    W.IsMixedRestartWitness (cubicMetricBox d cubicOrigin m)
+      p (fun _ ↦ 0) delta
+      (cubicGraphIsoCouplingReindex
+        (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)) Y) := by
+  classical
+  let R := cubicMetricBox d cubicOrigin m
+  let E := cubicRegionBoundaryEdgesWithinBox d R n
+  let F := cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)
+  let Yref := cubicGraphIsoCouplingReindex F Y
+  have hmn' : m ≤ n := by omega
+  obtain ⟨e, w, heBoundary, hwExterior, heExplored, hwCertificate,
+      hoExplored, hoExterior, hseedCertificate⟩ :=
+    rootRadialMixedWitness_exploredCertificate
+      hmn' a p incremented hdelta X W hW
+  have hrealizedX := hW.1
+  rcases hrealizedX with ⟨hoCleared, hentryBox, hcLayer, hcSeed⟩
+  change W.IsMixedRestartWitness R p (fun _ ↦ 0) delta Yref
+  refine ⟨?_, e, heBoundary, ?_, ?_⟩
+  · refine ⟨?_, hentryBox, hcLayer, ?_⟩
+    · change Yref (cubicStepEdge W.boundaryPoint.1 (a.1, true)) < (p : ℝ) ∧
+        cubicStepEdge W.boundaryPoint.1 (a.1, true) ∉ E
+      constructor
+      · change Y (F.mapEdgeSet
+          (cubicStepEdge W.boundaryPoint.1 (a.1, true))) < (p : ℝ)
+        exact label_lt_density_of_mem_rootPostRadialSourceHistoryProfile
+          hm hmn p incremented X Y hoExterior hoExplored hY
+      · exact hoCleared.2
+    · intro f hfSeed
+      change Yref f < (p : ℝ) ∧ f ∉ E
+      have hfCertificate := hseedCertificate f hfSeed
+      constructor
+      · change Y (F.mapEdgeSet f) < (p : ℝ)
+        exact label_lt_density_of_mem_rootPostRadialSourceHistoryProfile
+          hm hmn p incremented X Y hfCertificate.2 hfCertificate.1 hY
+      · exact (hcSeed hfSeed).2
+  · refine ⟨w, ?_, hwExterior⟩
+    intro fSym hfWalk
+    let f : CubicEdge d := ⟨fSym, w.edges_subset_edgeSet hfWalk⟩
+    have hfFinset : f ∈ walkEdgeFinset w :=
+      (mem_walkEdgeFinset_iff w f).mpr hfWalk
+    have hfCertificate := hwCertificate f hfFinset
+    change Yref f < (p : ℝ) ∧ f ∉ E
+    constructor
+    · change Y (F.mapEdgeSet f) < (p : ℝ)
+      exact label_lt_density_of_mem_rootPostRadialSourceHistoryProfile
+        hm hmn p incremented X Y hfCertificate.2 hfCertificate.1 hY
+    · intro hfBoundary
+      exact Set.disjoint_left.mp
+        (disjoint_cubicRegionExteriorEdgesWithinBox_boundary d R n)
+        (hwExterior hfFinset) hfBoundary
+  · change Yref e < ((fun _ : CubicEdge d ↦ (0 : I)) e : ℝ) + delta
+    have hePhysicalBoundary :=
+      rootBranch_mapEdgeSet_mem_rootInitialBoundaryEdges a heBoundary
+    have heOpen := label_lt_incremented_of_mem_rootPostRadialSourceHistoryProfile
+      hm hmn p incremented X Y hePhysicalBoundary heExplored hY
+    simpa [Yref, F, hdelta] using heOpen
+
+/-- The reference positive restart region becomes the literal opposite-quadrant region after
+the transverse reversal. -/
+theorem cubicRestartFrameIso_positiveSeededRestartRegion_subset_steered
+    {d m n : ℕ} (i : Fin d) :
+    cubicGraphIsoRegion
+        (cubicRestartFrameIso cubicOrigin (i, true)
+          (oppositeTransverseRestartFlip (i, true)))
+        (positiveSeededRestartRegion d i m n) ⊆
+      steeredPositiveRestartRegion d i m n := by
+  rintro z ⟨w, hw, rfl⟩
+  rcases hw with hw | hw
+  · left
+    have himage := (cubicRestartFrameIso_mem_cubicMetricBox_iff
+      cubicOrigin (i, true) (oppositeTransverseRestartFlip (i, true))
+      cubicOrigin w).2 hw
+    simpa only [cubicRestartFrameIso_origin] using himage
+  · right
+    exact cubicRestartFrameIso_seededBoundaryLayerRegion_subset_steered i
+      ⟨w, hw, rfl⟩
+
+/-- A post-radial restart from a genuinely realized selected seed stays inside the two
+endpoint site boxes required by the Grimmett--Marstrand construction. -/
+theorem RootRadialSeedProfile.postRadialRestartRegion_subset_endpointBoxes
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (a : CubicDirection d) {omega : EdgeConfiguration d}
+    (hW : (W a).IsRealized omega) :
+    W.postRadialRestartRegion a ⊆
+      (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1)
+            (cubicStepFrom cubicOrigin a))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  intro z hz
+  rcases hz with ⟨q, hq, rfl⟩
+  let G := cubicRestartFrameIso cubicOrigin (a.1, true)
+    (oppositeTransverseRestartFlip (a.1, true))
+  have hGq : G q ∈ steeredPositiveRestartRegion d a.1 m n :=
+    cubicRestartFrameIso_positiveSeededRestartRegion_subset_steered a.1
+      ⟨q, hq, rfl⟩
+  have href :=
+    translated_steeredRestartRegion_subset_endpointBoxes_of_boxWithinBoundaryLayer
+      a.1 hW.2.2.1
+        ⟨G q, hGq, rfl⟩
+  rw [W.postRadialFrame_apply]
+  rcases href with href | href
+  · left
+    have himage := (cubicRestartFrameIso_mem_cubicMetricBox_iff
+      cubicOrigin a (rootRadialTransverseFlip a) cubicOrigin
+      (cubicTranslate cubicOrigin (W a).seedCenter.1 (G q))).2 href
+    simpa using himage
+  · right
+    have himage := (cubicRestartFrameIso_mem_cubicMetricBox_iff
+      cubicOrigin a (rootRadialTransverseFlip a)
+      (grimmettMarstrandSiteCenter (m + n + 1)
+        (cubicStepFrom cubicOrigin (a.1, true)))
+      (cubicTranslate cubicOrigin (W a).seedCenter.1 (G q))).2 href
+    have hcenter :
+        cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)
+            (grimmettMarstrandSiteCenter (m + n + 1)
+              (cubicStepFrom cubicOrigin (a.1, true))) =
+          grimmettMarstrandSiteCenter (m + n + 1)
+            (cubicStepFrom cubicOrigin a) := by
+      rw [show rootRadialTransverseFlip a = (fun _ ↦ false) by rfl,
+        cubicRestartFrameIso_noTransverse_eq]
+      have hzero : grimmettMarstrandSiteCenter (m + n + 1)
+          (cubicOrigin : Cubic d) = cubicOrigin := by
+        ext j
+        simp [grimmettMarstrandSiteCenter, cubicScale, cubicOrigin]
+      rw [← hzero]
+      exact cubicDirectionOrientationIso_referenceNextSiteCenter
+        (N := m + n + 1) cubicOrigin a
+    simpa [hcenter] using himage
+
+/-- Reference-coordinate separation between two distinct post-radial root directions.  A
+restart in direction `b` uses the wide radius only along `b`; in every transverse coordinate it
+stays in the original radius-`n` strip.  After recentering at the selected seed in a distinct
+direction `a`, every endpoint therefore lies strictly behind the new positive `n`-face. -/
+theorem RootRadialSeedProfile.postRadial_referenceCoord_add_one_lt_of_ne
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a)
+    {R : Finset (Cubic d)} {f : CubicEdge d}
+    (hf : f ∈ restartEventSupport d b.1 m n R)
+    {w z : Cubic d} (hwf : w ∈ (f : Sym2 (Cubic d)))
+    (hframes : W.postRadialFrame a z = W.postRadialFrame b w) :
+    z a.1 + 1 < (n : ℤ) := by
+  have hwWide : w ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1) :=
+    endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges
+      (restartEventSupport_subset_cubicBoxEdges_wide d b.1 m n R hf) hwf
+  rcases a with ⟨i, sa⟩
+  rcases b with ⟨j, sb⟩
+  have hai : (W (i, sa)).seedCenter.1 i = (n + m + 1 : ℕ) :=
+    seedCenter_axis_eq_of_boxWithinBoundaryLayer i (hgeom (i, sa))
+  have hbj : (W (j, sb)).seedCenter.1 j = (n + m + 1 : ℕ) :=
+    seedCenter_axis_eq_of_boxWithinBoundaryLayer j (hgeom (j, sb))
+  by_cases hij : i = j
+  · subst j
+    have hwBounds := (mem_cubicMetricBox.mp hwWide) i
+    simp [cubicOrigin] at hwBounds
+    cases sa <;> cases sb
+    · exact (hab rfl).elim
+    · have hcenterA : W.physicalCenter (i, false) i =
+          -(n + m + 1 : ℕ) := by
+        simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+          hai, cubicOrigin]
+      have hcenterB : W.physicalCenter (i, true) i =
+          (n + m + 1 : ℕ) := by
+        simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+          hbj, cubicOrigin]
+      have hAz : W.postRadialFrame (i, false) z i =
+          -z i - (n + m + 1 : ℕ) := by
+        simp only [RootRadialSeedProfile.postRadialFrame,
+          cubicRestartFrameIso_apply]
+        rw [hcenterA]
+        simp [cubicRestartFrameFlip] <;> ring
+      have hBw : W.postRadialFrame (i, true) w i =
+          w i + (n + m + 1 : ℕ) := by
+        simp only [RootRadialSeedProfile.postRadialFrame,
+          cubicRestartFrameIso_apply]
+        rw [hcenterB]
+        simp [cubicRestartFrameFlip] <;> ring
+      have hcoord : W.postRadialFrame (i, false) z i =
+          W.postRadialFrame (i, true) w i := congrFun hframes i
+      have hcoord' : -z i - (n + m + 1 : ℕ) =
+          w i + (n + m + 1 : ℕ) :=
+        hAz.symm.trans (hcoord.trans hBw)
+      clear hcoord hAz hBw hframes hcenterA hcenterB hai hbj
+      change z i + 1 < (n : ℤ)
+      omega
+    · have hcenterA : W.physicalCenter (i, true) i =
+          (n + m + 1 : ℕ) := by
+        simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+          hai, cubicOrigin]
+      have hcenterB : W.physicalCenter (i, false) i =
+          -(n + m + 1 : ℕ) := by
+        simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+          hbj, cubicOrigin]
+      have hAz : W.postRadialFrame (i, true) z i =
+          z i + (n + m + 1 : ℕ) := by
+        simp only [RootRadialSeedProfile.postRadialFrame,
+          cubicRestartFrameIso_apply]
+        rw [hcenterA]
+        simp [cubicRestartFrameFlip] <;> ring
+      have hBw : W.postRadialFrame (i, false) w i =
+          -w i - (n + m + 1 : ℕ) := by
+        simp only [RootRadialSeedProfile.postRadialFrame,
+          cubicRestartFrameIso_apply]
+        rw [hcenterB]
+        simp [cubicRestartFrameFlip] <;> ring
+      have hcoord : W.postRadialFrame (i, true) z i =
+          W.postRadialFrame (i, false) w i := congrFun hframes i
+      have hcoord' : z i + (n + m + 1 : ℕ) =
+          -w i - (n + m + 1 : ℕ) :=
+        hAz.symm.trans (hcoord.trans hBw)
+      clear hcoord hAz hBw hframes hcenterA hcenterB hai hbj
+      change z i + 1 < (n : ℤ)
+      omega
+    · exact (hab rfl).elim
+  · have hwTrans := endpoint_mem_restartEventSupport_transverse_bounds
+        (i := j) (j := i) hij hf hwf
+    have hbi := seedCenter_transverse_bounds_of_boxWithinBoundaryLayer
+      j (hgeom (j, sb)) hij
+    have hcenterB : W.physicalCenter (j, sb) i = (W (j, sb)).seedCenter.1 i := by
+      simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+        rootRadialTransverseFlip, cubicOrigin, hij]
+    have hBw : W.postRadialFrame (j, sb) w i =
+        -w i + (W (j, sb)).seedCenter.1 i := by
+      simp only [RootRadialSeedProfile.postRadialFrame,
+        cubicRestartFrameIso_apply]
+      rw [hcenterB]
+      simp [cubicRestartFrameFlip, oppositeTransverseRestartFlip, hij]
+    cases sa
+    · have hcenterA : W.physicalCenter (i, false) i =
+          -(n + m + 1 : ℕ) := by
+        simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+          hai, cubicOrigin]
+      have hAz : W.postRadialFrame (i, false) z i =
+          -z i - (n + m + 1 : ℕ) := by
+        simp only [RootRadialSeedProfile.postRadialFrame,
+          cubicRestartFrameIso_apply]
+        rw [hcenterA]
+        simp [cubicRestartFrameFlip] <;> ring
+      have hcoord : W.postRadialFrame (i, false) z i =
+          W.postRadialFrame (j, sb) w i := congrFun hframes i
+      have hcoord' : -z i - (n + m + 1 : ℕ) =
+          -w i + (W (j, sb)).seedCenter.1 i :=
+        hAz.symm.trans (hcoord.trans hBw)
+      change z i + 1 < (n : ℤ)
+      omega
+    · have hcenterA : W.physicalCenter (i, true) i =
+          (n + m + 1 : ℕ) := by
+        simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+          hai, cubicOrigin]
+      have hAz : W.postRadialFrame (i, true) z i =
+          z i + (n + m + 1 : ℕ) := by
+        simp only [RootRadialSeedProfile.postRadialFrame,
+          cubicRestartFrameIso_apply]
+        rw [hcenterA]
+        simp [cubicRestartFrameFlip] <;> ring
+      have hcoord : W.postRadialFrame (i, true) z i =
+          W.postRadialFrame (j, sb) w i := congrFun hframes i
+      have hcoord' : z i + (n + m + 1 : ℕ) =
+          -w i + (W (j, sb)).seedCenter.1 i :=
+        hAz.symm.trans (hcoord.trans hBw)
+      change z i + 1 < (n : ℤ)
+      omega
+
+/-- The weaker endpoint separation used by freshness follows from the one-layer estimate. -/
+theorem RootRadialSeedProfile.postRadial_referenceCoord_lt_of_ne
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a)
+    {R : Finset (Cubic d)} {f : CubicEdge d}
+    (hf : f ∈ restartEventSupport d b.1 m n R)
+    {w z : Cubic d} (hwf : w ∈ (f : Sym2 (Cubic d)))
+    (hframes : W.postRadialFrame a z = W.postRadialFrame b w) :
+    z a.1 < (n : ℤ) := by
+  have h := W.postRadial_referenceCoord_add_one_lt_of_ne
+    hm hmn hgeom hab hf hwf hframes
+  omega
+
+/-- Pulling a distinct post-radial restart support into the current direction's reference frame
+puts every endpoint strictly behind the current positive target face.  This is the support-level
+form of `postRadial_referenceCoord_lt_of_ne` needed by the sequential root exploration. -/
+theorem RootRadialSeedProfile.postRadialRestartSupport_endpoint_coord_add_one_lt_of_ne
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a) {R : Finset (Cubic d)}
+    {e : CubicEdge d}
+    (he : e ∈ (framedRestartSupport (W.physicalCenter b) b
+      (oppositeTransverseRestartFlip b) m n R).image
+        (W.postRadialFrame a).symm.mapEdgeSet)
+    {z : Cubic d} (hze : z ∈ (e : Sym2 (Cubic d))) :
+    z a.1 + 1 < (n : ℤ) := by
+  classical
+  rw [Finset.mem_image] at he
+  obtain ⟨ePhysical, hePhysical, rfl⟩ := he
+  change z ∈ Sym2.map (W.postRadialFrame a).symm
+    (ePhysical : Sym2 (Cubic d)) at hze
+  rw [Sym2.mem_map] at hze
+  obtain ⟨y, hye, rfl⟩ := hze
+  rw [framedRestartSupport, Finset.mem_image] at hePhysical
+  obtain ⟨f, hf, rfl⟩ := hePhysical
+  change y ∈ Sym2.map (W.postRadialFrame b) (f : Sym2 (Cubic d)) at hye
+  rw [Sym2.mem_map] at hye
+  obtain ⟨w, hwf, rfl⟩ := hye
+  apply W.postRadial_referenceCoord_add_one_lt_of_ne hm hmn hgeom hab hf hwf
+  simp
+
+/-- Weak endpoint separation retained for the existing target-freshness interface. -/
+theorem RootRadialSeedProfile.postRadialRestartSupport_endpoint_coord_lt_of_ne
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a) {R : Finset (Cubic d)}
+    {e : CubicEdge d}
+    (he : e ∈ (framedRestartSupport (W.physicalCenter b) b
+      (oppositeTransverseRestartFlip b) m n R).image
+        (W.postRadialFrame a).symm.mapEdgeSet)
+    {z : Cubic d} (hze : z ∈ (e : Sym2 (Cubic d))) :
+    z a.1 < (n : ℤ) := by
+  have h := W.postRadialRestartSupport_endpoint_coord_add_one_lt_of_ne
+    hm hmn hgeom hab he hze
+  omega
+
+/-- Endpoint freshness between two distinct root directions: after pulling the earlier
+direction's restart support into the current frame, it is disjoint from the current seeded
+target support. -/
+theorem RootRadialSeedProfile.postRadialRestartSupport_targetEndpointFresh_of_ne
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a) (R : Finset (Cubic d)) :
+    Disjoint
+      (cubicEdgeEndpointVertices
+        ((framedRestartSupport (W.physicalCenter b) b
+          (oppositeTransverseRestartFlip b) m n R).image
+            (W.postRadialFrame a).symm.mapEdgeSet))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
+  apply disjoint_endpointVertices_seededBoundaryTargetSupport_of_coord_lt
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  exact W.postRadialRestartSupport_endpoint_coord_lt_of_ne
+    hm hmn hgeom hab he hze
+
+/-- A source update in a distinct root direction preserves the fact that all explored
+endpoints lie behind the current direction's target face.  The old part follows from the
+induction hypothesis, while every newly added edge lies in the distinct direction's framed
+restart support and is handled by the pairwise steering geometry above. -/
+theorem RootRadialSeedProfile.referenceEndpoint_coord_lt_next_of_ne
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a)
+    (S : SourceFiniteEdgeRevealState d) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    (hBehind : ∀ z ∈ cubicEdgeEndpointVertices
+      (S.referenceExploredEdges (W.postRadialFrame a)), z a.1 < (n : ℤ))
+    {z : Cubic d}
+    (hz : z ∈ cubicEdgeEndpointVertices
+      ((S.next
+        ((S.framedQuery (W.physicalCenter b) b
+          (oppositeTransverseRestartFlip b)).restartSupport m n)
+        p incremented X).referenceExploredEdges (W.postRadialFrame a))) :
+    z a.1 < (n : ℤ) := by
+  classical
+  let Fa := W.postRadialFrame a
+  let Qb := S.framedQuery (W.physicalCenter b) b
+    (oppositeTransverseRestartFlip b)
+  obtain ⟨e, heReference, hze⟩ :=
+    mem_cubicEdgeEndpointVertices_iff.mp hz
+  rw [SourceFiniteEdgeRevealState.referenceExploredEdges,
+    Finset.mem_image] at heReference
+  obtain ⟨f, hfNext, rfl⟩ := heReference
+  have hfNext' : f ∈ S.nextExplored (Qb.restartSupport m n) p incremented X := by
+    exact hfNext
+  have hfAllowed := S.nextExplored_subset_explored_union_stageRegion
+    (Qb.restartSupport m n) p incremented X hfNext'
+  rw [Finset.mem_union] at hfAllowed
+  rcases hfAllowed with hfOld | hfStage
+  · apply hBehind z
+    apply mem_cubicEdgeEndpointVertices_iff.mpr
+    refine ⟨Fa.symm.mapEdgeSet f, ?_, hze⟩
+    exact Finset.mem_image.mpr ⟨f, hfOld, rfl⟩
+  · apply W.postRadialRestartSupport_endpoint_coord_lt_of_ne
+      hm hmn hgeom hab (R := cubicEdgeEndpointVertices
+        (S.referenceExploredEdges (W.postRadialFrame b)))
+    · apply Finset.mem_image.mpr
+      refine ⟨f, ?_, rfl⟩
+      simpa [Qb, SourceFiniteEdgeRevealState.framedQuery,
+        FramedRestartQuery.restartSupport,
+        RootRadialSeedProfile.postRadialFrame] using hfStage
+    · exact hze
+
+/-- One source update in another direction preserves a full unused vertex layer before the
+current target face.  This is the precise geometry required by Lemma 7.17, whose avoidance
+hypothesis includes the vertex boundary of the explored region. -/
+theorem RootRadialSeedProfile.referenceEndpoint_coord_add_one_lt_next_of_ne
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n)
+    (hgeom : ∀ c : CubicDirection d,
+      SeedBoxWithinBoundaryLayer d c.1 m n (W c).seedCenter.1)
+    {a b : CubicDirection d} (hab : b ≠ a)
+    (S : SourceFiniteEdgeRevealState d) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    (hBehind : ∀ z ∈ cubicEdgeEndpointVertices
+      (S.referenceExploredEdges (W.postRadialFrame a)), z a.1 + 1 < (n : ℤ))
+    {z : Cubic d}
+    (hz : z ∈ cubicEdgeEndpointVertices
+      ((S.next
+        ((S.framedQuery (W.physicalCenter b) b
+          (oppositeTransverseRestartFlip b)).restartSupport m n)
+        p incremented X).referenceExploredEdges (W.postRadialFrame a))) :
+    z a.1 + 1 < (n : ℤ) := by
+  classical
+  let Fa := W.postRadialFrame a
+  let Qb := S.framedQuery (W.physicalCenter b) b
+    (oppositeTransverseRestartFlip b)
+  obtain ⟨e, heReference, hze⟩ :=
+    mem_cubicEdgeEndpointVertices_iff.mp hz
+  rw [SourceFiniteEdgeRevealState.referenceExploredEdges,
+    Finset.mem_image] at heReference
+  obtain ⟨f, hfNext, rfl⟩ := heReference
+  have hfNext' : f ∈ S.nextExplored (Qb.restartSupport m n) p incremented X := hfNext
+  have hfAllowed := S.nextExplored_subset_explored_union_stageRegion
+    (Qb.restartSupport m n) p incremented X hfNext'
+  rw [Finset.mem_union] at hfAllowed
+  rcases hfAllowed with hfOld | hfStage
+  · apply hBehind z
+    apply mem_cubicEdgeEndpointVertices_iff.mpr
+    refine ⟨Fa.symm.mapEdgeSet f, ?_, hze⟩
+    exact Finset.mem_image.mpr ⟨f, hfOld, rfl⟩
+  · apply W.postRadialRestartSupport_endpoint_coord_add_one_lt_of_ne
+      hm hmn hgeom hab (R := cubicEdgeEndpointVertices
+        (S.referenceExploredEdges (W.postRadialFrame b)))
+    · apply Finset.mem_image.mpr
+      refine ⟨f, ?_, rfl⟩
+      simpa [Qb, SourceFiniteEdgeRevealState.framedQuery,
+        FramedRestartQuery.restartSupport,
+        RootRadialSeedProfile.postRadialFrame] using hfStage
+    · exact hze
+
+/-- Every endpoint examined by the simultaneous radial phase lies strictly behind the next
+positive target face when pulled into the selected seed's post-radial frame. -/
+theorem rootPostRadialSourceEdgeState_referenceEndpoint_coord_add_one_lt_of_geometry
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hgeom : SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1)
+    {z : Cubic d}
+    (hz : z ∈ cubicEdgeEndpointVertices
+      ((rootPostRadialSourceEdgeState d m n p incremented X).referenceExploredEdges
+        (W.postRadialFrame a))) :
+    z a.1 + 1 < (n : ℤ) := by
+  let F := W.postRadialFrame a
+  obtain ⟨e, heReference, hze⟩ :=
+    mem_cubicEdgeEndpointVertices_iff.mp hz
+  rw [SourceFiniteEdgeRevealState.referenceExploredEdges,
+    Finset.mem_image] at heReference
+  obtain ⟨f, hfExplored, rfl⟩ := heReference
+  change z ∈ Sym2.map F.symm (f : Sym2 (Cubic d)) at hze
+  rw [Sym2.mem_map] at hze
+  obtain ⟨w, hwf, hwz⟩ := hze
+  have hwEq : w = F z := by
+    apply F.injective
+    simpa using congrArg F hwz
+  subst w
+  have hfRadial : f ∈ rootRadialExploredEdges d m n p incremented X := by
+    rw [rootPostRadialSourceEdgeState_explored hm (Nat.le_of_lt hmn)
+      p incremented X] at hfExplored
+    exact hfExplored
+  have hfWide : f ∈ cubicBoxEdges d cubicOrigin (n + 2 * m + 1) :=
+    rootRadialEdgeSupport_subset_wideBox d m n
+      (rootRadialExploredEdges_subset_support d m n p incremented X hfRadial)
+  have hzPhysical : F z ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1) :=
+    endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges hfWide hwf
+  have hseedAxis : (W a).seedCenter.1 a.1 = (n + m + 1 : ℕ) :=
+    seedCenter_axis_eq_of_boxWithinBoundaryLayer a.1 hgeom
+  cases ha : a.2
+  · have hphysicalAxis : W.physicalCenter a a.1 =
+        -(n + m + 1 : ℕ) := by
+      simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+        hseedAxis, cubicOrigin, ha]
+    have hcoord := (mem_cubicMetricBox.mp hzPhysical) a.1
+    simp [F, RootRadialSeedProfile.postRadialFrame, cubicRestartFrameFlip,
+      hphysicalAxis, cubicOrigin, ha] at hcoord
+    omega
+  · have hphysicalAxis : W.physicalCenter a a.1 =
+        (n + m + 1 : ℕ) := by
+      simp [RootRadialSeedProfile.physicalCenter, cubicRestartFrameFlip,
+        hseedAxis, cubicOrigin, ha]
+    have hcoord := (mem_cubicMetricBox.mp hzPhysical) a.1
+    simp [F, RootRadialSeedProfile.postRadialFrame, cubicRestartFrameFlip,
+      hphysicalAxis, cubicOrigin, ha] at hcoord
+    omega
+
+/-- Weak post-radial endpoint separation retained for target-support freshness. -/
+theorem rootPostRadialSourceEdgeState_referenceEndpoint_coord_lt_of_geometry
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hgeom : SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1)
+    {z : Cubic d}
+    (hz : z ∈ cubicEdgeEndpointVertices
+      ((rootPostRadialSourceEdgeState d m n p incremented X).referenceExploredEdges
+        (W.postRadialFrame a))) :
+    z a.1 < (n : ℤ) := by
+  have h := rootPostRadialSourceEdgeState_referenceEndpoint_coord_add_one_lt_of_geometry
+    hm hmn W a p incremented X hgeom hz
+  omega
+
+/-- Realization-facing one-layer post-radial endpoint bound. -/
+theorem rootPostRadialSourceEdgeState_referenceEndpoint_coord_add_one_lt
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hW : (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X))
+    {z : Cubic d}
+    (hz : z ∈ cubicEdgeEndpointVertices
+      ((rootPostRadialSourceEdgeState d m n p incremented X).referenceExploredEdges
+        (W.postRadialFrame a))) :
+    z a.1 + 1 < (n : ℤ) :=
+  rootPostRadialSourceEdgeState_referenceEndpoint_coord_add_one_lt_of_geometry
+    hm hmn W a p incremented X hW.2.2.1 hz
+
+/-- Realization-facing wrapper for the geometric post-radial endpoint bound. -/
+theorem rootPostRadialSourceEdgeState_referenceEndpoint_coord_lt
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hW : (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X))
+    {z : Cubic d}
+    (hz : z ∈ cubicEdgeEndpointVertices
+      ((rootPostRadialSourceEdgeState d m n p incremented X).referenceExploredEdges
+        (W.postRadialFrame a))) :
+    z a.1 < (n : ℤ) :=
+  rootPostRadialSourceEdgeState_referenceEndpoint_coord_lt_of_geometry
+    hm hmn W a p incremented X hW.2.2.1 hz
+
+/-- The literal post-radial source state has not examined any endpoint of the next target from
+the selected seed.  This is the concrete first instance of Grimmett's steering-freshness claim:
+the simultaneous radial support lies in `B(n+2m+1)`, whereas the selected center is exactly
+`n+m+1` units in direction `a`, so its pullback lies strictly behind the new `n`-face. -/
+theorem rootPostRadialSourceEdgeState_targetEndpointFresh
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hW : (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X)) :
+    let S := rootPostRadialSourceEdgeState d m n p incremented X
+    let F := W.postRadialFrame a
+    Disjoint (cubicEdgeEndpointVertices (S.referenceExploredEdges F))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
+  dsimp only
+  apply disjoint_endpointVertices_seededBoundaryTargetSupport_of_coord_lt
+  intro z hz
+  exact rootPostRadialSourceEdgeState_referenceEndpoint_coord_lt
+    hm hmn W a p incremented X hW hz
+
+/-- Consequently, the literal first post-radial query has exactly the source boundary
+intersected with its reveal support; no extra target coordinate has been examined. -/
+theorem rootPostRadial_framedQuery_boundarySupport_eq
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hW : (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X)) :
+    let S := rootPostRadialSourceEdgeState d m n p incremented X
+    let Q := S.framedQuery (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a)
+    Q.boundarySupport n = S.boundary ∩ Q.restartSupport m n := by
+  dsimp only
+  apply SourceFiniteEdgeRevealState.framedQuery_boundarySupport_eq_boundary_inter_restartSupport_of_targetEndpointFresh
+  simpa [RootRadialSeedProfile.postRadialFrame] using
+    rootPostRadialSourceEdgeState_targetEndpointFresh hm hmn W a p incremented X hW
+
+/-- The literal first post-radial query is also disjoint from the edge set already explored by
+the simultaneous radial phase. -/
+theorem rootPostRadial_framedQuery_explored_disjoint_restartSupport
+    {d m n : ℕ} [NeZero d] (hm : 1 ≤ m) (hmn : m + 1 < n)
+    (W : RootRadialSeedProfile d m n) (a : CubicDirection d)
+    (p incremented : I) (X : CubicEdge d → ℝ)
+    (hW : (W a).IsRealized
+      (framedReferenceThresholdConfiguration cubicOrigin a
+        (rootRadialTransverseFlip a) p X)) :
+    let S := rootPostRadialSourceEdgeState d m n p incremented X
+    let Q := S.framedQuery (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a)
+    Disjoint (S.explored : Set (CubicEdge d))
+      (Q.restartSupport m n : Set (CubicEdge d)) := by
+  dsimp only
+  apply SourceFiniteEdgeRevealState.framedQuery_explored_disjoint_restartSupport_of_targetEndpointFresh
+  simpa [RootRadialSeedProfile.postRadialFrame] using
+    rootPostRadialSourceEdgeState_targetEndpointFresh hm hmn W a p incremented X hW
+
+/-- The radial root event simultaneously supplies all concrete seed centers, their final-density
+connections to the central seed, and the endpoint-box steering certificate needed for the
+second root phase. -/
+theorem exists_rootRadialSeedProfile_with_steering_of_mem
+    {d m n : ℕ} (hmn : m + 1 < n) {X : CubicEdge d → ℝ}
+    {p pFinal : I} {delta : ℝ}
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hdeltaFinal : delta ≤ (pFinal : ℝ))
+    (hroot : X ∈ rootRadialEvent d m n p delta) :
+    ∃ W : RootRadialSeedProfile d m n,
+      ∀ a : CubicDirection d,
+        rootRadialSelectedSeed d m n pFinal a X = some (W a) ∧
+        (W a).IsRealized
+          (framedReferenceThresholdConfiguration cubicOrigin a
+            (rootRadialTransverseFlip a) pFinal X) ∧
+        (∃ z ∈ cubicMetricBox d cubicOrigin m,
+          thresholdConfiguration pFinal X ∈
+            connectionEventIn d (cubicBoxEdges d cubicOrigin n)
+              (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a) z)
+              (W.physicalBoundaryPoint a)) ∧
+        W.postRadialRestartRegion a ⊆
+          (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) ∪
+            (cubicMetricBox d
+              (grimmettMarstrandSiteCenter (m + n + 1)
+                (cubicStepFrom cubicOrigin a))
+              (2 * (m + n + 1)) : Set (Cubic d)) := by
+  obtain ⟨W, hW⟩ := exists_rootRadialSeedProfile_of_mem
+    hmn hpFinal hdeltaFinal hroot
+  refine ⟨W, fun a ↦ ?_⟩
+  have ha := hW a
+  refine ⟨ha.1, ha.2.1, ha.2.2, ?_⟩
+  exact W.postRadialRestartRegion_subset_endpointBoxes a ha.2.1
+
+end Percolation

@@ -98,6 +98,23 @@ theorem pow_mul_measureReal_lt_of_step
               (ih (by omega) (fun j hj ↦ hstep j (by omega))) ha
           _ < mu.real (history (k + 1)) := hstep k (by omega)
 
+/-- Intersecting an arbitrary event with a measurable probability-one support does not change
+its real measure.  The event itself need not be measurable; this is useful for semantic events
+which have only subsequently been identified almost surely with finite cylinder unions. -/
+theorem measureReal_inter_eq_of_measureReal_eq_one
+    {Omega : Type*} [MeasurableSpace Omega] {mu : Measure Omega}
+    [IsProbabilityMeasure mu]
+    (support event : Set Omega) (hsupport : MeasurableSet support)
+    (hsupport_one : mu.real support = 1) :
+    mu.real (event ∩ support) = mu.real event := by
+  have hcompl : mu.real supportᶜ = 0 := by
+    have hsum := measureReal_add_measureReal_compl (μ := mu) hsupport
+    rw [hsupport_one] at hsum
+    simpa using hsum
+  have hdiff := measureReal_diff_null (μ := mu)
+    (s₁ := event) (s₂ := supportᶜ) hcompl
+  simpa only [Set.diff_eq, compl_compl] using hdiff
+
 /-- A ratio-free restart bound remains valid after intersecting with an independent piece of
 the earlier exploration history.  Both independence hypotheses are explicit: the past must be
 independent of the boundary cell itself and of the successful part of that cell.  This is the

@@ -246,6 +246,12 @@ structure FramedRestartQuery (d : ℕ) where
 
 namespace FramedRestartQuery
 
+/-- The box-local reference region seen by a restart.  A dynamic source state may remember
+explored vertices far outside this box, but the restart boundary and paths cannot observe them. -/
+noncomputable def croppedRegion {d : ℕ} (Q : FramedRestartQuery d) (n : ℕ) :
+    Finset (Cubic d) :=
+  Q.region ∩ cubicMetricBox d cubicOrigin n
+
 def successEvent {d : ℕ} (Q : FramedRestartQuery d)
     (m n : ℕ) (p : I) (delta : ℝ) : Set (CubicEdge d → ℝ) :=
   framedSprinkledRestartEvent Q.center Q.direction Q.transverseFlip
@@ -267,6 +273,53 @@ theorem measurableSet_successEvent_coordSigma {d : ℕ} (Q : FramedRestartQuery 
       (Q.successEvent m n p delta) :=
   measurableSet_framedSprinkledRestartEvent_coordSigma
     Q.center Q.direction Q.transverseFlip m n Q.region p Q.beta delta
+
+/-- The uniform source Lemma 7.17 package applies to a framed dynamic query through its
+box-cropped region.  The two remaining geometric premises are stated on that literal local
+region; no containment of the global explored endpoint set in `B(n)` is assumed. -/
+theorem uniformRestartBounds_of_croppedRegion
+    {d m n : ℕ} (Q : FramedRestartQuery d) (p : I) (delta epsilon : ℝ)
+    (huniform : UniformRestartBounds d m n p delta epsilon)
+    (hmn : m ≤ n)
+    (hseed : cubicMetricBox d cubicOrigin m ⊆ Q.region)
+    (hAvoid : RegionAvoidsSeededBoundaryQuadrant d Q.direction.1 n
+      (Q.croppedRegion n))
+    (hupper : ∀ e ∈ cubicRegionBoundaryEdgesWithinBox d Q.region n,
+      (Q.beta e : ℝ) + delta ≤ 1) :
+    (1 - epsilon) * (couplingMeasure (CubicEdge d)).real
+        (Q.boundaryHistoryEvent n) <
+      (couplingMeasure (CubicEdge d)).real
+        (Q.successEvent m n p delta ∩ Q.boundaryHistoryEvent n) := by
+  have hboxMono : cubicMetricBox d cubicOrigin m ⊆
+      cubicMetricBox d cubicOrigin n := by
+    intro x hx
+    rw [mem_cubicMetricBox] at hx ⊢
+    intro j
+    specialize hx j
+    omega
+  have hlocal := huniform Q.direction.1 (Q.croppedRegion n) Q.beta
+    (by
+      intro x hx
+      exact Finset.mem_inter.mpr ⟨hseed hx, hboxMono hx⟩)
+    Finset.inter_subset_right hAvoid (by
+      intro e he
+      apply hupper e
+      rw [FramedRestartQuery.croppedRegion,
+        cubicRegionBoundaryEdgesWithinBox_inter_cubicMetricBox] at he
+      exact he)
+  have hreference :
+      (1 - epsilon) * (couplingMeasure (CubicEdge d)).real
+          (boundaryClosedHistoryEvent
+            (cubicRegionBoundaryEdgesWithinBox d Q.region n) Q.beta) <
+        (couplingMeasure (CubicEdge d)).real
+          (sprinkledRestartEvent d Q.direction.1 m n Q.region p Q.beta delta ∩
+            boundaryClosedHistoryEvent
+              (cubicRegionBoundaryEdgesWithinBox d Q.region n) Q.beta) := by
+    simpa only [FramedRestartQuery.croppedRegion,
+      cubicRegionBoundaryEdgesWithinBox_inter_cubicMetricBox,
+      sprinkledRestartEvent_inter_cubicMetricBox] using hlocal
+  apply framedSprinkledRestart_inter_history_gt
+  exact hreference
 
 end FramedRestartQuery
 

@@ -1,4 +1,5 @@
 import Percolation.Bernoulli.FiniteEventContinuity
+import Percolation.Critical.FiniteCylinderTranslation
 import Percolation.Critical.StaticBlocks
 
 /-!
@@ -65,6 +66,32 @@ theorem cubicTranslateAlongCoordinate_of_ne {d : ℕ}
 def seededBoundaryLayerRegion (d : ℕ) (i : Fin d) (m n : ℕ) : Set (Cubic d) :=
   {z | ∃ r : ℕ, 1 ≤ r ∧ r ≤ 2 * m + 1 ∧
     ∃ y ∈ seededBoundaryQuadrant d i n, z = cubicTranslateAlongCoordinate y i r}
+
+/-- The entire layered target lies in the radius `n + 2m + 1` coordinate box. -/
+theorem seededBoundaryLayerRegion_mem_wideBox
+    {d m n : ℕ} {i : Fin d} {z : Cubic d}
+    (hz : z ∈ seededBoundaryLayerRegion d i m n) :
+    z ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1) := by
+  rcases hz with ⟨r, _hr1, hrUpper, y, hyQuadrant, rfl⟩
+  rw [mem_cubicMetricBox]
+  intro j
+  have hyFace := mem_cubicBoxFace.mp
+    (mem_seededBoundaryQuadrant_iff.mp hyQuadrant).1
+  by_cases hji : j = i
+  · subst j
+    have hyi : y i = (n : ℤ) := by
+      simpa [cubicOrigin] using hyFace.1
+    rw [cubicTranslateAlongCoordinate_same, hyi]
+    simp [cubicOrigin]
+    constructor <;> omega
+  · rw [cubicTranslateAlongCoordinate_of_ne y hji]
+    have hjBounds := hyFace.2 j hji
+    have hjLower : -(n : ℤ) ≤ y j := by
+      simpa [cubicOrigin] using hjBounds.1
+    have hjUpper : y j ≤ (n : ℤ) := by
+      simpa [cubicOrigin] using hjBounds.2
+    simp [cubicOrigin]
+    constructor <;> omega
 
 /-- A translated seed box lies wholly in the layered boundary region. -/
 def SeedBoxWithinBoundaryLayer
@@ -183,13 +210,112 @@ theorem seedCenter_mem_seededBoundaryPossibleCenters
         (by rw [cubicLInfDist_comm]; exact mem_cubicMetricBox_iff_lInfDist_le.mp hyc)
     _ = n + m + 1 := by omega
 
+/-- Exact finite set of seed centers that can occur in the prescribed layered target region.
+The older ambient box remains useful as a finite enumeration type, but using that coarse box
+as an edge dependency set would include impossible seed boxes on the wrong side of the face. -/
+noncomputable def seededBoundaryAdmissibleCenters
+    (d : ℕ) (i : Fin d) (m n : ℕ) : Finset (Cubic d) := by
+  classical
+  exact (seededBoundaryPossibleCenters d m n).filter
+    (SeedBoxWithinBoundaryLayer d i m n)
+
+@[simp]
+theorem mem_seededBoundaryAdmissibleCenters_iff
+    {d m n : ℕ} {i : Fin d} {c : Cubic d} :
+    c ∈ seededBoundaryAdmissibleCenters d i m n ↔
+      c ∈ seededBoundaryPossibleCenters d m n ∧
+        SeedBoxWithinBoundaryLayer d i m n c := by
+  classical
+  simp [seededBoundaryAdmissibleCenters]
+
+theorem seedCenter_mem_seededBoundaryAdmissibleCenters
+    {d m n : ℕ} {i : Fin d} {y c : Cubic d}
+    (hy : y ∈ seededBoundaryQuadrant d i n)
+    (hyc : cubicStepFrom y (i, true) ∈ cubicMetricBox d c m)
+    (hcLayer : SeedBoxWithinBoundaryLayer d i m n c) :
+    c ∈ seededBoundaryAdmissibleCenters d i m n :=
+  mem_seededBoundaryAdmissibleCenters_iff.mpr
+    ⟨seedCenter_mem_seededBoundaryPossibleCenters hy hyc, hcLayer⟩
+
 /-- Finite edge support deciding the seeded connection event. -/
 noncomputable def seedConnectionSupport
     (d : ℕ) (i : Fin d) (m n : ℕ) : Finset (CubicEdge d) := by
   classical
   exact cubicBoxEdges d cubicOrigin n ∪
     (seededBoundaryQuadrant d i n).image (fun y ↦ cubicStepEdge y (i, true)) ∪
-      (seededBoundaryPossibleCenters d m n).biUnion fun c ↦ cubicBoxEdges d c m
+      (seededBoundaryAdmissibleCenters d i m n).biUnion fun c ↦
+        cubicBoxEdges d c m
+
+/-- The exact seeded-connection dependency set fits in the smallest obvious wide box. -/
+theorem seedConnectionSupport_subset_cubicBoxEdges_wide
+    (d : ℕ) (i : Fin d) (m n : ℕ) :
+    seedConnectionSupport d i m n ⊆
+      cubicBoxEdges d cubicOrigin (n + 2 * m + 1) := by
+  classical
+  intro e he
+  rw [seedConnectionSupport] at he
+  simp only [Finset.mem_union] at he
+  apply mem_cubicBoxEdges_of_endpoints
+  intro z hze
+  rcases he with (heBox | heStep) | heSeed
+  · apply mem_cubicMetricBox_iff_lInfDist_le.mpr
+    exact (mem_cubicMetricBox_iff_lInfDist_le.mp
+      (endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heBox hze)).trans
+        (by omega)
+  · obtain ⟨y, hyQuadrant, rfl⟩ := Finset.mem_image.mp heStep
+    change z ∈ s(y, cubicStepFrom y (i, true)) at hze
+    rw [Sym2.mem_iff] at hze
+    have hyFace := mem_cubicBoxFace.mp
+      (mem_seededBoundaryQuadrant_iff.mp hyQuadrant).1
+    have hyWide : y ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1) := by
+      rw [mem_cubicMetricBox]
+      intro j
+      by_cases hji : j = i
+      · subst j
+        have hyi : y i = (n : ℤ) := by
+          simpa [cubicOrigin] using hyFace.1
+        simp [hyi, cubicOrigin]
+        constructor <;> omega
+      · have hjBounds := hyFace.2 j hji
+        have hjLower : -(n : ℤ) ≤ y j := by
+          simpa [cubicOrigin] using hjBounds.1
+        have hjUpper : y j ≤ (n : ℤ) := by
+          simpa [cubicOrigin] using hjBounds.2
+        simp [cubicOrigin]
+        constructor <;> omega
+    have hstepWide : cubicStepFrom y (i, true) ∈
+        cubicMetricBox d cubicOrigin (n + 2 * m + 1) := by
+      rw [mem_cubicMetricBox]
+      intro j
+      by_cases hji : j = i
+      · subst j
+        have hyi : y i = (n : ℤ) := by
+          simpa [cubicOrigin] using hyFace.1
+        have hstepi : cubicStepFrom y (i, true) i = (n : ℤ) + 1 := by
+          simp [cubicStepFrom, cubicDirectionIncrement, hyi]
+        rw [hstepi]
+        simp [cubicOrigin]
+        omega
+      · have hjBounds := hyFace.2 j hji
+        have hjLower : -(n : ℤ) ≤ y j := by
+          simpa [cubicOrigin] using hjBounds.1
+        have hjUpper : y j ≤ (n : ℤ) := by
+          simpa [cubicOrigin] using hjBounds.2
+        have hstepj : cubicStepFrom y (i, true) j = y j := by
+          simp [cubicStepFrom, cubicDirectionIncrement, hji]
+        rw [hstepj]
+        simp [cubicOrigin]
+        constructor <;> omega
+    rcases hze with hzy | hzstep
+    · subst z
+      exact hyWide
+    · subst z
+      exact hstepWide
+  · rw [Finset.mem_biUnion] at heSeed
+    obtain ⟨c, hcAdmissible, heSeed⟩ := heSeed
+    exact seededBoundaryLayerRegion_mem_wideBox
+      ((mem_seededBoundaryAdmissibleCenters_iff.mp hcAdmissible).2 z
+        (endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heSeed hze))
 
 /-- For a fixed boundary vertex, being a seeded target is measurable.  The possible seed
 centers form a countable (not definitionally finite) union; retaining that union is important
@@ -298,8 +424,8 @@ theorem dependsOn_seedConnectionEvent (d : ℕ) (i : Fin d) (m n : ℕ) :
       apply Finset.mem_union_left
       apply Finset.mem_union_right
       exact Finset.mem_image.mpr ⟨y, hyQ, rfl⟩
-    have hcCenter : c ∈ seededBoundaryPossibleCenters d m n :=
-      seedCenter_mem_seededBoundaryPossibleCenters hyQ hyc
+    have hcCenter : c ∈ seededBoundaryAdmissibleCenters d i m n :=
+      seedCenter_mem_seededBoundaryAdmissibleCenters hyQ hyc hcLayer
     have hcSeed' : η ∈ cubicSeedEvent d c m := by
       intro e he
       apply (hagree e ?_).mp (hcSeed he)
@@ -317,8 +443,8 @@ theorem dependsOn_seedConnectionEvent (d : ℕ) (i : Fin d) (m n : ℕ) :
       apply Finset.mem_union_left
       apply Finset.mem_union_right
       exact Finset.mem_image.mpr ⟨y, hyQ, rfl⟩
-    have hcCenter : c ∈ seededBoundaryPossibleCenters d m n :=
-      seedCenter_mem_seededBoundaryPossibleCenters hyQ hyc
+    have hcCenter : c ∈ seededBoundaryAdmissibleCenters d i m n :=
+      seedCenter_mem_seededBoundaryAdmissibleCenters hyQ hyc hcLayer
     have hcSeed' : ω ∈ cubicSeedEvent d c m := by
       intro e he
       apply (hagree e ?_).mpr (hcSeed he)

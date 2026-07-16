@@ -90,6 +90,21 @@ theorem HasAdaptiveAnswerLowerBoundOn.pullback
     adaptiveAnswerHistoryEvent_pullbackAdaptiveAnswer]
   simpa using h (mapDecisionHistory f history) (f u) trivial
 
+/-- Uniform ratio-free lower bounds with an explicit admissibility predicate transport along
+the vertex/history embedding by pulling that predicate back as well. -/
+theorem HasAdaptiveAnswerLowerBoundOn.pullbackAdmissible
+    [MeasurableSpace Omega] {mu : Measure Omega}
+    {answer : Omega → List (V × Bool) → V → Bool}
+    {admissible : List (V × Bool) → V → Prop} {q : ℝ}
+    (h : HasAdaptiveAnswerLowerBoundOn mu answer admissible q)
+    (f : U → V) :
+    HasAdaptiveAnswerLowerBoundOn mu (pullbackAdaptiveAnswer f answer)
+      (fun history u ↦ admissible (mapDecisionHistory f history) (f u)) q := by
+  intro history u hadmissible
+  rw [adaptiveAnswerHistoryEvent_pullbackAdaptiveAnswer,
+    adaptiveAnswerHistoryEvent_pullbackAdaptiveAnswer]
+  simpa using h (mapDecisionHistory f history) (f u) hadmissible
+
 end AdaptiveSiteExploration
 
 namespace SiteExploration

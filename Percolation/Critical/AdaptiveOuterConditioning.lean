@@ -98,10 +98,15 @@ theorem cubicRegionSiteExploration_infinite_inter_probability_pos_of_adaptiveLow
     (q : I) (hq : siteCriticalProbability (cubicRegionGraph d F) < (q : ℝ))
     {answer : Omega → List (F × Bool) → F → Bool}
     (hanswer : AdaptiveSiteExploration.MeasurableAnswer answer)
+    (admissible : List (F × Bool) → F → Prop)
     (hlower : AdaptiveSiteExploration.HasAdaptiveAnswerLowerBoundWithin mu outer
       (prefixedAdaptiveAnswer
         (cubicRegionSiteExploration d F root).initial.history answer)
-      (fun _ _ ↦ True) (q : ℝ)) :
+      admissible (q : ℝ))
+    (hadmissibleQuery : ∀ history,
+      ((cubicRegionSiteExploration d F root).replayState history).frontier.Nonempty →
+      admissible history
+        ((cubicRegionSiteExploration d F root).replayQuery root history)) :
     0 < mu.real (outer ∩ {omega |
       ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
         (answer omega)).Infinite}) := by
@@ -115,7 +120,8 @@ theorem cubicRegionSiteExploration_infinite_inter_probability_pos_of_adaptiveLow
         ((cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
           (answer omega)).Infinite} :=
     cubicRegionSiteExploration_infinite_probability_pos_of_adaptiveLowerBound
-      d F root hF (mu[|outer]) q hq hanswer (hlower.cond houter)
+      d F root hF (mu[|outer]) q hq hanswer admissible
+        (hlower.cond houter) hadmissibleQuery
   rw [AdaptiveSiteExploration.measureReal_cond_apply mu houter] at hcondPos
   exact pos_of_mul_pos_right hcondPos (inv_nonneg.mpr measureReal_nonneg)
 

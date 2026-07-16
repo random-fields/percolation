@@ -2,13 +2,14 @@ import Percolation.Critical.DynamicInitializedProgram
 import Percolation.Critical.DynamicFramedRestart
 
 /-!
-# The special root block in the Grimmett--Marstrand construction
+# The radial phase of the special root block
 
 The origin is not queried by the same `2d+1`-extension law as later coarse sites.  Grimmett first
-conditions on a central seed, then asks simultaneously for one seeded branch in every signed
-coordinate direction.  This file defines that literal finite event and proves the source union
-bound `(1-2dε)`, its positive probability, and the exact central-seed probability under the
-common uniform coupling.
+conditions on a central seed, then asks simultaneously for one seeded radial branch in every
+signed coordinate direction.  This file defines that first-phase finite event and proves the
+source union bound `(1-2dε)`, its positive probability, and the exact central-seed probability
+under the common uniform coupling.  It is not yet the completed root block: equation (7.33)
+performs one further extension from each of the `2d` selected radial seeds.
 -/
 
 namespace Percolation
@@ -63,9 +64,10 @@ theorem couplingMeasure_real_rootSeedLabelEvent_pos
   rw [couplingMeasure_real_rootSeedLabelEvent]
   exact pow_pos hp _
 
-/-- The first move uses Grimmett's reversed transverse quadrant `T*(n)`. -/
-def rootBranchTransverseFlip {d : ℕ} (a : CubicDirection d) : Fin d → Bool :=
-  fun j ↦ decide (j ≠ a.1)
+/-- The simultaneous radial step uses `L_j^a(T(n))` with no transverse reversal.  Grimmett's
+`T*(n)` mask belongs to the subsequent extension from the selected radial seed. -/
+def rootRadialTransverseFlip {d : ℕ} (_a : CubicDirection d) : Fin d → Bool :=
+  fun _ ↦ false
 
 /-- Reference data for one of the simultaneous root branches.  The boundary threshold is zero,
 as in equations (7.28)--(7.29); the background density `p` is supplied when reading the event. -/
@@ -73,7 +75,7 @@ noncomputable def rootBranchQuery
     (d m : ℕ) (a : CubicDirection d) : FramedRestartQuery d where
   center := cubicOrigin
   direction := a
-  transverseFlip := rootBranchTransverseFlip a
+  transverseFlip := rootRadialTransverseFlip a
   region := cubicMetricBox d cubicOrigin m
   beta := fun _ ↦ 0
 
@@ -141,10 +143,10 @@ theorem disjoint_rootSeedSupport_rootBranchRestartSupport
     {d m n : ℕ} (hmn : m ≤ n) (a : CubicDirection d) :
     Disjoint (cubicBoxEdges d cubicOrigin m : Set (CubicEdge d))
       ((rootBranchQuery d m a).restartSupport m n : Set (CubicEdge d)) := by
-  let F := cubicRestartFrameIso cubicOrigin a (rootBranchTransverseFlip a)
+  let F := cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a)
   rw [Set.disjoint_left]
   intro e heSeed heRestart
-  change e ∈ framedRestartSupport cubicOrigin a (rootBranchTransverseFlip a) m n
+  change e ∈ framedRestartSupport cubicOrigin a (rootRadialTransverseFlip a) m n
     (cubicMetricBox d cubicOrigin m) at heRestart
   rw [framedRestartSupport, Finset.mem_image] at heRestart
   obtain ⟨f, hfRestart, hfe⟩ := heRestart
@@ -153,7 +155,7 @@ theorem disjoint_rootSeedSupport_rootBranchRestartSupport
     rw [show (cubicBoxEdges d cubicOrigin m).image F.mapEdgeSet =
         cubicBoxEdges d cubicOrigin m by
       simpa [F] using (cubicRestartFrameIso_image_cubicBoxEdges_eq
-        (n := m) cubicOrigin a (rootBranchTransverseFlip a))]
+        (n := m) cubicOrigin a (rootRadialTransverseFlip a))]
     exact heSeed
   rw [Finset.mem_image] at heImage
   obtain ⟨g, hgSeed, hge⟩ := heImage
@@ -190,16 +192,16 @@ theorem rootBranchSuccess_inter_rootSeed_gt
       (support : Set (CubicEdge d))] G :=
     Q.measurableSet_successEvent_coordSigma m n p delta
   have hHsmall : MeasurableSet[coordSigma (CubicEdge d)
-      (framedBoundaryHistorySupport cubicOrigin a (rootBranchTransverseFlip a)
+      (framedBoundaryHistorySupport cubicOrigin a (rootRadialTransverseFlip a)
         (cubicMetricBox d cubicOrigin m) n : Set (CubicEdge d))] H :=
     measurableSet_framedBoundaryClosedHistoryEvent_coordSigma
-      cubicOrigin a (rootBranchTransverseFlip a)
+      cubicOrigin a (rootRadialTransverseFlip a)
         (cubicMetricBox d cubicOrigin m) n (fun _ ↦ 0)
   have hH : MeasurableSet[coordSigma (CubicEdge d)
       (support : Set (CubicEdge d))] H :=
     (coordSigma_mono fun e he ↦
       framedBoundaryHistorySupport_subset_restartSupport
-        cubicOrigin a (rootBranchTransverseFlip a)
+        cubicOrigin a (rootRadialTransverseFlip a)
           (cubicMetricBox d cubicOrigin m) he) H hHsmall
   have hfresh : Disjoint
       (cubicBoxEdges d cubicOrigin m : Set (CubicEdge d))
@@ -211,7 +213,7 @@ theorem rootBranchSuccess_inter_rootSeed_gt
     indepSet_of_measurableSet_coordSigma_of_disjoint hfresh hseedMeas (hG.inter hH)
   have hHmass : (couplingMeasure (CubicEdge d)).real H = 1 := by
     change (couplingMeasure (CubicEdge d)).real
-        (framedBoundaryClosedHistoryEvent cubicOrigin a (rootBranchTransverseFlip a)
+        (framedBoundaryClosedHistoryEvent cubicOrigin a (rootRadialTransverseFlip a)
           (cubicMetricBox d cubicOrigin m) n (fun _ ↦ 0)) = 1
     unfold framedBoundaryClosedHistoryEvent
     rw [couplingMeasure_real_framedTransportEvent]
@@ -234,23 +236,23 @@ theorem rootBranchSuccess_inter_rootSeed_gt
     intro X hX
     exact ⟨hX.1, hX.2.1⟩)
 
-/-- The positive initialization event: the central seed and every one of the `2d` simultaneous
-root branches succeed. -/
-def rootInitializationEvent
+/-- The positive radial event: the central seed and every one of the `2d` simultaneous radial
+branches succeed.  This is the first factor in (7.33), not the completed root block. -/
+def rootRadialEvent
     (d m n : ℕ) (p : I) (delta : ℝ) : Set (CubicEdge d → ℝ) :=
   rootSeedLabelEvent d m p ∩ ⋂ a : CubicDirection d,
     rootBranchSuccessEvent d m n p delta a
 
-theorem measurableSet_rootInitializationEvent
+theorem measurableSet_rootRadialEvent
     (d m n : ℕ) (p : I) (delta : ℝ) :
-    MeasurableSet (rootInitializationEvent d m n p delta) := by
+    MeasurableSet (rootRadialEvent d m n p delta) := by
   exact (measurableSet_rootSeedLabelEvent d m p).inter
     (MeasurableSet.iInter fun a ↦
       measurableSet_rootBranchSuccessEvent d m n p delta a)
 
 /-- Equation (7.30), in ratio-free form.  The individual branch estimates may be proved by
 Lemma 7.17 after factoring the central seed from the fresh restart coordinates. -/
-theorem rootInitialization_probability_gt
+theorem rootRadial_probability_gt
     {d m n : ℕ} [NeZero d] (p : I) (delta epsilon : ℝ)
     (hrestart : ∀ a : CubicDirection d,
       (1 - epsilon) *
@@ -260,7 +262,7 @@ theorem rootInitialization_probability_gt
     (1 - 2 * d * epsilon) *
         (couplingMeasure (CubicEdge d)).real (rootSeedLabelEvent d m p) <
       (couplingMeasure (CubicEdge d)).real
-        (rootInitializationEvent d m n p delta) := by
+        (rootRadialEvent d m n p delta) := by
   have h := allSuccess_inter_history_gt
     (fun a : CubicDirection d ↦ rootBranchSuccessEvent d m n p delta a)
     (rootSeedLabelEvent d m p)
@@ -280,14 +282,15 @@ theorem rootInitialization_probability_gt
         ((⋂ a : CubicDirection d, rootBranchSuccessEvent d m n p delta a) ∩
           rootSeedLabelEvent d m p) := h
     _ = (couplingMeasure (CubicEdge d)).real
-        (rootInitializationEvent d m n p delta) := by
+        (rootRadialEvent d m n p delta) := by
       congr 1
       ext X
-      simp [rootInitializationEvent, and_comm]
+      simp [rootRadialEvent, and_comm]
 
-/-- The simultaneous root construction has positive mass whenever its source factor is positive.
-This is the outer event consumed by `InitializedFinitePartitionedRestartProgram`. -/
-theorem rootInitialization_probability_pos
+/-- The simultaneous radial construction has positive mass whenever its source factor is
+positive.  The post-radial extensions in `DynamicRootCompletion` turn it into the outer event
+consumed by `InitializedFinitePartitionedRestartProgram`. -/
+theorem rootRadial_probability_pos
     {d m n : ℕ} [NeZero d] {p : I} {delta epsilon : ℝ}
     (hp : 0 < (p : ℝ)) (hfactor : 2 * d * epsilon < 1)
     (hrestart : ∀ a : CubicDirection d,
@@ -296,17 +299,17 @@ theorem rootInitialization_probability_pos
         (couplingMeasure (CubicEdge d)).real
           (rootBranchSuccessEvent d m n p delta a ∩ rootSeedLabelEvent d m p)) :
     0 < (couplingMeasure (CubicEdge d)).real
-      (rootInitializationEvent d m n p delta) := by
+      (rootRadialEvent d m n p delta) := by
   have hseed := couplingMeasure_real_rootSeedLabelEvent_pos d m hp
-  have hlower := rootInitialization_probability_gt p delta epsilon hrestart
+  have hlower := rootRadial_probability_gt p delta epsilon hrestart
   have hfactorPos : 0 < 1 - 2 * d * epsilon := by linarith
   exact (mul_pos hfactorPos hseed).trans hlower
 
-/-- The literal root initialization has positive probability from the framed Lemma 7.17
+/-- The literal root radial phase has positive probability from the framed Lemma 7.17
 estimates themselves.  This version removes the intermediate seed-conditioned branch
 hypothesis: freshness of the central seed is proved by
 `rootBranchSuccess_inter_rootSeed_gt`. -/
-theorem rootInitialization_probability_pos_of_branchBounds
+theorem rootRadial_probability_pos_of_branchBounds
     {d m n : ℕ} [NeZero d] (hmn : m ≤ n) {p : I} (hp : 0 < (p : ℝ))
     {delta epsilon : ℝ} (hfactor : 2 * d * epsilon < 1)
     (hbranch : ∀ a : CubicDirection d,
@@ -317,8 +320,8 @@ theorem rootInitialization_probability_pos_of_branchBounds
           ((rootBranchQuery d m a).successEvent m n p delta ∩
             (rootBranchQuery d m a).boundaryHistoryEvent n)) :
     0 < (couplingMeasure (CubicEdge d)).real
-      (rootInitializationEvent d m n p delta) := by
-  apply rootInitialization_probability_pos hp hfactor
+      (rootRadialEvent d m n p delta) := by
+  apply rootRadial_probability_pos hp hfactor
   intro a
   exact rootBranchSuccess_inter_rootSeed_gt hmn hp delta epsilon a (hbranch a)
 
@@ -381,23 +384,23 @@ theorem rootBranchBounds_of_reference
             (rootBranchQuery d m a).boundaryHistoryEvent n) := by
   intro a
   have hframed := framedSprinkledRestart_inter_history_gt
-    cubicOrigin a (rootBranchTransverseFlip a)
+    cubicOrigin a (rootRadialTransverseFlip a)
       (cubicMetricBox d cubicOrigin m) p (fun _ ↦ 0) delta epsilon (h a.1)
   change (1 - epsilon) *
       (couplingMeasure (CubicEdge d)).real
-        (framedBoundaryClosedHistoryEvent cubicOrigin a (rootBranchTransverseFlip a)
+        (framedBoundaryClosedHistoryEvent cubicOrigin a (rootRadialTransverseFlip a)
           (cubicMetricBox d cubicOrigin m) n (fun _ ↦ 0)) <
     (couplingMeasure (CubicEdge d)).real
-      (framedSprinkledRestartEvent cubicOrigin a (rootBranchTransverseFlip a)
+      (framedSprinkledRestartEvent cubicOrigin a (rootRadialTransverseFlip a)
           m n (cubicMetricBox d cubicOrigin m) p (fun _ ↦ 0) delta ∩
-        framedBoundaryClosedHistoryEvent cubicOrigin a (rootBranchTransverseFlip a)
+        framedBoundaryClosedHistoryEvent cubicOrigin a (rootRadialTransverseFlip a)
           (cubicMetricBox d cubicOrigin m) n (fun _ ↦ 0))
   exact hframed
 
-/-- Source-faithful existence of a positive root block.  The coordinate-uniform form of
+/-- Source-faithful existence of a positive radial root phase.  The coordinate-uniform form of
 Lemma 7.17 chooses one pair `m,n`; the signed steering frame supplies all `2d` simultaneous
 branches, and freshness factors them through the literal central seed. -/
-theorem exists_rootInitialization_probability_pos
+theorem exists_rootRadial_probability_pos
     (d : ℕ) [NeZero d] (hd : 0 < d) (p : I)
     (htheta : 0 < theta d p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
     {delta epsilon : ℝ} (hepsilon : 0 < epsilon)
@@ -405,16 +408,16 @@ theorem exists_rootInitialization_probability_pos
     (hfactor : 2 * d * epsilon < 1) :
     ∃ m n : ℕ, 2 * m < n ∧ m + 1 < n ∧
       0 < (couplingMeasure (CubicEdge d)).real
-        (rootInitializationEvent d m n p delta) := by
+        (rootRadialEvent d m n p delta) := by
   obtain ⟨m, n, hmn, hmnBoundary, hreference⟩ :=
     exists_rootReferenceBranchBounds
       d hd p htheta hp0 hp1 hepsilon hdelta hdelta1
   refine ⟨m, n, hmn, hmnBoundary, ?_⟩
-  apply rootInitialization_probability_pos_of_branchBounds (by omega) hp0 hfactor
+  apply rootRadial_probability_pos_of_branchBounds (by omega) hp0 hfactor
   exact rootBranchBounds_of_reference hreference
 
 /-- One source-consistent choice of radii, uniform restart estimates for every later admissible
-region, and the positive literal root event at those same radii. -/
+region, and the positive literal radial event at those same radii. -/
 structure DynamicBlockRestartPackage
     (d : ℕ) (p : I) (delta epsilon : ℝ) where
   m : ℕ
@@ -422,12 +425,12 @@ structure DynamicBlockRestartPackage
   two_mul_inner_lt_outer : 2 * m < n
   boundary_gap : m + 1 < n
   uniformBounds : UniformRestartBounds d m n p delta epsilon
-  rootInitialization_pos :
+  rootRadialEvent_pos :
     0 < (couplingMeasure (CubicEdge d)).real
-      (rootInitializationEvent d m n p delta)
+      (rootRadialEvent d m n p delta)
 
-/-- Lemmas 7.9 and 7.17 produce a complete common-radius restart package, including the special
-root construction. -/
+/-- Lemmas 7.9 and 7.17 produce a common-radius restart package, including the special root's
+radial phase.  The second root phase is assembled separately. -/
 theorem exists_dynamicBlockRestartPackage
     (d : ℕ) [NeZero d] (hd : 0 < d) (p : I)
     (htheta : 0 < theta d p) (hp0 : 0 < (p : ℝ)) (hp1 : (p : ℝ) < 1)
@@ -440,8 +443,8 @@ theorem exists_dynamicBlockRestartPackage
   have hreference : RootReferenceBranchBounds d m n p delta epsilon :=
     rootReferenceBranchBounds_of_uniform hmnBoundary hdelta1 huniform
   have hroot : 0 < (couplingMeasure (CubicEdge d)).real
-      (rootInitializationEvent d m n p delta) := by
-    apply rootInitialization_probability_pos_of_branchBounds (by omega) hp0 hfactor
+      (rootRadialEvent d m n p delta) := by
+    apply rootRadial_probability_pos_of_branchBounds (by omega) hp0 hfactor
     exact rootBranchBounds_of_reference hreference
   exact ⟨{
     m := m
@@ -449,6 +452,6 @@ theorem exists_dynamicBlockRestartPackage
     two_mul_inner_lt_outer := hmn
     boundary_gap := hmnBoundary
     uniformBounds := huniform
-    rootInitialization_pos := hroot }⟩
+    rootRadialEvent_pos := hroot }⟩
 
 end Percolation

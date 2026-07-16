@@ -34,7 +34,8 @@ theorem nonempty_finiteBoxOpenGraph_walk_of_walkIsOpen_of_support
         exact hbox z (by simp [hz])
       obtain ⟨qBox⟩ := ih hopenTail hboxTail
       have hopenHead :
-          (⟨s(u, y), (SimpleGraph.mem_edgeSet (cubicGraph d)).mpr huy⟩ : CubicEdge d) ∈ ω := by
+          (⟨s(u, y), (SimpleGraph.mem_edgeSet (cubicGraph d)).mpr huy⟩ :
+            CubicEdge d) ∈ ω := by
         apply hopen
         simp [SimpleGraph.Walk.edges_cons]
       have hAdjOpen : (cubicOpenGraph d ω).Adj u y :=

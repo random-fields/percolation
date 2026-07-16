@@ -88,3 +88,8 @@ the final review window it reported 16,211 seconds and 2,735,063 tokens.  This i
 aggregate goal usage, not a per-theorem reconstruction.  Per-theorem snapshots were not taken
 consistently during construction, so the table reports them as **not individually measured**;
 no estimated allocation is presented as measured telemetry.
+
+At the end of the final review, before Git publication work, the tracker reported 23,262 seconds
+and 4,320,600 tokens.  Thus the separately measured final-review window used 7,051 seconds and
+1,585,537 tokens.  The aggregate and review-window figures are tracker measurements; they are not
+assigned retroactively to individual theorems.

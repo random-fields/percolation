@@ -131,7 +131,8 @@ theorem measurableSet_finiteCylinder_generateFrom {E s : Finset ι} {S : Set ι}
       (finiteCylinder E s) := by
   classical
   have hrepr : finiteCylinder E s =
-      (⋂ e ∈ s, {ω : Set ι | e ∈ ω}) ∩ (⋂ e ∈ E \ s, {ω : Set ι | e ∈ ω}ᶜ) := by
+      (⋂ e ∈ s, {ω : Set ι | e ∈ ω}) ∩
+        (⋂ e ∈ E \ s, {ω : Set ι | e ∈ ω}ᶜ) := by
     ext ω
     simp only [mem_finiteCylinder, Set.mem_inter_iff, Set.mem_iInter, Set.mem_compl_iff,
       Set.mem_setOf_eq, Finset.mem_sdiff]
@@ -453,9 +454,12 @@ theorem abs_sliceProbability_sub_le (E : Finset ι) (p : I) (A B : Set (Set ι))
       ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' A) ∆
         ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' B) := by
     simp [Set.symmDiff_def]
-  show |setBer((Set.univ : Set ι), p).real ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' A) -
-      setBer((Set.univ : Set ι), p).real ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' B)| ≤
-    setBer((Set.univ : Set ι), p).real ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' (A ∆ B))
+  show
+    |setBer((Set.univ : Set ι), p).real ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' A) -
+        setBer((Set.univ : Set ι), p).real
+          ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' B)| ≤
+      setBer((Set.univ : Set ι), p).real
+        ((fun η => spliceOn E (restrictTo E ω) η) ⁻¹' (A ∆ B))
   rw [hpre, abs_sub_le_iff]
   refine ⟨setBernoulli_real_sub_le_symmDiff p _ _, ?_⟩
   have h := setBernoulli_real_sub_le_symmDiff p

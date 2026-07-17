@@ -98,7 +98,8 @@ noncomputable def RootRadialSeedProfile.rootOutgoingSeedCenter
     (W.physicalCenter a) a (oppositeTransverseRestartFlip a) p delta X
 
 /-- Full outgoing record offered to the neighboring coarse site.  Besides its physical anchor,
-it retains the reference-frame target center needed by the child's compensating turn. -/
+it retains the physical displacement from the root coarse-site center needed by the child's
+compensating turn. -/
 noncomputable def RootRadialSeedProfile.rootOutgoingSeed
     {d m n : ℕ} (W : RootRadialSeedProfile d m n)
     (p radialIncremented : I) (delta : ℝ)
@@ -106,9 +107,9 @@ noncomputable def RootRadialSeedProfile.rootOutgoingSeed
     (X : CubicEdge d → ℝ) (a : CubicDirection d) :
     Option (LaterSiteOutgoingSeed d) :=
   (W.rootOutgoingWitness p radialIncremented delta incremented X a).map fun U ↦
-    ⟨cubicRestartFrameIso (W.physicalCenter a) a
-        (oppositeTransverseRestartFlip a) U.seedCenter.1,
-      U.seedCenter.1⟩
+    let target := cubicRestartFrameIso (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a) U.seedCenter.1
+    ⟨target, cubicRelativePosition cubicOrigin target⟩
 
 /-- Completion of all root slots implies success of the query in every signed direction. -/
 theorem RootRadialSeedProfile.mem_rootOutgoingQuery_successEvent_of_completion
@@ -165,7 +166,7 @@ theorem RootRadialSeedProfile.exists_rootOutgoingSeed_of_completion
         (W.physicalCenter a) a (oppositeTransverseRestartFlip a) p delta X hsuccess
 
 /-- Completed-root form of `rootOutgoingSeed`: the full child-steering record is present and
-its reference center is the literal selected mixed witness. -/
+its reference center is the selected physical displacement from the root coarse-site center. -/
 theorem RootRadialSeedProfile.exists_rootOutgoingSeedData_of_completion
     {d m n : ℕ} (W : RootRadialSeedProfile d m n)
     (p radialIncremented : I) (delta : ℝ)
@@ -176,8 +177,9 @@ theorem RootRadialSeedProfile.exists_rootOutgoingSeedData_of_completion
     (a : CubicDirection d) :
     ∃ U : RestartSeedWitnessIndex d a.1 m n,
       W.rootOutgoingSeed p radialIncremented delta incremented X a =
-        some ⟨cubicRestartFrameIso (W.physicalCenter a) a
-          (oppositeTransverseRestartFlip a) U.seedCenter.1, U.seedCenter.1⟩ ∧
+        (let target := cubicRestartFrameIso (W.physicalCenter a) a
+            (oppositeTransverseRestartFlip a) U.seedCenter.1;
+          some ⟨target, cubicRelativePosition cubicOrigin target⟩) ∧
       U.IsMixedRestartWitness
         (W.rootOutgoingQuery p radialIncremented incremented X a).region p
         (W.rootOutgoingQuery p radialIncremented incremented X a).beta delta
@@ -219,8 +221,9 @@ theorem RootRadialSeedProfile.rootOutgoingSeed_seedBox_subset_completedExplored
   obtain ⟨V, hVSeed, hV⟩ := W.exists_rootOutgoingSeedData_of_completion
     p radialIncremented delta incremented X hX a
   have hUeq : U =
-      ⟨cubicRestartFrameIso (W.physicalCenter a) a
-        (oppositeTransverseRestartFlip a) V.seedCenter.1, V.seedCenter.1⟩ := by
+      (let target := cubicRestartFrameIso (W.physicalCenter a) a
+          (oppositeTransverseRestartFlip a) V.seedCenter.1;
+        ⟨target, cubicRelativePosition cubicOrigin target⟩) := by
     exact Option.some.inj (hU.symm.trans hVSeed)
   subst U
   have hgeom : ∀ b : CubicDirection d,

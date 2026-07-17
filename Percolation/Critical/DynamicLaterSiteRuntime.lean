@@ -48,6 +48,9 @@ noncomputable def defaultRestartSeedWitness
 @[ext]
 structure LaterSiteRuntime (d : ℕ) where
   source : SourceFiniteEdgeRevealState d
+  /-- Deterministic coarse-site center relative to which the two inlet steering moves are
+  recomputed. -/
+  inletReferenceBase : Cubic d
   firstTarget : Cubic d
   firstReferenceTarget : Cubic d
   centralTarget : Cubic d
@@ -64,15 +67,23 @@ def SeedBoxesInstalled {d : ℕ} (m : ℕ) (R : LaterSiteRuntime d) : Prop :=
       ∀ a U, R.outgoing a = some U →
         cubicBoxEdges d U.physicalCenter m ⊆ R.source.explored
 
-/-- Runtime before the first inlet restart. -/
-noncomputable def initial {d : ℕ}
-    (source : SourceFiniteEdgeRevealState d) (inletCenter : Cubic d) :
+/-- Runtime before the first inlet restart, with an explicit destination coarse-site center. -/
+noncomputable def initialAt {d : ℕ}
+    (source : SourceFiniteEdgeRevealState d) (inletCenter referenceBase : Cubic d) :
     LaterSiteRuntime d where
   source := source
+  inletReferenceBase := referenceBase
   firstTarget := inletCenter
   firstReferenceTarget := cubicOrigin
   centralTarget := inletCenter
   outgoing := fun _ ↦ none
+
+/-- Compatibility initializer for local runtime lemmas which do not distinguish the inlet
+anchor from the destination reference center. -/
+noncomputable def initial {d : ℕ}
+    (source : SourceFiniteEdgeRevealState d) (inletCenter : Cubic d) :
+    LaterSiteRuntime d :=
+  initialAt source inletCenter inletCenter
 
 /-- An inlet seed already present in the incoming source state initializes the installed-seed
 invariant of the total runtime. -/
@@ -82,7 +93,7 @@ theorem seedBoxesInstalled_initial {d m : ℕ}
     (initial source inletCenter).SeedBoxesInstalled m := by
   refine ⟨hseed, hseed, ?_⟩
   intro a U hU
-  simp [initial] at hU
+  simp [initial, initialAt] at hU
 
 /-- Physical center from which a numeric slot starts. -/
 def slotCenter {d : ℕ} (R : LaterSiteRuntime d)
@@ -251,11 +262,15 @@ noncomputable def step {d m n : ℕ} (hmn : 2 * m ≤ n)
     p delta X a k
   let target := cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
     (R.slotTransverseFlip incoming firstFlip secondFlip a k) witness.seedCenter.1
+  let inletDisplacement := cubicRelativePosition R.inletReferenceBase target
+  let branchDisplacement :=
+    cubicRelativePosition (R.slotCenterFor inletCenter a k) target
   let published : LaterSiteOutgoingSeed d :=
-    ⟨target, witness.seedCenter.1⟩
+    ⟨target, branchDisplacement⟩
   { source := R.source.next (Q.restartSupport m n) p (incremented R.source a) X
+    inletReferenceBase := R.inletReferenceBase
     firstTarget := if k = 0 then target else R.firstTarget
-    firstReferenceTarget := if k = 0 then witness.seedCenter.1 else R.firstReferenceTarget
+    firstReferenceTarget := if k = 0 then inletDisplacement else R.firstReferenceTarget
     centralTarget := if k = 1 then target else R.centralTarget
     outgoing := if 2 ≤ k then Function.update R.outgoing a (some published) else R.outgoing }
 
@@ -305,10 +320,14 @@ theorem finite_range_step_of_finite_range
     let R := t.1.1
     let target := cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
       (R.slotTransverseFlip incoming firstFlip secondFlip a k) t.2.seedCenter.1
-    let published : LaterSiteOutgoingSeed d := ⟨target, t.2.seedCenter.1⟩
+    let inletDisplacement := cubicRelativePosition R.inletReferenceBase target
+    let branchDisplacement :=
+      cubicRelativePosition (R.slotCenterFor inletCenter a k) target
+    let published : LaterSiteOutgoingSeed d := ⟨target, branchDisplacement⟩
     { source := t.1.2
+      inletReferenceBase := R.inletReferenceBase
       firstTarget := if k = 0 then target else R.firstTarget
-      firstReferenceTarget := if k = 0 then t.2.seedCenter.1 else R.firstReferenceTarget
+      firstReferenceTarget := if k = 0 then inletDisplacement else R.firstReferenceTarget
       centralTarget := if k = 1 then target else R.centralTarget
       outgoing := if 2 ≤ k then Function.update R.outgoing a (some published) else R.outgoing }
   apply (hdata.image assemble).subset
@@ -455,7 +474,10 @@ theorem exists_outgoing_runFrom_restartPair {d m n : ℕ} (hmn : 2 * m ≤ n)
   let U : LaterSiteOutgoingSeed d :=
     ⟨cubicRestartFrameIso (R1.slotCenterFor inletCenter a (k + 1)) a
         (R1.slotTransverseFlip incoming firstFlip secondFlip a (k + 1)) W.seedCenter.1,
-      W.seedCenter.1⟩
+      cubicRelativePosition (R1.slotCenterFor inletCenter a (k + 1))
+        (cubicRestartFrameIso (R1.slotCenterFor inletCenter a (k + 1)) a
+          (R1.slotTransverseFlip incoming firstFlip secondFlip a (k + 1))
+          W.seedCenter.1)⟩
   refine ⟨U, ?_⟩
   change (R1.step hmn inletCenter incoming firstFlip secondFlip
     p delta incremented X a (k + 1)).outgoing a = some U
@@ -514,13 +536,140 @@ theorem slotTransverseFlip_step_same_succ_of_two_le
     (R.step hmn inletCenter incoming firstFlip secondFlip p delta incremented X a k
       ).slotTransverseFlip incoming firstFlip secondFlip a (k + 1) =
       inletCompensatingTransverseFlip a
-        (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
-          p delta X a k).seedCenter.1 := by
+        (cubicRelativePosition (R.slotCenterFor inletCenter a k)
+          (R.selectedTarget hmn inletCenter incoming firstFlip secondFlip
+            p delta X a k)) := by
   have hk0 : k + 1 ≠ 0 := by omega
   have hk1 : k + 1 ≠ 1 := by omega
   have hkBase0 : k ≠ 0 := by omega
   have hkBase1 : k ≠ 1 := by omega
-  simp [slotTransverseFlip, step, hk, hk0, hk1, hkBase0, hkBase1]
+  simp [slotTransverseFlip, step, selectedTarget, hk, hk0, hk1, hkBase0, hkBase1]
+
+/-- The link-up query in an outgoing duplicate pair reads only the two endpoint boxes of the
+first query's signed frame.  This is the concrete non-root counterpart of the post-radial
+two-endpoint containment theorem. -/
+theorem endpointVertices_restartQuery_step_same_succ_subset_endpointBoxes
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : 2 * m ≤ n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (a : CubicDirection d) (k : ℕ) (hk : 2 ≤ k) :
+    let base := R.slotCenterFor inletCenter a k
+    let transverse := R.slotTransverseFlip incoming firstFlip secondFlip a k
+    let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X a k
+    (cubicEdgeEndpointVertices
+        ((Rnext.restartQuery inletCenter incoming firstFlip secondFlip a (k + 1)
+          ).restartSupport m n) : Set (Cubic d)) ⊆
+      (cubicMetricBox d base (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (cubicRestartFrameIso base a transverse
+            (grimmettMarstrandSiteCenter (m + n + 1)
+              (cubicStepFrom cubicOrigin (a.1, true))))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  dsimp only
+  intro z hz
+  let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+    p delta incremented X a k
+  let Qnext := Rnext.restartQuery inletCenter incoming firstFlip secondFlip a (k + 1)
+  have hzRegion := Qnext.endpointVertices_restartSupport_subset_frameRegion hz
+  have hcenter := R.slotCenterFor_step_same_succ_of_two_le hmn inletCenter incoming
+    firstFlip secondFlip p delta incremented X a k hk
+  have hflip := R.slotTransverseFlip_step_same_succ_of_two_le hmn inletCenter incoming
+    firstFlip secondFlip p delta incremented X a k hk
+  have hgeom := R.selectedWitness_seedBoxWithinBoundaryLayer hmn inletCenter incoming
+    firstFlip secondFlip p delta X a k
+  apply pairedRestartRegion_subset_endpointBoxes_of_geometry
+    (R.slotCenterFor inletCenter a k)
+    (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip p delta X a k
+      ).seedCenter.1 a
+    (R.slotTransverseFlip incoming firstFlip secondFlip a k) hm hgeom
+  simpa [Qnext, Rnext, restartQuery, SourceFiniteEdgeRevealState.framedQuery,
+    hcenter, hflip, selectedTarget] using hzRegion
+
+/-- The second inlet query obeys the same two-endpoint containment, with the literal inlet
+center as the base of the first signed frame. -/
+theorem endpointVertices_secondInletQuery_subset_endpointBoxes
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : 2 * m ≤ n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (hbase : R.inletReferenceBase = inletCenter)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) :
+    let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X incoming 0
+    (cubicEdgeEndpointVertices
+        ((Rnext.restartQuery inletCenter incoming firstFlip secondFlip incoming 1
+          ).restartSupport m n) : Set (Cubic d)) ⊆
+      (cubicMetricBox d inletCenter (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (cubicRestartFrameIso inletCenter incoming firstFlip
+            (grimmettMarstrandSiteCenter (m + n + 1)
+              (cubicStepFrom cubicOrigin (incoming.1, true))))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  dsimp only
+  intro z hz
+  let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+    p delta incremented X incoming 0
+  let Qnext := Rnext.restartQuery inletCenter incoming firstFlip secondFlip incoming 1
+  have hzRegion := Qnext.endpointVertices_restartSupport_subset_frameRegion hz
+  have hcenter := R.slotCenterFor_step_zero_one hmn inletCenter incoming
+    firstFlip secondFlip p delta incremented X incoming
+  have hgeom := R.selectedWitness_seedBoxWithinBoundaryLayer hmn inletCenter incoming
+    firstFlip secondFlip p delta X incoming 0
+  apply pairedRestartRegion_subset_endpointBoxes_of_geometry inletCenter
+    (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
+      p delta X incoming 0).seedCenter.1 incoming firstFlip hm hgeom
+  simpa [Qnext, Rnext, restartQuery, SourceFiniteEdgeRevealState.framedQuery,
+    hcenter, step, selectedTarget, slotTransverseFlip, slotCenterFor, hbase] using hzRegion
+
+/-- The record published by a fresh duplicate branch lies in the half-way box of the signed
+frame in which that pair began.  This retains the sharper location information suppressed by
+the coarser two-endpoint support bound. -/
+theorem outgoing_runFrom_restartPair_mem_framedHalfwayBox
+    {d m n : ℕ} (hm : 1 ≤ m) (hmn : 2 * m ≤ n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (a : CubicDirection d) (k : ℕ) (hk : 2 ≤ k)
+    {U : LaterSiteOutgoingSeed d}
+    (hU : (runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+      R k (laterSiteBranchRestartPair a)).outgoing a = some U) :
+    U.physicalCenter ∈
+      cubicGraphIsoRegion
+        (cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
+          (R.slotTransverseFlip incoming firstFlip secondFlip a k))
+        (grimmettMarstrandHalfwayBox d (m + n + 1) cubicOrigin (a.1, true)) := by
+  let c := (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
+    p delta X a k).seedCenter.1
+  let R1 := R.step hmn inletCenter incoming firstFlip secondFlip
+    p delta incremented X a k
+  let q := (R1.selectedWitness hmn inletCenter incoming firstFlip secondFlip
+    p delta X a (k + 1)).seedCenter.1
+  have hc : SeedBoxWithinBoundaryLayer d a.1 m n c := by
+    exact R.selectedWitness_seedBoxWithinBoundaryLayer hmn inletCenter incoming firstFlip
+      secondFlip p delta X a k
+  have hq : SeedBoxWithinBoundaryLayer d a.1 m n q := by
+    exact R1.selectedWitness_seedBoxWithinBoundaryLayer hmn inletCenter incoming firstFlip
+      secondFlip p delta X a (k + 1)
+  have hlocated := pairedRestartTarget_mem_framedHalfwayBox_of_geometry
+    (R.slotCenterFor inletCenter a k) c q a
+      (R.slotTransverseFlip incoming firstFlip secondFlip a k) hm hc hq
+  have hcenter := R.slotCenterFor_step_same_succ_of_two_le hmn inletCenter incoming
+    firstFlip secondFlip p delta incremented X a k hk
+  have hflip := R.slotTransverseFlip_step_same_succ_of_two_le hmn inletCenter incoming
+    firstFlip secondFlip p delta incremented X a k hk
+  change (R1.step hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+    a (k + 1)).outgoing a = some U at hU
+  have hk' : 2 ≤ k + 1 := by omega
+  have hphysical : U.physicalCenter =
+      cubicRestartFrameIso (R1.slotCenterFor inletCenter a (k + 1)) a
+        (R1.slotTransverseFlip incoming firstFlip secondFlip a (k + 1)) q := by
+    symm
+    simpa [step, hk', q] using congrArg (fun V ↦ Option.map
+      LaterSiteOutgoingSeed.physicalCenter V) hU
+  rw [hphysical, hcenter, hflip]
+  simpa [c, q, R1, selectedTarget] using hlocated
 
 /-- Every direction in a duplicate-pair branch schedule has a final published outgoing seed.
 No later pair overwrites it because the branch list has no duplicates. -/
@@ -890,14 +1039,16 @@ theorem seedBoxesInstalled_step_of_success
             { physicalCenter :=
                 R.selectedTarget hmn inletCenter incoming firstFlip secondFlip p delta X a k
               referenceCenter :=
-                (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
-                  p delta X a k).seedCenter.1 } := by
+                cubicRelativePosition (R.slotCenterFor inletCenter a k)
+                  (R.selectedTarget hmn inletCenter incoming firstFlip secondFlip
+                    p delta X a k) } := by
           have hsome : some U = some
               { physicalCenter :=
                   R.selectedTarget hmn inletCenter incoming firstFlip secondFlip p delta X a k
                 referenceCenter :=
-                  (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
-                    p delta X a k).seedCenter.1 } := by
+                  cubicRelativePosition (R.slotCenterFor inletCenter a k)
+                    (R.selectedTarget hmn inletCenter incoming firstFlip secondFlip
+                      p delta X a k) } := by
             simpa [Rnext, step, selectedTarget, hk] using hU.symm
           exact Option.some.inj hsome
         subst U
@@ -1018,9 +1169,9 @@ noncomputable def outgoingSeed {d m n : ℕ}
     firstFlip secondFlip p delta incremented X
   let k := branchSlotIndex incoming a
   let W := R.selectedWitness hmn inletCenter incoming firstFlip secondFlip p delta X a k
-  ⟨cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
-      (R.slotTransverseFlip incoming firstFlip secondFlip a k) W.seedCenter.1,
-    W.seedCenter.1⟩
+  let target := cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
+    (R.slotTransverseFlip incoming firstFlip secondFlip a k) W.seedCenter.1
+  ⟨target, cubicRelativePosition (R.slotCenterFor inletCenter a k) target⟩
 
 /-- Actual physical center of the selected outgoing seed. -/
 noncomputable def outgoingSeedCenter {d m n : ℕ}
@@ -1043,8 +1194,11 @@ theorem outgoingSeed_referenceCenter
       p delta incremented X).referenceCenter =
       let R := branchPrefixRuntime hd hmn source inletCenter incoming a
         firstFlip secondFlip p delta incremented X
-      R.selectedWitness hmn inletCenter incoming firstFlip secondFlip p delta X a
-        (branchSlotIndex incoming a) |>.seedCenter.1 := by
+      let k := branchSlotIndex incoming a
+      let W := R.selectedWitness hmn inletCenter incoming firstFlip secondFlip p delta X a k
+      cubicRelativePosition (R.slotCenterFor inletCenter a k)
+        (cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
+          (R.slotTransverseFlip incoming firstFlip secondFlip a k) W.seedCenter.1) := by
   rfl
 
 /-- Completion of a non-root site exposes a literal mixed-threshold outgoing seed in every

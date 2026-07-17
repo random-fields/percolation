@@ -51,7 +51,7 @@ structure ReplayProgramFinalThresholdCertificate
       let directions := siteDirectionOrder hd root fullHistory queried
       LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
         first unusedSecondFlip p pFinal delta incremented X
-        (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 directions
+        (siteInitialRuntime (m + n + 1) queried S seed) 0 directions
 
 namespace ReplayProgramFinalThresholdCertificate
 

@@ -12,6 +12,22 @@ prevents a formally valid but geometrically unfaithful block program.
 
 namespace Percolation
 
+/-- Physical displacement of `target` from `base`, expressed in the fixed cubic coordinates.
+Compensating steering depends on this signed displacement after all preceding frame flips. -/
+def cubicRelativePosition {d : ℕ} (base target : Cubic d) : Cubic d :=
+  fun j ↦ target j - base j
+
+@[simp]
+theorem cubicRelativePosition_apply {d : ℕ} (base target : Cubic d) (j : Fin d) :
+    cubicRelativePosition base target j = target j - base j :=
+  rfl
+
+@[simp]
+theorem cubicRelativePosition_self {d : ℕ} (base : Cubic d) :
+    cubicRelativePosition base base = cubicOrigin := by
+  ext j
+  simp [cubicRelativePosition, cubicOrigin]
+
 /-- Coordinate flips for a restart frame.  The exit coordinate is fixed by the signed direction;
 all other coordinates are controlled independently by `transverseFlip`. -/
 def cubicRestartFrameFlip {d : ℕ}
@@ -278,5 +294,54 @@ theorem cubicRestartFrameIso_mem_inletCompensatingBoundaryRegion
     · simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
         inletCompensatingTransverseFlip, cubicOrigin, hji, hpos]
       exact mul_nonpos_of_nonneg_of_nonpos hzNonneg (le_of_not_gt hpos)
+
+/-- A second restart using the signed displacement selected by the first restart exactly
+implements Grimmett's transverse reversal in the first frame's reference coordinates.  This
+identity is the algebraic reason the two applications assigned to one outgoing branch do not
+drift in a flipped transverse direction. -/
+theorem cubicRestartFrameIso_inletCompensating_comp
+    {d : ℕ} (center c : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool)
+    (hpos : ∀ j, j ≠ a.1 → 0 < c j) (z : Cubic d) :
+    let target := cubicRestartFrameIso center a transverseFlip c
+    cubicRestartFrameIso target a
+        (inletCompensatingTransverseFlip a
+          (cubicRelativePosition center target)) z =
+      cubicRestartFrameIso center a transverseFlip
+        (cubicTranslate cubicOrigin c
+          (cubicRestartFrameIso cubicOrigin (a.1, true)
+            (oppositeTransverseRestartFlip (a.1, true)) z)) := by
+  dsimp only
+  ext j
+  by_cases hja : j = a.1
+  · subst j
+    rcases a with ⟨i, positive⟩
+    cases positive <;>
+      simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+        cubicRelativePosition, inletCompensatingTransverseFlip,
+        oppositeTransverseRestartFlip, cubicTranslate, cubicOrigin] <;>
+      ring
+  · have hc : 0 < c j := hpos j hja
+    have hcneg : ¬c j < 0 := by omega
+    have hnegc : ¬0 < -c j := by omega
+    by_cases hflip : transverseFlip j
+    · have hrelative : cubicRelativePosition center
+          (cubicRestartFrameIso center a transverseFlip c) j = -c j := by
+        simp [cubicRelativePosition, cubicRestartFrameIso_apply,
+          cubicRestartFrameFlip, hja, hflip]
+      simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+        cubicRelativePosition, inletCompensatingTransverseFlip,
+        oppositeTransverseRestartFlip, cubicTranslate, cubicOrigin,
+        hja, hflip, hrelative, hc, hcneg, hnegc]
+      ring
+    · have hrelative : cubicRelativePosition center
+          (cubicRestartFrameIso center a transverseFlip c) j = c j := by
+        simp [cubicRelativePosition, cubicRestartFrameIso_apply,
+          cubicRestartFrameFlip, hja, hflip]
+      simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+        cubicRelativePosition, inletCompensatingTransverseFlip,
+        oppositeTransverseRestartFlip, cubicTranslate, cubicOrigin,
+        hja, hflip, hrelative, hc, hcneg, hnegc]
+      ring
 
 end Percolation

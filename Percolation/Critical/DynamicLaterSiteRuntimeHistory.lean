@@ -108,6 +108,7 @@ theorem step_eq_of_mem_nextHistoryProfile
     simpa [step, Q, center, flip] using hY
   apply LaterSiteRuntime.ext
   · simpa [step, Q, center, flip] using hsource
+  · rfl
   · simp [step, selectedTarget, selectedWitness, Q, center, flip, hselected]
   · simp [step, selectedTarget, selectedWitness, Q, center, flip, hselected]
   · simp [step, selectedTarget, selectedWitness, Q, center, flip, hselected]

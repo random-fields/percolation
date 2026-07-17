@@ -31,9 +31,9 @@ noncomputable def outgoingOfRootWitnessTable
     F → CubicDirection d → Option (LaterSiteOutgoingSeed d) :=
   fun v a ↦ if v = root then
     (T a).map fun U ↦
-      ⟨cubicRestartFrameIso (W.physicalCenter a) a
-          (oppositeTransverseRestartFlip a) U.seedCenter.1,
-        U.seedCenter.1⟩
+      let target := cubicRestartFrameIso (W.physicalCenter a) a
+        (oppositeTransverseRestartFlip a) U.seedCenter.1
+      ⟨target, cubicRelativePosition cubicOrigin target⟩
   else none
 
 /-- The completed-root replay state has finite range.  Although its outgoing table is a
@@ -96,10 +96,10 @@ theorem finite_range_step_of_finite_range
       let incoming := incomingDirection hd root history v
       let first := firstFlip hd root history v S
       let initialRuntime : (CubicEdge d → ℝ) → LaterSiteRuntime d := fun _ ↦
-        LaterSiteRuntime.initial S.source seed.physicalCenter
+        siteInitialRuntime (m + n + 1) v S seed
       have hinitial : (Set.range initialRuntime).Finite := by
         have hsubset : Set.range initialRuntime ⊆
-            {LaterSiteRuntime.initial S.source seed.physicalCenter} := by
+            {siteInitialRuntime (m + n + 1) v S seed} := by
           rintro R ⟨X, rfl⟩
           simp [initialRuntime]
         exact (Set.finite_singleton _).subset hsubset
@@ -119,7 +119,8 @@ theorem finite_range_step_of_finite_range
   let assemble : DynamicBlockHistoryState d F × LaterSiteRuntime d →
       DynamicBlockHistoryState d F := fun t ↦
     { source := t.2.source
-      outgoing := if accepted then Function.update t.1.outgoing v t.2.outgoing
+      outgoing := if accepted then Function.update t.1.outgoing v
+        (normalizeOutgoingTable (m + n + 1) v t.2.outgoing)
         else t.1.outgoing }
   apply (hdata.image assemble).subset
   rintro S ⟨X, rfl⟩

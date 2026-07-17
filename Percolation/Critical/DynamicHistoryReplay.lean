@@ -49,6 +49,15 @@ def SeedBoxesInstalled {d m : ℕ} {V : Type*}
   ∀ v a U, S.outgoing v a = some U →
     cubicBoxEdges d U.physicalCenter m ⊆ S.source.explored
 
+/-- Every published steering record uses the displacement from the deterministic coarse-site
+center which published it.  This invariant is deliberately separate from seed installation:
+the former drives the next signed frame, while the latter drives open connectivity. -/
+def OutgoingReferenceCentersNormalized {d N : ℕ} {F : Set (Cubic d)}
+    (S : DynamicBlockHistoryState d F) : Prop :=
+  ∀ v a U, S.outgoing v a = some U →
+    U.referenceCenter =
+      cubicRelativePosition (grimmettMarstrandSiteCenter N v.1) U.physicalCenter
+
 /-- Completion of all root restarts initializes the global installed-seed invariant. -/
 theorem seededBoxesInstalled_rooted
     {d m n : ℕ} {V : Type*} [DecidableEq V] [NeZero d]
@@ -74,6 +83,33 @@ theorem seededBoxesInstalled_rooted
         (rootExtensionDirectionOrder d).length X).explored
     rw [RootRadialSeedProfile.rootExtensionPrefixState, List.take_length]
     simpa [RootRadialSeedProfile.completedRootExtensionState] using hseed
+  · simp [rooted, hvr] at hU
+
+/-- The root table is normalized whenever the deterministic coarse center of the chosen root
+is the physical origin.  The final planar specialization takes the literal origin subtype, so
+this condition is discharged by reflexivity there. -/
+theorem outgoingReferenceCentersNormalized_rooted
+    {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F]
+    (W : RootRadialSeedProfile d m n) (root : F)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hroot : grimmettMarstrandSiteCenter N root.1 = cubicOrigin) :
+    (rooted W root p radialIncremented delta incremented X
+      ).OutgoingReferenceCentersNormalized (N := N) := by
+  classical
+  intro v a U hU
+  by_cases hvr : v = root
+  · subst v
+    have hseed : W.rootOutgoingSeed p radialIncremented delta incremented X a = some U := by
+      simpa [rooted] using hU
+    unfold RootRadialSeedProfile.rootOutgoingSeed at hseed
+    cases hW : W.rootOutgoingWitness p radialIncremented delta incremented X a with
+    | none => simp [hW] at hseed
+    | some V =>
+        simp only [hW, Option.map_some, Option.some.injEq] at hseed
+        subst U
+        simpa [hroot]
   · simp [rooted, hvr] at hU
 
 end DynamicBlockHistoryState
@@ -115,8 +151,9 @@ theorem outgoingCoversUndecidedNeighbors_rooted
   let a := cubicDirectionOfAdjacent huv
   obtain ⟨V, hV, _hWitness⟩ := W.exists_rootOutgoingSeedData_of_completion
     p radialIncremented delta incremented X hX a
-  refine ⟨⟨cubicRestartFrameIso (W.physicalCenter a) a
-      (oppositeTransverseRestartFlip a) V.seedCenter.1, V.seedCenter.1⟩, ?_⟩
+  let target := cubicRestartFrameIso (W.physicalCenter a) a
+    (oppositeTransverseRestartFlip a) V.seedCenter.1
+  refine ⟨⟨target, cubicRelativePosition cubicOrigin target⟩, ?_⟩
   simpa [DynamicBlockHistoryState.rooted, a] using hV
 
 /-- Canonical suffix obtained by replaying only the Boolean decisions through the rooted coarse
@@ -606,6 +643,14 @@ theorem siteDirectionOrder_length_le (hd : 0 < d) (root : F)
   exact activeLaterSiteDirectionOrder_length_le hd history v
     (incomingDirection hd root history v)
 
+/-- Initial non-root runtime anchored at the deterministic center of the queried coarse site.
+The incoming seed may lie in the parent/child half-way box, so it must not itself be used as
+the reference origin for the two inlet steering moves. -/
+noncomputable def siteInitialRuntime (N : ℕ) (v : F) (S : DynamicBlockHistoryState d F)
+    (seed : LaterSiteOutgoingSeed d) : LaterSiteRuntime d :=
+  LaterSiteRuntime.initialAt S.source seed.physicalCenter
+    (grimmettMarstrandSiteCenter N v.1)
+
 /-- Total runtime used to decide one queried coarse site. -/
 noncomputable def siteRuntime (hd : 0 < d) (hmn : 2 * m ≤ n)
     (root : F) (history : List (F × Bool)) (v : F)
@@ -615,7 +660,7 @@ noncomputable def siteRuntime (hd : 0 < d) (hmn : 2 * m ≤ n)
   LaterSiteRuntime.runFrom hmn seed.physicalCenter
     (incomingDirection hd root history v) (firstFlip hd root history v S)
     unusedSecondFlip p delta incremented X
-      (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+      (siteInitialRuntime (m + n + 1) v S seed) 0
       (siteDirectionOrder hd root history v)
 
 /-- Every active fresh branch of the source-faithful runtime publishes a final outgoing seed.
@@ -636,7 +681,7 @@ theorem exists_siteRuntime_outgoing_of_active
   let first := firstFlip hd root history v S
   let branches :=
     (activeLaterSiteBranchDirections F history v incoming).toList
-  let R0 := LaterSiteRuntime.initial S.source seed.physicalCenter
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
   let R2 := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
     p delta incremented X R0 0 [incoming, incoming]
   have haList : a ∈ branches := by
@@ -654,6 +699,42 @@ theorem exists_siteRuntime_outgoing_of_active
   rw [hdirections, LaterSiteRuntime.runFrom_append]
   simpa [R2] using hpair
 
+/-- Rewrite an outgoing seed's steering datum relative to the deterministic coarse-site
+center which publishes it.  The physical anchor is unchanged. -/
+def normalizeOutgoingSeed (N : ℕ) (v : F)
+    (U : LaterSiteOutgoingSeed d) : LaterSiteOutgoingSeed d :=
+  { physicalCenter := U.physicalCenter
+    referenceCenter := cubicRelativePosition
+      (grimmettMarstrandSiteCenter N v.1) U.physicalCenter }
+
+@[simp]
+theorem normalizeOutgoingSeed_physicalCenter (N : ℕ) (v : F)
+    (U : LaterSiteOutgoingSeed d) :
+    (normalizeOutgoingSeed N v U).physicalCenter = U.physicalCenter :=
+  rfl
+
+@[simp]
+theorem normalizeOutgoingSeed_referenceCenter (N : ℕ) (v : F)
+    (U : LaterSiteOutgoingSeed d) :
+    (normalizeOutgoingSeed N v U).referenceCenter =
+      cubicRelativePosition (grimmettMarstrandSiteCenter N v.1) U.physicalCenter :=
+  rfl
+
+/-- Normalize every branch entry before it is made visible to the child-site selector. -/
+def normalizeOutgoingTable (N : ℕ) (v : F)
+    (outgoing : CubicDirection d → Option (LaterSiteOutgoingSeed d)) :
+    CubicDirection d → Option (LaterSiteOutgoingSeed d) :=
+  fun a ↦ (outgoing a).map (normalizeOutgoingSeed N v)
+
+theorem normalizeOutgoingTable_eq_some_iff (N : ℕ) (v : F)
+    (outgoing : CubicDirection d → Option (LaterSiteOutgoingSeed d))
+    (a : CubicDirection d) (U : LaterSiteOutgoingSeed d) :
+    normalizeOutgoingTable N v outgoing a = some U ↔
+      ∃ V, outgoing a = some V ∧ U = normalizeOutgoingSeed N v V := by
+  cases hV : outgoing a with
+  | none => simp [normalizeOutgoingTable, hV]
+  | some V => simp [normalizeOutgoingTable, hV, eq_comm]
+
 /-- One replayed coarse decision.  Failed sites retain no outgoing table; accepted sites publish
 the branch table computed by their completed runtime. -/
 noncomputable def step (hd : 0 < d) (hmn : 2 * m ≤ n)
@@ -663,7 +744,35 @@ noncomputable def step (hd : 0 < d) (hmn : 2 * m ≤ n)
     DynamicBlockHistoryState d F :=
   let R := siteRuntime hd hmn root history v p delta incremented X S
   { source := R.source
-    outgoing := if accepted then Function.update S.outgoing v R.outgoing else S.outgoing }
+    outgoing := if accepted then Function.update S.outgoing v
+      (normalizeOutgoingTable (m + n + 1) v R.outgoing) else S.outgoing }
+
+/-- Normalizing the table at its publication point preserves the global reference-frame
+invariant, independently of whether the queried site is accepted. -/
+theorem outgoingReferenceCentersNormalized_step
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F) (accepted : Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (hS : S.OutgoingReferenceCentersNormalized (N := m + n + 1)) :
+    (step hd hmn root history v accepted p delta incremented X S
+      ).OutgoingReferenceCentersNormalized (N := m + n + 1) := by
+  classical
+  intro u a U hU
+  cases accepted
+  · exact hS u a U (by simpa [step] using hU)
+  · by_cases huv : u = v
+    · subst u
+      have hnormalized : normalizeOutgoingTable (m + n + 1) v
+          (siteRuntime hd hmn root history v p delta incremented X S).outgoing a =
+          some U := by
+        simpa [step] using hU
+      obtain ⟨V, _hV, rfl⟩ :=
+        (normalizeOutgoingTable_eq_some_iff (m + n + 1) v
+          (siteRuntime hd hmn root history v p delta incremented X S).outgoing a U).mp
+          hnormalized
+      rfl
+    · exact hS u a U (by simpa [step, huv] using hU)
 
 /-- A rejected coarse site does not publish new seeds, while its total source replay only
 enlarges the explored set; hence all previously published seed certificates survive. -/
@@ -679,7 +788,7 @@ theorem seededBoxesInstalled_step_false
   let incoming := incomingDirection hd root history v
   let first := firstFlip hd root history v S
   let directions := siteDirectionOrder hd root history v
-  let R0 := LaterSiteRuntime.initial S.source seed.physicalCenter
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
   have hmono := LaterSiteRuntime.source_explored_subset_runFrom hmn seed.physicalCenter
     incoming first unusedSecondFlip p delta incremented X R0 0 directions
   intro u a U hU
@@ -704,7 +813,7 @@ theorem seededBoxesInstalled_step_true_of_success
       let directions := siteDirectionOrder hd root history v
       LaterSiteRuntime.succeedsFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 directions)
+          (siteInitialRuntime (m + n + 1) v S seed) 0 directions)
     (hready :
       let seed := inletSeed hd root history v S
       let incoming := incomingDirection hd root history v
@@ -713,7 +822,7 @@ theorem seededBoxesInstalled_step_true_of_success
       ∀ j (hj : j < directions.length),
         let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
           unusedSecondFlip p delta incremented X
-            (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+            (siteInitialRuntime (m + n + 1) v S seed) 0 (directions.take j)
         let a := directions[j]
         Disjoint
             (cubicEdgeEndpointVertices (Rj.source.referenceExploredEdges
@@ -731,11 +840,13 @@ theorem seededBoxesInstalled_step_true_of_success
   let incoming := incomingDirection hd root history v
   let first := firstFlip hd root history v S
   let directions := siteDirectionOrder hd root history v
-  let R0 := LaterSiteRuntime.initial S.source seed.physicalCenter
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
   let R := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
     p delta incremented X R0 0 directions
   have hR0 : R0.SeedBoxesInstalled m := by
-    exact LaterSiteRuntime.seedBoxesInstalled_initial S.source seed.physicalCenter hinlet
+    refine ⟨hinlet, hinlet, ?_⟩
+    intro a U hU
+    simp [R0, siteInitialRuntime, LaterSiteRuntime.initialAt] at hU
   have hR : R.SeedBoxesInstalled m := by
     apply LaterSiteRuntime.seedBoxesInstalled_runFrom_of_succeedsFrom
       seed.physicalCenter incoming first unusedSecondFlip p delta incremented X R0 0
@@ -745,10 +856,13 @@ theorem seededBoxesInstalled_step_true_of_success
   intro u a U hU
   by_cases huv : u = v
   · subst u
-    have hUR : R.outgoing a = some U := by
+    have hnormalized :
+        normalizeOutgoingTable (m + n + 1) v R.outgoing a = some U := by
       simpa [step, siteRuntime, seed, incoming, first, directions, R0, R] using hU
+    obtain ⟨V, hVR, rfl⟩ :=
+      (normalizeOutgoingTable_eq_some_iff (m + n + 1) v R.outgoing a U).mp hnormalized
     simpa [step, siteRuntime, seed, incoming, first, directions, R0, R] using
-      hR.2.2 a U hUR
+      hR.2.2 a V hVR
   · have hUold : S.outgoing u a = some U := by
       simpa [step, siteRuntime, seed, incoming, first, directions, R0, R, huv] using hU
     have hmono := LaterSiteRuntime.source_explored_subset_runFrom hmn seed.physicalCenter
@@ -844,8 +958,8 @@ theorem outgoingCoversUndecidedNeighbors_step
         exact not_or_intro hwAcceptedOld hwRejectedOld
       obtain ⟨U, hU⟩ := exists_siteRuntime_outgoing_of_active hd hmn root history v
         p delta incremented X S a (by simpa [incoming] using haActive)
-      refine ⟨U, ?_⟩
-      simpa [step, a] using hU
+      refine ⟨normalizeOutgoingSeed (m + n + 1) v U, ?_⟩
+      simpa [step, normalizeOutgoingTable, a, hU]
     · have huv : u ≠ v := by
         intro huv
         subst u
@@ -864,6 +978,23 @@ noncomputable def replayFrom (hd : 0 < d) (hmn : 2 * m ≤ n)
   | prior, S, (v, accepted) :: rest =>
       replayFrom hd hmn root p delta incremented X (prior ++ [(v, accepted)])
         (step hd hmn root prior v accepted p delta incremented X S) rest
+
+/-- Reference-frame normalization is invariant under an arbitrary literal replay suffix. -/
+theorem outgoingReferenceCentersNormalized_replayFrom
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (prior : List (F × Bool))
+    (S : DynamicBlockHistoryState d F) (history : List (F × Bool))
+    (hS : S.OutgoingReferenceCentersNormalized (N := m + n + 1)) :
+    (replayFrom hd hmn root p delta incremented X prior S history
+      ).OutgoingReferenceCentersNormalized (N := m + n + 1) := by
+  induction history generalizing prior S with
+  | nil => exact hS
+  | cons entry rest ih =>
+      rcases entry with ⟨v, accepted⟩
+      apply ih
+      exact outgoingReferenceCentersNormalized_step hd hmn root prior v accepted p delta
+        incremented X S hS
 
 /-- The outgoing-table invariant follows the actual chronological trace generated by the site
 exploration.  This induction is deliberately driven by the site state rather than by the
@@ -955,7 +1086,22 @@ noncomputable def replay
     DynamicBlockHistoryState d F :=
   replayFrom hd hmn root p delta incremented X [(root, true)]
     (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X)
-      (canonicalSuffix root history)
+    (canonicalSuffix root history)
+
+/-- The complete replay keeps every published reference displacement based at its publishing
+coarse site. -/
+theorem outgoingReferenceCentersNormalized_replay
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (W : RootRadialSeedProfile d m n) (root : F)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (history : List (F × Bool))
+    (hroot : grimmettMarstrandSiteCenter (m + n + 1) root.1 = cubicOrigin) :
+    (replay hd hmn W root p radialIncremented delta incremented X history
+      ).OutgoingReferenceCentersNormalized (N := m + n + 1) := by
+  apply outgoingReferenceCentersNormalized_replayFrom hd hmn root p delta incremented X
+  exact DynamicBlockHistoryState.outgoingReferenceCentersNormalized_rooted W root p
+    radialIncremented delta incremented X hroot
 
 /-- Every completed root replay carries the outgoing-table invariant through the canonical
 chronological suffix.  In particular, all admissible next queries can recover a genuine parent
@@ -1020,7 +1166,7 @@ noncomputable def answer
   exact decide <| LaterSiteRuntime.succeedsFrom hmn seed.physicalCenter
     (incomingDirection hd root fullHistory queried)
     (firstFlip hd root fullHistory queried S) unusedSecondFlip p delta incremented X
-      (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+      (siteInitialRuntime (m + n + 1) queried S seed) 0
       (siteDirectionOrder hd root fullHistory queried)
 
 /-- The `j`-th source-faithful restart event for a queried site, padded by the sure event after
@@ -1044,7 +1190,7 @@ noncomputable def paddedStageSuccess
     if hj : j < directions.length then
       let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) queried S seed) 0 (directions.take j)
       X ∈ (Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip
         directions[j] j).successEvent m n p delta
     else True}
@@ -1077,7 +1223,7 @@ theorem answer_eq_finiteAdaptiveSuccessAnswer
     S, fullHistory, queried, seed, incoming, first, directions] using
       (LaterSiteRuntime.succeedsFrom_iff_forall_padded hmn seed.physicalCenter incoming
         first unusedSecondFlip p delta incremented X
-        (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (4 * d) directions hlength)
+        (siteInitialRuntime (m + n + 1) queried S seed) 0 (4 * d) directions hlength)
 
 /-- Appending a successful coarse decision is exactly the preceding semantic history together
 with all `4d` padded literal restart events.  This is the final-prefix identity consumed by the

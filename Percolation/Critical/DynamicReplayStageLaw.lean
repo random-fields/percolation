@@ -29,7 +29,8 @@ noncomputable def stateRuntimeQuerySuccess
   let seed := inletSeed hd root fullHistory queried S
   let incoming := incomingDirection hd root fullHistory queried
   let first := firstFlip hd root fullHistory queried S
-  LaterSiteRuntime.prefixQuerySuccessEvent hmn S.source seed.physicalCenter incoming first
+  LaterSiteRuntime.prefixQuerySuccessEvent hmn S.source seed.physicalCenter
+    (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming first
     unusedSecondFlip p delta incremented (siteDirectionOrder hd root fullHistory queried) j a
 
 /-- The `j`-th padded restart event when the incoming global replay state is fixed. -/
@@ -48,7 +49,7 @@ noncomputable def statePaddedStageSuccess
     if hj : j < directions.length then
       let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) queried S seed) 0 (directions.take j)
       X ∈ (Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip
         directions[j] j).successEvent m n p delta
     else True}
@@ -74,7 +75,8 @@ noncomputable def stateActiveStageSuccess
   let seed := inletSeed hd root fullHistory queried S
   let incoming := incomingDirection hd root fullHistory queried
   let first := firstFlip hd root fullHistory queried S
-  LaterSiteRuntime.prefixSemanticSuccessEvent hmn S.source seed.physicalCenter incoming first
+  LaterSiteRuntime.prefixSemanticSuccessEvent hmn S.source seed.physicalCenter
+    (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming first
     unusedSecondFlip p delta incremented (siteDirectionOrder hd root fullHistory queried) j a
       S.source.historyProfile.event
 
@@ -181,7 +183,7 @@ structure StableReplayStageCertificate
     ∀ l (hl : l < directions.length) e,
       let Rl := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial c.1.1.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) queried c.1.1 seed) 0
           (directions.take l)
       let a := directions[l]
       (incremented Rl.source a e : ℝ) = (Rl.source.lower e : ℝ) + delta
@@ -198,7 +200,7 @@ structure StableReplayStageCertificate
     ∀ l (hl : l < directions.length),
       let Rl := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial c.1.1.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) queried c.1.1 seed) 0
           (directions.take l)
       let a := directions[l]
       let center := Rl.slotCenterFor seed.physicalCenter a l
@@ -219,7 +221,7 @@ structure StableReplayStageCertificate
     ∀ l (hl : l < directions.length),
       let Rl := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial c.1.1.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) queried c.1.1 seed) 0
           (directions.take l)
       let a := directions[l]
       let Q := Rl.restartQuery seed.physicalCenter incoming first unusedSecondFlip a l
@@ -250,7 +252,8 @@ private theorem stablePrefix_event_subset
     let first := firstFlip hd root fullHistory queried S
     let directions := siteDirectionOrder hd root fullHistory queried
     ∀ X ∈ S.source.historyProfile.event,
-      (LaterSiteRuntime.prefixRuntime hmn S.source seed.physicalCenter incoming first
+      (LaterSiteRuntime.prefixRuntime hmn S.source seed.physicalCenter
+        (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming first
         unusedSecondFlip p delta incremented directions j X).source.historyProfile.event ⊆
           S.source.historyProfile.event := by
   dsimp only
@@ -262,8 +265,8 @@ private theorem stablePrefix_event_subset
     (incomingDirection hd root fullHistory queried)
     (firstFlip hd root fullHistory queried c.1.1)
     unusedSecondFlip p delta incremented C.policy_mono X
-    (LaterSiteRuntime.initial c.1.1.source
-      (inletSeed hd root fullHistory queried c.1.1).physicalCenter) 0
+    (siteInitialRuntime (m + n + 1) queried c.1.1
+      (inletSeed hd root fullHistory queried c.1.1)) 0
     ((siteDirectionOrder hd root fullHistory queried).take j)
 
 private theorem policy_adds_on_taken_prefix
@@ -282,7 +285,7 @@ private theorem policy_adds_on_taken_prefix
       (hl : l < (directions.take j).length) e,
       let Rl := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) queried S seed) 0
           ((directions.take j).take l)
       let a := (directions.take j)[l]
       (incremented Rl.source a e : ℝ) = (Rl.source.lower e : ℝ) + delta := by
@@ -315,7 +318,7 @@ private theorem target_fresh_on_taken_prefix
       (hl : l < (directions.take j).length),
       let Rl := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) queried S seed) 0
           ((directions.take j).take l)
       let a := (directions.take j)[l]
       let center := Rl.slotCenterFor seed.physicalCenter a l
@@ -353,7 +356,8 @@ private theorem target_fresh_on_runtime_cell
     let first := firstFlip hd root fullHistory queried S
     let directions := siteDirectionOrder hd root fullHistory queried
     ∀ r : LaterSiteRuntime.StablePrefixRuntimeIndex hmn S.source
-        seed.physicalCenter incoming first unusedSecondFlip p delta incremented directions j
+        seed.physicalCenter (grimmettMarstrandSiteCenter (m + n + 1) queried.1)
+          incoming first unusedSecondFlip p delta incremented directions j
           S.source.historyProfile.event,
       let R := r.1.1
       let a := directions[j]
@@ -386,7 +390,8 @@ private theorem restart_gt_on_runtime_cell
     let first := firstFlip hd root fullHistory queried S
     let directions := siteDirectionOrder hd root fullHistory queried
     ∀ r : LaterSiteRuntime.StablePrefixRuntimeIndex hmn S.source
-        seed.physicalCenter incoming first unusedSecondFlip p delta incremented directions j
+        seed.physicalCenter (grimmettMarstrandSiteCenter (m + n + 1) queried.1)
+          incoming first unusedSecondFlip p delta incremented directions j
           S.source.historyProfile.event,
       let R := r.1.1
       let a := directions[j]
@@ -415,6 +420,9 @@ private theorem activePrefixCertificate
       (inletSeed hd root ([(root, true)] ++ canonicalSuffix root history)
         (canonicalQueryFromFullHistory root
           ([(root, true)] ++ canonicalSuffix root history)) c.1.1).physicalCenter
+      (grimmettMarstrandSiteCenter (m + n + 1)
+        (canonicalQueryFromFullHistory root
+          ([(root, true)] ++ canonicalSuffix root history)).1)
       (incomingDirection hd root ([(root, true)] ++ canonicalSuffix root history)
         (canonicalQueryFromFullHistory root
           ([(root, true)] ++ canonicalSuffix root history)))
@@ -439,7 +447,8 @@ private theorem activePrefixCertificate
     intro X hX
     exact C.nonnegative (c.2.1 hX)
   have hstablePrefix : ∀ X ∈ Acell,
-      (LaterSiteRuntime.prefixRuntime hmn S.source seed.physicalCenter incoming first
+      (LaterSiteRuntime.prefixRuntime hmn S.source seed.physicalCenter
+        (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming first
         unusedSecondFlip p delta incremented directions j X).source.historyProfile.event ⊆
           Acell := by
     exact stablePrefix_event_subset C c j
@@ -453,16 +462,18 @@ private theorem activePrefixCertificate
     rw [← hsource]
     exact hs
   have hnonempty : Nonempty
-      (LaterSiteRuntime.StablePrefixRuntimeIndex hmn S.source seed.physicalCenter incoming
+      (LaterSiteRuntime.StablePrefixRuntimeIndex hmn S.source seed.physicalCenter
+        (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming
         first unusedSecondFlip p delta incremented directions j Acell) :=
     LaterSiteRuntime.nonempty_stablePrefixRuntimeIndex hmn S.source seed.physicalCenter
-      incoming first unusedSecondFlip p delta incremented directions j Acell X0 hX0cell
+      (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming first unusedSecondFlip
+        p delta incremented directions j Acell X0 hX0cell
         (hstablePrefix X0 hX0cell)
   have hadds : ∀ X ∈ Acell, ∀ l
       (hl : l < (directions.take j).length) e,
       let Rl := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) queried S seed) 0
           ((directions.take j).take l)
       let a := (directions.take j)[l]
       (incremented Rl.source a e : ℝ) = (Rl.source.lower e : ℝ) + delta := by
@@ -471,7 +482,7 @@ private theorem activePrefixCertificate
       (hl : l < (directions.take j).length),
       let Rl := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) queried S seed) 0
           ((directions.take j).take l)
       let a := (directions.take j)[l]
       let center := Rl.slotCenterFor seed.physicalCenter a l
@@ -481,7 +492,8 @@ private theorem activePrefixCertificate
         (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
     exact target_fresh_on_taken_prefix C c j
   have hTargetFresh : ∀ r : LaterSiteRuntime.StablePrefixRuntimeIndex hmn S.source
-      seed.physicalCenter incoming first unusedSecondFlip p delta incremented directions j
+      seed.physicalCenter (grimmettMarstrandSiteCenter (m + n + 1) queried.1)
+        incoming first unusedSecondFlip p delta incremented directions j
         Acell,
       let R := r.1.1
       let a := directions[j]
@@ -492,7 +504,8 @@ private theorem activePrefixCertificate
         (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
     exact target_fresh_on_runtime_cell C c j hj
   have hrestart : ∀ r : LaterSiteRuntime.StablePrefixRuntimeIndex hmn S.source
-      seed.physicalCenter incoming first unusedSecondFlip p delta incremented directions j
+      seed.physicalCenter (grimmettMarstrandSiteCenter (m + n + 1) queried.1)
+        incoming first unusedSecondFlip p delta incremented directions j
         Acell,
       let R := r.1.1
       let a := directions[j]
@@ -532,7 +545,7 @@ theorem runtime_ready_of_mem
     ∀ j (hj : j < directions.length),
       let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) queried S seed) 0 (directions.take j)
       let a := directions[j]
       Disjoint
           (cubicEdgeEndpointVertices (Rj.source.referenceExploredEdges
@@ -573,10 +586,12 @@ theorem runtime_ready_of_mem
               (canonicalQueryFromFullHistory root
                 ([(root, true)] ++ canonicalSuffix root history)) S)
             unusedSecondFlip p delta incremented X
-            (LaterSiteRuntime.initial S.source
+            (siteInitialRuntime (m + n + 1)
+              (canonicalQueryFromFullHistory root
+                ([(root, true)] ++ canonicalSuffix root history)) S
               (inletSeed hd root ([(root, true)] ++ canonicalSuffix root history)
                 (canonicalQueryFromFullHistory root
-                  ([(root, true)] ++ canonicalSuffix root history)) S).physicalCenter)
+                  ([(root, true)] ++ canonicalSuffix root history)) S))
             0
             ((siteDirectionOrder hd root
               ([(root, true)] ++ canonicalSuffix root history)
@@ -596,10 +611,12 @@ theorem runtime_ready_of_mem
               (canonicalQueryFromFullHistory root
                 ([(root, true)] ++ canonicalSuffix root history)) S)
             unusedSecondFlip p delta incremented X
-            (LaterSiteRuntime.initial S.source
+            (siteInitialRuntime (m + n + 1)
+              (canonicalQueryFromFullHistory root
+                ([(root, true)] ++ canonicalSuffix root history)) S
               (inletSeed hd root ([(root, true)] ++ canonicalSuffix root history)
                 (canonicalQueryFromFullHistory root
-                  ([(root, true)] ++ canonicalSuffix root history)) S).physicalCenter)
+                  ([(root, true)] ++ canonicalSuffix root history)) S))
             0
             ((siteDirectionOrder hd root
               ([(root, true)] ++ canonicalSuffix root history)
@@ -630,7 +647,7 @@ private theorem mem_statePaddedStageSuccess_iff_runtimeQuery_of_lt
       let directions := siteDirectionOrder hd root fullHistory queried
       let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) queried S seed) 0 (directions.take j)
       X ∈ (Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip
         directions[j] j).successEvent m n p delta := by
   unfold statePaddedStageSuccess
@@ -657,7 +674,8 @@ private theorem stageSlice_eq_prefixSemanticSuccess_of_lt
       let first := firstFlip hd root fullHistory queried S
       let directions := siteDirectionOrder hd root fullHistory queried
       {X | X ∈ S.source.historyProfile.event ∧
-        X ∈ ((LaterSiteRuntime.prefixRuntime hmn S.source seed.physicalCenter incoming first
+        X ∈ ((LaterSiteRuntime.prefixRuntime hmn S.source seed.physicalCenter
+          (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming first
           unusedSecondFlip p delta incremented directions j X).restartQuery
             seed.physicalCenter incoming first unusedSecondFlip directions[j] j).successEvent
               m n p delta} := by
@@ -701,7 +719,9 @@ private theorem stageSlice_measurable_and_lower_of_lt
   let Acell := S.source.historyProfile.event
   let D := activePrefixCertificate C c j hj
   have h := AdaptiveSiteExploration.laterSitePrefixSemantic_measurable_and_lower
-    hmn S.source seed.physicalCenter incoming first unusedSecondFlip p delta epsilon incremented
+    hmn S.source seed.physicalCenter
+      (grimmettMarstrandSiteCenter (m + n + 1) queried.1) incoming first
+      unusedSecondFlip p delta epsilon incremented
       D.hmono directions j D.hj Acell D.hnonempty D.hAcurrent D.hAnonnegative D.hstable
         D.hadds D.hfreshPrefix D.hTargetFresh D.hrestart
   simpa only [fullHistory, S, queried, seed, incoming, first, directions, Acell] using h
@@ -865,7 +885,7 @@ theorem runtime_ready
     ∀ j (hj : j < directions.length),
       let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) queried S seed) 0 (directions.take j)
       let a := directions[j]
       Disjoint
           (cubicEdgeEndpointVertices (Rj.source.referenceExploredEdges
@@ -939,7 +959,7 @@ theorem seededBoxesInstalled_step_true
       let directions := siteDirectionOrder hd root fullHistory queried
       LaterSiteRuntime.succeedsFrom hmn seed.physicalCenter incoming first
         unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 directions := by
+          (siteInitialRuntime (m + n + 1) queried S seed) 0 directions := by
     simpa only [answer, decide_eq_true_eq, S, fullHistory, queried] using hanswer
   have hready := C.runtime_ready history v hadmissible hinitial hhistory
   exact seededBoxesInstalled_step_true_of_success hd hmn root fullHistory queried p delta

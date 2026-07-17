@@ -315,6 +315,14 @@ finite-fibre-anchor and exact accepted-replay-state window ran from `203s` / `11
 `1248s` / `558,943` tokens: **1045s** and **443,988 tokens**.  It is kept separate from the
 historical subtotal above because the counters belong to different goal runs.
 
+The same fresh tracker measured the subsequent confined-connectivity and steering-geometry
+window from `1248s` / `558,943` tokens to `3678s` / `1,474,513` tokens: **2430s** and
+**915,570 tokens**.  This window covers the source/root/runtime/replay `RootedOpenWithin` stack,
+the exact root two-endpoint containment theorem, total-witness geometry, and their local and
+integrated verification.  The following `3678s` / `1,474,513` to `4177s` / `1,687,072`
+interval—**499s** and **212,559 tokens**—is PR restacking, documentation, and CI diagnosis and is
+therefore a separate non-theorem row rather than theorem telemetry.
+
 The tracker interval `27366s`–`27634s` / `7,357,876`–`7,414,573` contains the Figure 7.14
 witness-family reduction together with intervening documentation and Git work from the preceding
 checkpoint. It is recorded as a mixed interval and excluded from theorem totals; no reconstructed

@@ -1029,6 +1029,127 @@ theorem seededBoxesInstalled_replay
         rw [hquery] at hstep
         exact hstep
 
+/-- Along every genuine semantic replay history, all published anchors remain in the literal
+half-way boxes of their advertised coarse bonds.  This is the global coordinate invariant
+needed to confine the later-site construction to `4NF + B(2N)`. -/
+theorem outgoingSeedsInHalfwayBoxes_replay
+    [NeZero d]
+    (C : ReplayProgramStageCertificates hd hmn W root p radialIncremented delta epsilon
+      incremented initialEvent)
+    (hm : 1 ≤ m) (hmnStrict : m + 1 < n)
+    (hroot : (root : Cubic d) = cubicOrigin)
+    (history : List (F × Bool)) {X : CubicEdge d → ℝ}
+    (hinitial : X ∈ initialEvent)
+    (hhistory : X ∈ AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
+      (AdaptiveSiteExploration.finiteAdaptiveSuccessAnswer
+        (paddedStageSuccess hd hmn W root p radialIncremented delta incremented)
+        (4 * d)) history)
+    (hadmissible : ∀ (prior : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      history = prior ++ (v, accepted) :: tail → AdmissibleQuery root prior v) :
+    (replay hd hmn W root p radialIncremented delta incremented X history
+      ).OutgoingSeedsInHalfwayBoxes (N := m + n + 1) := by
+  let finiteAnswer := AdaptiveSiteExploration.finiteAdaptiveSuccessAnswer
+    (paddedStageSuccess hd hmn W root p radialIncremented delta incremented) (4 * d)
+  induction history using List.reverseRecOn with
+  | nil =>
+      simpa [replay, canonicalSuffix, SiteExploration.replayState,
+        cubicRegionSiteExploration, rootedSiteExploration] using
+        DynamicBlockHistoryState.outgoingSeedsInHalfwayBoxes_rooted W root p
+          radialIncremented delta incremented X
+            (C.initial_subset_root_completion hinitial) hroot
+  | append_singleton prior entry ih =>
+      rcases entry with ⟨v, accepted⟩
+      have hadmissibleLast : AdmissibleQuery root prior v :=
+        hadmissible prior v accepted [] (by simp)
+      have hadmissiblePrior : ∀ (pref : List (F × Bool)) (u : F) (b : Bool)
+          (tail : List (F × Bool)),
+          prior = pref ++ (u, b) :: tail → AdmissibleQuery root pref u := by
+        intro pref u b tail hprior
+        apply hadmissible pref u b (tail ++ [(v, accepted)])
+        rw [hprior]
+        simp [List.append_assoc]
+      have hhistorySplit :
+          X ∈ AdaptiveSiteExploration.adaptiveAnswerHistoryEvent finiteAnswer prior ∩
+            {Y | finiteAnswer Y prior v = accepted} := by
+        rw [← AdaptiveSiteExploration.adaptiveAnswerHistoryEvent_append_singleton]
+        simpa [finiteAnswer] using hhistory
+      let S := replay hd hmn W root p radialIncremented delta incremented X prior
+      have hhalfway : S.OutgoingSeedsInHalfwayBoxes (N := m + n + 1) := by
+        exact ih (by simpa [finiteAnswer] using hhistorySplit.1) hadmissiblePrior
+      have hinstalled : S.SeedBoxesInstalled (m := m) := by
+        exact C.seededBoxesInstalled_replay hm hmnStrict prior hinitial
+          (by simpa [finiteAnswer] using hhistorySplit.1) hadmissiblePrior
+      have hcompletion := C.initial_subset_root_completion hinitial
+      have hcover : OutgoingCoversUndecidedNeighbors
+          ([(root, true)] ++ canonicalSuffix root prior) S := by
+        simpa [S] using outgoingCoversUndecidedNeighbors_replay hd hmn W root p
+          radialIncremented delta incremented X prior hcompletion
+      have hrootCenter : grimmettMarstrandSiteCenter (m + n + 1) root.1 =
+          cubicOrigin := by
+        rw [hroot]
+        ext j
+        simp [grimmettMarstrandSiteCenter, cubicScale, cubicOrigin]
+      have hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1) := by
+        simpa [S] using outgoingReferenceCentersNormalized_replay hd hmn W root p
+          radialIncremented delta incremented X prior hrootCenter
+      rw [replay_append_singleton_of_admissibleQuery hd hmn W root p radialIncremented
+        delta incremented X prior v accepted hadmissibleLast]
+      exact outgoingSeedsInHalfwayBoxes_step_of_admissibleQuery hd hmn root prior v accepted
+        p delta incremented X S hadmissibleLast hcover hinstalled hnormalized hhalfway
+
+/-- On every genuine adaptive prefix, the complete literal runtime for the next admissible
+query reads edges only inside the Grimmett--Marstrand thickening of the coarse region. -/
+theorem supportsWithin_thickening_replay
+    [NeZero d]
+    (C : ReplayProgramStageCertificates hd hmn W root p radialIncremented delta epsilon
+      incremented initialEvent)
+    (hm : 1 ≤ m) (hmnStrict : m + 1 < n)
+    (hroot : (root : Cubic d) = cubicOrigin)
+    (history : List (F × Bool)) {X : CubicEdge d → ℝ}
+    (hinitial : X ∈ initialEvent)
+    (hhistory : X ∈ AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
+      (AdaptiveSiteExploration.finiteAdaptiveSuccessAnswer
+        (paddedStageSuccess hd hmn W root p radialIncremented delta incremented)
+        (4 * d)) history)
+    (hadmissibleHistory : ∀ (prior : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      history = prior ++ (v, accepted) :: tail → AdmissibleQuery root prior v)
+    (v : F) (hadmissible : AdmissibleQuery root history v) :
+    let fullHistory := [(root, true)] ++ canonicalSuffix root history
+    let S := replay hd hmn W root p radialIncremented delta incremented X history
+    let seed := inletSeed hd root fullHistory v S
+    let incoming := incomingDirection hd root fullHistory v
+    let first := firstFlip hd root fullHistory v S
+    let directions := siteDirectionOrder hd root fullHistory v
+    LaterSiteRuntime.SupportsWithin hmn seed.physicalCenter incoming first
+      unusedSecondFlip p delta incremented X
+      (grimmettMarstrandThickening d F (m + n + 1))
+      (siteInitialRuntime (m + n + 1) v S seed) 0 directions := by
+  dsimp only
+  let S := replay hd hmn W root p radialIncremented delta incremented X history
+  have hcompletion := C.initial_subset_root_completion hinitial
+  have hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S := by
+    simpa [S] using outgoingCoversUndecidedNeighbors_replay hd hmn W root p
+      radialIncremented delta incremented X history hcompletion
+  have hinstalled : S.SeedBoxesInstalled (m := m) := by
+    exact C.seededBoxesInstalled_replay hm hmnStrict history hinitial hhistory
+      hadmissibleHistory
+  have hrootCenter : grimmettMarstrandSiteCenter (m + n + 1) root.1 =
+      cubicOrigin := by
+    rw [hroot]
+    ext j
+    simp [grimmettMarstrandSiteCenter, cubicScale, cubicOrigin]
+  have hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1) := by
+    simpa [S] using outgoingReferenceCentersNormalized_replay hd hmn W root p
+      radialIncremented delta incremented X history hrootCenter
+  have hhalfway : S.OutgoingSeedsInHalfwayBoxes (N := m + n + 1) := by
+    exact C.outgoingSeedsInHalfwayBoxes_replay hm hmnStrict hroot history hinitial
+      hhistory hadmissibleHistory
+  exact siteRuntime_supportsWithin_thickening_of_admissibleQuery hd hmn root history v
+    p delta incremented X S hadmissible hcover hinstalled hnormalized hhalfway
+
 /-- The source-faithful `4d` restart schedule satisfies the adaptive lower law once every
 literal semantic prefix has its stable replay certificate. -/
 theorem hasAdaptiveAnswerLowerBoundWithin

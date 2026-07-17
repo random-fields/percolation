@@ -115,6 +115,80 @@ theorem replay_source_rootedOpen
         hrootedPrior B.base_le
       exact hbounded
 
+/-- Every state produced by a genuine finite adaptive history is root-connected at the final
+density by witness walks confined to the literal Grimmett--Marstrand thickening.  Unlike the
+unconfined replay theorem, this uses the geometric stage certificate at every reached query;
+no containment premise is required for unreachable total-policy states. -/
+theorem replay_source_rootedOpenWithin_thickening
+    [NeZero d]
+    (C : ReplayProgramStageCertificates hd hmn W root p radialIncremented delta epsilon
+      incremented initialEvent)
+    (B : ReplayProgramFinalThresholdCertificate C pFinal)
+    (hm : 1 ≤ m) (hmnStrict : m + 1 < n)
+    (hroot : (root : Cubic d) = cubicOrigin)
+    (hrootF : cubicOrigin ∈ F)
+    (hneighborsF : ∀ a : CubicDirection d, cubicStepFrom cubicOrigin a ∈ F)
+    (history : List (F × Bool)) {X : CubicEdge d → ℝ}
+    (hinitial : X ∈ initialEvent)
+    (hhistory : X ∈ AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
+      (AdaptiveSiteExploration.finiteAdaptiveSuccessAnswer
+        (paddedStageSuccess hd hmn W root p radialIncremented delta incremented)
+        (4 * d)) history)
+    (hadmissible : ∀ (prior : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      history = prior ++ (v, accepted) :: tail → AdmissibleQuery root prior v) :
+    (replay hd hmn W root p radialIncremented delta incremented X history
+      ).source.RootedOpenWithin (thresholdConfiguration pFinal X)
+        (grimmettMarstrandThickening d F (m + n + 1)) cubicOrigin := by
+  let finiteAnswer := AdaptiveSiteExploration.finiteAdaptiveSuccessAnswer
+    (paddedStageSuccess hd hmn W root p radialIncremented delta incremented) (4 * d)
+  induction history using List.reverseRecOn with
+  | nil =>
+      simpa [replay, canonicalSuffix, SiteExploration.replayState,
+        cubicRegionSiteExploration, rootedSiteExploration] using
+        DynamicBlockHistoryState.rooted_source_rootedOpenWithin_thickening_of_neighbors
+          W root p radialIncremented pFinal delta incremented X
+          (C.initial_subset_root_completion hinitial) B.base_le B.radial_le hrootF
+          hneighborsF (B.root_bounded hinitial)
+  | append_singleton prior entry ih =>
+      rcases entry with ⟨v, accepted⟩
+      have hadmissibleLast : AdmissibleQuery root prior v :=
+        hadmissible prior v accepted [] (by simp)
+      have hadmissiblePrior : ∀ (pref : List (F × Bool)) (u : F) (b : Bool)
+          (tail : List (F × Bool)),
+          prior = pref ++ (u, b) :: tail → AdmissibleQuery root pref u := by
+        intro pref u b tail hprior
+        apply hadmissible pref u b (tail ++ [(v, accepted)])
+        rw [hprior]
+        simp [List.append_assoc]
+      have hhistorySplit :
+          X ∈ AdaptiveSiteExploration.adaptiveAnswerHistoryEvent finiteAnswer prior ∩
+            {Y | finiteAnswer Y prior v = accepted} := by
+        rw [← AdaptiveSiteExploration.adaptiveAnswerHistoryEvent_append_singleton]
+        simpa [finiteAnswer] using hhistory
+      have hrootedPrior := ih
+        (by simpa [finiteAnswer] using hhistorySplit.1) hadmissiblePrior
+      have hbounded := B.runtime_bounded prior v hadmissibleLast hinitial
+        (by simpa [finiteAnswer] using hhistorySplit.1)
+      have hwithin := C.supportsWithin_thickening_replay hm hmnStrict hroot prior hinitial
+        (by simpa [finiteAnswer] using hhistorySplit.1) hadmissiblePrior v
+          hadmissibleLast
+      rw [replay_append_singleton_of_admissibleQuery hd hmn W root p radialIncremented
+        delta incremented X prior v accepted hadmissibleLast]
+      have hquery : canonicalQueryFromFullHistory root
+          ([(root, true)] ++ canonicalSuffix root prior) = v :=
+        canonicalQueryFromFullHistory_eq_of_admissibleQuery root prior v hadmissibleLast
+      dsimp only at hbounded
+      rw [hquery] at hbounded
+      apply step_source_rootedOpenWithin_of_prefixBounds hd hmn root
+        ([(root, true)] ++ canonicalSuffix root prior) v accepted p pFinal delta
+        incremented X (replay hd hmn W root p radialIncremented delta incremented X prior)
+        hrootedPrior B.base_le hbounded
+      dsimp only at hwithin ⊢
+      intro j hj
+      simpa using LaterSiteRuntime.SupportsWithin.getElem hmn _ _ _ _ p delta incremented X
+        (grimmettMarstrandThickening d F (m + n + 1)) _ 0 _ hwithin j hj
+
 /-- Every published seed after a genuine replay lies in the origin component at the final
 density, with no hypothesis about unreachable threshold-policy states. -/
 theorem outgoing_physicalCenter_connected_replay
@@ -144,6 +218,45 @@ theorem outgoing_physicalCenter_connected_replay
   have hinstalled : S.SeedBoxesInstalled (m := m) :=
     C.seededBoxesInstalled_replay hm hmnStrict history hinitial hhistory hadmissible
   exact DynamicBlockHistoryState.outgoing_physicalCenter_connected hm hrooted
+    hinstalled hU
+
+/-- Every seed published by a genuine replay is connected to the origin inside the literal
+Grimmett--Marstrand thickening.  This is the region-confined anchor statement used to turn an
+infinite successful coarse exploration into an infinite open cluster of the thickened bond
+graph. -/
+theorem outgoing_physicalCenter_connectedWithin_thickening_replay
+    [NeZero d]
+    (C : ReplayProgramStageCertificates hd hmn W root p radialIncremented delta epsilon
+      incremented initialEvent)
+    (B : ReplayProgramFinalThresholdCertificate C pFinal)
+    (hm : 1 ≤ m) (hmnStrict : m + 1 < n)
+    (hroot : (root : Cubic d) = cubicOrigin)
+    (hrootF : cubicOrigin ∈ F)
+    (hneighborsF : ∀ a : CubicDirection d, cubicStepFrom cubicOrigin a ∈ F)
+    (history : List (F × Bool)) {X : CubicEdge d → ℝ}
+    (hinitial : X ∈ initialEvent)
+    (hhistory : X ∈ AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
+      (AdaptiveSiteExploration.finiteAdaptiveSuccessAnswer
+        (paddedStageSuccess hd hmn W root p radialIncremented delta incremented)
+        (4 * d)) history)
+    (hadmissible : ∀ (prior : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      history = prior ++ (v, accepted) :: tail → AdmissibleQuery root prior v)
+    {v : F} {a : CubicDirection d} {U : LaterSiteOutgoingSeed d}
+    (hU : (replay hd hmn W root p radialIncremented delta incremented X history
+      ).outgoing v a = some U) :
+    thresholdConfiguration pFinal X ∈
+      connectionEventWithinVertices d
+        (grimmettMarstrandThickening d F (m + n + 1))
+        cubicOrigin U.physicalCenter := by
+  let S := replay hd hmn W root p radialIncremented delta incremented X history
+  have hrooted : S.source.RootedOpenWithin (thresholdConfiguration pFinal X)
+      (grimmettMarstrandThickening d F (m + n + 1)) cubicOrigin :=
+    B.replay_source_rootedOpenWithin_thickening C hm hmnStrict hroot hrootF
+      hneighborsF history hinitial hhistory hadmissible
+  have hinstalled : S.SeedBoxesInstalled (m := m) :=
+    C.seededBoxesInstalled_replay hm hmnStrict history hinitial hhistory hadmissible
+  exact DynamicBlockHistoryState.outgoing_physicalCenter_connectedWithin hm hrooted
     hinstalled hU
 
 end ReplayProgramFinalThresholdCertificate

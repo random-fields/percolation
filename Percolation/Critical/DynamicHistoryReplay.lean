@@ -58,6 +58,13 @@ def OutgoingReferenceCentersNormalized {d N : ℕ} {F : Set (Cubic d)}
     U.referenceCenter =
       cubicRelativePosition (grimmettMarstrandSiteCenter N v.1) U.physicalCenter
 
+/-- Every published outgoing anchor occupies the literal half-way box of the signed coarse
+bond under which it is stored. -/
+def OutgoingSeedsInHalfwayBoxes {d N : ℕ} {F : Set (Cubic d)}
+    (S : DynamicBlockHistoryState d F) : Prop :=
+  ∀ v a U, S.outgoing v a = some U →
+    U.physicalCenter ∈ grimmettMarstrandHalfwayBox d N v.1 a
+
 /-- Completion of all root restarts initializes the global installed-seed invariant. -/
 theorem seededBoxesInstalled_rooted
     {d m n : ℕ} {V : Type*} [DecidableEq V] [NeZero d]
@@ -110,6 +117,29 @@ theorem outgoingReferenceCentersNormalized_rooted
         simp only [hW, Option.map_some, Option.some.injEq] at hseed
         subst U
         simpa [hroot]
+  · simp [rooted, hvr] at hU
+
+/-- The completed root initializes the literal half-way-box invariant at the coarse origin. -/
+theorem outgoingSeedsInHalfwayBoxes_rooted
+    {d m n : ℕ} {F : Set (Cubic d)} [LinearOrder F]
+    (W : RootRadialSeedProfile d m n) (root : F)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hX : X ∈ W.mixedExtensionPrefixSuccessEvent p radialIncremented delta incremented
+      (rootExtensionDirectionOrder d).length)
+    (hroot : (root : Cubic d) = cubicOrigin) :
+    (rooted W root p radialIncremented delta incremented X
+      ).OutgoingSeedsInHalfwayBoxes (N := m + n + 1) := by
+  classical
+  intro v a U hU
+  by_cases hvr : v = root
+  · subst v
+    have hseed : W.rootOutgoingSeed p radialIncremented delta incremented X a = some U := by
+      simpa [rooted] using hU
+    have hlocated := W.rootOutgoingSeed_physicalCenter_mem_halfwayBox_of_completion
+      p radialIncremented delta incremented X hX a U hseed
+    simpa [hroot] using hlocated
   · simp [rooted, hvr] at hU
 
 end DynamicBlockHistoryState
@@ -208,6 +238,25 @@ private theorem replayStateFrom_wellFormed
       exact ih (E.step (fun _ ↦ accepted) s)
         (E.step_wellFormed (fun _ ↦ accepted) hs)
 
+/-- Static replay never queries the same vertex twice when its incoming state is well formed,
+history consistent, and already has a duplicate-free chronological history. -/
+theorem replayStateFrom_history_map_fst_nodup
+    {V : Type*} [DecidableEq V] [LinearOrder V]
+    (E : SiteExploration V) (s : SiteExplorationState V)
+    (history : List (V × Bool)) (hwell : s.WellFormed)
+    (hconsistent : s.HistoryConsistent)
+    (hnodup : (s.history.map Prod.fst).Nodup) :
+    ((E.replayStateFrom s history).history.map Prod.fst).Nodup := by
+  induction history generalizing s with
+  | nil => exact hnodup
+  | cons entry history ih =>
+      rcases entry with ⟨_ignored, accepted⟩
+      exact ih (E.step (fun _ ↦ accepted) s)
+        (E.step_wellFormed (fun _ ↦ accepted) hwell)
+        (E.step_historyConsistent (fun _ ↦ accepted) hconsistent)
+        (E.step_history_map_fst_nodup (fun _ ↦ accepted)
+          hwell hconsistent hnodup)
+
 private theorem replayStateFrom_openRootedAt
     {V : Type*} [DecidableEq V] [LinearOrder V]
     (E : SiteExploration V) (root : V) (s : SiteExplorationState V)
@@ -293,6 +342,24 @@ theorem root_cons_canonicalSuffix_eq_replayHistory
         exact Option.some.inj hhead
       subst head
       simp
+
+/-- The canonical coarse replay suffix is a genuine chronological query list: every coarse
+vertex occurs at most once, independently of malformed vertex fields in the caller's input. -/
+theorem canonicalSuffix_map_fst_nodup
+    (root : F) (history : List (F × Bool)) :
+    ((canonicalSuffix root history).map Prod.fst).Nodup := by
+  let E := cubicRegionSiteExploration d F root
+  have hfull :
+      (((E.replayState history).history).map Prod.fst).Nodup := by
+    apply replayStateFrom_history_map_fst_nodup E E.initial history
+    · exact cubicRegionSiteExploration_initial_wellFormed d F root
+    · simp [E, cubicRegionSiteExploration, rootedSiteExploration,
+        SiteExplorationState.HistoryConsistent, explorationHistoryAccepted,
+        explorationHistoryRejected]
+    · simp [E, cubicRegionSiteExploration, rootedSiteExploration]
+  have hdecomp := root_cons_canonicalSuffix_eq_replayHistory (d := d) root history
+  rw [← hdecomp] at hfull
+  exact (by simpa using hfull.tail)
 
 /-- Actual chronological query trace generated from an arbitrary list of Boolean answers.
 The vertex fields of the input are ignored, exactly as in `SiteExploration.replayStateFrom`;
@@ -449,6 +516,41 @@ theorem canonicalSuffix_append_singleton_of_admissibleQuery
         rw [root_cons_canonicalSuffix_eq_replayHistory]
   have hdrop := congrArg (List.drop 1) hcanonical
   simpa using hdrop
+
+/-- The actual next query is absent from the preceding canonical suffix.  This is the
+pointwise form of chronological query uniqueness used by spatial reveal accounting. -/
+theorem not_mem_canonicalSuffix_map_fst_of_admissibleQuery
+    (root : F) (history : List (F × Bool)) (v : F)
+    (hadmissible : AdmissibleQuery root history v) :
+    v ∉ (canonicalSuffix root history).map Prod.fst := by
+  let E := cubicRegionSiteExploration d F root
+  let s := E.replayState history
+  have hnext : SiteExploration.nextVertex s = some v := by
+    have hquery : E.replayQuery root history = v := hadmissible.2.symm
+    have hfrontier : s.frontier.Nonempty := by
+      simpa [s, E, AdmissibleQuery] using hadmissible.1
+    have hnextQuery : SiteExploration.nextVertex s =
+        some (E.replayQuery root history) := by
+      simp [SiteExploration.nextVertex, SiteExploration.replayQuery, hfrontier, s]
+    simpa [hquery] using hnextQuery
+  have hvfrontier : v ∈ s.frontier :=
+    SiteExploration.mem_frontier_of_nextVertex_eq_some hnext
+  have hwell : s.WellFormed := by
+    simpa [s, E] using cubicRegion_replayState_wellFormed (d := d) root history
+  have hconsistent : s.HistoryConsistent := by
+    simpa [s, E] using cubicRegion_replayState_historyConsistent (d := d) root history
+  have hvnotDecided : v ∉ s.decided :=
+    Finset.disjoint_left.mp hwell.2 hvfrontier
+  intro hvSuffix
+  apply hvnotDecided
+  rw [SiteExplorationState.decided, hconsistent.1, hconsistent.2]
+  apply Finset.mem_union.mpr
+  apply mem_explorationHistoryAccepted_or_rejected_iff_mem_map_fst.mpr
+  have hfull := root_cons_canonicalSuffix_eq_replayHistory (d := d) root history
+  rw [← hfull]
+  simp only [List.map_append, List.map_cons, List.map_nil, List.mem_append,
+    List.mem_cons, List.not_mem_nil, or_false]
+  exact Or.inr hvSuffix
 
 theorem admissibleQuery_replayQuery (root : F) (history : List (F × Bool))
     (hfrontier :
@@ -619,12 +721,105 @@ theorem inletSeed_parent_outgoing_of_admissibleQuery
   rw [hseed]
   exact hU
 
+/-- On a genuine query, the total parent and incoming-direction selectors name an actual
+oriented cubic edge ending at the queried coarse site. -/
+theorem cubicStepFrom_inletParent_incomingDirection_of_admissibleQuery
+    (hd : 0 < d) (root : F) (history : List (F × Bool)) (v : F)
+    (hadmissible : AdmissibleQuery root history v) :
+    cubicStepFrom
+        (inletParent root ([(root, true)] ++ canonicalSuffix root history) v : Cubic d)
+        (incomingDirection hd root ([(root, true)] ++ canonicalSuffix root history) v) =
+      (v : Cubic d) := by
+  classical
+  let E := cubicRegionSiteExploration d F root
+  let EA := AdaptiveSiteExploration.cubicRegion d F root
+  let s := E.replayState history
+  let fullHistory := [(root, true)] ++ canonicalSuffix root history
+  have hfull : fullHistory = s.history := by
+    simpa [fullHistory, s, E] using
+      root_cons_canonicalSuffix_eq_replayHistory (d := d) root history
+  have hfrontier : s.frontier.Nonempty := by
+    simpa [AdmissibleQuery, s, E] using hadmissible.1
+  have hnext : SiteExploration.nextVertex s = some (E.replayQuery root history) := by
+    simp [SiteExploration.nextVertex, SiteExploration.replayQuery, hfrontier, s]
+  have hvQuery : v = E.replayQuery root history := by
+    simpa [E] using hadmissible.2
+  have hvfrontier : v ∈ s.frontier := by
+    apply SiteExploration.mem_frontier_of_nextVertex_eq_some
+    simpa [hvQuery] using hnext
+  have hconsistent : s.HistoryConsistent := by
+    simpa [s, E] using cubicRegion_replayState_historyConsistent (d := d) root history
+  have hopen : EA.OpenRootedAt root s := by
+    simpa [EA, E, AdaptiveSiteExploration.cubicRegion, SiteExploration.toAdaptive, s] using
+      cubicRegion_replayState_openRootedAt (d := d) root history
+  have hne : (EA.historyInletCandidates fullHistory v).Nonempty := by
+    rw [hfull]
+    exact EA.historyInletCandidates_nonempty_of_frontier root hopen hconsistent hvfrontier
+  let parent := EA.historyInletParent fullHistory v hne
+  have hparentAdjInduced : EA.graph.Adj parent v :=
+    EA.historyInletParent_adj fullHistory v hne
+  have hparentAdj : (cubicGraph d).Adj (parent : Cubic d) v :=
+    SimpleGraph.induce_adj.mp hparentAdjInduced
+  have hparent : inletParent root fullHistory v = parent := by
+    simp [inletParent, EA, hne, parent]
+  have hincoming : incomingDirection hd root fullHistory v =
+      cubicDirectionOfAdjacent hparentAdj := by
+    simp [incomingDirection, hparent, hparentAdj]
+  rw [show [(root, true)] ++ canonicalSuffix root history = fullHistory by rfl,
+    hparent, hincoming]
+  exact cubicStepFrom_directionOfAdjacent hparentAdj
+
 /-- First inlet steering mask computed from the parent's published reference displacement. -/
 noncomputable def firstFlip (hd : 0 < d) (root : F)
     (history : List (F × Bool)) (v : F)
     (S : DynamicBlockHistoryState d F) : Fin d → Bool :=
   inletCompensatingTransverseFlip (incomingDirection hd root history v)
     (inletSeed hd root history v S).referenceCenter
+
+/-- Normalized parent records compute exactly the compensation mask based at the destination
+coarse-site center.  Parent and child site centers differ only on the incoming axis, which the
+mask deliberately ignores. -/
+theorem firstFlip_eq_destinationCompensation_of_admissibleQuery
+    (hd : 0 < d) (root : F) (history : List (F × Bool)) (v : F)
+    (S : DynamicBlockHistoryState d F)
+    (hadmissible : AdmissibleQuery root history v)
+    (hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S)
+    (hinstalled : S.SeedBoxesInstalled (m := m))
+    (hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1)) :
+    firstFlip hd root ([(root, true)] ++ canonicalSuffix root history) v S =
+      inletCompensatingTransverseFlip
+        (incomingDirection hd root ([(root, true)] ++ canonicalSuffix root history) v)
+        (cubicRelativePosition (grimmettMarstrandSiteCenter (m + n + 1) v.1)
+          (inletSeed hd root ([(root, true)] ++ canonicalSuffix root history) v S
+            ).physicalCenter) := by
+  let fullHistory := [(root, true)] ++ canonicalSuffix root history
+  let parent := inletParent root fullHistory v
+  let incoming := incomingDirection hd root fullHistory v
+  let seed := inletSeed hd root fullHistory v S
+  have hU : S.outgoing parent incoming = some seed := by
+    simpa [fullHistory, parent, incoming, seed] using
+      inletSeed_parent_outgoing_of_admissibleQuery (m := m) hd root history v S
+        hadmissible hcover hinstalled
+  have hreference : seed.referenceCenter =
+      cubicRelativePosition (grimmettMarstrandSiteCenter (m + n + 1) parent.1)
+        seed.physicalCenter :=
+    hnormalized parent incoming seed hU
+  have hstep : cubicStepFrom (parent : Cubic d) incoming = (v : Cubic d) := by
+    simpa [fullHistory, parent, incoming] using
+      cubicStepFrom_inletParent_incomingDirection_of_admissibleQuery hd root history v
+        hadmissible
+  have hcenters : ∀ j, j ≠ incoming.1 →
+      grimmettMarstrandSiteCenter (m + n + 1) parent.1 j =
+        grimmettMarstrandSiteCenter (m + n + 1) v.1 j := by
+    intro j hji
+    have hj := congrFun hstep j
+    have hparentCoord : parent.1 j = v.1 j := by
+      simpa [cubicStepFrom, cubicDirectionIncrement, Function.update_of_ne hji] using hj
+    simp [grimmettMarstrandSiteCenter, cubicScale, hparentCoord]
+  rw [firstFlip, hreference]
+  exact inletCompensatingTransverseFlip_relative_eq_of_eq_off_axis
+    incoming _ _ _ hcenters
 
 /-- The old explicit second-mask parameter is ignored by the runtime: slot two reads the first
 selected reference center stored in `LaterSiteRuntime.firstReferenceTarget`. -/
@@ -698,6 +893,240 @@ theorem exists_siteRuntime_outgoing_of_active
       p delta incremented X R0 0 (siteDirectionOrder hd root history v)).outgoing a = some U
   rw [hdirections, LaterSiteRuntime.runFrom_append]
   simpa [R2] using hpair
+
+/-- A direction excluded from the active branch set is never populated by the completed site
+runtime.  The two inlet occurrences use slots zero and one and therefore do not publish an
+outgoing record. -/
+theorem siteRuntime_outgoing_eq_none_of_not_active
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (a : CubicDirection d)
+    (ha : a ∉ activeLaterSiteBranchDirections F history v
+      (incomingDirection hd root history v)) :
+    (siteRuntime hd hmn root history v p delta incremented X S).outgoing a = none := by
+  let seed := inletSeed hd root history v S
+  let incoming := incomingDirection hd root history v
+  let first := firstFlip hd root history v S
+  let branches := (activeLaterSiteBranchDirections F history v incoming).toList
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
+  let R2 := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
+    p delta incremented X R0 0 [incoming, incoming]
+  have haList : a ∉ branches := by
+    simpa [branches, incoming] using ha
+  have haPairs : a ∉ branches.flatMap laterSiteBranchRestartPair := by
+    simpa [laterSiteBranchRestartPair] using haList
+  have hR2 : R2.outgoing a = none := by
+    simp [R2, R0, siteInitialRuntime, LaterSiteRuntime.runFrom,
+      LaterSiteRuntime.step, LaterSiteRuntime.initialAt]
+  have hdirections : siteDirectionOrder hd root history v =
+      [incoming, incoming] ++ branches.flatMap laterSiteBranchRestartPair := by
+    simp [siteDirectionOrder, activeLaterSiteDirectionOrder, incoming, branches]
+  change (LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
+    p delta incremented X R0 0 (siteDirectionOrder hd root history v)).outgoing a = none
+  rw [hdirections, LaterSiteRuntime.runFrom_append]
+  change (LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
+    p delta incremented X R2 2 (branches.flatMap laterSiteBranchRestartPair)).outgoing a = none
+  rw [LaterSiteRuntime.runFrom_outgoing_eq_of_not_mem hmn seed.physicalCenter incoming
+    first unusedSecondFlip p delta incremented X R2 2
+      (branches.flatMap laterSiteBranchRestartPair) a haPairs]
+  exact hR2
+
+/-- On an admissible replay query, every active branch published by the concrete site runtime
+lies in the literal half-way box of its advertised coarse bond. -/
+theorem exists_siteRuntime_outgoing_mem_halfwayBox_of_active
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (hadmissible : AdmissibleQuery root history v)
+    (hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S)
+    (hinstalled : S.SeedBoxesInstalled (m := m))
+    (hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1))
+    (hhalfway : S.OutgoingSeedsInHalfwayBoxes (N := m + n + 1))
+    (a : CubicDirection d)
+    (ha : a ∈ activeLaterSiteBranchDirections F
+      ([(root, true)] ++ canonicalSuffix root history) v
+      (incomingDirection hd root ([(root, true)] ++ canonicalSuffix root history) v)) :
+    ∃ U : LaterSiteOutgoingSeed d,
+      (siteRuntime hd hmn root ([(root, true)] ++ canonicalSuffix root history) v
+        p delta incremented X S).outgoing a = some U ∧
+      U.physicalCenter ∈ grimmettMarstrandHalfwayBox d (m + n + 1) v.1 a := by
+  let fullHistory := [(root, true)] ++ canonicalSuffix root history
+  let parent := inletParent root fullHistory v
+  let seed := inletSeed hd root fullHistory v S
+  let incoming := incomingDirection hd root fullHistory v
+  let first := firstFlip hd root fullHistory v S
+  let branches :=
+    (activeLaterSiteBranchDirections F fullHistory v incoming).toList
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
+  let R2 := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
+    p delta incremented X R0 0 [incoming, incoming]
+  have hU : S.outgoing parent incoming = some seed := by
+    simpa [fullHistory, parent, seed, incoming] using
+      inletSeed_parent_outgoing_of_admissibleQuery (m := m) hd root history v S
+        hadmissible hcover hinstalled
+  have hseedLocated : seed.physicalCenter ∈
+      grimmettMarstrandHalfwayBox d (m + n + 1) parent.1 incoming :=
+    hhalfway parent incoming seed hU
+  have hstep : cubicStepFrom (parent : Cubic d) incoming = (v : Cubic d) := by
+    simpa [fullHistory, parent, incoming] using
+      cubicStepFrom_inletParent_incomingDirection_of_admissibleQuery hd root history v
+        hadmissible
+  have hfirst : first = inletCompensatingTransverseFlip incoming
+      (cubicRelativePosition
+        (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom parent.1 incoming))
+        seed.physicalCenter) := by
+    have h := firstFlip_eq_destinationCompensation_of_admissibleQuery
+      (m := m) (n := n) hd root history v S hadmissible hcover hinstalled hnormalized
+    rw [hstep]
+    simpa [fullHistory, first, incoming, seed] using h
+  have hcentral : R2.centralTarget ∈
+      cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) v.1)
+        (m + n + 1) := by
+    have h := LaterSiteRuntime.centralTarget_runFrom_inletPair_initialAt_mem_destinationSiteBox
+      hmn S.source parent.1 seed.physicalCenter incoming first unusedSecondFlip hfirst
+        hseedLocated p delta incremented X
+    simpa [R2, R0, siteInitialRuntime, hstep] using h
+  have hbase : R2.inletReferenceBase =
+      grimmettMarstrandSiteCenter (m + n + 1) v.1 := by
+    rw [LaterSiteRuntime.runFrom_inletReferenceBase]
+    rfl
+  have hclear : ∀ b, b ∈ branches → R2.outgoing b = none := by
+    intro b _hb
+    simp [R2, R0, siteInitialRuntime, LaterSiteRuntime.runFrom,
+      LaterSiteRuntime.step, LaterSiteRuntime.initialAt]
+  have haList : a ∈ branches := by
+    simpa [branches, fullHistory, incoming] using ha
+  have hbranch :=
+    LaterSiteRuntime.exists_outgoing_runFrom_branchPairs_mem_halfwayBox_of_coarseLocated
+      hmn seed.physicalCenter incoming first unusedSecondFlip p delta incremented X R2 2
+        v.1 branches (Finset.nodup_toList _) hbase hcentral hclear a haList (by omega)
+  have hdirections : siteDirectionOrder hd root fullHistory v =
+      [incoming, incoming] ++ branches.flatMap laterSiteBranchRestartPair := by
+    simp [siteDirectionOrder, activeLaterSiteDirectionOrder, incoming, branches]
+  change ∃ U : LaterSiteOutgoingSeed d,
+    (LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
+      p delta incremented X R0 0 (siteDirectionOrder hd root fullHistory v)).outgoing a =
+        some U ∧
+      U.physicalCenter ∈ grimmettMarstrandHalfwayBox d (m + n + 1) v.1 a
+  rw [hdirections, LaterSiteRuntime.runFrom_append]
+  simpa [R2] using hbranch
+
+/-- Every literal support read while processing an admissible coarse query lies in the
+Grimmett--Marstrand thickening of the induced coarse region. -/
+theorem siteRuntime_supportsWithin_thickening_of_admissibleQuery
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (hadmissible : AdmissibleQuery root history v)
+    (hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S)
+    (hinstalled : S.SeedBoxesInstalled (m := m))
+    (hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1))
+    (hhalfway : S.OutgoingSeedsInHalfwayBoxes (N := m + n + 1)) :
+    let fullHistory := [(root, true)] ++ canonicalSuffix root history
+    let seed := inletSeed hd root fullHistory v S
+    let incoming := incomingDirection hd root fullHistory v
+    let first := firstFlip hd root fullHistory v S
+    let directions := siteDirectionOrder hd root fullHistory v
+    LaterSiteRuntime.SupportsWithin hmn seed.physicalCenter incoming first
+      unusedSecondFlip p delta incremented X
+      (grimmettMarstrandThickening d F (m + n + 1))
+      (siteInitialRuntime (m + n + 1) v S seed) 0 directions := by
+  dsimp only
+  let fullHistory := [(root, true)] ++ canonicalSuffix root history
+  let parent := inletParent root fullHistory v
+  let seed := inletSeed hd root fullHistory v S
+  let incoming := incomingDirection hd root fullHistory v
+  let first := firstFlip hd root fullHistory v S
+  let branches :=
+    (activeLaterSiteBranchDirections F fullHistory v incoming).toList
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
+  let R2 := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
+    p delta incremented X R0 0 [incoming, incoming]
+  have hU : S.outgoing parent incoming = some seed := by
+    simpa [fullHistory, parent, seed, incoming] using
+      inletSeed_parent_outgoing_of_admissibleQuery (m := m) hd root history v S
+        hadmissible hcover hinstalled
+  have hseedLocated : seed.physicalCenter ∈
+      grimmettMarstrandHalfwayBox d (m + n + 1) parent.1 incoming :=
+    hhalfway parent incoming seed hU
+  have hstep : cubicStepFrom (parent : Cubic d) incoming = (v : Cubic d) := by
+    simpa [fullHistory, parent, incoming] using
+      cubicStepFrom_inletParent_incomingDirection_of_admissibleQuery hd root history v
+        hadmissible
+  have hfirst : first = inletCompensatingTransverseFlip incoming
+      (cubicRelativePosition
+        (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom parent.1 incoming))
+        seed.physicalCenter) := by
+    have h := firstFlip_eq_destinationCompensation_of_admissibleQuery
+      (m := m) (n := n) hd root history v S hadmissible hcover hinstalled hnormalized
+    rw [hstep]
+    simpa [fullHistory, first, incoming, seed] using h
+  have hcentral : R2.centralTarget ∈
+      cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) v.1)
+        (m + n + 1) := by
+    have h := LaterSiteRuntime.centralTarget_runFrom_inletPair_initialAt_mem_destinationSiteBox
+      hmn S.source parent.1 seed.physicalCenter incoming first unusedSecondFlip hfirst
+        hseedLocated p delta incremented X
+    simpa [R2, R0, siteInitialRuntime, hstep] using h
+  have hbase : R2.inletReferenceBase =
+      grimmettMarstrandSiteCenter (m + n + 1) v.1 := by
+    rw [LaterSiteRuntime.runFrom_inletReferenceBase]
+    rfl
+  have hclear : ∀ b, b ∈ branches → R2.outgoing b = none := by
+    intro b _hb
+    simp [R2, R0, siteInitialRuntime, LaterSiteRuntime.runFrom,
+      LaterSiteRuntime.step, LaterSiteRuntime.initialAt]
+  have hinletBoxes :
+      (cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) parent.1)
+          (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom parent.1 incoming))
+          (2 * (m + n + 1)) : Set (Cubic d)) ⊆
+        grimmettMarstrandThickening d F (m + n + 1) := by
+    intro z hz
+    rcases hz with hz | hz
+    · exact grimmettMarstrandCenteredBox_subset_thickening parent.property le_rfl hz
+    · rw [hstep] at hz
+      exact grimmettMarstrandCenteredBox_subset_thickening v.property le_rfl hz
+  have hinlet := LaterSiteRuntime.supportsWithin_inletPair_of_coarseLocated hmn R0
+    parent.1 seed.physicalCenter incoming first unusedSecondFlip p delta incremented X
+      (grimmettMarstrandThickening d F (m + n + 1)) hseedLocated hfirst hinletBoxes
+  have hbranchBoxes : ∀ a, a ∈ branches →
+      (cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) v.1)
+          (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom v.1 a))
+          (2 * (m + n + 1)) : Set (Cubic d)) ⊆
+        grimmettMarstrandThickening d F (m + n + 1) := by
+    intro a ha z hz
+    have haActive : a ∈ activeLaterSiteBranchDirections F fullHistory v incoming := by
+      simpa [branches] using ha
+    obtain ⟨_haReverse, w, hw, _hwFresh⟩ :=
+      mem_activeLaterSiteBranchDirections_iff.mp haActive
+    rcases hz with hz | hz
+    · exact grimmettMarstrandCenteredBox_subset_thickening v.property le_rfl hz
+    · rw [hw] at hz
+      exact grimmettMarstrandCenteredBox_subset_thickening w.property le_rfl hz
+  have hbranches := LaterSiteRuntime.supportsWithin_branchPairs_of_coarseLocated hmn
+    seed.physicalCenter incoming first unusedSecondFlip p delta incremented X
+      (grimmettMarstrandThickening d F (m + n + 1)) R2 2 v.1 branches
+        (Finset.nodup_toList _) hbase hcentral hclear hbranchBoxes (by omega)
+  have hdirections : siteDirectionOrder hd root fullHistory v =
+      [incoming, incoming] ++ branches.flatMap laterSiteBranchRestartPair := by
+    simp [siteDirectionOrder, activeLaterSiteDirectionOrder, incoming, branches]
+  change LaterSiteRuntime.SupportsWithin hmn seed.physicalCenter incoming first
+    unusedSecondFlip p delta incremented X
+      (grimmettMarstrandThickening d F (m + n + 1)) R0 0
+        (siteDirectionOrder hd root fullHistory v)
+  rw [hdirections, LaterSiteRuntime.supportsWithin_append]
+  refine ⟨hinlet, ?_⟩
+  simpa [R2] using hbranches
 
 /-- Rewrite an outgoing seed's steering datum relative to the deterministic coarse-site
 center which publishes it.  The physical anchor is unchanged. -/
@@ -773,6 +1202,53 @@ theorem outgoingReferenceCentersNormalized_step
           hnormalized
       rfl
     · exact hS u a U (by simpa [step, huv] using hU)
+
+/-- Literal half-way-box locations are preserved by a genuine chronological replay step.
+Rejected sites publish nothing; accepted sites publish only the active branches certified by
+`exists_siteRuntime_outgoing_mem_halfwayBox_of_active`. -/
+theorem outgoingSeedsInHalfwayBoxes_step_of_admissibleQuery
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F) (accepted : Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (hadmissible : AdmissibleQuery root history v)
+    (hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S)
+    (hinstalled : S.SeedBoxesInstalled (m := m))
+    (hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1))
+    (hhalfway : S.OutgoingSeedsInHalfwayBoxes (N := m + n + 1)) :
+    (step hd hmn root ([(root, true)] ++ canonicalSuffix root history) v accepted
+      p delta incremented X S).OutgoingSeedsInHalfwayBoxes (N := m + n + 1) := by
+  classical
+  intro u a U hU
+  cases accepted
+  · exact hhalfway u a U (by simpa [step] using hU)
+  · by_cases huv : u = v
+    · subst u
+      have htable : normalizeOutgoingTable (m + n + 1) v
+          (siteRuntime hd hmn root ([(root, true)] ++ canonicalSuffix root history) v
+            p delta incremented X S).outgoing a = some U := by
+        simpa [step] using hU
+      obtain ⟨V, hV, rfl⟩ :=
+        (normalizeOutgoingTable_eq_some_iff (m + n + 1) v
+          (siteRuntime hd hmn root ([(root, true)] ++ canonicalSuffix root history) v
+            p delta incremented X S).outgoing a U).mp htable
+      have haActive : a ∈ activeLaterSiteBranchDirections F
+          ([(root, true)] ++ canonicalSuffix root history) v
+          (incomingDirection hd root ([(root, true)] ++ canonicalSuffix root history) v) := by
+        by_contra ha
+        have hnone := siteRuntime_outgoing_eq_none_of_not_active hd hmn root
+          ([(root, true)] ++ canonicalSuffix root history) v p delta incremented X S a ha
+        rw [hV] at hnone
+        simp at hnone
+      obtain ⟨V', hV', hlocated⟩ :=
+        exists_siteRuntime_outgoing_mem_halfwayBox_of_active hd hmn root history v p delta
+          incremented X S hadmissible hcover hinstalled hnormalized hhalfway a haActive
+      rw [hV] at hV'
+      have hVV' : V = V' := Option.some.inj hV'
+      subst V'
+      exact hlocated
+    · exact hhalfway u a U (by simpa [step, huv] using hU)
 
 /-- A rejected coarse site does not publish new seeds, while its total source replay only
 enlarges the explored set; hence all previously published seed certificates survive. -/

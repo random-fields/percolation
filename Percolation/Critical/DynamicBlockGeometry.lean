@@ -91,6 +91,58 @@ noncomputable def grimmettMarstrandHalfwayBox
     (d N : ℕ) (x : Cubic d) (a : CubicDirection d) : Finset (Cubic d) :=
   grimmettMarstrandBondBox d N x (cubicStepFrom x a)
 
+/-- The midpoint of a signed coarse bond is at `L∞` distance exactly at most `2N` from
+the destination site center. -/
+theorem grimmettMarstrandBondCenter_mem_destinationBox
+    {d N : ℕ} (x : Cubic d) (a : CubicDirection d) :
+    grimmettMarstrandBondCenter N x (cubicStepFrom x a) ∈
+      cubicMetricBox d
+        (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) (2 * N) := by
+  rw [mem_cubicMetricBox]
+  intro i
+  rcases a with ⟨j, positive⟩
+  by_cases hij : i = j
+  · subst i
+    by_cases hp : positive <;>
+      simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+        cubicStepFrom, cubicDirectionIncrement, hp] <;>
+      ring_nf <;> omega
+  · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+      cubicStepFrom, cubicDirectionIncrement, hij]
+    ring_nf
+    omega
+
+/-- A half-way seed is uniformly local to the destination coarse site.  The radius is `3N`:
+the bond box has radius `N` and its midpoint is `2N` from either endpoint site center. -/
+theorem grimmettMarstrandHalfwayBox_subset_destinationBox
+    {d N : ℕ} (x : Cubic d) (a : CubicDirection d) :
+    (grimmettMarstrandHalfwayBox d N x a : Set (Cubic d)) ⊆
+      cubicMetricBox d
+        (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) (3 * N) := by
+  intro z hz
+  apply mem_cubicMetricBox_iff_lInfDist_le.mpr
+  rw [cubicLInfDist_comm]
+  change z ∈ cubicMetricBox d
+    (grimmettMarstrandBondCenter N x (cubicStepFrom x a)) N at hz
+  have hzCenter : cubicLInfDist z
+      (grimmettMarstrandBondCenter N x (cubicStepFrom x a)) ≤ N := by
+    rw [cubicLInfDist_comm]
+    exact mem_cubicMetricBox_iff_lInfDist_le.mp hz
+  have hcenterDestination : cubicLInfDist
+      (grimmettMarstrandBondCenter N x (cubicStepFrom x a))
+      (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) ≤ 2 * N := by
+    rw [cubicLInfDist_comm]
+    exact mem_cubicMetricBox_iff_lInfDist_le.mp
+      (grimmettMarstrandBondCenter_mem_destinationBox x a)
+  calc
+    cubicLInfDist z (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) ≤
+        cubicLInfDist z (grimmettMarstrandBondCenter N x (cubicStepFrom x a)) +
+          cubicLInfDist (grimmettMarstrandBondCenter N x (cubicStepFrom x a))
+            (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) :=
+      cubicLInfDist_triangle _ _ _
+    _ ≤ N + 2 * N := Nat.add_le_add hzCenter hcenterDestination
+    _ = 3 * N := by omega
+
 /-- The final enlarged region `4NF+B(2N)`, written using the literal Chapter 7 thickening. -/
 def grimmettMarstrandThickening
     (d : ℕ) (F : Set (Cubic d)) (N : ℕ) : Set (Cubic d) :=

@@ -244,6 +244,30 @@ def inletCompensatingTransverseFlip {d : ℕ}
     (a : CubicDirection d) (inletCenter : Cubic d) : Fin d → Bool :=
   fun j ↦ decide (j ≠ a.1 ∧ 0 < inletCenter j)
 
+/-- The inlet compensation mask only reads coordinates transverse to the steering axis. -/
+theorem inletCompensatingTransverseFlip_eq_of_eq_off_axis
+    {d : ℕ} (a : CubicDirection d) (u v : Cubic d)
+    (h : ∀ j, j ≠ a.1 → u j = v j) :
+    inletCompensatingTransverseFlip a u =
+      inletCompensatingTransverseFlip a v := by
+  funext j
+  by_cases hja : j = a.1
+  · simp [inletCompensatingTransverseFlip, hja]
+  · simp [inletCompensatingTransverseFlip, hja, h j hja]
+
+/-- Changing the reference origin only along the steering axis does not change the transverse
+compensation computed from a fixed physical inlet. -/
+theorem inletCompensatingTransverseFlip_relative_eq_of_eq_off_axis
+    {d : ℕ} (a : CubicDirection d) (reference₁ reference₂ inlet : Cubic d)
+    (h : ∀ j, j ≠ a.1 → reference₁ j = reference₂ j) :
+    inletCompensatingTransverseFlip a
+        (cubicRelativePosition reference₁ inlet) =
+      inletCompensatingTransverseFlip a
+        (cubicRelativePosition reference₂ inlet) := by
+  apply inletCompensatingTransverseFlip_eq_of_eq_off_axis
+  intro j hja
+  simp [cubicRelativePosition, h j hja]
+
 /-- The corresponding source region `T_a(n)`.  When an inlet coordinate is zero the source
 inequality imposes no sign condition; our oriented image chooses its nonnegative half, which is
 a subset and hence retains the required steering containment. -/

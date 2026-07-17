@@ -1551,6 +1551,23 @@ Dated milestones and anti-library notes.
     budget and the sharper non-root two-endpoint containment; a larger-radius shortcut is invalid
     because changing the thickening radius also changes its dilation centers.
 
+136. **Literal non-root confinement and acceptance-time anchor bridge (2026-07-17).** Closed
+    the geometric and infinite-cluster assembly gaps left by the previous checkpoint.  Both
+    slots of every expanded outgoing branch are now localized in the two endpoint boxes of the
+    corresponding coarse bond, and this localization is propagated through every genuine
+    adaptive replay history.  Consequently the final-density rooted walks and every published
+    seed connection stay inside the literal `4NF+B(2N)` thickening.  For a limiting occupied
+    coarse site, the chosen physical anchor is the inlet seed published by its accepted parent;
+    it lies within radius `3N` of the destination site center.  These uniformly local anchors
+    have finite fibres, so an infinite occupied coarse cluster yields an infinite open cluster
+    in the thickening without a false injectivity premise.  The resulting probability theorem
+    and critical-value adapter are unconditional once the concrete replay-stage and
+    final-threshold certificates are supplied.  The full 8,709-job build and the expanded
+    transitive axiom audit pass with only `propext`, `Classical.choice`, and `Quot.sound`.
+    The unique remaining Theorem 7.2 construction issue is the source's global overlap claim
+    behind (7.34): a per-site `4d` attempt bound does not prove that a persistent edge is charged
+    only finitely many times across the whole adaptive exploration.
+
 ## Axiom Ledger
 
 Empty.

@@ -404,8 +404,40 @@ theorem regionHasInfiniteClusterProbability_pos_of_replayCertificates
   rw [← couplingMeasure_real_hasInfiniteOpenClusterInVertices_thresholdConfiguration]
   exact hinfinite.trans_le (measureReal_mono hsubset)
 
-/-- Theorem 7.2(a) adapter for the concrete certified replay and its selected finite-fibre
-anchors. -/
+/-- Target-density form of Theorem 7.2(a) for the concrete certified replay and its selected
+finite-fibre anchors.  The target `q` is deliberately independent of the auxiliary coarse
+region's critical probability; the source-facing specialization takes
+`q = cubicCriticalProbability d + eta`. -/
+theorem exists_regionCriticalProbability_thickening_le_of_replayCertificates
+    [NeZero d]
+    {p radialIncremented pFinal : I} {delta q : ℝ}
+    {incremented : RootExtensionThresholdPolicy d}
+    {W : RootRadialSeedProfile d m n} {root : F}
+    {initialEvent : Set (CubicEdge d → ℝ)}
+    {hd : 0 < d} {hmn : 2 * m ≤ n}
+    (hF : (cubicRegionGraph d F).Connected) (hd2 : 2 ≤ d)
+    (hcrit : regionCriticalProbability d F < 1)
+    (C : ReplayProgramStageCertificates hd hmn W root p radialIncremented delta
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      incremented initialEvent)
+    (B : ReplayProgramFinalThresholdCertificate C pFinal)
+    (hm : 1 ≤ m) (hmnStrict : m + 1 < n)
+    (hroot : (root : Cubic d) = cubicOrigin)
+    (hrootF : cubicOrigin ∈ F)
+    (hneighborsF : ∀ a : CubicDirection d, cubicStepFrom cubicOrigin a ∈ F)
+    (hinitialMeasurable : MeasurableSet initialEvent)
+    (hinitialPos : 0 < (couplingMeasure (CubicEdge d)).real initialEvent)
+    (hanswer : AdaptiveSiteExploration.MeasurableAnswer
+      (answer hd hmn W root p radialIncremented delta incremented))
+    (hpFinal : (pFinal : ℝ) ≤ q) :
+    ∃ k : ℕ,
+      regionCriticalProbability d (cubicDilatedThickening d F k) ≤ q := by
+  apply exists_regionCriticalProbability_thickening_le_of_dynamicPercolation hpFinal
+  exact regionHasInfiniteClusterProbability_pos_of_replayCertificates hF
+    (siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one root hd2 hF hcrit)
+    C B hm hmnStrict hroot hrootF hneighborsF hinitialMeasurable hinitialPos hanswer
+
+/-- Region-relative compatibility wrapper for callers of the earlier replay API. -/
 theorem exists_regionCriticalProbability_thickening_le_add_of_replayCertificates
     [NeZero d]
     {p radialIncremented pFinal : I} {delta eta : ℝ}
@@ -430,11 +462,9 @@ theorem exists_regionCriticalProbability_thickening_le_add_of_replayCertificates
     (hpFinal : (pFinal : ℝ) ≤ regionCriticalProbability d F + eta) :
     ∃ k : ℕ,
       regionCriticalProbability d (cubicDilatedThickening d F k) ≤
-        regionCriticalProbability d F + eta := by
-  apply exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation hpFinal
-  exact regionHasInfiniteClusterProbability_pos_of_replayCertificates hF
-    (siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one root hd2 hF hcrit)
-    C B hm hmnStrict hroot hrootF hneighborsF hinitialMeasurable hinitialPos hanswer
+        regionCriticalProbability d F + eta :=
+  exists_regionCriticalProbability_thickening_le_of_replayCertificates hF hd2 hcrit C B hm
+    hmnStrict hroot hrootF hneighborsF hinitialMeasurable hinitialPos hanswer hpFinal
 
 end DynamicBlockHistoryReplay
 

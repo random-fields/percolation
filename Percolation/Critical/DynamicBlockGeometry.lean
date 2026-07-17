@@ -274,7 +274,22 @@ theorem grimmettMarstrandHalfwayBox_subset_thickening
       rwa [← grimmettMarstrandSiteCenter_eq_thickeningCenter]⟩
 
 /-- Order-theoretic conclusion once the block exploration has produced percolation in the
-literal enlarged region at a density no larger than `p_c(F)+eta`. -/
+literal enlarged region at a density no larger than an advertised target `q`.  Keeping `q`
+independent of the coarse region is essential in Theorem 7.2: its slab application chooses the
+final bond density near the ambient cubic critical probability, while the auxiliary region `F`
+is used only to support a supercritical site exploration. -/
+theorem exists_regionCriticalProbability_thickening_le_of_dynamicPercolation
+    {d N : ℕ} {F : Set (Cubic d)} {p : I} {q : ℝ}
+    (hp : (p : ℝ) ≤ q)
+    (hpercolates : 0 < regionHasInfiniteClusterProbability d
+      (grimmettMarstrandThickening d F N) p) :
+    ∃ k : ℕ,
+      regionCriticalProbability d (cubicDilatedThickening d F k) ≤ q := by
+  refine ⟨2 * N, ?_⟩
+  exact (regionCriticalProbability_le_of_hasInfiniteClusterProbability_pos
+    hpercolates).trans hp
+
+/-- Region-relative form retained for the original dynamic-block assembly API. -/
 theorem exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation
     {d N : ℕ} {F : Set (Cubic d)} {p : I} {eta : ℝ}
     (hp : (p : ℝ) ≤ regionCriticalProbability d F + eta)
@@ -282,9 +297,7 @@ theorem exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation
       (grimmettMarstrandThickening d F N) p) :
     ∃ k : ℕ,
       regionCriticalProbability d (cubicDilatedThickening d F k) ≤
-        regionCriticalProbability d F + eta := by
-  refine ⟨2 * N, ?_⟩
-  exact (regionCriticalProbability_le_of_hasInfiniteClusterProbability_pos
-    hpercolates).trans hp
+        regionCriticalProbability d F + eta :=
+  exists_regionCriticalProbability_thickening_le_of_dynamicPercolation hp hpercolates
 
 end Percolation

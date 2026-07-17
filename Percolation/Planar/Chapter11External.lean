@@ -68,13 +68,13 @@ axiom maxEdgeDisjointGrimmettRectangleCrossings_probability_le_exp
 
 /-- The probability `τᶠₚ(0,eₙ)` that the origin has a finite open cluster containing the
 axis vertex `eₙ`. -/
-noncomputable def truncatedTwoPointConnectivity (p : I) (n : ℕ) : ℝ :=
+noncomputable def squareTruncatedTwoPointConnectivity (p : I) (n : ℕ) : ℝ :=
   (bernoulliBondMeasure 2 p).real
     (connectionEvent 2 cubicOrigin (cubicAxisVertex 2 n) ∩ finiteClusterEvent 2)
 
 /-- Negative logarithm of the truncated axis connectivity. -/
 noncomputable def truncatedConnectivityNegLog (p : I) (n : ℕ) : ℝ :=
-  -Real.log (truncatedTwoPointConnectivity p n)
+  -Real.log (squareTruncatedTwoPointConnectivity p n)
 
 /-- The exponential rate associated with truncated connectivity. -/
 noncomputable def truncatedConnectivityDecayRate (p : I) : ℝ :=
@@ -89,7 +89,7 @@ noncomputable def finiteCorrelationLength (p : I) : ℝ≥0∞ :=
 The comparison with surrounding dual circuits depends on Proposition 11.2. -/
 axiom truncatedTwoPointConnectivity_logRate_tendsto
     {p : I} (hpHalf : (1 / 2 : ℝ) < p) (hpOne : (p : ℝ) < 1) :
-    Tendsto (fun n : ℕ ↦ -Real.log (truncatedTwoPointConnectivity p n) / n)
+    Tendsto (fun n : ℕ ↦ -Real.log (squareTruncatedTwoPointConnectivity p n) / n)
       atTop (nhds (truncatedConnectivityDecayRate p))
 
 /-- **Grimmett, Theorem 11.24.**  In the supercritical square lattice, finite-cluster

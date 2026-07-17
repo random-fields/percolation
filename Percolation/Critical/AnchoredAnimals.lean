@@ -461,6 +461,45 @@ theorem weight_concat (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
   rw [hOpen, hClosed, hAClosed, hBClosed]
   field_simp
 
+/-- Bernoulli weight of the root-preserving concatenation.  Anchoring is needed only for the
+right factor, which is translated before being joined. -/
+theorem weight_rootedConcat (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (A : CubicBondAnimal d n) (B : CubicBondAnimal d m)
+    (hB : B.IsBottomLeftAnchored) (hd : 0 < d) :
+    (A.rootedConcat B hB hd).weight p =
+      p * (1 - p)⁻¹ ^ 2 * A.weight p * B.weight p := by
+  have hq : 1 - p ≠ 0 := sub_ne_zero.mpr hp1.ne'
+  have hbA := A.boundary_card_pos hd
+  have hbB := B.boundary_card_pos hd
+  rw [weight, weight, weight]
+  change p ^ (A.concatenatedEdges B hd).card *
+      (1 - p) ^ (A.rootedConcat B hB hd).boundary.card = _
+  rw [A.concatenatedEdges_card B hB hd,
+    A.rootedConcat_boundary_card B hB hd]
+  have hOpen : p ^ (A.edges.card + B.edges.card + 1) =
+      p ^ A.edges.card * p ^ B.edges.card * p := by
+    rw [show A.edges.card + B.edges.card + 1 =
+      (A.edges.card + B.edges.card) + 1 by omega, pow_succ, pow_add]
+  have hClosed : (1 - p) ^ (A.boundary.card + B.boundary.card - 2) =
+      (1 - p) ^ (A.boundary.card - 1) *
+        (1 - p) ^ (B.boundary.card - 1) := by
+    rw [show A.boundary.card + B.boundary.card - 2 =
+      (A.boundary.card - 1) + (B.boundary.card - 1) by omega, pow_add]
+  have hAClosed : (1 - p) ^ A.boundary.card =
+      (1 - p) ^ (A.boundary.card - 1) * (1 - p) := by
+    calc
+      (1 - p) ^ A.boundary.card =
+          (1 - p) ^ ((A.boundary.card - 1) + 1) := by congr 1; omega
+      _ = (1 - p) ^ (A.boundary.card - 1) * (1 - p) := by rw [pow_succ]
+  have hBClosed : (1 - p) ^ B.boundary.card =
+      (1 - p) ^ (B.boundary.card - 1) * (1 - p) := by
+    calc
+      (1 - p) ^ B.boundary.card =
+          (1 - p) ^ ((B.boundary.card - 1) + 1) := by congr 1; omega
+      _ = (1 - p) ^ (B.boundary.card - 1) * (1 - p) := by rw [pow_succ]
+  rw [hOpen, hClosed, hAClosed, hBClosed]
+  field_simp
+
 theorem anchoredMass_supermultiplicative
     (d m n : ℕ) (p : ℝ) (hd : 0 < d) (hp0 : 0 < p) (hp1 : p < 1) :
     p * (1 - p)⁻¹ ^ 2 * anchoredMass d m p * anchoredMass d n p ≤

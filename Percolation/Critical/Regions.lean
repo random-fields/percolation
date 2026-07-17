@@ -444,6 +444,24 @@ noncomputable def regionThetaFrom
   (bernoulliBondMeasure d p).real
     {ω | (cubicOpenClusterWithinVertices d A ω x).Infinite}
 
+/-- Rooted percolation inside a fixed induced region is monotone in the bond density. -/
+theorem regionThetaFrom_mono
+    (d : ℕ) (A : Set (Cubic d)) (x : Cubic d) {p q : I} (hpq : p ≤ q) :
+    regionThetaFrom d A p x ≤ regionThetaFrom d A q x := by
+  have h := IsIncreasingEvent.setBernoulli_real_mono
+    (isIncreasingEvent_cubicOpenClusterWithinVertices_infinite d A x)
+    (measurableSet_cubicOpenClusterWithinVertices_infinite d A x) hpq
+  simpa [regionThetaFrom, bernoulliBondMeasure] using h
+
+/-- Enlarging the allowed vertex region can only increase rooted percolation. -/
+theorem regionThetaFrom_mono_region
+    {d : ℕ} {A B : Set (Cubic d)} (hAB : A ⊆ B) (p : I) (x : Cubic d) :
+    regionThetaFrom d A p x ≤ regionThetaFrom d B p x := by
+  apply measureReal_mono
+  · intro ω hω
+    exact hω.mono (cubicOpenClusterWithinVertices_mono hAB ω x)
+  · exact measure_ne_top _ _
+
 @[simp]
 theorem regionThetaFrom_univ (d : ℕ) (p : I) (x : Cubic d) :
     regionThetaFrom d Set.univ p x = thetaFrom d p x := by

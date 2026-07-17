@@ -123,6 +123,40 @@ theorem cubicTranslationConfigurationPullback_hasInfiniteOpenClusterFrom_iff
     (cubicTranslationConfigurationPullback_clusterWithin_infinite_iff
       (Set.univ : Set (Cubic d)) ω x y z)
 
+/-- Rooted infinite-cluster probabilities are covariant under simultaneous translation of the
+region and root. -/
+theorem bernoulliBondMeasure_real_cubicOpenClusterWithinVertices_infinite_translate
+    {d : ℕ} (A : Set (Cubic d)) (p : I) (x y z : Cubic d) :
+    (bernoulliBondMeasure d p).real
+        {ω | (cubicOpenClusterWithinVertices d A ω z).Infinite} =
+      (bernoulliBondMeasure d p).real
+        {ω | (cubicOpenClusterWithinVertices d (cubicTranslateRegion x y A) ω
+          (cubicTranslate x y z)).Infinite} := by
+  let T := cubicTranslationConfigurationPullback x y
+  have hpre : T ⁻¹' {ω | (cubicOpenClusterWithinVertices d A ω z).Infinite} =
+      {ω | (cubicOpenClusterWithinVertices d (cubicTranslateRegion x y A) ω
+        (cubicTranslate x y z)).Infinite} := by
+    ext ω
+    exact cubicTranslationConfigurationPullback_clusterWithin_infinite_iff A ω x y z
+  have hmap := congrArg
+    (fun μ : Measure (EdgeConfiguration d) ↦
+      μ.real {ω | (cubicOpenClusterWithinVertices d A ω z).Infinite})
+    (bernoulliBondMeasure_map_cubicTranslationConfigurationPullback p x y)
+  change (Measure.map T (bernoulliBondMeasure d p)).real
+      {ω | (cubicOpenClusterWithinVertices d A ω z).Infinite} =
+    (bernoulliBondMeasure d p).real
+      {ω | (cubicOpenClusterWithinVertices d A ω z).Infinite} at hmap
+  rw [map_measureReal_apply (measurable_cubicTranslationConfigurationPullback x y)
+    (measurableSet_cubicOpenClusterWithinVertices_infinite d A z), hpre] at hmap
+  exact hmap.symm
+
+theorem regionThetaFrom_translate {d : ℕ}
+    (A : Set (Cubic d)) (p : I) (x y z : Cubic d) :
+    regionThetaFrom d (cubicTranslateRegion x y A) p (cubicTranslate x y z) =
+      regionThetaFrom d A p z := by
+  exact (bernoulliBondMeasure_real_cubicOpenClusterWithinVertices_infinite_translate
+    A p x y z).symm
+
 private theorem hasInfiniteOpenClusterInVertices_translate
     {d : ℕ} {A : Set (Cubic d)} {ω : EdgeConfiguration d}
     (x y : Cubic d)

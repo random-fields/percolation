@@ -22,6 +22,88 @@ def positiveSeededRestartRegion
   (cubicMetricBox d cubicOrigin n : Set (Cubic d)) ∪
     seededBoundaryLayerRegion d i m n
 
+/-- Every vertex incident to a coordinate read by the exact reference restart belongs to the
+reference exploratory box or to its layered target. -/
+theorem cubicEdgeEndpointVertices_restartEventSupport_subset_positiveSeededRestartRegion
+    (d : ℕ) (i : Fin d) (m n : ℕ) (R : Finset (Cubic d)) :
+    (cubicEdgeEndpointVertices (restartEventSupport d i m n R) : Set (Cubic d)) ⊆
+      positiveSeededRestartRegion d i m n := by
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  simp only [restartEventSupport, Finset.mem_union] at he
+  rcases he with (heBoundary | heExterior) | heTarget
+  · left
+    exact endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges
+      (mem_cubicRegionBoundaryEdgesWithinBox_iff.mp heBoundary).1 hze
+  · left
+    exact endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges
+      (mem_cubicRegionExteriorEdgesWithinBox_iff.mp heExterior).1 hze
+  · obtain ⟨heSupport, heNotBox⟩ := Finset.mem_sdiff.mp heTarget
+    rw [seedConnectionSupport] at heSupport
+    simp only [Finset.mem_union] at heSupport
+    rcases heSupport with (heBox | heStep) | heSeed
+    · exact (heNotBox heBox).elim
+    · obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp heStep
+      change z ∈ s(y, cubicStepFrom y (i, true)) at hze
+      rw [Sym2.mem_iff] at hze
+      rcases hze with rfl | rfl
+      · left
+        have hyFace := mem_cubicBoxFace.mp
+          (mem_seededBoundaryQuadrant_iff.mp hy).1
+        have hyBox : z ∈ cubicMetricBox d cubicOrigin n := by
+          rw [mem_cubicMetricBox]
+          intro j
+          by_cases hji : j = i
+          · subst j
+            simp [cubicOrigin, hyFace.1]
+          · exact hyFace.2 j hji
+        exact hyBox
+      · right
+        refine ⟨1, by omega, by omega, y, hy, ?_⟩
+        ext j
+        by_cases hji : j = i
+        · subst j
+          simp [cubicStepFrom, cubicDirectionIncrement,
+            cubicTranslateAlongCoordinate]
+        · simp [cubicStepFrom, cubicDirectionIncrement,
+            cubicTranslateAlongCoordinate, hji]
+    · rw [Finset.mem_biUnion] at heSeed
+      obtain ⟨c, hc, heBox⟩ := heSeed
+      right
+      exact (mem_seededBoundaryAdmissibleCenters_iff.mp hc).2 z
+        (endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heBox hze)
+
+/-- Framing a reference restart transports its whole endpoint support into the framed copy of
+the positive seeded restart region. -/
+theorem cubicEdgeEndpointVertices_framedRestartSupport_subset_frameRegion
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) (R : Finset (Cubic d)) :
+    (cubicEdgeEndpointVertices
+        (framedRestartSupport center a transverseFlip m n R) : Set (Cubic d)) ⊆
+      cubicGraphIsoRegion (cubicRestartFrameIso center a transverseFlip)
+        (positiveSeededRestartRegion d a.1 m n) := by
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  rw [framedRestartSupport, Finset.mem_image] at he
+  obtain ⟨f, hf, rfl⟩ := he
+  change z ∈ Sym2.map (cubicRestartFrameIso center a transverseFlip)
+    (f : Sym2 (Cubic d)) at hze
+  rw [Sym2.mem_map] at hze
+  obtain ⟨w, hw, rfl⟩ := hze
+  exact ⟨w,
+    cubicEdgeEndpointVertices_restartEventSupport_subset_positiveSeededRestartRegion
+      d a.1 m n R (mem_cubicEdgeEndpointVertices_iff.mpr ⟨f, hf, hw⟩), rfl⟩
+
+/-- Query-facing form of endpoint-support containment. -/
+theorem FramedRestartQuery.endpointVertices_restartSupport_subset_frameRegion
+    {d m n : ℕ} (Q : FramedRestartQuery d) :
+    (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆
+      cubicGraphIsoRegion
+        (cubicRestartFrameIso Q.center Q.direction Q.transverseFlip)
+        (positiveSeededRestartRegion d Q.direction.1 m n) := by
+  exact cubicEdgeEndpointVertices_framedRestartSupport_subset_frameRegion
+    Q.center Q.direction Q.transverseFlip Q.region
+
 /-- The local frame of the post-radial extension selected in signed direction `a`. -/
 def RootRadialSeedProfile.postRadialFrame
     {d m n : ℕ} (W : RootRadialSeedProfile d m n) (a : CubicDirection d) :
@@ -498,6 +580,56 @@ theorem RootRadialSeedProfile.postRadialRestartRegion_subset_endpointBoxes
       exact cubicDirectionOrientationIso_referenceNextSiteCenter
         (N := m + n + 1) cubicOrigin a
     simpa [hcenter] using himage
+
+/-- The literal finite support of a post-radial query is contained in its geometric restart
+region and hence in the two endpoint site boxes. -/
+theorem RootRadialSeedProfile.endpointVertices_postRadialQuery_subset_endpointBoxes
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (a : CubicDirection d) (S : SourceFiniteEdgeRevealState d)
+    {omega : EdgeConfiguration d} (hW : (W a).IsRealized omega) :
+    (cubicEdgeEndpointVertices
+        ((S.framedQuery (W.physicalCenter a) a
+          (oppositeTransverseRestartFlip a)).restartSupport m n) : Set (Cubic d)) ⊆
+      (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1)
+            (cubicStepFrom cubicOrigin a))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  intro z hz
+  apply W.postRadialRestartRegion_subset_endpointBoxes a hW
+  simpa [RootRadialSeedProfile.postRadialRestartRegion,
+    RootRadialSeedProfile.postRadialFrame, SourceFiniteEdgeRevealState.framedQuery] using
+    (S.framedQuery (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a)).endpointVertices_restartSupport_subset_frameRegion hz
+
+/-- If the root and the coarse neighbor in direction `a` both belong to `F`, every endpoint
+read by that root extension lies in the literal final thickening. -/
+theorem RootRadialSeedProfile.endpointVertices_postRadialQuery_subset_thickening
+    {d m n : ℕ} {F : Set (Cubic d)} (W : RootRadialSeedProfile d m n)
+    (a : CubicDirection d) (S : SourceFiniteEdgeRevealState d)
+    {omega : EdgeConfiguration d} (hW : (W a).IsRealized omega)
+    (hrootF : cubicOrigin ∈ F) (hstepF : cubicStepFrom cubicOrigin a ∈ F) :
+    (cubicEdgeEndpointVertices
+        ((S.framedQuery (W.physicalCenter a) a
+          (oppositeTransverseRestartFlip a)).restartSupport m n) : Set (Cubic d)) ⊆
+      grimmettMarstrandThickening d F (m + n + 1) := by
+  intro z hz
+  rcases W.endpointVertices_postRadialQuery_subset_endpointBoxes a S hW hz with hz | hz
+  · exact grimmettMarstrandCenteredBox_subset_thickening hrootF le_rfl hz
+  · exact grimmettMarstrandCenteredBox_subset_thickening hstepF le_rfl hz
+
+/-- The simultaneous radial support is already inside the root-centered part of the final
+thickening. -/
+theorem rootRadialEdgeSupport_endpointVertices_subset_thickening
+    {d m n : ℕ} {F : Set (Cubic d)} (hrootF : cubicOrigin ∈ F) :
+    (cubicEdgeEndpointVertices (rootRadialEdgeSupport d m n) : Set (Cubic d)) ⊆
+      grimmettMarstrandThickening d F (m + n + 1) := by
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  have heWide := rootRadialEdgeSupport_subset_wideBox d m n he
+  apply grimmettMarstrandCenteredBox_subset_thickening
+    (N := m + n + 1) (R := n + 2 * m + 1) hrootF (by omega)
+  exact endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heWide hze
 
 /-- Reference-coordinate separation between two distinct post-radial root directions.  A
 restart in direction `b` uses the wide radius only along `b`; in every transverse coordinate it

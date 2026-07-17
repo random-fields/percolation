@@ -60,6 +60,49 @@ theorem runPostRadialExtensions_rootedOpen_of_prefixBounds
       simpa [FinalThresholdBoundedOnPrefixes, List.take_succ_cons, Q, S',
         RootRadialSeedProfile.runPostRadialExtensions] using h
 
+/-- Region-confined root connectivity under bounds and containment on only the actual root
+prefixes. -/
+theorem runPostRadialExtensions_rootedOpenWithin_of_prefixBounds
+    {d m n : ℕ} {A : Set (Cubic d)} (W : RootRadialSeedProfile d m n)
+    (p pFinal : I) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : SourceFiniteEdgeRevealState d)
+    (directions : List (CubicDirection d))
+    (hrooted : S.RootedOpenWithin
+      (thresholdConfiguration pFinal X) A cubicOrigin)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hbounded : W.FinalThresholdBoundedOnPrefixes p pFinal incremented X S directions)
+    (hstageA : ∀ j (hj : j < directions.length),
+      let Sj := W.runPostRadialExtensions p incremented X S (directions.take j)
+      let a := directions[j]
+      let Q := Sj.framedQuery (W.physicalCenter a) a
+        (oppositeTransverseRestartFlip a)
+      (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
+    (W.runPostRadialExtensions p incremented X S directions).RootedOpenWithin
+      (thresholdConfiguration pFinal X) A cubicOrigin := by
+  induction directions generalizing S with
+  | nil => exact hrooted
+  | cons a rest ih =>
+      let Q := S.framedQuery (W.physicalCenter a) a
+        (oppositeTransverseRestartFlip a)
+      let S' := S.next (Q.restartSupport m n) p (incremented S a) X
+      have hfirst : ∀ e, (incremented S a e : ℝ) ≤ (pFinal : ℝ) := by
+        intro e
+        simpa using hbounded 0 (by simp) e
+      have hrooted' : S'.RootedOpenWithin
+          (thresholdConfiguration pFinal X) A cubicOrigin := by
+        exact S.rootedOpenWithin_next (Q.restartSupport m n) p pFinal
+          (incremented S a) X hrooted (by simpa [Q] using hstageA 0 (by simp))
+          hpFinal hfirst
+      apply ih (S := S') hrooted'
+      · intro j hj e
+        have h := hbounded (j + 1) (by simp; omega) e
+        simpa [FinalThresholdBoundedOnPrefixes, List.take_succ_cons, Q, S',
+          RootRadialSeedProfile.runPostRadialExtensions] using h
+      · intro j hj
+        have h := hstageA (j + 1) (by simp; omega)
+        simpa [List.take_succ_cons, Q, S',
+          RootRadialSeedProfile.runPostRadialExtensions] using h
+
 /-- Reachable-prefix version of connectivity for the completed root state. -/
 theorem completedRootExtensionState_rootedOpen_of_prefixBounds
     {d m n : ℕ} (W : RootRadialSeedProfile d m n)
@@ -82,6 +125,41 @@ theorem completedRootExtensionState_rootedOpen_of_prefixBounds
     W.runPostRadialExtensions_rootedOpen_of_prefixBounds p pFinal incremented X
       (rootPostRadialSourceEdgeState d m n p radialIncremented X)
       (rootExtensionDirectionOrder d) hpost hpFinal hbounded
+
+/-- Reachable-prefix connectivity for the completed root state, with every witness walk
+confined to `A`. -/
+theorem completedRootExtensionState_rootedOpenWithin_of_prefixBounds
+    {d m n : ℕ} {A : Set (Cubic d)} (W : RootRadialSeedProfile d m n)
+    (p radialIncremented pFinal : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hcompletion : X ∈ W.mixedExtensionPrefixSuccessEvent p radialIncremented
+      delta incremented (rootExtensionDirectionOrder d).length)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hradialFinal : (radialIncremented : ℝ) ≤ (pFinal : ℝ))
+    (hboxA : (cubicMetricBox d cubicOrigin m : Set (Cubic d)) ⊆ A)
+    (hradialA : (cubicEdgeEndpointVertices (rootRadialEdgeSupport d m n) :
+      Set (Cubic d)) ⊆ A)
+    (hbounded : W.FinalThresholdBoundedOnPrefixes p pFinal incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      (rootExtensionDirectionOrder d))
+    (hstageA : ∀ j (hj : j < (rootExtensionDirectionOrder d).length),
+      let S := W.runPostRadialExtensions p incremented X
+        (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+        ((rootExtensionDirectionOrder d).take j)
+      let a := (rootExtensionDirectionOrder d)[j]
+      let Q := S.framedQuery (W.physicalCenter a) a
+        (oppositeTransverseRestartFlip a)
+      (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
+    (W.completedRootExtensionState p radialIncremented incremented X).RootedOpenWithin
+      (thresholdConfiguration pFinal X) A cubicOrigin := by
+  have hseed : X ∈ rootSeedLabelEvent d m p := hcompletion.1.1
+  have hpost := rootPostRadialSourceEdgeState_rootedOpenWithin (n := n)
+    p radialIncremented pFinal X hseed hpFinal hradialFinal hboxA hradialA
+  simpa [RootRadialSeedProfile.completedRootExtensionState] using
+    W.runPostRadialExtensions_rootedOpenWithin_of_prefixBounds p pFinal incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      (rootExtensionDirectionOrder d) hpost hpFinal hbounded hstageA
 
 /-- The canonical budgeted policy satisfies the reachable root-prefix final-density bound
 whenever the complete `2d` root budget fits below `pFinal`. -/
@@ -179,6 +257,54 @@ theorem rootedOpen_runFrom_of_prefixBounds
       have h := hbounded (j + 1) (by simp; omega) e
       simpa [FinalThresholdBoundedOnPrefixes, List.take_succ_cons, runFrom, R',
         Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using h
+
+/-- Region-confined runtime connectivity under final-threshold bounds and geometric
+containment on the literal reached prefixes. -/
+theorem rootedOpenWithin_runFrom_of_prefixBounds
+    {d m n : ℕ} {A : Set (Cubic d)} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p pFinal : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (anchor : Cubic d)
+    (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d))
+    (hrooted : R.source.RootedOpenWithin
+      (thresholdConfiguration pFinal X) A anchor)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hbounded : FinalThresholdBoundedOnPrefixes hmn inletCenter incoming firstFlip
+      secondFlip p pFinal delta incremented X R offset directions)
+    (hstageA : ∀ j (hj : j < directions.length),
+      let Rj := runFrom hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X R offset (directions.take j)
+      let a := directions[j]
+      let Q := Rj.restartQuery inletCenter incoming firstFlip secondFlip a (offset + j)
+      (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
+    (runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+      R offset directions).source.RootedOpenWithin
+        (thresholdConfiguration pFinal X) A anchor := by
+  induction directions generalizing R offset with
+  | nil => exact hrooted
+  | cons a rest ih =>
+      let R' := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a offset
+      have hfirst : ∀ e, (incremented R.source a e : ℝ) ≤ (pFinal : ℝ) := by
+        intro e
+        simpa using hbounded 0 (by simp) e
+      have hrooted' : R'.source.RootedOpenWithin
+          (thresholdConfiguration pFinal X) A anchor := by
+        exact R.source.rootedOpenWithin_next
+          ((R.restartQuery inletCenter incoming firstFlip secondFlip a offset).restartSupport m n)
+          p pFinal (incremented R.source a) X hrooted
+          (by simpa using hstageA 0 (by simp)) hpFinal hfirst
+      apply ih (R := R') (offset := offset + 1) hrooted'
+      · intro j hj e
+        have h := hbounded (j + 1) (by simp; omega) e
+        simpa [FinalThresholdBoundedOnPrefixes, List.take_succ_cons, runFrom, R',
+          Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using h
+      · intro j hj
+        have h := hstageA (j + 1) (by simp; omega)
+        simpa [List.take_succ_cons, runFrom, R', Nat.add_assoc, Nat.add_comm,
+          Nat.add_left_comm] using h
 
 end LaterSiteRuntime
 

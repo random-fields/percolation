@@ -56,6 +56,18 @@ theorem connection_seedCenter_of_box_subset
     (center_mem_cubicEdgeEndpointVertices_cubicBoxEdges hm center)
   exact hrooted.2 e (hseed heBox) center hcenter
 
+/-- Region-confined version of `connection_seedCenter_of_box_subset`. -/
+theorem connection_seedCenterWithin_of_box_subset
+    {d m : ℕ} [NeZero d] (hm : 1 ≤ m)
+    {S : SourceFiniteEdgeRevealState d} {omega : EdgeConfiguration d}
+    {A : Set (Cubic d)} {anchor center : Cubic d}
+    (hrooted : S.RootedOpenWithin omega A anchor)
+    (hseed : cubicBoxEdges d center m ⊆ S.explored) :
+    omega ∈ connectionEventWithinVertices d A anchor center := by
+  obtain ⟨e, heBox, hcenter⟩ := mem_cubicEdgeEndpointVertices_iff.mp
+    (center_mem_cubicEdgeEndpointVertices_cubicBoxEdges hm center)
+  exact hrooted.2 e (hseed heBox) center hcenter
+
 /-- Every seed record published by a globally installed, root-connected history state names a
 center in the same open component as the root anchor. -/
 theorem outgoing_physicalCenter_connected
@@ -68,6 +80,19 @@ theorem outgoing_physicalCenter_connected
     (hU : S.outgoing v a = some U) :
     omega ∈ connectionEvent d anchor U.physicalCenter := by
   exact connection_seedCenter_of_box_subset hm hrooted (hinstalled v a U hU)
+
+/-- Every installed seed center is connected to the root by a witness supported in `A` when
+the accumulated source state carries the confined invariant. -/
+theorem outgoing_physicalCenter_connectedWithin
+    {d m : ℕ} [NeZero d] (hm : 1 ≤ m)
+    {V : Type*} {S : DynamicBlockHistoryState d V}
+    {omega : EdgeConfiguration d} {A : Set (Cubic d)} {anchor : Cubic d}
+    (hrooted : S.source.RootedOpenWithin omega A anchor)
+    (hinstalled : S.SeedBoxesInstalled (m := m))
+    {v : V} {a : CubicDirection d} {U : LaterSiteOutgoingSeed d}
+    (hU : S.outgoing v a = some U) :
+    omega ∈ connectionEventWithinVertices d A anchor U.physicalCenter := by
+  exact connection_seedCenterWithin_of_box_subset hm hrooted (hinstalled v a U hU)
 
 /-- The source field of the initialized global history state is exactly the connected completed
 root source state. -/
@@ -117,7 +142,44 @@ theorem rooted_source_rootedOpen_of_prefixBounds
     (thresholdConfiguration pFinal X) cubicOrigin
   rw [List.take_length]
   exact W.completedRootExtensionState_rootedOpen_of_prefixBounds p radialIncremented
-    pFinal delta incremented X hcompletion hpFinal hradialFinal hbounded
+      pFinal delta incremented X hcompletion hpFinal hradialFinal hbounded
+
+/-- Initialized-history connectivity whose retained witness walks all stay in `A`. -/
+theorem rooted_source_rootedOpenWithin_of_prefixBounds
+    {d m n : ℕ} {V : Type*} [DecidableEq V] {A : Set (Cubic d)}
+    (W : RootRadialSeedProfile d m n) (root : V)
+    (p radialIncremented pFinal : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hcompletion : X ∈ W.mixedExtensionPrefixSuccessEvent p radialIncremented
+      delta incremented (rootExtensionDirectionOrder d).length)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hradialFinal : (radialIncremented : ℝ) ≤ (pFinal : ℝ))
+    (hboxA : (cubicMetricBox d cubicOrigin m : Set (Cubic d)) ⊆ A)
+    (hradialA : (cubicEdgeEndpointVertices (rootRadialEdgeSupport d m n) :
+      Set (Cubic d)) ⊆ A)
+    (hbounded : W.FinalThresholdBoundedOnPrefixes p pFinal incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      (rootExtensionDirectionOrder d))
+    (hstageA : ∀ j (hj : j < (rootExtensionDirectionOrder d).length),
+      let S := W.runPostRadialExtensions p incremented X
+        (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+        ((rootExtensionDirectionOrder d).take j)
+      let a := (rootExtensionDirectionOrder d)[j]
+      let Q := S.framedQuery (W.physicalCenter a) a
+        (oppositeTransverseRestartFlip a)
+      (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
+    (rooted W root p radialIncremented delta incremented X).source.RootedOpenWithin
+      (thresholdConfiguration pFinal X) A cubicOrigin := by
+  change (W.runPostRadialExtensions p incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      ((rootExtensionDirectionOrder d).take
+        (rootExtensionDirectionOrder d).length)).RootedOpenWithin
+    (thresholdConfiguration pFinal X) A cubicOrigin
+  rw [List.take_length]
+  exact W.completedRootExtensionState_rootedOpenWithin_of_prefixBounds p radialIncremented
+    pFinal delta incremented X hcompletion hpFinal hradialFinal hboxA hradialA hbounded
+      hstageA
 
 end DynamicBlockHistoryState
 
@@ -181,6 +243,51 @@ theorem step_source_rootedOpen_of_prefixBounds
       cubicOrigin R0 0 directions hR0 hpFinal hbounded
   simpa [step, siteRuntime, seed, incoming, first, directions, R0] using hrun
 
+/-- One replay step preserves region-confined connectivity when each literal runtime stage is
+contained in `A`. -/
+theorem step_source_rootedOpenWithin_of_prefixBounds
+    (hd : 0 < d) (hmn : 2 * m ≤ n) {A : Set (Cubic d)}
+    (root : F) (history : List (F × Bool)) (v : F) (accepted : Bool)
+    (p pFinal : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (hrooted : S.source.RootedOpenWithin
+      (thresholdConfiguration pFinal X) A cubicOrigin)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hbounded :
+      let seed := inletSeed hd root history v S
+      let incoming := incomingDirection hd root history v
+      let first := firstFlip hd root history v S
+      let directions := siteDirectionOrder hd root history v
+      LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
+        first unusedSecondFlip p pFinal delta incremented X
+        (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 directions)
+    (hstageA :
+      let seed := inletSeed hd root history v S
+      let incoming := incomingDirection hd root history v
+      let first := firstFlip hd root history v S
+      let directions := siteDirectionOrder hd root history v
+      ∀ j (hj : j < directions.length),
+        let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
+          unusedSecondFlip p delta incremented X
+          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+        let a := directions[j]
+        let Q := Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip a j
+        (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
+    (step hd hmn root history v accepted p delta incremented X S
+      ).source.RootedOpenWithin (thresholdConfiguration pFinal X) A cubicOrigin := by
+  let seed := inletSeed hd root history v S
+  let incoming := incomingDirection hd root history v
+  let first := firstFlip hd root history v S
+  let directions := siteDirectionOrder hd root history v
+  let R0 := LaterSiteRuntime.initial S.source seed.physicalCenter
+  have hR0 : R0.source.RootedOpenWithin
+      (thresholdConfiguration pFinal X) A cubicOrigin := by
+    simpa [R0, LaterSiteRuntime.initial] using hrooted
+  have hrun := LaterSiteRuntime.rootedOpenWithin_runFrom_of_prefixBounds hmn
+    seed.physicalCenter incoming first unusedSecondFlip p pFinal delta incremented X
+      cubicOrigin R0 0 directions hR0 hpFinal hbounded (by simpa [R0] using hstageA)
+  simpa [step, siteRuntime, seed, incoming, first, directions, R0] using hrun
+
 /-- Origin connectivity propagates through an arbitrary literal replay suffix. -/
 theorem replayFrom_source_rootedOpen
     (hd : 0 < d) (hmn : 2 * m ≤ n)
@@ -241,6 +348,66 @@ theorem replayFrom_source_rootedOpen_of_prefixBounds
       intro pref u b tail heq
       have hall := hbounded ((v, accepted) :: pref) u b tail (by simpa using heq)
       simpa [replayFrom, List.append_assoc] using hall
+
+/-- Region-confined connectivity through a replay suffix under threshold and containment
+certificates on every concrete runtime prefix. -/
+theorem replayFrom_source_rootedOpenWithin_of_prefixBounds
+    (hd : 0 < d) (hmn : 2 * m ≤ n) {A : Set (Cubic d)}
+    (root : F) (p pFinal : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (prior : List (F × Bool)) (S : DynamicBlockHistoryState d F)
+    (history : List (F × Bool))
+    (hrooted : S.source.RootedOpenWithin
+      (thresholdConfiguration pFinal X) A cubicOrigin)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hbounded : ∀ (pref : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      history = pref ++ (v, accepted) :: tail →
+      let T := replayFrom hd hmn root p delta incremented X prior S pref
+      let fullHistory := prior ++ pref
+      let seed := inletSeed hd root fullHistory v T
+      let incoming := incomingDirection hd root fullHistory v
+      let first := firstFlip hd root fullHistory v T
+      let directions := siteDirectionOrder hd root fullHistory v
+      LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
+        first unusedSecondFlip p pFinal delta incremented X
+        (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 directions)
+    (hstageA : ∀ (pref : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      history = pref ++ (v, accepted) :: tail →
+      let T := replayFrom hd hmn root p delta incremented X prior S pref
+      let fullHistory := prior ++ pref
+      let seed := inletSeed hd root fullHistory v T
+      let incoming := incomingDirection hd root fullHistory v
+      let first := firstFlip hd root fullHistory v T
+      let directions := siteDirectionOrder hd root fullHistory v
+      ∀ j (hj : j < directions.length),
+        let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
+          unusedSecondFlip p delta incremented X
+          (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 (directions.take j)
+        let a := directions[j]
+        let Q := Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip a j
+        (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
+    (replayFrom hd hmn root p delta incremented X prior S history
+      ).source.RootedOpenWithin (thresholdConfiguration pFinal X) A cubicOrigin := by
+  induction history generalizing prior S with
+  | nil => exact hrooted
+  | cons entry rest ih =>
+      rcases entry with ⟨v, accepted⟩
+      have hfirst := hbounded [] v accepted rest (by simp)
+      have hfirstA := hstageA [] v accepted rest (by simp)
+      have hstep := step_source_rootedOpenWithin_of_prefixBounds hd hmn root prior v
+        accepted p pFinal delta incremented X S hrooted hpFinal
+        (by simpa [replayFrom] using hfirst) (by simpa [replayFrom] using hfirstA)
+      apply ih (prior := prior ++ [(v, accepted)])
+        (S := step hd hmn root prior v accepted p delta incremented X S) hstep
+      · intro pref u b tail heq
+        have hall := hbounded ((v, accepted) :: pref) u b tail (by simpa using heq)
+        simpa [replayFrom, List.append_assoc] using hall
+      · intro pref u b tail heq
+        have hall := hstageA ((v, accepted) :: pref) u b tail (by simpa using heq)
+        simpa [replayFrom, List.append_assoc] using hall
 
 /-- Every accumulated source state produced by the canonical global replay is a single open
 component rooted at the physical origin. -/
@@ -305,6 +472,74 @@ theorem replay_source_rootedOpen_of_prefixBounds
       radialIncremented pFinal delta incremented X hcompletion hpFinal hradialFinal
       hrootBounded)
     hpFinal hsuffixBounded
+
+/-- Canonical replay connectivity with all witness walks confined to `A`.  The obligations are
+split into the completed-root geometry and the literal non-root runtime prefixes, matching the
+two geometric parts of the Grimmett--Marstrand construction. -/
+theorem replay_source_rootedOpenWithin_of_prefixBounds
+    (hd : 0 < d) (hmn : 2 * m ≤ n) {A : Set (Cubic d)}
+    (W : RootRadialSeedProfile d m n) (root : F)
+    (p radialIncremented pFinal : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (history : List (F × Bool))
+    (hcompletion : X ∈ W.mixedExtensionPrefixSuccessEvent p radialIncremented
+      delta incremented (rootExtensionDirectionOrder d).length)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hradialFinal : (radialIncremented : ℝ) ≤ (pFinal : ℝ))
+    (hboxA : (cubicMetricBox d cubicOrigin m : Set (Cubic d)) ⊆ A)
+    (hradialA : (cubicEdgeEndpointVertices (rootRadialEdgeSupport d m n) :
+      Set (Cubic d)) ⊆ A)
+    (hrootBounded : W.FinalThresholdBoundedOnPrefixes p pFinal incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      (rootExtensionDirectionOrder d))
+    (hrootStageA : ∀ j (hj : j < (rootExtensionDirectionOrder d).length),
+      let S := W.runPostRadialExtensions p incremented X
+        (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+        ((rootExtensionDirectionOrder d).take j)
+      let a := (rootExtensionDirectionOrder d)[j]
+      let Q := S.framedQuery (W.physicalCenter a) a
+        (oppositeTransverseRestartFlip a)
+      (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A)
+    (hsuffixBounded : ∀ (pref : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      canonicalSuffix root history = pref ++ (v, accepted) :: tail →
+      let T := replayFrom hd hmn root p delta incremented X [(root, true)]
+        (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X) pref
+      let fullHistory := [(root, true)] ++ pref
+      let seed := inletSeed hd root fullHistory v T
+      let incoming := incomingDirection hd root fullHistory v
+      let first := firstFlip hd root fullHistory v T
+      let directions := siteDirectionOrder hd root fullHistory v
+      LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
+        first unusedSecondFlip p pFinal delta incremented X
+        (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 directions)
+    (hsuffixStageA : ∀ (pref : List (F × Bool)) (v : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      canonicalSuffix root history = pref ++ (v, accepted) :: tail →
+      let T := replayFrom hd hmn root p delta incremented X [(root, true)]
+        (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X) pref
+      let fullHistory := [(root, true)] ++ pref
+      let seed := inletSeed hd root fullHistory v T
+      let incoming := incomingDirection hd root fullHistory v
+      let first := firstFlip hd root fullHistory v T
+      let directions := siteDirectionOrder hd root fullHistory v
+      ∀ j (hj : j < directions.length),
+        let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
+          unusedSecondFlip p delta incremented X
+          (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 (directions.take j)
+        let a := directions[j]
+        let Q := Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip a j
+        (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
+    (replay hd hmn W root p radialIncremented delta incremented X history
+      ).source.RootedOpenWithin (thresholdConfiguration pFinal X) A cubicOrigin := by
+  exact replayFrom_source_rootedOpenWithin_of_prefixBounds hd hmn root p pFinal delta
+    incremented X [(root, true)]
+    (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X)
+    (canonicalSuffix root history)
+    (DynamicBlockHistoryState.rooted_source_rootedOpenWithin_of_prefixBounds W root p
+      radialIncremented pFinal delta incremented X hcompletion hpFinal hradialFinal
+      hboxA hradialA hrootBounded hrootStageA)
+    hpFinal hsuffixBounded hsuffixStageA
 
 namespace ReplayProgramStageCertificates
 

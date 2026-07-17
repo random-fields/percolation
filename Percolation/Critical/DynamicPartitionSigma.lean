@@ -126,6 +126,61 @@ theorem mul_measureReal_stableReplayHistory_le_successUnion
       · exact hsuccessSubset
       · exact hlower
 
+/-- Correct outer replay composition for a sequential runtime prefix.  Each cell is the
+explicit intersection `A ∩ sourceHistory`; consequently this theorem needs measurability of
+those cells, but no assertion that a pre-query source cell determines future restart outcomes. -/
+theorem mul_measureReal_representedReplayCells_le_successUnion
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (W : RootRadialSeedProfile d m n) (root : F)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (history : List (F × Bool)) (A : Set (CubicEdge d → ℝ))
+    (q : ℝ)
+    (hreplay : ∀ X ∈ A, ∀ Y,
+      Y ∈ (replay hd hmn W root p radialIncremented delta incremented X history
+        ).source.historyProfile.event →
+      replay hd hmn W root p radialIncremented delta incremented Y history =
+        replay hd hmn W root p radialIncremented delta incremented X history)
+    (hself : ∀ X ∈ A,
+      X ∈ (replay hd hmn W root p radialIncremented delta incremented X history
+        ).source.historyProfile.event)
+    (success : RepresentedReplayStateIndex hd hmn W root p radialIncremented delta
+      incremented history A → Set (CubicEdge d → ℝ))
+    (hcellMeasurable : ∀ c, MeasurableSet
+      (representedReplayCell (hd := hd) (hmn := hmn) (W := W) (root := root)
+        (p := p) (radialIncremented := radialIncremented) (delta := delta)
+        (incremented := incremented) (history := history) (A := A) c))
+    (hsuccessMeasurable : ∀ c, MeasurableSet (success c))
+    (hsuccessSubset : ∀ c, success c ⊆
+      representedReplayCell (hd := hd) (hmn := hmn) (W := W) (root := root)
+        (p := p) (radialIncremented := radialIncremented) (delta := delta)
+        (incremented := incremented) (history := history) (A := A) c)
+    (hlower : ∀ c,
+      q * (couplingMeasure (CubicEdge d)).real
+          (representedReplayCell (hd := hd) (hmn := hmn) (W := W) (root := root)
+            (p := p) (radialIncremented := radialIncremented) (delta := delta)
+            (incremented := incremented) (history := history) (A := A) c) ≤
+        (couplingMeasure (CubicEdge d)).real (success c)) :
+    q * (couplingMeasure (CubicEdge d)).real A ≤
+      (couplingMeasure (CubicEdge d)).real (finiteSuccessSliceUnion success) := by
+  have hcells := iUnion_representedReplayCell_eq hd hmn W root p radialIncremented delta
+    incremented history A hself
+  calc
+    q * (couplingMeasure (CubicEdge d)).real A =
+        q * (couplingMeasure (CubicEdge d)).real
+          (⋃ c : RepresentedReplayStateIndex hd hmn W root p radialIncremented delta
+            incremented history A, representedReplayCell c) := by rw [hcells]
+    _ ≤ (couplingMeasure (CubicEdge d)).real (finiteSuccessSliceUnion success) := by
+      apply mul_measureReal_finiteCellUnion_le_successSliceUnion
+        (fun c : RepresentedReplayStateIndex hd hmn W root p radialIncremented delta
+          incremented history A ↦ representedReplayCell c) success q
+      · exact pairwiseDisjoint_representedReplayCell hd hmn W root p radialIncremented delta
+          incremented history A hreplay
+      · exact hcellMeasurable
+      · exact hsuccessMeasurable
+      · exact hsuccessSubset
+      · exact hlower
+
 end DynamicBlockHistoryReplay
 
 namespace AdaptiveSiteExploration.PartitionedFramedRestartStage

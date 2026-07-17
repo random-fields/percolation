@@ -201,6 +201,8 @@ import Percolation.Critical.DynamicHistoryReplayStability
 import Percolation.Critical.DynamicHistoryReplayPartition
 import Percolation.Critical.DynamicPartitionSigma
 import Percolation.Critical.DynamicReplayStageLaw
+import Percolation.Critical.DynamicSequentialReplayStageLaw
+import Percolation.Critical.DynamicSequentialReplayProgram
 import Percolation.Critical.DynamicSourceConnectivity
 import Percolation.Critical.DynamicLaterSiteConnectivity
 import Percolation.Critical.DynamicRootConnectivity

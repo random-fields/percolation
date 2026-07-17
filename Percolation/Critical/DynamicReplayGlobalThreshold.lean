@@ -23,6 +23,7 @@ variable {incremented : RootExtensionThresholdPolicy d}
 variable {W : RootRadialSeedProfile d m n} {root : F}
 variable {initialEvent : Set (CubicEdge d → ℝ)}
 variable {hd : 0 < d} {hmn : 2 * m ≤ n}
+variable {depth : ℕ}
 
 namespace ReplayProgramStageCertificates
 

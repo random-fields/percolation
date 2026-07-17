@@ -1568,6 +1568,19 @@ Dated milestones and anti-library notes.
     behind (7.34): a per-site `4d` attempt bound does not prove that a persistent edge is charged
     only finitely many times across the whole adaptive exploration.
 
+137. **Scale-uniform non-root reveal accounting (2026-07-17).** Separated the source's `4d`
+    within-site restart attempts from its global spatial overlap accounting.  A fixed physical
+    vertex now has at most `2^d(2d+1)` influencing coarse query sites, independently of the block
+    scale. Canonical replay queries are proved distinct, every literal runtime support is confined
+    to the query's influence region, and pointwise threshold induction charges an edge only when
+    that query can affect its canonical endpoint.  This yields an explicit global replay cap,
+    exact `lower + delta` behavior on every reached runtime prefix, and a concrete
+    `ReplayProgramFinalThresholdCertificate` for the budgeted policy.  The cap is a safe internal
+    packing bound; the public Theorem 7.2 statement and final density are unchanged.  The remaining
+    Theorem 7.2 construction task is the mutually history-indexed stable stage certificate (and
+    thereby concrete adaptive-answer measurability), not final-threshold accounting. No telemetry
+    was reconstructed for this continuation.
+
 ## Axiom Ledger
 
 Empty.

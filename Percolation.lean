@@ -161,8 +161,10 @@ import Percolation.Critical.DynamicLaterSiteHistory
 import Percolation.Critical.DynamicLaterSiteRuntime
 import Percolation.Critical.DynamicLaterSiteRuntimeHistory
 import Percolation.Critical.DynamicLaterSitePartition
+import Percolation.Critical.DynamicGlobalRevealBudget
 import Percolation.Critical.DynamicHistoryReplay
 import Percolation.Critical.DynamicHistoryReplayFinite
+import Percolation.Critical.DynamicReplayRevealBudget
 import Percolation.Critical.DynamicHistoryReplayStability
 import Percolation.Critical.DynamicHistoryReplayPartition
 import Percolation.Critical.DynamicPartitionSigma
@@ -173,6 +175,8 @@ import Percolation.Critical.DynamicRootConnectivity
 import Percolation.Critical.DynamicReachableConnectivity
 import Percolation.Critical.DynamicReplayConnectivity
 import Percolation.Critical.DynamicReplayFinalThreshold
+import Percolation.Critical.DynamicReplayGlobalThreshold
+import Percolation.Critical.DynamicReplayGlobalCertificate
 import Percolation.Critical.DynamicRootEdgeState
 import Percolation.Critical.DynamicRecursiveEdgeState
 import Percolation.Critical.DynamicRootRecursiveState

@@ -35,7 +35,11 @@ structure ReplayProgramFinalThresholdCertificate
     W.FinalThresholdBoundedOnPrefixes p pFinal incremented X
       (rootPostRadialSourceEdgeState d m n p radialIncremented X)
       (rootExtensionDirectionOrder d)
-  runtime_bounded : ∀ (history : List (F × Bool)) (v : F),
+  runtime_bounded : ∀ (history : List (F × Bool)),
+    (∀ (prior : List (F × Bool)) (u : F) (accepted : Bool)
+      (tail : List (F × Bool)),
+      history = prior ++ (u, accepted) :: tail → AdmissibleQuery root prior u) →
+    ∀ (v : F),
     AdmissibleQuery root history v →
     ∀ {X : CubicEdge d → ℝ}, X ∈ initialEvent →
       X ∈ AdaptiveSiteExploration.adaptiveAnswerHistoryEvent
@@ -100,7 +104,7 @@ theorem replay_source_rootedOpen
         simpa [finiteAnswer] using hhistory
       have hrootedPrior := ih
         (by simpa [finiteAnswer] using hhistorySplit.1) hadmissiblePrior
-      have hbounded := B.runtime_bounded prior v hadmissibleLast hinitial
+      have hbounded := B.runtime_bounded prior hadmissiblePrior v hadmissibleLast hinitial
         (by simpa [finiteAnswer] using hhistorySplit.1)
       rw [replay_append_singleton_of_admissibleQuery hd hmn W root p radialIncremented
         delta incremented X prior v accepted hadmissibleLast]
@@ -168,7 +172,7 @@ theorem replay_source_rootedOpenWithin_thickening
         simpa [finiteAnswer] using hhistory
       have hrootedPrior := ih
         (by simpa [finiteAnswer] using hhistorySplit.1) hadmissiblePrior
-      have hbounded := B.runtime_bounded prior v hadmissibleLast hinitial
+      have hbounded := B.runtime_bounded prior hadmissiblePrior v hadmissibleLast hinitial
         (by simpa [finiteAnswer] using hhistorySplit.1)
       have hwithin := C.supportsWithin_thickening_replay hm hmnStrict hroot prior hinitial
         (by simpa [finiteAnswer] using hhistorySplit.1) hadmissiblePrior v

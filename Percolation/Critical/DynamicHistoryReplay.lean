@@ -1,5 +1,6 @@
 import Percolation.Critical.DynamicLaterSitePartition
 import Percolation.Critical.DynamicActiveDirections
+import Percolation.Critical.DynamicGlobalRevealBudget
 import Percolation.Critical.ExplorationHistory
 
 /-!
@@ -1123,6 +1124,132 @@ theorem siteRuntime_supportsWithin_thickening_of_admissibleQuery
   change LaterSiteRuntime.SupportsWithin hmn seed.physicalCenter incoming first
     unusedSecondFlip p delta incremented X
       (grimmettMarstrandThickening d F (m + n + 1)) R0 0
+        (siteDirectionOrder hd root fullHistory v)
+  rw [hdirections, LaterSiteRuntime.supportsWithin_append]
+  refine ⟨hinlet, ?_⟩
+  simpa [R2] using hbranches
+
+/-- Every literal support read by one admissible coarse query lies in the scale-uniform local
+influence region of that query.  This is the spatial input for global reveal accounting: a
+fixed physical edge can be charged only by the uniformly many coarse sites whose influence
+regions contain one of its endpoints. -/
+theorem siteRuntime_supportsWithin_queryInfluenceRegion_of_admissibleQuery
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (hadmissible : AdmissibleQuery root history v)
+    (hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S)
+    (hinstalled : S.SeedBoxesInstalled (m := m))
+    (hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1))
+    (hhalfway : S.OutgoingSeedsInHalfwayBoxes (N := m + n + 1)) :
+    let fullHistory := [(root, true)] ++ canonicalSuffix root history
+    let seed := inletSeed hd root fullHistory v S
+    let incoming := incomingDirection hd root fullHistory v
+    let first := firstFlip hd root fullHistory v S
+    let directions := siteDirectionOrder hd root fullHistory v
+    LaterSiteRuntime.SupportsWithin hmn seed.physicalCenter incoming first
+      unusedSecondFlip p delta incremented X
+      (grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1)
+      (siteInitialRuntime (m + n + 1) v S seed) 0 directions := by
+  dsimp only
+  let fullHistory := [(root, true)] ++ canonicalSuffix root history
+  let parent := inletParent root fullHistory v
+  let seed := inletSeed hd root fullHistory v S
+  let incoming := incomingDirection hd root fullHistory v
+  let first := firstFlip hd root fullHistory v S
+  let branches :=
+    (activeLaterSiteBranchDirections F fullHistory v incoming).toList
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
+  let R2 := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
+    p delta incremented X R0 0 [incoming, incoming]
+  have hU : S.outgoing parent incoming = some seed := by
+    simpa [fullHistory, parent, seed, incoming] using
+      inletSeed_parent_outgoing_of_admissibleQuery (m := m) hd root history v S
+        hadmissible hcover hinstalled
+  have hseedLocated : seed.physicalCenter ∈
+      grimmettMarstrandHalfwayBox d (m + n + 1) parent.1 incoming :=
+    hhalfway parent incoming seed hU
+  have hstep : cubicStepFrom (parent : Cubic d) incoming = (v : Cubic d) := by
+    simpa [fullHistory, parent, incoming] using
+      cubicStepFrom_inletParent_incomingDirection_of_admissibleQuery hd root history v
+        hadmissible
+  have hparentNeighbor : (parent : Cubic d) ∈ cubicClosedNeighborFinset v.1 := by
+    apply mem_cubicClosedNeighborFinset_comm
+    rw [mem_cubicClosedNeighborFinset_iff]
+    exact Or.inr ⟨incoming, hstep⟩
+  have hvNeighbor : (v : Cubic d) ∈ cubicClosedNeighborFinset v.1 := by
+    rw [mem_cubicClosedNeighborFinset_iff]
+    exact Or.inl rfl
+  have hfirst : first = inletCompensatingTransverseFlip incoming
+      (cubicRelativePosition
+        (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom parent.1 incoming))
+        seed.physicalCenter) := by
+    have h := firstFlip_eq_destinationCompensation_of_admissibleQuery
+      (m := m) (n := n) hd root history v S hadmissible hcover hinstalled hnormalized
+    rw [hstep]
+    simpa [fullHistory, first, incoming, seed] using h
+  have hcentral : R2.centralTarget ∈
+      cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) v.1)
+        (m + n + 1) := by
+    have h := LaterSiteRuntime.centralTarget_runFrom_inletPair_initialAt_mem_destinationSiteBox
+      hmn S.source parent.1 seed.physicalCenter incoming first unusedSecondFlip hfirst
+        hseedLocated p delta incremented X
+    simpa [R2, R0, siteInitialRuntime, hstep] using h
+  have hbase : R2.inletReferenceBase =
+      grimmettMarstrandSiteCenter (m + n + 1) v.1 := by
+    rw [LaterSiteRuntime.runFrom_inletReferenceBase]
+    rfl
+  have hclear : ∀ b, b ∈ branches → R2.outgoing b = none := by
+    intro b _hb
+    simp [R2, R0, siteInitialRuntime, LaterSiteRuntime.runFrom,
+      LaterSiteRuntime.step, LaterSiteRuntime.initialAt]
+  have hinletBoxes :
+      (cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) parent.1)
+          (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom parent.1 incoming))
+          (2 * (m + n + 1)) : Set (Cubic d)) ⊆
+        grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1 := by
+    intro z hz
+    rcases hz with hz | hz
+    · exact centeredBox_subset_grimmettMarstrandQueryInfluenceRegion hparentNeighbor hz
+    · rw [hstep] at hz
+      exact centeredBox_subset_grimmettMarstrandQueryInfluenceRegion hvNeighbor hz
+  have hinlet := LaterSiteRuntime.supportsWithin_inletPair_of_coarseLocated hmn R0
+    parent.1 seed.physicalCenter incoming first unusedSecondFlip p delta incremented X
+      (grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1)
+      hseedLocated hfirst hinletBoxes
+  have hbranchBoxes : ∀ a, a ∈ branches →
+      (cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) v.1)
+          (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom v.1 a))
+          (2 * (m + n + 1)) : Set (Cubic d)) ⊆
+        grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1 := by
+    intro a ha z hz
+    have haActive : a ∈ activeLaterSiteBranchDirections F fullHistory v incoming := by
+      simpa [branches] using ha
+    obtain ⟨_haReverse, w, hw, _hwFresh⟩ :=
+      mem_activeLaterSiteBranchDirections_iff.mp haActive
+    have hwNeighbor : (w : Cubic d) ∈ cubicClosedNeighborFinset v.1 := by
+      rw [mem_cubicClosedNeighborFinset_iff]
+      exact Or.inr ⟨a, hw⟩
+    rcases hz with hz | hz
+    · exact centeredBox_subset_grimmettMarstrandQueryInfluenceRegion hvNeighbor hz
+    · rw [hw] at hz
+      exact centeredBox_subset_grimmettMarstrandQueryInfluenceRegion hwNeighbor hz
+  have hbranches := LaterSiteRuntime.supportsWithin_branchPairs_of_coarseLocated hmn
+    seed.physicalCenter incoming first unusedSecondFlip p delta incremented X
+      (grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1) R2 2 v.1 branches
+        (Finset.nodup_toList _) hbase hcentral hclear hbranchBoxes (by omega)
+  have hdirections : siteDirectionOrder hd root fullHistory v =
+      [incoming, incoming] ++ branches.flatMap laterSiteBranchRestartPair := by
+    simp [siteDirectionOrder, activeLaterSiteDirectionOrder, incoming, branches]
+  change LaterSiteRuntime.SupportsWithin hmn seed.physicalCenter incoming first
+    unusedSecondFlip p delta incremented X
+      (grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1) R0 0
         (siteDirectionOrder hd root fullHistory v)
   rw [hdirections, LaterSiteRuntime.supportsWithin_append]
   refine ⟨hinlet, ?_⟩

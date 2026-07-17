@@ -345,6 +345,96 @@ noncomputable def runFrom {d m n : ℕ} (hmn : 2 * m ≤ n)
         (R.step hmn inletCenter incoming firstFlip secondFlip p delta incremented X a k)
         (k + 1) rest
 
+/-- Under a policy which spends at most `delta` per step, a finite runtime raises a uniform
+lower-threshold bound by at most its number of restart applications. -/
+theorem coe_runFrom_lower_le_add_length
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (hdelta : 0 ≤ delta)
+    (incremented : RootExtensionThresholdPolicy d)
+    (hpolicy : ∀ S a e,
+      (incremented S a e : ℝ) ≤ (S.lower e : ℝ) + delta)
+    (X : CubicEdge d → ℝ) (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d)) (B : ℝ)
+    (hlower : ∀ e, (R.source.lower e : ℝ) ≤ B)
+    (hp : (p : ℝ) ≤ B) (e : CubicEdge d) :
+    ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+      R offset directions).source.lower e : ℝ) ≤
+        B + (directions.length : ℝ) * delta := by
+  induction directions generalizing R offset B with
+  | nil => simpa using hlower e
+  | cons a rest ih =>
+      let Q := R.restartQuery inletCenter incoming firstFlip secondFlip a offset
+      let R' := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a offset
+      have hlower' : ∀ f, (R'.source.lower f : ℝ) ≤ B + delta := by
+        intro f
+        apply R.source.coe_next_lower_le_of_le
+        · intro g
+          exact (hlower g).trans (le_add_of_nonneg_right hdelta)
+        · intro g
+          exact (hpolicy R.source a g).trans (by linarith [hlower g])
+        · exact hp.trans (le_add_of_nonneg_right hdelta)
+      have hp' : (p : ℝ) ≤ B + delta :=
+        hp.trans (le_add_of_nonneg_right hdelta)
+      have hrest := ih R' (offset + 1) (B + delta) hlower' hp'
+      change
+        ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+          R' (offset + 1) rest).source.lower e : ℝ) ≤
+            B + ((a :: rest).length : ℝ) * delta
+      calc
+        ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+          R' (offset + 1) rest).source.lower e : ℝ) ≤
+            (B + delta) + (rest.length : ℝ) * delta := hrest
+        _ = B + ((a :: rest).length : ℝ) * delta := by
+          simp only [List.length_cons, Nat.cast_add, Nat.cast_one]
+          ring
+
+/-- Pointwise version of the runtime threshold estimate.  This is the form needed for global
+spatial accounting, because the number of earlier influencing coarse queries depends on the
+endpoint of the particular edge being bounded. -/
+theorem coe_runFrom_lower_le_add_length_at
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (hdelta : 0 ≤ delta)
+    (incremented : RootExtensionThresholdPolicy d)
+    (hpolicy : ∀ S a e,
+      (incremented S a e : ℝ) ≤ (S.lower e : ℝ) + delta)
+    (X : CubicEdge d → ℝ) (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d)) (B : ℝ)
+    (e : CubicEdge d) (hlower : (R.source.lower e : ℝ) ≤ B)
+    (hp : (p : ℝ) ≤ B) :
+    ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+      R offset directions).source.lower e : ℝ) ≤
+        B + (directions.length : ℝ) * delta := by
+  induction directions generalizing R offset B with
+  | nil => simpa using hlower
+  | cons a rest ih =>
+      let Q := R.restartQuery inletCenter incoming firstFlip secondFlip a offset
+      let R' := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a offset
+      have hlower' : (R'.source.lower e : ℝ) ≤ B + delta := by
+        apply R.source.coe_next_lower_le_of_le_at
+        · exact hlower.trans (le_add_of_nonneg_right hdelta)
+        · exact (hpolicy R.source a e).trans (by linarith)
+        · exact hp.trans (le_add_of_nonneg_right hdelta)
+      have hp' : (p : ℝ) ≤ B + delta :=
+        hp.trans (le_add_of_nonneg_right hdelta)
+      have hrest := ih R' (offset + 1) (B + delta) hlower' hp'
+      change
+        ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+          R' (offset + 1) rest).source.lower e : ℝ) ≤
+            B + ((a :: rest).length : ℝ) * delta
+      calc
+        ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+          R' (offset + 1) rest).source.lower e : ℝ) ≤
+            (B + delta) + (rest.length : ℝ) * delta := hrest
+        _ = B + ((a :: rest).length : ℝ) * delta := by
+          simp only [List.length_cons, Nat.cast_add, Nat.cast_one]
+          ring
+
 /-- Every literal restart support in a runtime schedule is confined to `A`.  This recursive
 encoding follows the executable runtime exactly and avoids arithmetic on flattened pair-list
 indices in later replay proofs. -/
@@ -362,6 +452,70 @@ def SupportsWithin {d m n : ℕ} (hmn : 2 * m ≤ n)
         SupportsWithin hmn inletCenter incoming firstFlip secondFlip p delta incremented X A
           (R.step hmn inletCenter incoming firstFlip secondFlip
             p delta incremented X a k) (k + 1) rest
+
+/-- If one endpoint of an edge lies outside a region containing every runtime support, the
+runtime never changes that edge's lower threshold. -/
+theorem runFrom_lower_eq_of_supportsWithin_of_endpoint_not_mem
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (A : Set (Cubic d))
+    (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d))
+    (hwithin : SupportsWithin hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X A R offset directions)
+    (e : CubicEdge d) (hout : e.1.out.1 ∉ A) :
+    (runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+      R offset directions).source.lower e = R.source.lower e := by
+  induction directions generalizing R offset with
+  | nil => rfl
+  | cons a rest ih =>
+      let Q := R.restartQuery inletCenter incoming firstFlip secondFlip a offset
+      let R' := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a offset
+      have heNotSupport : e ∉ Q.restartSupport m n := by
+        intro he
+        apply hout
+        apply hwithin.1
+        apply mem_cubicEdgeEndpointVertices_iff.mpr
+        refine ⟨e, he, ?_⟩
+        rw [← e.1.out_eq, Sym2.mem_iff]
+        simp
+      have hfirst : R'.source.lower e = R.source.lower e := by
+        exact R.source.next_lower_eq_of_not_mem_stageRegion
+          (Q.restartSupport m n) p (incremented R.source a) X heNotSupport
+      have hrest := ih R' (offset + 1) hwithin.2
+      change
+        (runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+          R' (offset + 1) rest).source.lower e = R.source.lower e
+      exact hrest.trans hfirst
+
+/-- Literal support confinement is inherited by every prefix of a runtime schedule. -/
+theorem supportsWithin_take
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (A : Set (Cubic d))
+    (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d))
+    (hwithin : SupportsWithin hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X A R offset directions) (k : ℕ) :
+    SupportsWithin hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X A R offset (directions.take k) := by
+  induction directions generalizing R offset k with
+  | nil =>
+      simp only [List.take_nil]
+      trivial
+  | cons a rest ih =>
+      cases k with
+      | zero =>
+          simp only [List.take_zero]
+          trivial
+      | succ k =>
+          rw [List.take_succ_cons]
+          exact ⟨hwithin.1, ih _ _ hwithin.2 k⟩
 
 @[simp]
 theorem supportsWithin_nil {d m n : ℕ} (hmn : 2 * m ≤ n)

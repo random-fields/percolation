@@ -1539,6 +1539,18 @@ Dated milestones and anti-library notes.
     The separate Chapter-8-enablement tracker measured this window as 1045 seconds and 443,988
     tokens.
 
+135. **Region-confined dynamic replay and exact root steering support (2026-07-17).** Added a
+    region-indexed open-connectivity invariant from individual source edges through root and
+    non-root runtime steps, reachable prefixes, and complete deterministic replay.  The root
+    phase now has a literal containment theorem in `4NF+B(2N)` whenever the corresponding coarse
+    root and signed neighbor are present, using the selected seed's retained boundary-layer
+    geometry rather than a deterministic surrogate.  Total later-site witnesses now retain the
+    same geometry even on failed restarts, and every framed query has an explicit deterministic
+    endpoint-support bound.  The integrated replay-connectivity build passes with standard
+    axioms only.  The final Theorem 7.2 certificate still requires the concrete non-root overlap
+    budget and the sharper non-root two-endpoint containment; a larger-radius shortcut is invalid
+    because changing the thickening radius also changes its dilation centers.
+
 ## Axiom Ledger
 
 Empty.

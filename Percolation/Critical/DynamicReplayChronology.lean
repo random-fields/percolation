@@ -24,36 +24,39 @@ variable {V : Type*} [DecidableEq V] [LinearOrder V]
 property.  The prefix formulation is the induction invariant needed when an input list contains
 junk vertex fields or continues after the frontier has become empty. -/
 theorem IsReplayTrace.append_chronologicalTraceFrom
-    (E : SiteExploration V) {prefix : List (V × Bool)}
-    (htrace : E.IsReplayTrace prefix) (input : List (V × Bool)) :
+    (E : SiteExploration V) {historyPrefix : List (V × Bool)}
+    (htrace : E.IsReplayTrace historyPrefix) (input : List (V × Bool)) :
     E.IsReplayTrace
-      (prefix ++ chronologicalTraceFrom E (E.replayState prefix) input) := by
-  induction input generalizing prefix with
-  | nil => simpa [chronologicalTraceFrom] using htrace
+      (historyPrefix ++ DynamicBlockHistoryReplay.chronologicalTraceFrom E
+        (E.replayState historyPrefix) input) := by
+  induction input generalizing historyPrefix with
+  | nil => simpa [DynamicBlockHistoryReplay.chronologicalTraceFrom] using htrace
   | cons entry rest ih =>
       rcases entry with ⟨ignored, accepted⟩
-      simp only [chronologicalTraceFrom]
+      simp only [DynamicBlockHistoryReplay.chronologicalTraceFrom]
       split
       next hnext =>
-        have hfrontier : (E.replayState prefix).frontier = ∅ :=
+        have hfrontier : (E.replayState historyPrefix).frontier = ∅ :=
           (SiteExploration.nextVertex_eq_none_iff _).mp hnext
         have hstep :
-            E.step (fun _ ↦ accepted) (E.replayState prefix) = E.replayState prefix :=
+            E.step (fun _ ↦ accepted) (E.replayState historyPrefix) =
+              E.replayState historyPrefix :=
           E.step_eq_self_of_frontier_eq_empty (fun _ ↦ accepted) hfrontier
         simpa [hstep] using ih htrace
       next v hnext =>
-        have htrace' : E.IsReplayTrace (prefix ++ [(v, accepted)]) :=
+        have htrace' : E.IsReplayTrace (historyPrefix ++ [(v, accepted)]) :=
           IsReplayTrace.snoc htrace hnext
         have hreplay :
-            E.replayState (prefix ++ [(v, accepted)]) =
-              E.step (fun _ ↦ accepted) (E.replayState prefix) := by
+            E.replayState (historyPrefix ++ [(v, accepted)]) =
+              E.step (fun _ ↦ accepted) (E.replayState historyPrefix) := by
           rw [E.replayState_append_singleton]
         simpa [List.append_assoc, hreplay] using ih htrace'
 
 /-- The chronological trace generated from the initial state is a genuine replay trace. -/
 theorem isReplayTrace_chronologicalTraceFrom
     (E : SiteExploration V) (input : List (V × Bool)) :
-    E.IsReplayTrace (chronologicalTraceFrom E E.initial input) := by
+    E.IsReplayTrace
+      (DynamicBlockHistoryReplay.chronologicalTraceFrom E E.initial input) := by
   simpa using
     (IsReplayTrace.append_chronologicalTraceFrom E (IsReplayTrace.nil (E := E)) input)
 

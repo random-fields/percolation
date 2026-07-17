@@ -365,6 +365,41 @@ noncomputable def concat
   edge_endpoints := A.concatenatedEdges_endpoints B hd
   connected := A.concatenated_connected B hB hd
 
+/-- Concatenate an arbitrary rooted animal with a bottom-left anchored animal.  The left
+animal need not itself be anchored: its original root remains the root of the output.  This is
+the root-preserving version of `concat` used in Grimmett's diameter-gluing argument (Lemma
+8.27). -/
+noncomputable def rootedConcat
+    (A : CubicBondAnimal d m) (B : CubicBondAnimal d n)
+    (hB : B.IsBottomLeftAnchored) (hd : 0 < d) :
+    CubicBondAnimal d (m + n) where
+  vertices := A.concatenatedVertices B hd
+  vertices_subset := A.concatenatedVertices_subset_metricBall B hB hd
+  edges := A.concatenatedEdges B hd
+  edges_subset := by
+    intro e he
+    apply cubicEdge_mem_cubicMetricBallEdges_of_out_mem
+    · exact A.concatenatedVertices_subset_metricBall B hB hd
+        (A.concatenatedEdges_endpoints B hd e he e.1.out.1 (Sym2.out_fst_mem e.1))
+    · exact A.concatenatedVertices_subset_metricBall B hB hd
+        (A.concatenatedEdges_endpoints B hd e he e.1.out.2 (Sym2.out_snd_mem e.1))
+  origin_mem := by
+    rw [concatenatedVertices, Finset.mem_union]
+    exact Or.inl A.origin_mem
+  vertices_card := A.concatenatedVertices_card B hB hd
+  edge_endpoints := A.concatenatedEdges_endpoints B hd
+  connected := A.concatenated_connected B hB hd
+
+@[simp] theorem rootedConcat_vertices
+    (A : CubicBondAnimal d m) (B : CubicBondAnimal d n)
+    (hB : B.IsBottomLeftAnchored) (hd : 0 < d) :
+    (A.rootedConcat B hB hd).vertices = A.concatenatedVertices B hd := rfl
+
+@[simp] theorem rootedConcat_edges
+    (A : CubicBondAnimal d m) (B : CubicBondAnimal d n)
+    (hB : B.IsBottomLeftAnchored) (hd : 0 < d) :
+    (A.rootedConcat B hB hd).edges = A.concatenatedEdges B hd := rfl
+
 theorem concat_isBottomLeftAnchored
     (A : CubicBondAnimal d m) (B : CubicBondAnimal d n)
     (hA : A.IsBottomLeftAnchored) (hB : B.IsBottomLeftAnchored) (hd : 0 < d) :
@@ -736,6 +771,54 @@ theorem concat_boundary_card
     Finset.card_singleton, A.placedBoundary_card B hd] at hcard
   omega
 
+/-- The root-preserving concatenation has the same boundary correction as the anchored
+concatenation: the joining edge removes one boundary edge from each factor. -/
+theorem rootedConcat_boundary_eq_union_erase_connector
+    (A : CubicBondAnimal d m) (B : CubicBondAnimal d n)
+    (hB : B.IsBottomLeftAnchored) (hd : 0 < d) :
+    (A.rootedConcat B hB hd).boundary =
+      (A.boundary ∪ A.placedBoundary B hd).erase (A.connectorEdge hd) := by
+  ext e
+  change e ∈ cubicIncidentEdges d (A.concatenatedVertices B hd) \
+      A.concatenatedEdges B hd ↔ _
+  rw [concatenatedVertices, cubicIncidentEdges_union, concatenatedEdges,
+    boundary, A.placedBoundary_eq_incident_sdiff B hd]
+  simp only [Finset.mem_sdiff, Finset.mem_union, Finset.mem_insert, Finset.mem_erase]
+  have hAIB := Finset.disjoint_left.mp (A.edges_disjoint_incident_placedVertices B hB hd)
+  have hBIA := Finset.disjoint_left.mp (A.placedEdges_disjoint_incident_vertices B hB hd)
+  constructor
+  · rintro ⟨heI | heI, heOcc⟩
+    · refine ⟨fun heC ↦ heOcc (Or.inl heC),
+        Or.inl ⟨heI, fun heA ↦ heOcc (Or.inr (Or.inl heA))⟩⟩
+    · refine ⟨fun heC ↦ heOcc (Or.inl heC),
+        Or.inr ⟨heI, fun heB ↦ heOcc (Or.inr (Or.inr heB))⟩⟩
+  · rintro ⟨heC, ⟨heI, heA⟩ | ⟨heI, heB⟩⟩
+    · refine ⟨Or.inl heI, ?_⟩
+      rintro (rfl | heA' | heB')
+      · exact heC rfl
+      · exact heA heA'
+      · exact hBIA heB' heI
+    · refine ⟨Or.inr heI, ?_⟩
+      rintro (rfl | heA' | heB')
+      · exact heC rfl
+      · exact hAIB heA' heI
+      · exact heB heB'
+
+theorem rootedConcat_boundary_card
+    (A : CubicBondAnimal d m) (B : CubicBondAnimal d n)
+    (hB : B.IsBottomLeftAnchored) (hd : 0 < d) :
+    (A.rootedConcat B hB hd).boundary.card =
+      A.boundary.card + B.boundary.card - 2 := by
+  rw [A.rootedConcat_boundary_eq_union_erase_connector B hB hd,
+    Finset.card_erase_of_mem (by
+      rw [Finset.mem_union]
+      exact Or.inl (A.connectorEdge_mem_boundary hd))]
+  have hcard := Finset.card_union_add_card_inter
+    A.boundary (A.placedBoundary B hd)
+  rw [A.boundary_inter_placedBoundary_eq_singleton B hB hd,
+    Finset.card_singleton, A.placedBoundary_card B hd] at hcard
+  omega
+
 theorem toLex_lt_of_mem_vertices_of_mem_placedVertices
     (A : CubicBondAnimal d m) (B : CubicBondAnimal d n)
     (hB : B.IsBottomLeftAnchored) (hd : 0 < d)
@@ -913,11 +996,36 @@ theorem anchoredConcat_injective (hd : 0 < d) :
   subst B'
   rfl
 
+/-- For fixed vertex counts, root-preserving concatenation is injective in both the rooted
+left animal and the anchored right animal. -/
+theorem rootedConcat_injective (hd : 0 < d) :
+    Function.Injective
+      (fun AB : CubicBondAnimal d m × Anchored d n ↦
+        AB.1.rootedConcat AB.2.1 AB.2.2 hd) := by
+  rintro ⟨A, ⟨B, hB⟩⟩ ⟨A', ⟨B', hB'⟩⟩ hconcat
+  have hCV : A.concatenatedVertices B hd = A'.concatenatedVertices B' hd :=
+    congrArg CubicBondAnimal.vertices hconcat
+  have hCE : A.concatenatedEdges B hd = A'.concatenatedEdges B' hd :=
+    congrArg CubicBondAnimal.edges hconcat
+  have hAV := A.vertices_eq_of_concatenatedVertices_eq A' B B' hB hB' hd hCV
+  have hAE := A.edges_eq_of_concatenatedEdges_eq_of_vertices_eq
+    A' B B' hB hB' hd hAV hCE
+  have hAA' := ext_data A A' hAV hAE
+  subst A'
+  have hPV := A.placedVertices_eq_of_concatenatedVertices_eq B B' hB hB' hd hCV
+  have hBV := A.vertices_eq_of_placedVertices_eq B B' hB hB' hd hPV
+  have hPE := A.placedEdges_eq_of_concatenatedEdges_eq B B' hB hB' hd hCE
+  have hBE := A.edges_eq_of_placedEdges_eq B B' hB hB' hd hPE
+  have hBB' := ext_data B B' hBV hBE
+  subst B'
+  rfl
+
 end CubicBondAnimal
 
 #print axioms CubicBondAnimal.bottomLeft_mem
 #print axioms CubicBondAnimal.coordinate_zero_nonneg_of_anchored
 #print axioms CubicBondAnimal.concat_boundary_card
 #print axioms CubicBondAnimal.anchoredConcat_injective
+#print axioms CubicBondAnimal.rootedConcat_injective
 
 end Percolation

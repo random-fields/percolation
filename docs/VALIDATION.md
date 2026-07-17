@@ -41,7 +41,25 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
   branches, their freshness factorization, and one common pair of Lemma 7.17 radii are now
   constructed with positive mass; composing the concrete `2d+1` non-root seed chain remains
   before Theorem 7.2. Theorems 7.2, 7.35, 7.61, and 7.68 remain targets.
-- **[target]** Burton-Keane uniqueness of the infinite cluster under standard hypotheses.
+- **[done]** Burton–Keane uniqueness of the infinite open cluster (Theorem 8.1), including the
+  compatible-three-partition bound, finite-energy elimination of finite multiplicities, and the
+  amenable trifurcation boundary contradiction.  Chapter 8 also has assumption-free proofs of
+  supercritical continuity, the finite radius and truncated-connectivity logarithmic rates, the
+  lower cluster-size tail, qualitative box crossing, and the exact local interior/boundary edge
+  local and aggregate edge balances and the pointwise finite-box density laws underlying 8.99.
+  A summable cylinder approximation and Borel–Cantelli replace the unavailable multiparameter
+  ergodic theorem and prove the ratio from the positive radius exponent.  Equation
+  8.43 and the full fresh-strip contraction 8.44--8.48 are proved.  For `d≥3` they give `a(p)>0`
+  from the single explicit Chapter 7 premise `SlabCriticalApproximation d`.
+  The higher-derivative animal-series argument in Theorem 8.92 is proved for every compact
+  interior interval from the exact uniform form of (8.91), including the `theta`, finite
+  susceptibility, and cluster-density identifications.
+  The compact-uniform form of (8.91), the full open-interval `C∞` conclusion of 8.92, equation
+  8.64, and Theorem 8.99 are now assembled for `d≥3` from that same visible slab premise.  The
+  remaining targets are the unconditional discharge of Chapter 7's premise, the separate planar
+  route, Theorem 8.65's omitted high-dimensional boundary topology, and the `p=1` endpoint of
+  8.92 based on (8.88).  See
+  `audit/topics/topic-08-supercritical-phase.md`.
 - **[target]** Planar duality for bond percolation on the square lattice.
 - **[target]** `p_c = 1/2` for bond percolation on `Z^2`.
 - **[target]** Random-cluster planar duality and the critical-point formula target

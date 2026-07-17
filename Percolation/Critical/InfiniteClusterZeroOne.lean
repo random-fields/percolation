@@ -121,7 +121,166 @@ theorem SimpleGraph.exists_infinite_reachable_deleteEdges_finset
       have hsingle := SimpleGraph.exists_infinite_reachable_deleteEdges_singleton ih e
       simpa [SimpleGraph.deleteEdges_deleteEdges, Set.union_comm] using hsingle
 
+/-- Rooted strengthening of finite-edge deletion: the surviving infinite component may be
+chosen inside the original component of the root. -/
+theorem SimpleGraph.exists_infinite_reachable_deleteEdges_finset_of_root
+    {r : V} (hinf : {y | G.Reachable r y}.Infinite) (E : Finset (Sym2 V)) :
+    ∃ x : V, G.Reachable r x ∧
+      {y | (G.deleteEdges (E : Set (Sym2 V))).Reachable x y}.Infinite := by
+  classical
+  induction E using Finset.induction_on with
+  | empty =>
+      refine ⟨r, ⟨SimpleGraph.Walk.nil⟩, ?_⟩
+      simpa [SimpleGraph.deleteEdges_empty] using hinf
+  | @insert e E he ih =>
+      obtain ⟨x, hrx, hxinf⟩ := ih
+      induction e using Sym2.ind with
+      | _ u v =>
+          let H := G.deleteEdges (E : Set (Sym2 V))
+          let X : Set V := {y | (H.deleteEdges {s(u, v)}).Reachable x y}
+          let U : Set V := {y | H.Reachable x y ∧
+            (H.deleteEdges {s(u, v)}).Reachable u y}
+          let W : Set V := {y | H.Reachable x y ∧
+            (H.deleteEdges {s(u, v)}).Reachable v y}
+          have hcover : {y | H.Reachable x y} ⊆ X ∪ U ∪ W := by
+            intro y hy
+            obtain ⟨P, hP⟩ := hy.symm.exists_isPath
+            by_cases heP : s(u, v) ∈ P.edges
+            · have huP : u ∈ P.support := P.fst_mem_support_of_mem_edges heP
+              have hvP : v ∈ P.support := P.snd_mem_support_of_mem_edges heP
+              have huv : u ≠ v :=
+                ((SimpleGraph.mem_edgeSet H).mp (P.edges_subset_edgeSet heP)).ne
+              let Qu := P.takeUntil u huP
+              by_cases heQu : s(u, v) ∈ Qu.edges
+              · let Qv := P.takeUntil v hvP
+                have hvQu : v ∈ Qu.support := Qu.snd_mem_support_of_mem_edges heQu
+                have huNotQv : u ∉ Qv.support := by
+                  simpa [Qv] using
+                    (P.notMem_support_takeUntil_support_takeUntil_subset huv.symm huP hvQu)
+                have heNotQv : s(u, v) ∉ Qv.edges := by
+                  intro heQv
+                  exact huNotQv (Qv.fst_mem_support_of_mem_edges heQv)
+                exact Or.inr ⟨hy,
+                  (SimpleGraph.reachable_deleteEdges_iff_exists_walk.mpr
+                    ⟨Qv, heNotQv⟩).symm⟩
+              · exact Or.inl (Or.inr ⟨hy,
+                  (SimpleGraph.reachable_deleteEdges_iff_exists_walk.mpr
+                    ⟨Qu, heQu⟩).symm⟩)
+            · exact Or.inl (Or.inl
+                (SimpleGraph.reachable_deleteEdges_iff_exists_walk.mpr ⟨P, heP⟩).symm)
+          by_cases hX : X.Infinite
+          · refine ⟨x, hrx, ?_⟩
+            simpa [H, X, SimpleGraph.deleteEdges_deleteEdges, Set.union_comm] using hX
+          · by_cases hU : U.Infinite
+            · obtain ⟨y, hyH, huy⟩ := hU.nonempty
+              have hxuG : G.Reachable x u :=
+                (hyH.trans (huy.symm.mono (SimpleGraph.deleteEdges_le _))).mono
+                  (by simp [H])
+              refine ⟨u, hrx.trans hxuG, ?_⟩
+              have hraw : {y | (H.deleteEdges {s(u, v)}).Reachable u y}.Infinite :=
+                hU.mono fun _ hy ↦ hy.2
+              simpa [H, SimpleGraph.deleteEdges_deleteEdges, Set.union_comm] using hraw
+            · by_cases hW : W.Infinite
+              · obtain ⟨y, hyH, hvy⟩ := hW.nonempty
+                have hxvG : G.Reachable x v :=
+                  (hyH.trans (hvy.symm.mono (SimpleGraph.deleteEdges_le _))).mono
+                    (by simp [H])
+                refine ⟨v, hrx.trans hxvG, ?_⟩
+                have hraw : {y | (H.deleteEdges {s(u, v)}).Reachable v y}.Infinite :=
+                  hW.mono fun _ hy ↦ hy.2
+                simpa [H, SimpleGraph.deleteEdges_deleteEdges, Set.union_comm] using hraw
+              · have hfinite : (X ∪ U ∪ W).Finite :=
+                  ((Set.not_infinite.mp hX).union (Set.not_infinite.mp hU)).union
+                    (Set.not_infinite.mp hW)
+                exact False.elim (hxinf (hfinite.subset hcover))
+
 end DeleteOneEdge
+
+section InfiniteComponentComparison
+
+variable {V : Type*} {G G' : SimpleGraph V}
+
+/-- Infinite connected components of an arbitrary graph, as a subtype. -/
+def InfiniteGraphComponent (G : SimpleGraph V) :=
+  {C : G.ConnectedComponent // C.supp.Infinite}
+
+/-- Inclusion of graphs sends an infinite component into an infinite component. -/
+noncomputable def InfiniteGraphComponent.mapOfLE (h : G ≤ G') :
+    InfiniteGraphComponent G → InfiniteGraphComponent G' := fun C ↦ by
+  let C' := C.1.map (SimpleGraph.Hom.ofLE h)
+  refine ⟨C', ?_⟩
+  apply C.2.mono
+  intro x hx
+  rw [SimpleGraph.ConnectedComponent.mem_supp_iff] at hx ⊢
+  simpa [C'] using congrArg
+    (SimpleGraph.ConnectedComponent.map (SimpleGraph.Hom.ofLE h)) hx
+
+/-- If the smaller graph is obtained by deleting finitely many edges, every infinite component
+of the larger graph contains an infinite component of the smaller graph. -/
+theorem InfiniteGraphComponent.mapOfLE_surjective_of_eq_deleteEdges
+    (G' : SimpleGraph V) (E : Finset (Sym2 V)) :
+    Function.Surjective
+      (InfiniteGraphComponent.mapOfLE
+        (G := G'.deleteEdges (E : Set (Sym2 V))) (G' := G')
+        (SimpleGraph.deleteEdges_le _)) := by
+  intro C'
+  obtain ⟨x, hx⟩ := C'.2.nonempty
+  have hxInf : {y | G'.Reachable x y}.Infinite := by
+    rw [show {y | G'.Reachable x y} = C'.1.supp by
+      ext y
+      rw [SimpleGraph.ConnectedComponent.mem_supp_iff]
+      have hxComponent : G'.connectedComponentMk x = C'.1 :=
+        C'.1.mem_supp_iff x |>.mp hx
+      rw [← hxComponent, SimpleGraph.ConnectedComponent.eq]
+      exact SimpleGraph.reachable_comm]
+    exact C'.2
+  obtain ⟨z, hxz, hzInf⟩ :=
+    SimpleGraph.exists_infinite_reachable_deleteEdges_finset_of_root hxInf E
+  let C : InfiniteGraphComponent (G'.deleteEdges (E : Set (Sym2 V))) :=
+    ⟨(G'.deleteEdges (E : Set (Sym2 V))).connectedComponentMk z, by
+      rw [show ((G'.deleteEdges (E : Set (Sym2 V))).connectedComponentMk z).supp =
+          {y | (G'.deleteEdges (E : Set (Sym2 V))).Reachable z y} by
+        ext y
+        rw [SimpleGraph.ConnectedComponent.mem_supp_iff,
+          SimpleGraph.ConnectedComponent.eq]
+        exact SimpleGraph.reachable_comm]
+      exact hzInf⟩
+  refine ⟨C, Subtype.ext ?_⟩
+  change G'.connectedComponentMk z = C'.1
+  have hxComponent : G'.connectedComponentMk x = C'.1 := C'.1.mem_supp_iff x |>.mp hx
+  exact (SimpleGraph.ConnectedComponent.sound hxz).symm.trans hxComponent
+
+theorem encard_infiniteGraphComponent_le_of_deleteEdges
+    (G' : SimpleGraph V) (E : Finset (Sym2 V)) :
+    ENat.card (InfiniteGraphComponent G') ≤
+      ENat.card (InfiniteGraphComponent (G'.deleteEdges (E : Set (Sym2 V)))) := by
+  classical
+  have hsurj := InfiniteGraphComponent.mapOfLE_surjective_of_eq_deleteEdges G' E
+  obtain ⟨g, hg⟩ := hsurj.hasRightInverse
+  exact ENat.card_le_card_of_injective hg.injective
+
+theorem encard_infiniteGraphComponent_lt_of_deleteEdges_of_not_injective
+    (G' : SimpleGraph V) (E : Finset (Sym2 V))
+    [Finite (InfiniteGraphComponent (G'.deleteEdges (E : Set (Sym2 V))))]
+    (hnotinj : ¬Function.Injective
+      (InfiniteGraphComponent.mapOfLE
+        (G := G'.deleteEdges (E : Set (Sym2 V))) (G' := G')
+        (SimpleGraph.deleteEdges_le _))) :
+    ENat.card (InfiniteGraphComponent G') <
+      ENat.card (InfiniteGraphComponent (G'.deleteEdges (E : Set (Sym2 V)))) := by
+  let f := InfiniteGraphComponent.mapOfLE
+    (G := G'.deleteEdges (E : Set (Sym2 V))) (G' := G')
+    (SimpleGraph.deleteEdges_le _)
+  have hsurj : Function.Surjective f :=
+    InfiniteGraphComponent.mapOfLE_surjective_of_eq_deleteEdges G' E
+  letI : Fintype (InfiniteGraphComponent (G'.deleteEdges (E : Set (Sym2 V)))) :=
+    Fintype.ofFinite _
+  letI : Finite (InfiniteGraphComponent G') := Finite.of_surjective f hsurj
+  letI : Fintype (InfiniteGraphComponent G') := Fintype.ofFinite _
+  rw [ENat.card_eq_coe_fintype_card, ENat.card_eq_coe_fintype_card, ENat.coe_lt_coe]
+  exact Fintype.card_lt_of_surjective_not_injective f hsurj hnotinj
+
+end InfiniteComponentComparison
 
 section OpenGraphFiniteClosing
 
@@ -168,6 +327,48 @@ theorem cubicOpenGraph_spliceOn_empty (E : Finset (CubicEdge d))
     exact Or.inr ⟨hopen, by
       exact (mem_underlyingCubicEdges_iff
         ((SimpleGraph.mem_edgeSet (cubicGraph d)).mpr hxy)).not.mp hnot⟩
+
+/-- Closing `E` after first opening `E` simply recovers the configuration with `E` closed. -/
+theorem cubicOpenGraph_spliceOn_empty_eq_deleteEdges_spliceOn_all
+    (E : Finset (CubicEdge d)) (omega : EdgeConfiguration d) :
+    cubicOpenGraph d (spliceOn E ∅ omega) =
+      (cubicOpenGraph d (spliceOn E E omega)).deleteEdges
+        (underlyingCubicEdges E : Set (Sym2 (Cubic d))) := by
+  calc
+    cubicOpenGraph d (spliceOn E ∅ omega) =
+        cubicOpenGraph d (spliceOn E ∅ (spliceOn E E omega)) := by
+      apply congrArg (cubicOpenGraph d)
+      ext e
+      by_cases he : e ∈ E
+      · simp [mem_spliceOn, he]
+      · simp [mem_spliceOn, he]
+    _ = (cubicOpenGraph d (spliceOn E E omega)).deleteEdges
+        (underlyingCubicEdges E : Set (Sym2 (Cubic d))) :=
+      cubicOpenGraph_spliceOn_empty E (spliceOn E E omega)
+
+/-- A prescribed trace `s ⊆ E` is obtained from the all-open trace by deleting precisely
+the edges of `E \ s`. -/
+theorem cubicOpenGraph_spliceOn_eq_deleteEdges_spliceOn_all
+    (E s : Finset (CubicEdge d)) (hs : s ⊆ E) (omega : EdgeConfiguration d) :
+    cubicOpenGraph d (spliceOn E s omega) =
+      (cubicOpenGraph d (spliceOn E E omega)).deleteEdges
+        (underlyingCubicEdges (E \ s) : Set (Sym2 (Cubic d))) := by
+  calc
+    cubicOpenGraph d (spliceOn E s omega) =
+        cubicOpenGraph d (spliceOn (E \ s) ∅ (spliceOn E E omega)) := by
+      apply congrArg (cubicOpenGraph d)
+      ext e
+      by_cases hes : e ∈ s
+      · have heE : e ∈ E := hs hes
+        simp [mem_spliceOn, hes, heE]
+      · by_cases heE : e ∈ E
+        · have heDiff : e ∈ E \ s := Finset.mem_sdiff.mpr ⟨heE, hes⟩
+          simp [mem_spliceOn, hes, heE, heDiff]
+        · have heDiff : e ∉ E \ s := by simp [heE]
+          simp [mem_spliceOn, hes, heE, heDiff]
+    _ = (cubicOpenGraph d (spliceOn E E omega)).deleteEdges
+        (underlyingCubicEdges (E \ s) : Set (Sym2 (Cubic d))) :=
+      cubicOpenGraph_spliceOn_empty (E \ s) (spliceOn E E omega)
 
 /-- Global infinitude is equivalently infinitude of a reachability class in the random open
 graph. -/

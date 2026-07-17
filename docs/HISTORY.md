@@ -1581,6 +1581,111 @@ Dated milestones and anti-library notes.
     thereby concrete adaptive-answer measurability), not final-threshold accounting. No telemetry
     was reconstructed for this continuation.
 
+135. **Chapter 8 uniqueness, continuity, and qualitative geometry (2026-07-16).**  Formalized
+    the compatible-three-partition lemma and the complete Burton–Keane proof that positive
+    percolation probability implies almost-sure uniqueness of the infinite open cluster.
+    Finite multiplicities are eliminated by measurable finite-energy splicing; infinite
+    multiplicity produces trifurcations, whose exact finite-box incidence count is bounded by
+    the boundary.  The common-uniform coupling and uniqueness then prove left continuity of
+    `theta` above criticality, completing Theorem 8.8.  The same uniqueness/coalescence layer,
+    together with face FKG, proves the qualitative left-right crossing limit of Theorem 8.97.
+
+136. **Chapter 8 finite radius, truncated connectivity, and lower size tail (2026-07-16).**
+    Added finite coordinate-box radius and diameter events with exact measurability and positive
+    finite-energy witnesses.  A source-faithful shifted gluing inequality and a generic corrected
+    quasi-subadditive limit theorem prove Theorem 8.18, including the polynomial-times-exponential
+    bound.  Separate even and odd animal splices prove equations 8.59 and 8.60 with their exact
+    weights and denominator, and a parity squeeze proves the full Theorem 8.53.  Independently,
+    the density-forcing, selected-scale, bounded-radix, and animal-concatenation chain proves
+    Lemmas 8.68/8.72/8.82 and the all-size stretched-exponential lower bound of Theorem 8.61.
+
+137. **Chapter 8 finite-cluster tail checkpoint and dependency audit (2026-07-16).**  Proved the
+    exact volume-to-coordinate-radius reduction and equation 8.64 from the positivity conclusion
+    `0 < a(p)`, including `n=0`, small-size, and vanishing-tail cases.  Production builds of the
+    new rate, gluing, and tail modules pass, and `Chapter8AxiomAudit` reports only `propext`,
+    `Classical.choice`, and `Quot.sound`.  The new comparator card records the genuine remaining
+    boundary: Theorem 8.21 requires the still-unfinished unconditional Chapter 7 slab
+    approximation; Theorem 8.65 and the smoothness theorem 8.92 transitively require that
+    renormalization/topological input; Theorem 8.99 requires a multiparameter pointwise ergodic
+    theorem not present in Mathlib or the repository.  No theorem parameter or Chapter 11
+    external axiom is presented as an unconditional Chapter 8 result.
+
+138. **Chapter 8 infinite-cluster edge balance (2026-07-16).**  Defined the off-edge infinite
+    continuation event and proved that its open and closed trace extensions have probabilities
+    `p q_e` and `(1-p) q_e`.  A one-edge deletion lemma identifies these events exactly with
+    Grimmett's open edges whose two endpoints lie in the infinite cluster and closed edges having
+    an infinite-cluster endpoint.  This yields an endpoint-safe cross-multiplied version of the
+    local balance behind Theorem 8.99.  The full almost-sure box-density ratio remains explicitly
+    open because Mathlib and the repository lack the required multiparameter pointwise ergodic
+    theorem.  The new transitive axiom audit again reports only standard Lean axioms.
+
+139. **Chapter 8 conditional edge-density ratio assembly (2026-07-16).**  Added the exact
+    finite-box counts for infinite-cluster interior and boundary edges, their directional
+    infinite-volume intensities, the summed balance identity, and a strict positivity theorem
+    for the interior intensity when `p theta(p)>0`.  The complete finite-box ratio conclusion of
+    Theorem 8.99 now follows from the single specialized proposition
+    `InfiniteClusterEdgeDensityLimits`; this isolates precisely the missing multiparameter
+    pointwise ergodic theorem and leaves no other probabilistic or algebraic step hidden.  The
+    strict production build and expanded transitive axiom audit pass with only `propext`,
+    `Classical.choice`, and `Quot.sound`.
+
+140. **Chapter 8 signed-hyperplane radius reduction (2026-07-16).**  Defined the exact finite
+    cluster event of hitting a signed coordinate hyperplane, proved its measurability, and used a
+    first-hit path to cover the finite box-radius event by the `2d` signed events.  Coordinate
+    permutations and reflections preserve their Bernoulli probabilities, yielding Grimmett's
+    exact factor `2d` in equation 8.43.  The logarithmic radius-rate limit then proves
+    `a(p) ≥ γ > 0` from the source exponential hyperplane estimate.  The remaining content of
+    Theorem 8.21 is now isolated to the strip-exploration contraction 8.44–8.48 after the
+    unconditional Chapter 7 slab approximation.  Strict builds and the expanded transitive axiom
+    audit pass with only standard Lean axioms.
+
+141. **Chapter 8 pointwise infinite-cluster edge densities (2026-07-16).**  Replaced the former
+    multiparameter-ergodic placeholder in Theorem 8.99 by a proved finite-cylinder strong law.
+    Exponentially small finite-cluster continuation errors are summable along square boxes, so
+    Borel–Cantelli transfers independent finite-cylinder averages to the infinite-cluster edge
+    fields.  Exact oriented-edge enumeration, a vanishing surface correction, and monotone
+    square-to-all-radius interpolation yield both interior and boundary edge-density limits.
+    The ratio theorem is therefore proved conditional only on the positive finite-cluster radius
+    exponent, exactly the remaining conclusion of Theorem 8.21.  The measured theorem and shared
+    infrastructure window was 42m40s and 907,656 tokens.  Strict builds and the transitive audit
+    pass with only `propext`, `Classical.choice`, and `Quot.sound`.
+
+142. **Chapter 8 supercritical smoothness analytic core (2026-07-16).**  Formalized the
+    higher-derivative argument in Theorem 8.92.  Exact Leibniz formulas give an explicit
+    polynomial derivative cost for every rooted animal; after summing within a fixed size, the
+    majorant is expressed using the physical probability `Pₚ(|C|=n)`.  A general theorem proves
+    summability of every polynomial times `exp(-eta*n^alpha)`, and termwise differentiation then
+    gives `C∞` exact-size series with arbitrary polynomial weights.  The instantiated weights
+    `1`, `n`, and `1/n` yield the animal extensions of `theta`, finite susceptibility, and cluster
+    density, together with their physical identifications.  The theorem assumes the exact
+    compact-uniform form of (8.91); deriving it unconditionally remains tied to Theorem 8.21, and
+    the `p=1` endpoint remains tied to (8.88).  The measured analytic-core window was 38m40s and
+    503,373 tokens.  Strict compilation and the expanded transitive audit pass with only standard
+    Lean axioms.
+
+143. **Chapter 8 aggregate-build integration (2026-07-16).**  Renamed Chapter 11's old
+    dimension-two helper to `squareTruncatedTwoPointConnectivity`, avoiding a namespace collision
+    with Chapter 8's genuine dimension-uniform `truncatedTwoPointConnectivity`.  The source-facing
+    Chapter 11 limit theorem keeps its existing name and now refers to the square-specific helper.
+    The complete `lake build` succeeds (8,750 jobs), and the Chapter 8 transitive audit still
+    reports only `propext`, `Classical.choice`, and `Quot.sound`.
+
+144. **Chapter 8 strip contraction and compact-uniform consequences (2026-07-16).**  Formalized
+    equations 8.44--8.48 without conditional-probability division: arbitrary-coordinate support
+    and product independence, canonical first strip entrances determined by strict-past bonds,
+    exact avoidance probability, one-step factorization, and recursively iterated histories give
+    `P(G_n) ≤ (1-θ_strip)^(n/k)`.  An endpoint-safe logarithmic rate absorbs quotient rounding and
+    all small radii, proving `a(p)>0` from a supercritical coordinate strip.  For `d≥3`, slab
+    inclusion and coordinate permutation reduce the only upstream premise to the named
+    `SlabCriticalApproximation d`.  Rooted region monotonicity then fixes one strip at a compact
+    interval's left endpoint and proves the uniform form of (8.91), closing the former uniformity
+    gap in the interior of Theorem 8.92 and assembling (8.64) and 8.99 from the same Chapter 7
+    premise.  The measured strip window was 29m32s/438,557 tokens and the uniform-consequence
+    window 11m52s/559,110 tokens.  Strict builds and the transitive audit use only standard axioms.
+    The final Chapter 8 audit build succeeds in 8,603 jobs, the repository-wide build succeeds in
+    8,757 jobs, and the measured verification/documentation closeout window was
+    22m34s/234,108 tokens.
+
 ## Axiom Ledger
 
 Empty.

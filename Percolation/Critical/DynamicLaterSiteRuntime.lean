@@ -178,6 +178,32 @@ noncomputable def selectedWitness {d m n : ℕ} (hmn : 2 * m ≤ n)
     (R.slotTransverseFlip incoming firstFlip secondFlip a k) p delta X).getD
       (defaultRestartSeedWitness a.1 hmn)
 
+/-- Even on a failed restart, the total runtime's default witness has the same geometric
+box-in-layer certificate as a genuine mixed witness.  Consequently every later slot has a
+uniform deterministic displacement bound, independently of success. -/
+theorem selectedWitness_seedBoxWithinBoundaryLayer
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (X : CubicEdge d → ℝ)
+    (a : CubicDirection d) (k : ℕ) :
+    SeedBoxWithinBoundaryLayer d a.1 m n
+      (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
+        p delta X a k).seedCenter.1 := by
+  classical
+  unfold selectedWitness SourceFiniteEdgeRevealState.selectedMixedWitness
+    selectedMixedRestartSeedWitness
+  split
+  next hnonempty =>
+    simp only [Option.getD_some]
+    exact (mem_mixedRestartSeedWitnesses_iff.mp hnonempty.choose_spec).1.2.2.1
+  next _hempty =>
+    simp only [Option.getD_none]
+    unfold defaultRestartSeedWitness
+    dsimp only
+    exact canonicalBoundarySeedBoxWithinBoundaryLayer a.1 hmn
+      (canonicalRestartBoundaryPoint_mem_seededBoundaryQuadrant a.1)
+
 /-- Physical target center selected at a slot. -/
 noncomputable def selectedTarget {d m n : ℕ} (hmn : 2 * m ≤ n)
     (R : LaterSiteRuntime d) (inletCenter : Cubic d)
@@ -187,6 +213,32 @@ noncomputable def selectedTarget {d m n : ℕ} (hmn : 2 * m ≤ n)
   cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
     (R.slotTransverseFlip incoming firstFlip secondFlip a k)
     (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip p delta X a k).seedCenter.1
+
+/-- A total selected target is at `L∞` distance at most `2(m+n+1)` from the slot center. -/
+theorem selectedTarget_mem_centeredBox
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (X : CubicEdge d → ℝ)
+    (a : CubicDirection d) (k : ℕ) :
+    R.selectedTarget hmn inletCenter incoming firstFlip secondFlip p delta X a k ∈
+      cubicMetricBox d (R.slotCenterFor inletCenter a k) (2 * (m + n + 1)) := by
+  let W := R.selectedWitness hmn inletCenter incoming firstFlip secondFlip p delta X a k
+  have hcenterBox : W.seedCenter.1 ∈ cubicMetricBox d W.seedCenter.1 m := by
+    rw [mem_cubicMetricBox]
+    intro j
+    omega
+  have hcenterLayer : W.seedCenter.1 ∈ seededBoundaryLayerRegion d a.1 m n :=
+    R.selectedWitness_seedBoxWithinBoundaryLayer hmn inletCenter incoming firstFlip
+      secondFlip p delta X a k W.seedCenter.1 hcenterBox
+  have hreference : W.seedCenter.1 ∈
+      cubicMetricBox d cubicOrigin (2 * (m + n + 1)) :=
+    positiveSeededRestartRegion_subset_doubleScaleBox d a.1 m n (Or.inr hcenterLayer)
+  have hframed := (cubicRestartFrameIso_mem_cubicMetricBox_iff
+    (R.slotCenterFor inletCenter a k) a
+    (R.slotTransverseFlip incoming firstFlip secondFlip a k)
+    cubicOrigin W.seedCenter.1).2 hreference
+  simpa [selectedTarget, W] using hframed
 
 /-- One total source step.  Only branch slots (`k≥2`) publish outgoing anchors. -/
 noncomputable def step {d m n : ℕ} (hmn : 2 * m ≤ n)

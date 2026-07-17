@@ -181,6 +181,50 @@ theorem rooted_source_rootedOpenWithin_of_prefixBounds
     pFinal delta incremented X hcompletion hpFinal hradialFinal hboxA hradialA hbounded
       hstageA
 
+/-- The root phase is automatically confined to the literal Grimmett--Marstrand thickening
+when the coarse region contains the origin and all of its signed nearest neighbours.  This is
+the exact specialization used for the planar coarse region after adjoining finitely many root
+neighbours; it avoids requiring the source-facing construction to explore a direction outside
+its coarse region. -/
+theorem rooted_source_rootedOpenWithin_thickening_of_neighbors
+    {d m n : ℕ} {V : Type*} [DecidableEq V] {F : Set (Cubic d)}
+    (W : RootRadialSeedProfile d m n) (root : V)
+    (p radialIncremented pFinal : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hcompletion : X ∈ W.mixedExtensionPrefixSuccessEvent p radialIncremented
+      delta incremented (rootExtensionDirectionOrder d).length)
+    (hpFinal : (p : ℝ) ≤ (pFinal : ℝ))
+    (hradialFinal : (radialIncremented : ℝ) ≤ (pFinal : ℝ))
+    (hrootF : cubicOrigin ∈ F)
+    (hneighborsF : ∀ a : CubicDirection d, cubicStepFrom cubicOrigin a ∈ F)
+    (hbounded : W.FinalThresholdBoundedOnPrefixes p pFinal incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      (rootExtensionDirectionOrder d)) :
+    (rooted W root p radialIncremented delta incremented X).source.RootedOpenWithin
+      (thresholdConfiguration pFinal X)
+      (grimmettMarstrandThickening d F (m + n + 1)) cubicOrigin := by
+  apply rooted_source_rootedOpenWithin_of_prefixBounds W root p radialIncremented pFinal
+    delta incremented X hcompletion hpFinal hradialFinal
+  · apply grimmettMarstrandCenteredBox_subset_thickening
+      (N := m + n + 1) (R := m) hrootF
+    omega
+  · exact rootRadialEdgeSupport_endpointVertices_subset_thickening hrootF
+  · exact hbounded
+  · intro j hj
+    dsimp only
+    let a := (rootExtensionDirectionOrder d)[j]
+    let S := W.runPostRadialExtensions p incremented X
+      (rootPostRadialSourceEdgeState d m n p radialIncremented X)
+      ((rootExtensionDirectionOrder d).take j)
+    have hgeom : SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1 :=
+      (hcompletion.1.2 a).1.2.2.1
+    intro z hz
+    rcases W.endpointVertices_postRadialQuery_subset_endpointBoxes_of_geometry
+        a S hgeom hz with hz | hz
+    · exact grimmettMarstrandCenteredBox_subset_thickening hrootF le_rfl hz
+    · exact grimmettMarstrandCenteredBox_subset_thickening (hneighborsF a) le_rfl hz
+
 end DynamicBlockHistoryState
 
 namespace DynamicBlockHistoryReplay

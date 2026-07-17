@@ -22,6 +22,51 @@ def positiveSeededRestartRegion
   (cubicMetricBox d cubicOrigin n : Set (Cubic d)) ∪
     seededBoundaryLayerRegion d i m n
 
+/-- A reference restart reads only a uniformly bounded box.  The slightly generous radius is
+useful for total-runtime displacement estimates; exact thickening containment uses the sharper
+two-endpoint-box lemmas below. -/
+theorem positiveSeededRestartRegion_subset_metricBox
+    (d : ℕ) (i : Fin d) (m n : ℕ) :
+    positiveSeededRestartRegion d i m n ⊆
+      (cubicMetricBox d cubicOrigin (n + 2 * m + 1) : Set (Cubic d)) := by
+  intro z hz
+  rcases hz with hz | hz
+  · change z ∈ cubicMetricBox d cubicOrigin n at hz
+    change z ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1)
+    rw [mem_cubicMetricBox] at hz ⊢
+    intro j
+    have hj := hz j
+    omega
+  · obtain ⟨r, hr1, hr2, y, hy, rfl⟩ := hz
+    change cubicTranslateAlongCoordinate y i r ∈
+      cubicMetricBox d cubicOrigin (n + 2 * m + 1)
+    rw [mem_cubicMetricBox]
+    intro j
+    have hyFace := mem_cubicBoxFace.mp
+      (mem_seededBoundaryQuadrant_iff.mp hy).1
+    by_cases hji : j = i
+    · subst j
+      have hyi := hyFace.1
+      simp [cubicTranslateAlongCoordinate, cubicOrigin] at hyi ⊢
+      omega
+    · have hyj := hyFace.2 j hji
+      simp [cubicTranslateAlongCoordinate_of_ne, hji, cubicOrigin] at hyj ⊢
+      omega
+
+/-- The convenient `2N` form, where `N=m+n+1`. -/
+theorem positiveSeededRestartRegion_subset_doubleScaleBox
+    (d : ℕ) (i : Fin d) (m n : ℕ) :
+    positiveSeededRestartRegion d i m n ⊆
+      (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) := by
+  intro z hz
+  have hz' := positiveSeededRestartRegion_subset_metricBox d i m n hz
+  change z ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1) at hz'
+  change z ∈ cubicMetricBox d cubicOrigin (2 * (m + n + 1))
+  rw [mem_cubicMetricBox] at hz' ⊢
+  intro j
+  have hj := hz' j
+  omega
+
 /-- Every vertex incident to a coordinate read by the exact reference restart belongs to the
 reference exploratory box or to its layered target. -/
 theorem cubicEdgeEndpointVertices_restartEventSupport_subset_positiveSeededRestartRegion
@@ -94,6 +139,23 @@ theorem cubicEdgeEndpointVertices_framedRestartSupport_subset_frameRegion
     cubicEdgeEndpointVertices_restartEventSupport_subset_positiveSeededRestartRegion
       d a.1 m n R (mem_cubicEdgeEndpointVertices_iff.mpr ⟨f, hf, hw⟩), rfl⟩
 
+/-- Every endpoint queried by a framed restart lies in the radius-`2(m+n+1)` box about its
+physical frame center. -/
+theorem cubicEdgeEndpointVertices_framedRestartSupport_subset_centeredBox
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) (R : Finset (Cubic d)) :
+    (cubicEdgeEndpointVertices
+        (framedRestartSupport center a transverseFlip m n R) : Set (Cubic d)) ⊆
+      (cubicMetricBox d center (2 * (m + n + 1)) : Set (Cubic d)) := by
+  intro z hz
+  obtain ⟨w, hw, rfl⟩ :=
+    cubicEdgeEndpointVertices_framedRestartSupport_subset_frameRegion
+      center a transverseFlip R hz
+  have hwBox := positiveSeededRestartRegion_subset_doubleScaleBox d a.1 m n hw
+  apply (cubicRestartFrameIso_mem_cubicMetricBox_iff
+    center a transverseFlip cubicOrigin w).2 at hwBox
+  simpa only [cubicRestartFrameIso_origin] using hwBox
+
 /-- Query-facing form of endpoint-support containment. -/
 theorem FramedRestartQuery.endpointVertices_restartSupport_subset_frameRegion
     {d m n : ℕ} (Q : FramedRestartQuery d) :
@@ -102,6 +164,14 @@ theorem FramedRestartQuery.endpointVertices_restartSupport_subset_frameRegion
         (cubicRestartFrameIso Q.center Q.direction Q.transverseFlip)
         (positiveSeededRestartRegion d Q.direction.1 m n) := by
   exact cubicEdgeEndpointVertices_framedRestartSupport_subset_frameRegion
+    Q.center Q.direction Q.transverseFlip Q.region
+
+/-- Query-facing centered-box bound. -/
+theorem FramedRestartQuery.endpointVertices_restartSupport_subset_centeredBox
+    {d m n : ℕ} (Q : FramedRestartQuery d) :
+    (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆
+      (cubicMetricBox d Q.center (2 * (m + n + 1)) : Set (Cubic d)) := by
+  exact cubicEdgeEndpointVertices_framedRestartSupport_subset_centeredBox
     Q.center Q.direction Q.transverseFlip Q.region
 
 /-- The local frame of the post-radial extension selected in signed direction `a`. -/
@@ -528,12 +598,13 @@ theorem cubicRestartFrameIso_positiveSeededRestartRegion_subset_steered
     exact cubicRestartFrameIso_seededBoundaryLayerRegion_subset_steered i
       ⟨w, hw, rfl⟩
 
-/-- A post-radial restart from a genuinely realized selected seed stays inside the two
-endpoint site boxes required by the Grimmett--Marstrand construction. -/
-theorem RootRadialSeedProfile.postRadialRestartRegion_subset_endpointBoxes
+/-- A post-radial restart from a geometrically valid selected seed stays inside the two
+endpoint site boxes required by the Grimmett--Marstrand construction.  Openness of the seed is
+irrelevant to this containment; only the retained box-in-layer certificate is used. -/
+theorem RootRadialSeedProfile.postRadialRestartRegion_subset_endpointBoxes_of_geometry
     {d m n : ℕ} (W : RootRadialSeedProfile d m n)
-    (a : CubicDirection d) {omega : EdgeConfiguration d}
-    (hW : (W a).IsRealized omega) :
+    (a : CubicDirection d)
+    (hgeom : SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1) :
     W.postRadialRestartRegion a ⊆
       (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) ∪
         (cubicMetricBox d
@@ -549,7 +620,7 @@ theorem RootRadialSeedProfile.postRadialRestartRegion_subset_endpointBoxes
       ⟨q, hq, rfl⟩
   have href :=
     translated_steeredRestartRegion_subset_endpointBoxes_of_boxWithinBoundaryLayer
-      a.1 hW.2.2.1
+      a.1 hgeom
         ⟨G q, hGq, rfl⟩
   rw [W.postRadialFrame_apply]
   rcases href with href | href
@@ -581,6 +652,19 @@ theorem RootRadialSeedProfile.postRadialRestartRegion_subset_endpointBoxes
         (N := m + n + 1) cubicOrigin a
     simpa [hcenter] using himage
 
+/-- Realization-facing wrapper for post-radial containment. -/
+theorem RootRadialSeedProfile.postRadialRestartRegion_subset_endpointBoxes
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (a : CubicDirection d) {omega : EdgeConfiguration d}
+    (hW : (W a).IsRealized omega) :
+    W.postRadialRestartRegion a ⊆
+      (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1)
+            (cubicStepFrom cubicOrigin a))
+          (2 * (m + n + 1)) : Set (Cubic d)) :=
+  W.postRadialRestartRegion_subset_endpointBoxes_of_geometry a hW.2.2.1
+
 /-- The literal finite support of a post-radial query is contained in its geometric restart
 region and hence in the two endpoint site boxes. -/
 theorem RootRadialSeedProfile.endpointVertices_postRadialQuery_subset_endpointBoxes
@@ -597,6 +681,26 @@ theorem RootRadialSeedProfile.endpointVertices_postRadialQuery_subset_endpointBo
           (2 * (m + n + 1)) : Set (Cubic d)) := by
   intro z hz
   apply W.postRadialRestartRegion_subset_endpointBoxes a hW
+  simpa [RootRadialSeedProfile.postRadialRestartRegion,
+    RootRadialSeedProfile.postRadialFrame, SourceFiniteEdgeRevealState.framedQuery] using
+    (S.framedQuery (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a)).endpointVertices_restartSupport_subset_frameRegion hz
+
+/-- Geometry-only form of the literal post-radial support containment. -/
+theorem RootRadialSeedProfile.endpointVertices_postRadialQuery_subset_endpointBoxes_of_geometry
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (a : CubicDirection d) (S : SourceFiniteEdgeRevealState d)
+    (hgeom : SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1) :
+    (cubicEdgeEndpointVertices
+        ((S.framedQuery (W.physicalCenter a) a
+          (oppositeTransverseRestartFlip a)).restartSupport m n) : Set (Cubic d)) ⊆
+      (cubicMetricBox d cubicOrigin (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1)
+            (cubicStepFrom cubicOrigin a))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  intro z hz
+  apply W.postRadialRestartRegion_subset_endpointBoxes_of_geometry a hgeom
   simpa [RootRadialSeedProfile.postRadialRestartRegion,
     RootRadialSeedProfile.postRadialFrame, SourceFiniteEdgeRevealState.framedQuery] using
     (S.framedQuery (W.physicalCenter a) a

@@ -1,7 +1,6 @@
 import Percolation.Critical.SupercriticalFiniteRadius
 import Percolation.Critical.ClusterSizeRate
 import Percolation.Critical.CubicSymmetry
-import Percolation.Planar.RSWPlacements
 
 /-!
 # Finite-cluster diameter gluing

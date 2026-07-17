@@ -305,6 +305,60 @@ theorem regionHasInfiniteClusterProbability_pos_initializedAdaptiveProgram_withA
   rw [← couplingMeasure_real_hasInfiniteOpenClusterInVertices_thresholdConfiguration]
   exact hinfinite.trans_le (measureReal_mono hsubset)
 
+/-- Selected anchors need not be literally injective.  It is enough that every lattice vertex
+is selected by only finitely many accepted coarse sites, which is the natural conclusion of
+uniform finite-box containment. -/
+theorem regionHasInfiniteClusterProbability_pos_initializedAdaptiveProgram_withFiniteFiberAnchors
+    {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected) (hd : 0 < d)
+    (hsite1 : siteCriticalProbability (cubicRegionGraph d F) < 1)
+    (P : InitializedPartitionedAdaptiveProgram d F m n
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      (4 * d))
+    (hadmissibleQuery : ∀ history,
+      ((cubicRegionSiteExploration d F root).replayState history).frontier.Nonempty →
+      P.admissible history
+        ((cubicRegionSiteExploration d F root).replayQuery root history))
+    (pBond : I) (anchor : (CubicEdge d → ℝ) → F → Cubic d)
+    (hfinite : ∀ X z, ((anchor X) ⁻¹' {z}).Finite)
+    (hcontained : ∀ X, X ∈ P.initialEvent → ∀ v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      anchor X v ∈ grimmettMarstrandThickening d F N)
+    (hconnection : ∀ X, X ∈ P.initialEvent → ∀ v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      thresholdConfiguration pBond X ∈
+        connectionEventWithinVertices d (grimmettMarstrandThickening d F N)
+          (anchor X root) (anchor X v)) :
+    0 < regionHasInfiniteClusterProbability d
+      (grimmettMarstrandThickening d F N) pBond := by
+  let E := (cubicRegionSiteExploration d F root).toAdaptive
+  let answer := P.fullHistoryAnswer
+    (cubicRegionSiteExploration d F root).initial.history
+  have hinfinite :
+      0 < (couplingMeasure (CubicEdge d)).real
+        (P.initialEvent ∩ {X | (E.occupiedLimit (answer X)).Infinite}) := by
+    simpa [E, answer] using P.cubicRegion_infinite_inter_probability_pos_dynamicBlock
+      F root hF hd (siteCriticalProbability_nonneg _) hsite1 hadmissibleQuery
+  have hroot : ∀ X, root ∈ E.occupiedLimit (answer X) := by
+    intro X
+    apply E.occupied_subset_occupiedLimit (answer X) 0
+    exact (cubicRegionSiteExploration_initial_openRootedAt d F root).1
+  have hsubset :
+      P.initialEvent ∩ {X | (E.occupiedLimit (answer X)).Infinite} ⊆
+        (thresholdConfiguration pBond) ⁻¹'
+          {omega | hasInfiniteOpenClusterInVertices d
+            (grimmettMarstrandThickening d F N) omega} := by
+    intro X hX
+    exact hasInfiniteOpenClusterInVertices_of_infinite_anchor_connections_finiteFibers hX.2
+      (anchor X) (hfinite X) (hroot X)
+      (hcontained X hX.1) (hconnection X hX.1)
+  rw [← couplingMeasure_real_hasInfiniteOpenClusterInVertices_thresholdConfiguration]
+  exact hinfinite.trans_le (measureReal_mono hsubset)
+
 /-- Order-theoretic Theorem 7.2(a) adapter for realization-dependent selected anchors. -/
 theorem exists_regionCriticalProbability_thickening_le_add_initializedAdaptiveProgram_withAnchors
     {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F] (root : F)
@@ -346,6 +400,81 @@ theorem exists_regionCriticalProbability_thickening_le_add_initializedAdaptivePr
     (siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one
       root hd hF hcrit)
     hadmissibleQuery pBond anchor hinjective hcontained hconnection
+
+/-- Order-theoretic Theorem 7.2(a) adapter for finite-fiber selected anchors. -/
+theorem exists_regionCriticalProbability_thickening_le_add_initializedAdaptiveProgram_withFiniteFiberAnchors
+    {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected) (hd : 2 ≤ d)
+    (hcrit : regionCriticalProbability d F < 1)
+    (P : InitializedPartitionedAdaptiveProgram d F m n
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      (4 * d))
+    (hadmissibleQuery : ∀ history,
+      ((cubicRegionSiteExploration d F root).replayState history).frontier.Nonempty →
+      P.admissible history
+        ((cubicRegionSiteExploration d F root).replayQuery root history))
+    (pBond : I) {eta : ℝ}
+    (hpBond : (pBond : ℝ) ≤ regionCriticalProbability d F + eta)
+    (anchor : (CubicEdge d → ℝ) → F → Cubic d)
+    (hfinite : ∀ X z, ((anchor X) ⁻¹' {z}).Finite)
+    (hcontained : ∀ X, X ∈ P.initialEvent → ∀ v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      anchor X v ∈ grimmettMarstrandThickening d F N)
+    (hconnection : ∀ X, X ∈ P.initialEvent → ∀ v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      thresholdConfiguration pBond X ∈
+        connectionEventWithinVertices d (grimmettMarstrandThickening d F N)
+          (anchor X root) (anchor X v)) :
+    ∃ k : ℕ,
+      regionCriticalProbability d (cubicDilatedThickening d F k) ≤
+        regionCriticalProbability d F + eta := by
+  apply exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation hpBond
+  exact P.regionHasInfiniteClusterProbability_pos_initializedAdaptiveProgram_withFiniteFiberAnchors
+    root hF (by omega)
+    (siteCriticalProbability_lt_one_of_regionCriticalProbability_lt_one
+      root hd hF hcrit)
+    hadmissibleQuery pBond anchor hfinite hcontained hconnection
+
+/-- Source-geometric form of the random-anchor adapter.  A selected anchor may vary with the
+common-uniform realization, but if it always lies in the radius-`2N` box about its coarse site,
+finite fibres and containment in `4NF+B(2N)` follow automatically. -/
+theorem exists_regionCriticalProbability_thickening_le_add_initializedAdaptiveProgram_withLocalAnchors
+    {d m n N : ℕ} {F : Set (Cubic d)} [LinearOrder F] (root : F)
+    (hF : (cubicRegionGraph d F).Connected) (hd : 2 ≤ d) (hN : 0 < N)
+    (hcrit : regionCriticalProbability d F < 1)
+    (P : InitializedPartitionedAdaptiveProgram d F m n
+      (dynamicBlockRestartError d (siteCriticalProbability (cubicRegionGraph d F)))
+      (4 * d))
+    (hadmissibleQuery : ∀ history,
+      ((cubicRegionSiteExploration d F root).replayState history).frontier.Nonempty →
+      P.admissible history
+        ((cubicRegionSiteExploration d F root).replayQuery root history))
+    (pBond : I) {eta : ℝ}
+    (hpBond : (pBond : ℝ) ≤ regionCriticalProbability d F + eta)
+    (anchor : (CubicEdge d → ℝ) → F → Cubic d)
+    (hanchor : ∀ X v,
+      anchor X v ∈ cubicMetricBox d (grimmettMarstrandSiteCenter N v.1) (2 * N))
+    (hconnection : ∀ X, X ∈ P.initialEvent → ∀ v,
+      v ∈ (cubicRegionSiteExploration d F root).toAdaptive.occupiedLimit
+        (P.fullHistoryAnswer
+          (cubicRegionSiteExploration d F root).initial.history X) →
+      thresholdConfiguration pBond X ∈
+        connectionEventWithinVertices d (grimmettMarstrandThickening d F N)
+          (anchor X root) (anchor X v)) :
+    ∃ k : ℕ,
+      regionCriticalProbability d (cubicDilatedThickening d F k) ≤
+        regionCriticalProbability d F + eta := by
+  apply P.exists_regionCriticalProbability_thickening_le_add_initializedAdaptiveProgram_withFiniteFiberAnchors
+    root hF hd hcrit hadmissibleQuery pBond hpBond anchor
+  · intro X z
+    exact finite_preimage_of_anchor_mem_siteBox hN (anchor X) (hanchor X) z
+  · intro X _hX v _hv
+    exact grimmettMarstrandCenteredBox_subset_thickening v.2 le_rfl (hanchor X v)
+  · exact hconnection
 
 /-- Dynamic-block assembly for the non-circular semantic-runtime interface. -/
 theorem regionHasInfiniteClusterProbability_pos_initializedAdaptiveProgram

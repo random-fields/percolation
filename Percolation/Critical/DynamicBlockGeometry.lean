@@ -48,6 +48,28 @@ theorem grimmettMarstrandSiteCenter_injective {d N : ℕ} (hN : 0 < N) :
   have hscale : (4 * (N : ℤ)) ≠ 0 := by positivity
   exact mul_left_cancel₀ hscale hi
 
+/-- Any choice of a physical anchor lying a uniformly bounded distance from its coarse
+Grimmett--Marstrand site has finite fibres.  This is the exact geometric property needed to
+turn infinitely many accepted coarse sites into infinitely many physical vertices; injectivity
+of the random anchor choice is unnecessary. -/
+theorem finite_preimage_of_anchor_mem_siteBox
+    {d N R : ℕ} {F : Set (Cubic d)} (hN : 0 < N)
+    (anchor : F → Cubic d)
+    (hanchor : ∀ x : F,
+      anchor x ∈ cubicMetricBox d (grimmettMarstrandSiteCenter N x.1) R) (z : Cubic d) :
+    (anchor ⁻¹' ({z} : Set (Cubic d))).Finite := by
+  let center : F → Cubic d := fun x ↦ grimmettMarstrandSiteCenter N x.1
+  apply Set.Finite.of_finite_image
+  · apply (cubicMetricBox d z R).finite_toSet.subset
+    rintro y ⟨x, hx, rfl⟩
+    have hxz : anchor x = z := by simpa using hx
+    apply mem_cubicMetricBox_iff_lInfDist_le.mpr
+    rw [cubicLInfDist_comm]
+    simpa [hxz] using mem_cubicMetricBox_iff_lInfDist_le.mp (hanchor x)
+  · intro x _ y _ hxy
+    apply Subtype.ext
+    exact grimmettMarstrandSiteCenter_injective hN hxy
+
 /-- Site-box `4Nx+B(N)`. -/
 noncomputable def grimmettMarstrandSiteBox
     (d N : ℕ) (x : Cubic d) : Finset (Cubic d) :=
@@ -95,6 +117,20 @@ theorem grimmettMarstrandSiteBox_subset_thickening
   intro i
   have hi := hz i
   omega
+
+/-- Every radius-`2N` box about a coarse site center lies in the final thickening.  The
+radius-`N` site-box theorem above is the most common special case; selected restart anchors
+need the slightly wider form. -/
+theorem grimmettMarstrandCenteredBox_subset_thickening
+    {d N R : ℕ} {F : Set (Cubic d)} {x : Cubic d} (hxF : x ∈ F)
+    (hR : R ≤ 2 * N) :
+    (cubicMetricBox d (grimmettMarstrandSiteCenter N x) R : Set (Cubic d)) ⊆
+      grimmettMarstrandThickening d F N := by
+  intro z hz
+  refine ⟨x, hxF, ?_⟩
+  rw [← grimmettMarstrandSiteCenter_eq_thickeningCenter]
+  exact mem_cubicMetricBox_iff_lInfDist_le.mpr
+    ((mem_cubicMetricBox_iff_lInfDist_le.mp hz).trans hR)
 
 /-- A half-way box is covered by the two radius-`2N` boxes centered at its adjacent site
 indices.  This is the exact coordinate fact behind the final `4NF+B(2N)` containment. -/

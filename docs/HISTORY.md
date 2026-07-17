@@ -1523,6 +1523,22 @@ Dated milestones and anti-library notes.
     realized exploration state and the corresponding replay state. This work occurred after the
     goal tracker was paused and is therefore unmeasured; no telemetry was reconstructed.
 
+134. **Finite-fibre anchors and exact accepted replay states (2026-07-17).** Repaired two final
+    Theorem 7.2 interface gaps found while preparing Chapter 8. Random selected seed anchors no
+    longer carry an unnecessarily strong injectivity obligation: an infinite coarse set has an
+    infinite physical image whenever every anchor fibre is finite, and uniform containment in a
+    radius-`2N` box about the injectively spaced coarse center proves those fibres finite while
+    also placing every anchor in `4NF+B(2N)`. Separately, every finite history-dependent site
+    execution is now proved equal to the deterministic replay of its realized suffix. The new
+    chronological trace certificate proves that every earlier history entry was the actual next
+    frontier query. Consequently every non-root vertex in the limiting occupied set has an exact
+    finite accepted replay query, belongs to the literal adaptive answer cell, and supplies all
+    prefix-admissibility facts required by the final-density replay theorem. The integrated build
+    passes without new axioms. The remaining global Chapter 7 obligations are the non-root
+    reveal-overlap budget and containment of the replay connection paths inside the thickening.
+    The separate Chapter-8-enablement tracker measured this window as 1045 seconds and 443,988
+    tokens.
+
 ## Axiom Ledger
 
 Empty.

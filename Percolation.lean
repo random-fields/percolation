@@ -194,6 +194,8 @@ import Percolation.Critical.AdaptiveDecisionOutcome
 import Percolation.Critical.AdaptiveDecisionRealization
 import Percolation.Critical.AdaptiveAcceptanceTime
 import Percolation.Critical.AdaptiveRealizedHistory
+import Percolation.Critical.AdaptiveStateReplay
+import Percolation.Critical.DynamicAcceptedAnchor
 import Percolation.Critical.BondExploration
 import Percolation.Critical.IncomingGreenDomination
 import Percolation.Critical.AdaptiveTargetExhaustion

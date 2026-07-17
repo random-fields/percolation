@@ -472,7 +472,11 @@ theorem exists_inletSeed_eq_and_seedBox_subset_of_admissibleQuery
     (hinstalled : S.SeedBoxesInstalled (m := m)) :
     ∃ U : LaterSiteOutgoingSeed d,
       inletSeed hd root ([(root, true)] ++ canonicalSuffix root history) v S = U ∧
-        cubicBoxEdges d U.physicalCenter m ⊆ S.source.explored := by
+        cubicBoxEdges d U.physicalCenter m ⊆ S.source.explored ∧
+        S.outgoing
+          (inletParent root ([(root, true)] ++ canonicalSuffix root history) v)
+          (incomingDirection hd root ([(root, true)] ++ canonicalSuffix root history) v) =
+            some U := by
   classical
   let E := cubicRegionSiteExploration d F root
   let s := E.replayState history
@@ -535,9 +539,12 @@ theorem exists_inletSeed_eq_and_seedBox_subset_of_admissibleQuery
   have hU' : S.outgoing (inletParent root fullHistory v)
       (incomingDirection hd root fullHistory v) = some U := by
     simpa [hparent, hincoming] using hU
-  refine ⟨U, ?_⟩
-  simpa [fullHistory] using inletSeed_eq_and_seedBox_subset_of_outgoing_eq_some
-    (m := m) hd root fullHistory v S U hinstalled hU'
+  refine ⟨U, ?_, ?_, ?_⟩
+  · exact (inletSeed_eq_and_seedBox_subset_of_outgoing_eq_some
+      (m := m) hd root fullHistory v S U hinstalled hU').1
+  · exact (inletSeed_eq_and_seedBox_subset_of_outgoing_eq_some
+      (m := m) hd root fullHistory v S U hinstalled hU').2
+  · simpa [fullHistory] using hU'
 
 theorem inletSeed_seedBox_subset_of_admissibleQuery
     (hd : 0 < d) (root : F) (history : List (F × Bool)) (v : F)
@@ -549,7 +556,27 @@ theorem inletSeed_seedBox_subset_of_admissibleQuery
     cubicBoxEdges d
       (inletSeed hd root ([(root, true)] ++ canonicalSuffix root history) v S
         ).physicalCenter m ⊆ S.source.explored := by
-  obtain ⟨U, hseed, hU⟩ :=
+  obtain ⟨U, hseed, hU, _hOutgoing⟩ :=
+    exists_inletSeed_eq_and_seedBox_subset_of_admissibleQuery
+      (m := m) hd root history v S hadmissible hcover hinstalled
+  rw [hseed]
+  exact hU
+
+/-- On a genuine query, the total inlet selector is the literal outgoing record published by
+its accepted parent.  This form is used to invoke the final-density replay connection theorem
+for the anchor selected at the query's acceptance time. -/
+theorem inletSeed_parent_outgoing_of_admissibleQuery
+    (hd : 0 < d) (root : F) (history : List (F × Bool)) (v : F)
+    (S : DynamicBlockHistoryState d F)
+    (hadmissible : AdmissibleQuery root history v)
+    (hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S)
+    (hinstalled : S.SeedBoxesInstalled (m := m)) :
+    S.outgoing
+        (inletParent root ([(root, true)] ++ canonicalSuffix root history) v)
+        (incomingDirection hd root ([(root, true)] ++ canonicalSuffix root history) v) =
+      some (inletSeed hd root ([(root, true)] ++ canonicalSuffix root history) v S) := by
+  obtain ⟨U, hseed, _hbox, hU⟩ :=
     exists_inletSeed_eq_and_seedBox_subset_of_admissibleQuery
       (m := m) hd root history v S hadmissible hcover hinstalled
   rw [hseed]

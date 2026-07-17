@@ -1242,6 +1242,89 @@ theorem rootRadialEdgeSupport_endpointVertices_subset_thickening
     (N := m + n + 1) (R := n + 2 * m + 1) hrootF (by omega)
   exact endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heWide hze
 
+/-- Recentring a second restart at the seed selected by a first restart in the same signed
+direction puts the whole first support strictly behind the second positive target face.  The
+calculation is independent of both transverse masks: axially the old support reaches at most
+`n + 2m + 1`, while the selected seed is exactly at `n + m + 1`. -/
+theorem compensatingFrame_referenceCoord_add_one_lt_of_priorRestart
+    {d m n : ℕ} (hmn : m + 1 < n)
+    (center c : Cubic d) (a : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    {R : Finset (Cubic d)} {f : CubicEdge d}
+    (hf : f ∈ restartEventSupport d a.1 m n R)
+    {w z : Cubic d} (hwf : w ∈ (f : Sym2 (Cubic d)))
+    (hframes :
+      cubicRestartFrameIso
+          (cubicRestartFrameIso center a firstFlip c) a secondFlip z =
+        cubicRestartFrameIso center a firstFlip w) :
+    z a.1 + 1 < (n : ℤ) := by
+  have hwWide : w ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1) :=
+    endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges
+      (restartEventSupport_subset_cubicBoxEdges_wide d a.1 m n R hf) hwf
+  have hwBounds := mem_cubicMetricBox.mp hwWide a.1
+  have hcAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer a.1 hc
+  have hcoord := congrFun hframes a.1
+  rcases a with ⟨i, positive⟩
+  change z i + 1 < (n : ℤ)
+  simp [cubicOrigin] at hwBounds
+  cases positive <;>
+    simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip, hcAxis] at hcoord <;>
+    omega
+
+/-- Support-level form of
+`compensatingFrame_referenceCoord_add_one_lt_of_priorRestart`. -/
+theorem framedRestartSupport_compensatingFrame_endpoint_coord_add_one_lt
+    {d m n : ℕ} (hmn : m + 1 < n)
+    (center c : Cubic d) (a : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (R : Finset (Cubic d)) {e : CubicEdge d}
+    (he : e ∈
+      (framedRestartSupport center a firstFlip m n R).image
+        (cubicRestartFrameIso
+          (cubicRestartFrameIso center a firstFlip c) a secondFlip).symm.mapEdgeSet)
+    {z : Cubic d} (hze : z ∈ (e : Sym2 (Cubic d))) :
+    z a.1 + 1 < (n : ℤ) := by
+  classical
+  let Fnext := cubicRestartFrameIso
+    (cubicRestartFrameIso center a firstFlip c) a secondFlip
+  rw [Finset.mem_image] at he
+  obtain ⟨ePhysical, hePhysical, rfl⟩ := he
+  change z ∈ Sym2.map Fnext.symm (ePhysical : Sym2 (Cubic d)) at hze
+  rw [Sym2.mem_map] at hze
+  obtain ⟨y, hye, rfl⟩ := hze
+  rw [framedRestartSupport, Finset.mem_image] at hePhysical
+  obtain ⟨f, hf, rfl⟩ := hePhysical
+  change y ∈ Sym2.map (cubicRestartFrameIso center a firstFlip)
+    (f : Sym2 (Cubic d)) at hye
+  rw [Sym2.mem_map] at hye
+  obtain ⟨w, hwf, rfl⟩ := hye
+  apply compensatingFrame_referenceCoord_add_one_lt_of_priorRestart
+    hmn center c a firstFlip secondFlip hc hf hwf
+  simp [Fnext]
+
+/-- A first restart support is endpoint-disjoint from the target of the compensating second
+restart in the same direction. -/
+theorem framedRestartSupport_compensatingFrame_targetEndpointFresh
+    {d m n : ℕ} (hmn : m + 1 < n)
+    (center c : Cubic d) (a : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (R : Finset (Cubic d)) :
+    Disjoint
+      (cubicEdgeEndpointVertices
+        ((framedRestartSupport center a firstFlip m n R).image
+          (cubicRestartFrameIso
+            (cubicRestartFrameIso center a firstFlip c) a secondFlip).symm.mapEdgeSet))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
+  apply disjoint_endpointVertices_seededBoundaryTargetSupport_of_coord_lt
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  have h := framedRestartSupport_compensatingFrame_endpoint_coord_add_one_lt
+    hmn center c a firstFlip secondFlip hc R he hze
+  omega
+
 /-- Reference-coordinate separation between two distinct post-radial root directions.  A
 restart in direction `b` uses the wide radius only along `b`; in every transverse coordinate it
 stays in the original radius-`n` strip.  After recentering at the selected seed in a distinct

@@ -345,6 +345,87 @@ noncomputable def runFrom {d m n : ℕ} (hmn : 2 * m ≤ n)
         (R.step hmn inletCenter incoming firstFlip secondFlip p delta incremented X a k)
         (k + 1) rest
 
+/-- Literal finite union of all restart supports read by a total runtime.  Unlike a coarse
+bounding box, this remembers the actual selected centers, signed frames, and chronological
+source states. -/
+noncomputable def restartSupportUnionFrom
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) : LaterSiteRuntime d → ℕ →
+      List (CubicDirection d) → Finset (CubicEdge d)
+  | _, _, [] => ∅
+  | R, k, a :: rest =>
+      (R.restartQuery inletCenter incoming firstFlip secondFlip a k).restartSupport m n ∪
+        restartSupportUnionFrom hmn inletCenter incoming firstFlip secondFlip p delta
+          incremented X
+          (R.step hmn inletCenter incoming firstFlip secondFlip p delta incremented X a k)
+          (k + 1) rest
+
+/-- Exact support accounting for a total runtime: no edge can enter the explored state except
+from the incoming explored set or one of the chronologically listed restart supports. -/
+theorem runFrom_explored_subset_initial_union_restartSupportUnionFrom
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d)) :
+    (runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+      R offset directions).source.explored ⊆
+      R.source.explored ∪
+        restartSupportUnionFrom hmn inletCenter incoming firstFlip secondFlip p delta
+          incremented X R offset directions := by
+  induction directions generalizing R offset with
+  | nil =>
+      intro e he
+      simpa [runFrom, restartSupportUnionFrom] using he
+  | cons a rest ih =>
+      let Q := R.restartQuery inletCenter incoming firstFlip secondFlip a offset
+      let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a offset
+      have hnext : Rnext.source.explored ⊆ R.source.explored ∪ Q.restartSupport m n := by
+        simpa [Rnext, step, Q] using
+          R.source.nextExplored_subset_explored_union_stageRegion
+            (Q.restartSupport m n) p (incremented R.source a) X
+      have hrest := ih Rnext (offset + 1)
+      intro e he
+      have he' : e ∈ Rnext.source.explored ∪
+          restartSupportUnionFrom hmn inletCenter incoming firstFlip secondFlip p delta
+            incremented X Rnext (offset + 1) rest := by
+        exact hrest (by simpa [runFrom, Rnext] using he)
+      rcases Finset.mem_union.mp he' with heNext | heRest
+      · rcases Finset.mem_union.mp (hnext heNext) with heOld | heLocal
+        · exact Finset.mem_union_left _ heOld
+        · exact Finset.mem_union_right _ <| Finset.mem_union_left _ heLocal
+      · exact Finset.mem_union_right _ <| Finset.mem_union_right _ heRest
+
+/-- Endpoint-set version of the exact runtime support accounting theorem. -/
+theorem endpointVertices_runFrom_subset_initial_union_restartSupportUnionFrom
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d)) :
+    cubicEdgeEndpointVertices
+        ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+          R offset directions).source.explored) ⊆
+      cubicEdgeEndpointVertices R.source.explored ∪
+        cubicEdgeEndpointVertices
+          (restartSupportUnionFrom hmn inletCenter incoming firstFlip secondFlip p delta
+            incremented X R offset directions) := by
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  have heUnion := runFrom_explored_subset_initial_union_restartSupportUnionFrom hmn
+    inletCenter incoming firstFlip secondFlip p delta incremented X R offset directions he
+  rcases Finset.mem_union.mp heUnion with heInitial | heSupport
+  · exact Finset.mem_union_left _ <|
+      mem_cubicEdgeEndpointVertices_iff.mpr ⟨e, heInitial, hze⟩
+  · exact Finset.mem_union_right _ <|
+      mem_cubicEdgeEndpointVertices_iff.mpr ⟨e, heSupport, hze⟩
+
 /-- Under a policy which spends at most `delta` per step, a finite runtime raises a uniform
 lower-threshold bound by at most its number of restart applications. -/
 theorem coe_runFrom_lower_le_add_length
@@ -579,6 +660,79 @@ theorem SupportsWithin.getElem {d m n : ℕ} (hmn : 2 * m ≤ n)
   rw [List.drop_eq_getElem_cons hj] at htail
   have hlen : (directions.take j).length = j := List.length_take_of_le (Nat.le_of_lt hj)
   simpa [SupportsWithin, hlen] using htail.1
+
+/-- Spatial support accounting for a complete runtime.  Every edge present after a confined
+schedule was either already explored on entry, or all of its endpoints lie in the advertised
+confinement region.  This is stronger than a mere final-threshold bound: it is the inductive
+form needed to compare a later target seed with the literal geometry of every earlier coarse
+query. -/
+theorem explored_mem_initial_or_endpoints_mem_of_supportsWithin
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (A : Set (Cubic d))
+    (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d))
+    (hwithin : SupportsWithin hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X A R offset directions)
+    {e : CubicEdge d}
+    (he : e ∈ (runFrom hmn inletCenter incoming firstFlip secondFlip p delta
+      incremented X R offset directions).source.explored) :
+    e ∈ R.source.explored ∨ ∀ z ∈ (e : Sym2 (Cubic d)), z ∈ A := by
+  induction directions generalizing R offset with
+  | nil =>
+      exact Or.inl he
+  | cons a rest ih =>
+      let Q := R.restartQuery inletCenter incoming firstFlip secondFlip a offset
+      let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a offset
+      have hlocal :
+          (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A := by
+        simpa [LaterSiteRuntime.SupportsWithin, Q] using hwithin.1
+      have hrest : SupportsWithin hmn inletCenter incoming firstFlip secondFlip
+          p delta incremented X A Rnext (offset + 1) rest := by
+        simpa [LaterSiteRuntime.SupportsWithin, Q, Rnext] using hwithin.2
+      have hfinal : e ∈
+          (runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+            Rnext (offset + 1) rest).source.explored := by
+        simpa [runFrom, Rnext] using he
+      rcases ih Rnext (offset + 1) hrest hfinal with heNext | heA
+      · have hallowed : e ∈ R.source.explored ∪ Q.restartSupport m n := by
+          have hsubset := R.source.nextExplored_subset_explored_union_stageRegion
+            (Q.restartSupport m n) p (incremented R.source a) X
+          exact hsubset (by simpa [Rnext, step, Q] using heNext)
+        rcases Finset.mem_union.mp hallowed with heOld | heSupport
+        · exact Or.inl heOld
+        · refine Or.inr ?_
+          intro z hze
+          exact hlocal <| mem_cubicEdgeEndpointVertices_iff.mpr
+            ⟨e, heSupport, hze⟩
+      · exact Or.inr heA
+
+/-- Endpoint-set form of
+`explored_mem_initial_or_endpoints_mem_of_supportsWithin`. -/
+theorem endpointVertices_runFrom_subset_initial_union_of_supportsWithin
+    {d m n : ℕ} (hmn : 2 * m ≤ n)
+    (inletCenter : Cubic d) (incoming : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (A : Set (Cubic d))
+    (R : LaterSiteRuntime d) (offset : ℕ)
+    (directions : List (CubicDirection d))
+    (hwithin : SupportsWithin hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X A R offset directions) :
+    (cubicEdgeEndpointVertices
+        ((runFrom hmn inletCenter incoming firstFlip secondFlip p delta incremented X
+          R offset directions).source.explored) : Set (Cubic d)) ⊆
+      (cubicEdgeEndpointVertices R.source.explored : Set (Cubic d)) ∪ A := by
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  rcases explored_mem_initial_or_endpoints_mem_of_supportsWithin hmn inletCenter incoming
+      firstFlip secondFlip p delta incremented X A R offset directions hwithin he with
+    heInitial | heA
+  · exact Or.inl <| mem_cubicEdgeEndpointVertices_iff.mpr ⟨e, heInitial, hze⟩
+  · exact Or.inr <| heA z hze
 
 /-- With the destination coarse center stored in `initialAt`, the two inlet applications
 recenter the incoming half-way seed inside the destination radius-`N` site box. -/
@@ -874,6 +1028,159 @@ theorem slotTransverseFlip_step_same_succ_of_two_le
   have hkBase0 : k ≠ 0 := by omega
   have hkBase1 : k ≠ 1 := by omega
   simp [slotTransverseFlip, step, selectedTarget, hk, hk0, hk1, hkBase0, hkBase1]
+
+/-- The support read by the first inlet application is fresh for the target of the immediately
+following application.  This is the runtime wrapper around the same-direction recentering
+lemma; it does not assume that either restart succeeds. -/
+theorem firstInletRestartSupport_targetFresh_for_second
+    {d m n : ℕ} (hmn : 2 * m ≤ n) (hmnStrict : m + 1 < n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) :
+    let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X incoming 0
+    let Fnext := cubicRestartFrameIso
+      (Rnext.slotCenterFor inletCenter incoming 1) incoming
+      (Rnext.slotTransverseFlip incoming firstFlip secondFlip incoming 1)
+    Disjoint
+      (cubicEdgeEndpointVertices
+        ((R.restartQuery inletCenter incoming firstFlip secondFlip incoming 0
+          ).restartSupport m n |>.image Fnext.symm.mapEdgeSet))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d incoming.1 m n)) := by
+  dsimp only
+  let c := (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
+    p delta X incoming 0).seedCenter.1
+  have hc := R.selectedWitness_seedBoxWithinBoundaryLayer hmn inletCenter incoming
+    firstFlip secondFlip p delta X incoming 0
+  have hcenter := R.slotCenterFor_step_zero_one hmn inletCenter incoming firstFlip
+    secondFlip p delta incremented X incoming
+  simpa [restartQuery, SourceFiniteEdgeRevealState.framedQuery, selectedTarget, c,
+    hcenter] using
+    framedRestartSupport_compensatingFrame_targetEndpointFresh hmnStrict
+      (R.slotCenterFor inletCenter incoming 0) c incoming
+      (R.slotTransverseFlip incoming firstFlip secondFlip incoming 0)
+      ((R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X incoming 0).slotTransverseFlip
+          incoming firstFlip secondFlip incoming 1)
+      hc
+      (cubicEdgeEndpointVertices (R.source.referenceExploredEdges
+        (cubicRestartFrameIso (R.slotCenterFor inletCenter incoming 0) incoming
+          (R.slotTransverseFlip incoming firstFlip secondFlip incoming 0))))
+
+/-- For every outgoing duplicate pair, the first branch support is fresh for the second
+link-up target. -/
+theorem outgoingRestartSupport_targetFresh_for_link
+    {d m n : ℕ} (hmn : 2 * m ≤ n) (hmnStrict : m + 1 < n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (a : CubicDirection d) (k : ℕ) (hk : 2 ≤ k) :
+    let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X a k
+    let Fnext := cubicRestartFrameIso
+      (Rnext.slotCenterFor inletCenter a (k + 1)) a
+      (Rnext.slotTransverseFlip incoming firstFlip secondFlip a (k + 1))
+    Disjoint
+      (cubicEdgeEndpointVertices
+        ((R.restartQuery inletCenter incoming firstFlip secondFlip a k
+          ).restartSupport m n |>.image Fnext.symm.mapEdgeSet))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
+  dsimp only
+  let c := (R.selectedWitness hmn inletCenter incoming firstFlip secondFlip
+    p delta X a k).seedCenter.1
+  have hc := R.selectedWitness_seedBoxWithinBoundaryLayer hmn inletCenter incoming
+    firstFlip secondFlip p delta X a k
+  have hcenter := R.slotCenterFor_step_same_succ_of_two_le hmn inletCenter incoming
+    firstFlip secondFlip p delta incremented X a k hk
+  simpa [restartQuery, SourceFiniteEdgeRevealState.framedQuery, selectedTarget, c,
+    hcenter] using
+    framedRestartSupport_compensatingFrame_targetEndpointFresh hmnStrict
+      (R.slotCenterFor inletCenter a k) c a
+      (R.slotTransverseFlip incoming firstFlip secondFlip a k)
+      ((R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a k).slotTransverseFlip
+          incoming firstFlip secondFlip a (k + 1))
+      hc
+      (cubicEdgeEndpointVertices (R.source.referenceExploredEdges
+        (cubicRestartFrameIso (R.slotCenterFor inletCenter a k) a
+          (R.slotTransverseFlip incoming firstFlip secondFlip a k))))
+
+/-- The second inlet query is fresh after the first update whenever the incoming explored state
+is already fresh in the second query's frame.  The new part is discharged unconditionally by
+`firstInletRestartSupport_targetFresh_for_second`. -/
+theorem targetFresh_step_firstInlet_for_second_of_priorFresh
+    {d m n : ℕ} (hmn : 2 * m ≤ n) (hmnStrict : m + 1 < n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hOld :
+      let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X incoming 0
+      let Fnext := cubicRestartFrameIso
+        (Rnext.slotCenterFor inletCenter incoming 1) incoming
+        (Rnext.slotTransverseFlip incoming firstFlip secondFlip incoming 1)
+      Disjoint (cubicEdgeEndpointVertices (R.source.referenceExploredEdges Fnext))
+        (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d incoming.1 m n))) :
+    let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X incoming 0
+    let Fnext := cubicRestartFrameIso
+      (Rnext.slotCenterFor inletCenter incoming 1) incoming
+      (Rnext.slotTransverseFlip incoming firstFlip secondFlip incoming 1)
+    Disjoint (cubicEdgeEndpointVertices (Rnext.source.referenceExploredEdges Fnext))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d incoming.1 m n)) := by
+  dsimp only at hOld ⊢
+  let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+    p delta incremented X incoming 0
+  let Fnext := cubicRestartFrameIso
+    (Rnext.slotCenterFor inletCenter incoming 1) incoming
+    (Rnext.slotTransverseFlip incoming firstFlip secondFlip incoming 1)
+  have hStage := R.firstInletRestartSupport_targetFresh_for_second
+    hmn hmnStrict inletCenter incoming firstFlip secondFlip p delta incremented X
+  simpa [Rnext, step, restartQuery] using
+    R.source.targetEndpointFresh_next_of_old_and_stage
+      ((R.restartQuery inletCenter incoming firstFlip secondFlip incoming 0
+        ).restartSupport m n)
+      p (incremented R.source incoming) X Fnext
+      (seededBoundaryTargetSupport d incoming.1 m n) hOld hStage
+
+/-- Link-up freshness for an outgoing duplicate pair reduces entirely to freshness of the
+incoming explored state in the link-up frame. -/
+theorem targetFresh_step_outgoing_for_link_of_priorFresh
+    {d m n : ℕ} (hmn : 2 * m ≤ n) (hmnStrict : m + 1 < n)
+    (R : LaterSiteRuntime d) (inletCenter : Cubic d)
+    (incoming : CubicDirection d) (firstFlip secondFlip : Fin d → Bool)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (a : CubicDirection d) (k : ℕ) (hk : 2 ≤ k)
+    (hOld :
+      let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+        p delta incremented X a k
+      let Fnext := cubicRestartFrameIso
+        (Rnext.slotCenterFor inletCenter a (k + 1)) a
+        (Rnext.slotTransverseFlip incoming firstFlip secondFlip a (k + 1))
+      Disjoint (cubicEdgeEndpointVertices (R.source.referenceExploredEdges Fnext))
+        (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n))) :
+    let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+      p delta incremented X a k
+    let Fnext := cubicRestartFrameIso
+      (Rnext.slotCenterFor inletCenter a (k + 1)) a
+      (Rnext.slotTransverseFlip incoming firstFlip secondFlip a (k + 1))
+    Disjoint (cubicEdgeEndpointVertices (Rnext.source.referenceExploredEdges Fnext))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
+  dsimp only at hOld ⊢
+  let Rnext := R.step hmn inletCenter incoming firstFlip secondFlip
+    p delta incremented X a k
+  let Fnext := cubicRestartFrameIso
+    (Rnext.slotCenterFor inletCenter a (k + 1)) a
+    (Rnext.slotTransverseFlip incoming firstFlip secondFlip a (k + 1))
+  have hStage := R.outgoingRestartSupport_targetFresh_for_link
+    hmn hmnStrict inletCenter incoming firstFlip secondFlip p delta incremented X a k hk
+  simpa [Rnext, step, restartQuery] using
+    R.source.targetEndpointFresh_next_of_old_and_stage
+      ((R.restartQuery inletCenter incoming firstFlip secondFlip a k).restartSupport m n)
+      p (incremented R.source a) X Fnext
+      (seededBoundaryTargetSupport d a.1 m n) hOld hStage
 
 /-- Before the coarse-site location invariant is imposed, the link-up query still has the
 uniform deterministic centered-box bound supplied by its literal signed frame. -/

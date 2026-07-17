@@ -194,6 +194,7 @@ import Percolation.Critical.DynamicLaterSiteRuntimeHistory
 import Percolation.Critical.DynamicLaterSitePartition
 import Percolation.Critical.DynamicGlobalRevealBudget
 import Percolation.Critical.DynamicHistoryReplay
+import Percolation.Critical.DynamicReplayExploredSupport
 import Percolation.Critical.DynamicReplayChronology
 import Percolation.Critical.DynamicHistoryReplayFinite
 import Percolation.Critical.DynamicReplayRevealBudget

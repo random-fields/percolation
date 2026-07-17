@@ -859,6 +859,42 @@ noncomputable def siteRuntime (hd : 0 < d) (hmn : 2 * m ≤ n)
       (siteInitialRuntime (m + n + 1) v S seed) 0
       (siteDirectionOrder hd root history v)
 
+/-- Exact finite support union read while processing one coarse query.  This wrapper retains
+the actual inlet selected from `S`, every realized steering target, and the chronological
+source state at each restart slot. -/
+noncomputable def siteRuntimeRestartSupportUnion
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F) :
+    Finset (CubicEdge d) :=
+  let seed := inletSeed hd root history v S
+  LaterSiteRuntime.restartSupportUnionFrom hmn seed.physicalCenter
+    (incomingDirection hd root history v) (firstFlip hd root history v S)
+    unusedSecondFlip p delta incremented X
+      (siteInitialRuntime (m + n + 1) v S seed) 0
+      (siteDirectionOrder hd root history v)
+
+/-- Exact one-query explored-endpoint accounting. -/
+theorem endpointVertices_siteRuntime_subset_source_union_restartSupportUnion
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F) :
+    cubicEdgeEndpointVertices
+        (siteRuntime hd hmn root history v p delta incremented X S).source.explored ⊆
+      cubicEdgeEndpointVertices S.source.explored ∪
+        cubicEdgeEndpointVertices
+          (siteRuntimeRestartSupportUnion hd hmn root history v p delta incremented X S) := by
+  let seed := inletSeed hd root history v S
+  simpa [siteRuntime, siteRuntimeRestartSupportUnion, seed, siteInitialRuntime,
+    LaterSiteRuntime.initialAt] using
+    (LaterSiteRuntime.endpointVertices_runFrom_subset_initial_union_restartSupportUnionFrom
+      hmn seed.physicalCenter (incomingDirection hd root history v)
+        (firstFlip hd root history v S) unusedSecondFlip p delta incremented X
+        (siteInitialRuntime (m + n + 1) v S seed) 0
+        (siteDirectionOrder hd root history v))
+
 /-- Every active fresh branch of the source-faithful runtime publishes a final outgoing seed.
 The published entry is the result of the second application in that branch's adjacent pair, so
 it is the half-way-box anchor rather than the provisional face seed. -/
@@ -1255,6 +1291,43 @@ theorem siteRuntime_supportsWithin_queryInfluenceRegion_of_admissibleQuery
   refine ⟨hinlet, ?_⟩
   simpa [R2] using hbranches
 
+/-- A chronological non-root query can add explored endpoints only inside its literal local
+influence region.  Previously explored endpoints are retained explicitly in the left summand;
+this makes the statement composable over an entire replay without replacing the real oriented
+restart geometry by one oversized box. -/
+theorem endpointVertices_siteRuntime_subset_source_union_queryInfluenceRegion_of_admissibleQuery
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (history : List (F × Bool)) (v : F)
+    (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (S : DynamicBlockHistoryState d F)
+    (hadmissible : AdmissibleQuery root history v)
+    (hcover : OutgoingCoversUndecidedNeighbors
+      ([(root, true)] ++ canonicalSuffix root history) S)
+    (hinstalled : S.SeedBoxesInstalled (m := m))
+    (hnormalized : S.OutgoingReferenceCentersNormalized (N := m + n + 1))
+    (hhalfway : S.OutgoingSeedsInHalfwayBoxes (N := m + n + 1)) :
+    let fullHistory := [(root, true)] ++ canonicalSuffix root history
+    (cubicEdgeEndpointVertices
+        (siteRuntime hd hmn root fullHistory v p delta incremented X S).source.explored :
+      Set (Cubic d)) ⊆
+      (cubicEdgeEndpointVertices S.source.explored : Set (Cubic d)) ∪
+        grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1 := by
+  dsimp only
+  let fullHistory := [(root, true)] ++ canonicalSuffix root history
+  let seed := inletSeed hd root fullHistory v S
+  let incoming := incomingDirection hd root fullHistory v
+  let first := firstFlip hd root fullHistory v S
+  let directions := siteDirectionOrder hd root fullHistory v
+  have hwithin := siteRuntime_supportsWithin_queryInfluenceRegion_of_admissibleQuery
+    hd hmn root history v p delta incremented X S hadmissible hcover hinstalled
+      hnormalized hhalfway
+  have hsubset := LaterSiteRuntime.endpointVertices_runFrom_subset_initial_union_of_supportsWithin
+    hmn seed.physicalCenter incoming first unusedSecondFlip p delta incremented X
+      (grimmettMarstrandQueryInfluenceRegion (m + n + 1) v.1)
+      (siteInitialRuntime (m + n + 1) v S seed) 0 directions hwithin
+  simpa [siteRuntime, fullHistory, seed, incoming, first, directions,
+    siteInitialRuntime, LaterSiteRuntime.initialAt] using hsubset
+
 /-- Rewrite an outgoing seed's steering datum relative to the deterministic coarse-site
 center which publishes it.  The physical anchor is unchanged. -/
 def normalizeOutgoingSeed (N : ℕ) (v : F)
@@ -1582,6 +1655,64 @@ noncomputable def replayFrom (hd : 0 < d) (hmn : 2 * m ≤ n)
       replayFrom hd hmn root p delta incremented X (prior ++ [(v, accepted)])
         (step hd hmn root prior v accepted p delta incremented X S) rest
 
+/-- Exact finite union of every non-root restart support read by a replay suffix. -/
+noncomputable def replayFromRestartSupportUnion
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) :
+    List (F × Bool) → DynamicBlockHistoryState d F → List (F × Bool) →
+      Finset (CubicEdge d)
+  | _, _, [] => ∅
+  | prior, S, (v, accepted) :: rest =>
+      siteRuntimeRestartSupportUnion hd hmn root prior v p delta incremented X S ∪
+        replayFromRestartSupportUnion hd hmn root p delta incremented X
+          (prior ++ [(v, accepted)])
+          (step hd hmn root prior v accepted p delta incremented X S) rest
+
+/-- Exact explored-endpoint accounting for an arbitrary replay suffix. -/
+theorem endpointVertices_replayFrom_subset_initial_union_restartSupportUnion
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (root : F) (p : I) (delta : ℝ) (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (prior : List (F × Bool))
+    (S : DynamicBlockHistoryState d F) (history : List (F × Bool)) :
+    cubicEdgeEndpointVertices
+        (replayFrom hd hmn root p delta incremented X prior S history).source.explored ⊆
+      cubicEdgeEndpointVertices S.source.explored ∪
+        cubicEdgeEndpointVertices
+          (replayFromRestartSupportUnion hd hmn root p delta incremented X prior S history) := by
+  induction history generalizing prior S with
+  | nil =>
+      intro z hz
+      exact Finset.mem_union_left _ <| by
+        simpa [replayFrom] using hz
+  | cons entry rest ih =>
+      rcases entry with ⟨v, accepted⟩
+      let Snext := step hd hmn root prior v accepted p delta incremented X S
+      have htail := ih (prior ++ [(v, accepted)]) Snext
+      intro z hz
+      have hzTail : z ∈ cubicEdgeEndpointVertices Snext.source.explored ∪
+          cubicEdgeEndpointVertices
+            (replayFromRestartSupportUnion hd hmn root p delta incremented X
+              (prior ++ [(v, accepted)]) Snext rest) := by
+        exact htail (by simpa [replayFrom, Snext] using hz)
+      rcases Finset.mem_union.mp hzTail with hzNext | hzRest
+      · have hzStep : z ∈ cubicEdgeEndpointVertices S.source.explored ∪
+            cubicEdgeEndpointVertices
+              (siteRuntimeRestartSupportUnion hd hmn root prior v p delta incremented X S) := by
+          apply endpointVertices_siteRuntime_subset_source_union_restartSupportUnion
+            hd hmn root prior v p delta incremented X S
+          simpa [Snext, step] using hzNext
+        rcases Finset.mem_union.mp hzStep with hzInitial | hzLocal
+        · exact Finset.mem_union_left _ hzInitial
+        · exact Finset.mem_union_right _ <| by
+            apply mem_cubicEdgeEndpointVertices_iff.mpr
+            obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hzLocal
+            exact ⟨e, Finset.mem_union_left _ he, hze⟩
+      · exact Finset.mem_union_right _ <| by
+          apply mem_cubicEdgeEndpointVertices_iff.mpr
+          obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hzRest
+          exact ⟨e, Finset.mem_union_right _ he, hze⟩
+
 /-- Reference-frame normalization is invariant under an arbitrary literal replay suffix. -/
 theorem outgoingReferenceCentersNormalized_replayFrom
     (hd : 0 < d) (hmn : 2 * m ≤ n)
@@ -1690,6 +1821,41 @@ noncomputable def replay
   replayFrom hd hmn root p delta incremented X [(root, true)]
     (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X)
     (canonicalSuffix root history)
+
+/-- Exact union of all non-root restart supports read by a canonical replay. -/
+noncomputable def replayRestartSupportUnion
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (W : RootRadialSeedProfile d m n) (root : F)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (history : List (F × Bool)) :
+    Finset (CubicEdge d) :=
+  replayFromRestartSupportUnion hd hmn root p delta incremented X [(root, true)]
+    (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X)
+    (canonicalSuffix root history)
+
+/-- The explored endpoints of a canonical replay are covered exactly by the completed-root
+state and the finite union of its literal non-root restart supports. -/
+theorem endpointVertices_replay_subset_rooted_union_restartSupportUnion
+    (hd : 0 < d) (hmn : 2 * m ≤ n)
+    (W : RootRadialSeedProfile d m n) (root : F)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ) (history : List (F × Bool)) :
+    cubicEdgeEndpointVertices
+        (replay hd hmn W root p radialIncremented delta incremented X history
+          ).source.explored ⊆
+      cubicEdgeEndpointVertices
+          (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X
+            ).source.explored ∪
+        cubicEdgeEndpointVertices
+          (replayRestartSupportUnion hd hmn W root p radialIncremented delta incremented X
+            history) := by
+  simpa [replay, replayRestartSupportUnion] using
+    (endpointVertices_replayFrom_subset_initial_union_restartSupportUnion hd hmn root p
+      delta incremented X [(root, true)]
+      (DynamicBlockHistoryState.rooted W root p radialIncremented delta incremented X)
+      (canonicalSuffix root history))
 
 /-- The complete replay keeps every published reference displacement based at its publishing
 coarse site. -/

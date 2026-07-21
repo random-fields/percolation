@@ -1,10 +1,12 @@
 import Percolation.Planar.Chapter11External
+import Percolation.Bernoulli.Inhomogeneous
 
 /-!
 # Inhomogeneous planar percolation
 
 This file supplies concrete product measures for the inhomogeneous square and triangular
-lattices used at the end of Grimmett Chapter 11.  The critical-surface conclusions themselves
+lattices used at the end of Grimmett Chapter 11.  The common coordinate-dependent product law
+is defined in `Percolation.Bernoulli.Inhomogeneous`.  The critical-surface conclusions themselves
 are external-reference axioms: Grimmett states them without proofs and refers to the original
 star--triangle literature.
 -/
@@ -13,19 +15,6 @@ namespace Percolation
 
 open MeasureTheory ProbabilityTheory Set
 open scoped unitInterval
-
-/-- Independent Bernoulli coordinates with a coordinate-dependent density profile. -/
-noncomputable def inhomogeneousSetBernoulli {ι : Type*} (q : ι → I) : Measure (Set ι) :=
-  Measure.comap (fun s i ↦ i ∈ s) <|
-    Measure.infinitePi fun i ↦
-      unitInterval.toNNReal (q i) • Measure.dirac True +
-        unitInterval.toNNReal (σ (q i)) • Measure.dirac False
-
-noncomputable instance inhomogeneousSetBernoulli.isProbabilityMeasure {ι : Type*}
-    (q : ι → I) : IsProbabilityMeasure (inhomogeneousSetBernoulli q) := by
-  rw [inhomogeneousSetBernoulli]
-  exact MeasurableEquiv.setOf.symm.measurableEmbedding.isProbabilityMeasure_comap <|
-    .of_forall fun P ↦ ⟨{i | P i}, rfl⟩
 
 /-- A square-lattice edge is horizontal when its endpoints have the same second coordinate. -/
 def squareEdgeIsHorizontal (e : SquareEdge) : Prop :=

@@ -23,7 +23,8 @@ this into page-anchored JSON in `kg/derived/`.
 | P14 | Ch. 9 | Scaling theory and critical exponents, informal interface | Critical | external/interface first |
 | P15 | Ch. 10 | High-dimensional mean-field/lace-expansion statements | Critical | external/interface first |
 | P16 | Ch. 11 | Planar duality and `p_c = 1/2` for square-lattice bond percolation | Planar | **complete modulo explicitly cited external-reference axioms**: exact `p_c(ℤ²)=1/2`, half-density rectangle duality, RSW algebra, centered supercritical crossing tails, and tube decay are proved; Proposition 11.2/Kesten topology, Russo lowest crossing, source-facing descendants, the cited CLT, and inhomogeneous critical surfaces are isolated and audited as project axioms; see `audit/topics/topic-11-bond-percolation-two-dimensions.md` |
-| P17 | Ch. 13 | Related processes: continuum, first-passage, electrical networks, random-cluster | Extensions | later |
+| P17 | Ch. 12 | Extensions: mixed/AB/long-range, surfaces, entanglement, rigidity, invasion, oriented, first-passage, and continuum percolation | Extensions | **active**: complete source inventory, dependency/API plan, fidelity rules, and telemetry/review protocol are frozen in `audit/topics/topic-12-extensions-of-percolation.md`; implementation begins with the countable inhomogeneous product and long-range graph stack |
+| P18 | Ch. 13 | Percolative systems: contact processes, electrical networks, random-cluster and related models | Extensions | later |
 
 ## Source RC — Grimmett, *The Random-Cluster Model*
 

@@ -457,4 +457,382 @@ theorem one_eighth_le_rswSquareCrossingProbability_half
   exact measureReal_mono (rswHalfSquareWitnessEvent_subset (k + 1) (by omega))
     (measure_ne_top _ _)
 
+/-! ### Axiom-free even-rectangle variant
+
+The preceding source-literal route starts from the exact trace count for the odd member of
+Grimmett's rectangle family.  The finite bond-interface proof gives a lower bound for the even
+members instead.  One additional fresh edge on the right absorbs this parity shift while keeping
+a scale-independent cost. -/
+
+/-- The second outward edge to the right of a selected Grimmett crossing. -/
+def grimmettTraceRightSecondExtensionEdge
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s) : SquareEdge :=
+  cubicStepEdge (grimmettTraceRightOuterVertex W) ((0 : Fin 2), true)
+
+/-- The endpoint two steps to the right of a selected Grimmett crossing. -/
+def grimmettTraceRightSecondOuterVertex
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s) :
+    SquareVertex :=
+  cubicStepFrom (grimmettTraceRightOuterVertex W) ((0 : Fin 2), true)
+
+/-- The selected crossing with one fresh edge on the left and two on the right. -/
+def grimmettTraceExtendedWalkThree
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s) :
+    squareGraph.Walk (grimmettTraceLeftOuterVertex W)
+      (grimmettTraceRightSecondOuterVertex W) :=
+  (grimmettTraceExtendedWalk W).append
+    (SimpleGraph.Walk.cons
+      (cubicGraph_adj_stepFrom (grimmettTraceRightOuterVertex W) ((0 : Fin 2), true))
+      SimpleGraph.Walk.nil)
+
+/-- The three trace-dependent fresh edges used by the even-rectangle variant. -/
+noncomputable def grimmettRectangleFreshExtensionEdgesThree
+    (n : ℕ) (s : Finset SquareEdge) : Finset SquareEdge := by
+  classical
+  exact if hs : s ∈ grimmettRectangleCrossingTraces n then
+    let W := selectedGrimmettRectangleTraceCrossing n ⟨s, hs⟩
+    insert (grimmettTraceRightSecondExtensionEdge W)
+      (grimmettRectangleFreshExtensionEdges n s)
+  else ∅
+
+private theorem grimmettTraceRightSecondExtensionEdge_not_mem
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s) :
+    grimmettTraceRightSecondExtensionEdge W ∉ grimmettRectangleEdges n := by
+  intro he
+  have hzEdge : grimmettTraceRightSecondOuterVertex W ∈
+      (grimmettTraceRightSecondExtensionEdge W : Sym2 SquareVertex) := by
+    simp [grimmettTraceRightSecondOuterVertex,
+      grimmettTraceRightSecondExtensionEdge, cubicStepEdge]
+  have hzRect := endpoint_mem_grimmettRectangleVertices_of_edge_mem he hzEdge
+  have hz0 := (mem_grimmettRectangleVertices_iff.mp hzRect).2.1
+  have hf0 := (mem_grimmettRectangleRight_iff.mp W.finish_mem).1
+  simp [grimmettTraceRightSecondOuterVertex, grimmettTraceRightOuterVertex,
+    cubicStepFrom, cubicDirectionIncrement, hf0] at hz0
+
+private theorem grimmettTraceRightSecondExtensionEdge_ne_left
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s) :
+    grimmettTraceRightSecondExtensionEdge W ≠ grimmettTraceLeftExtensionEdge W := by
+  intro h
+  have hz : grimmettTraceRightSecondOuterVertex W ∈
+      (grimmettTraceRightSecondExtensionEdge W : Sym2 SquareVertex) := by
+    simp [grimmettTraceRightSecondOuterVertex,
+      grimmettTraceRightSecondExtensionEdge, cubicStepEdge]
+  rw [h, grimmettTraceLeftExtensionEdge, cubicStepEdge, Sym2.mem_iff] at hz
+  have hs0 := (mem_grimmettRectangleLeft_iff.mp W.start_mem).1
+  have hf0 := (mem_grimmettRectangleRight_iff.mp W.finish_mem).1
+  rcases hz with hz | hz
+  · have hz0 := congrFun hz 0
+    simp [grimmettTraceRightSecondOuterVertex, grimmettTraceRightOuterVertex,
+      cubicStepFrom, cubicDirectionIncrement, hs0, hf0] at hz0
+    omega
+  · have hz0 := congrFun hz 0
+    simp [grimmettTraceRightSecondOuterVertex, grimmettTraceRightOuterVertex,
+      cubicStepFrom, cubicDirectionIncrement, hs0, hf0] at hz0
+    omega
+
+private theorem grimmettTraceRightSecondExtensionEdge_ne_right
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s) :
+    grimmettTraceRightSecondExtensionEdge W ≠ grimmettTraceRightExtensionEdge W := by
+  intro h
+  have hz : grimmettTraceRightSecondOuterVertex W ∈
+      (grimmettTraceRightSecondExtensionEdge W : Sym2 SquareVertex) := by
+    simp [grimmettTraceRightSecondOuterVertex,
+      grimmettTraceRightSecondExtensionEdge, cubicStepEdge]
+  rw [h, grimmettTraceRightExtensionEdge, cubicStepEdge, Sym2.mem_iff] at hz
+  have hf0 := (mem_grimmettRectangleRight_iff.mp W.finish_mem).1
+  rcases hz with hz | hz
+  · have hz0 := congrFun hz 0
+    simp [grimmettTraceRightSecondOuterVertex, grimmettTraceRightOuterVertex,
+      cubicStepFrom, cubicDirectionIncrement, hf0] at hz0
+    omega
+  · have hz0 := congrFun hz 0
+    simp [grimmettTraceRightSecondOuterVertex, grimmettTraceRightOuterVertex,
+      cubicStepFrom, cubicDirectionIncrement, hf0] at hz0
+
+theorem grimmettRectangleFreshExtensionEdgesThree_disjoint
+    (n : ℕ) (s : Finset SquareEdge) (hs : s ∈ grimmettRectangleCrossingTraces n) :
+    Disjoint (grimmettRectangleFreshExtensionEdgesThree n s)
+      (grimmettRectangleEdges n) := by
+  classical
+  let W := selectedGrimmettRectangleTraceCrossing n ⟨s, hs⟩
+  rw [Finset.disjoint_left]
+  intro e he hE
+  simp only [grimmettRectangleFreshExtensionEdgesThree, dif_pos hs,
+    Finset.mem_insert] at he
+  rcases he with rfl | he
+  · exact grimmettTraceRightSecondExtensionEdge_not_mem W hE
+  · exact (Finset.disjoint_left.mp
+      (grimmettRectangleFreshExtensionEdges_disjoint n s hs)) he hE
+
+theorem card_grimmettRectangleFreshExtensionEdgesThree
+    (n : ℕ) (s : Finset SquareEdge) (hs : s ∈ grimmettRectangleCrossingTraces n) :
+    (grimmettRectangleFreshExtensionEdgesThree n s).card = 3 := by
+  classical
+  let W := selectedGrimmettRectangleTraceCrossing n ⟨s, hs⟩
+  have hnot : grimmettTraceRightSecondExtensionEdge W ∉
+      grimmettRectangleFreshExtensionEdges n s := by
+    simp only [grimmettRectangleFreshExtensionEdges, dif_pos hs,
+      Finset.mem_insert, Finset.mem_singleton, not_or]
+    exact ⟨grimmettTraceRightSecondExtensionEdge_ne_left W,
+      grimmettTraceRightSecondExtensionEdge_ne_right W⟩
+  rw [grimmettRectangleFreshExtensionEdgesThree, dif_pos hs,
+    Finset.card_insert_of_notMem hnot,
+    card_grimmettRectangleFreshExtensionEdges n s hs]
+
+set_option maxHeartbeats 800000 in
+private theorem selectedGrimmettTraceExtendedWalkThree_isOpen
+    {n : ℕ} {s : Finset SquareEdge} (hs : s ∈ grimmettRectangleCrossingTraces n)
+    {ω : EdgeConfiguration 2}
+    (hcyl : ω ∈ finiteCylinder (grimmettRectangleEdges n) s)
+    (hfresh : ω ∈ openEdgeSetEvent 2
+      (grimmettRectangleFreshExtensionEdgesThree n s)) :
+    walkIsOpen ω (grimmettTraceExtendedWalkThree
+      (selectedGrimmettRectangleTraceCrossing n ⟨s, hs⟩)) := by
+  classical
+  let W := selectedGrimmettRectangleTraceCrossing n ⟨s, hs⟩
+  have hfreshOld : ω ∈ openEdgeSetEvent 2
+      (grimmettRectangleFreshExtensionEdges n s) := by
+    intro e he
+    apply hfresh
+    simp [grimmettRectangleFreshExtensionEdgesThree, hs, he]
+  have hOld : walkIsOpen ω (grimmettTraceExtendedWalk W) :=
+    selectedGrimmettTraceExtendedWalk_isOpen hs hcyl hfreshOld
+  have hsecondMem : grimmettTraceRightSecondExtensionEdge W ∈
+      grimmettRectangleFreshExtensionEdgesThree n s := by
+    simp [grimmettRectangleFreshExtensionEdgesThree, hs, W]
+  have hsecond : walkIsOpen ω
+      (SimpleGraph.Walk.cons
+        (cubicGraph_adj_stepFrom (grimmettTraceRightOuterVertex W)
+          ((0 : Fin 2), true)) SimpleGraph.Walk.nil) := by
+    intro e he
+    simp only [SimpleGraph.Walk.edges_cons, SimpleGraph.Walk.edges_nil,
+      List.mem_cons, List.not_mem_nil, or_false] at he
+    subst e
+    simpa [grimmettTraceRightSecondExtensionEdge, cubicStepEdge] using
+      hfresh hsecondMem
+  exact walkIsOpen_append hOld hsecond
+
+private theorem grimmettTraceExtendedWalkThree_edge_bounds
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s)
+    {e : Sym2 SquareVertex} (he : e ∈ (grimmettTraceExtendedWalkThree W).edges)
+    {z : SquareVertex} (hz : z ∈ e) :
+    (-1 : ℤ) ≤ z 0 ∧ z 0 ≤ (n + 3 : ℕ) ∧ 0 ≤ z 1 ∧ z 1 ≤ (n : ℤ) := by
+  simp only [grimmettTraceExtendedWalkThree, SimpleGraph.Walk.edges_append,
+    SimpleGraph.Walk.edges_cons, SimpleGraph.Walk.edges_nil, List.mem_append,
+    List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with he | he
+  · have h := grimmettTraceExtendedWalk_edge_bounds W he hz
+    omega
+  · rcases he with rfl | he
+    · rw [Sym2.mem_iff] at hz
+      have hf := mem_grimmettRectangleRight_iff.mp W.finish_mem
+      rcases hz with rfl | rfl <;>
+        simp [grimmettTraceRightSecondOuterVertex, grimmettTraceRightOuterVertex,
+          cubicStepFrom, cubicDirectionIncrement, hf] <;> omega
+    · change e ∈ ([] : List (Sym2 SquareVertex)) at he
+      simp at he
+
+private theorem grimmettTraceExtendedWalkThree_support_bounds
+    {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s)
+    {z : SquareVertex} (hz : z ∈ (grimmettTraceExtendedWalkThree W).support) :
+    (-1 : ℤ) ≤ z 0 ∧ z 0 ≤ (n + 3 : ℕ) ∧ 0 ≤ z 1 ∧ z 1 ≤ (n : ℤ) := by
+  have hnonNil : ¬(grimmettTraceExtendedWalkThree W).Nil := by
+    simp [grimmettTraceExtendedWalkThree, grimmettTraceExtendedWalk]
+  obtain ⟨e, he, hze⟩ :=
+    (SimpleGraph.Walk.mem_support_iff_exists_mem_edges_of_not_nil hnonNil).mp hz
+  exact grimmettTraceExtendedWalkThree_edge_bounds W he hze
+
+/-- The three-edge adaptive extension event for an even Grimmett rectangle. -/
+noncomputable def grimmettRectangleFreshCrossingEventThree (n : ℕ) :
+    Set (EdgeConfiguration 2) :=
+  adaptiveFreshOpenExtensionEvent (grimmettRectangleEdges n)
+    (grimmettRectangleCrossingTraces n) (grimmettRectangleFreshExtensionEdgesThree n)
+
+theorem measurableSet_grimmettRectangleFreshCrossingEventThree (n : ℕ) :
+    MeasurableSet (grimmettRectangleFreshCrossingEventThree n) := by
+  classical
+  apply measurableSet_adaptiveFreshOpenExtensionEvent
+  intro s hs
+  exact (Finset.mem_filter.mp hs).1
+
+/-- The even-source witness, transported into the boundary-free RSW square two scales up. -/
+noncomputable def rswHalfSquareWitnessEventThree (l : ℕ) : Set (EdgeConfiguration 2) :=
+  cubicGraphIsoEvent (grimmettFreshSquareIso l)
+    (grimmettRectangleFreshCrossingEventThree (2 * l))
+
+private theorem mapped_grimmettTraceExtendedWalkThree_support_mem_square
+    {l : ℕ} {s : Finset SquareEdge}
+    (W : GrimmettRectangleTraceCrossing (2 * l) s) {z : SquareVertex}
+    (hz : z ∈ ((grimmettTraceExtendedWalkThree W).map
+      (grimmettFreshSquareIso l).toHom).support) :
+    z ∈ squareRectangleVertices (2 * (l + 2)) (l + 2) := by
+  rw [SimpleGraph.Walk.support_map] at hz
+  obtain ⟨u, hu, rfl⟩ := List.mem_map.mp hz
+  have hb := grimmettTraceExtendedWalkThree_support_bounds W hu
+  rw [mem_squareRectangleVertices_iff]
+  change 0 ≤ grimmettFreshSquareIso l u 0 ∧
+    grimmettFreshSquareIso l u 0 ≤ (2 * (l + 2) : ℕ) ∧
+    -(l + 2 : ℕ) ≤ grimmettFreshSquareIso l u 1 ∧
+    grimmettFreshSquareIso l u 1 ≤ (l + 2 : ℕ)
+  simp only [grimmettFreshSquareIso_apply_zero, grimmettFreshSquareIso_apply_one]
+  omega
+
+private theorem mapped_grimmettTraceExtendedWalkThree_edge_not_boundary
+    {l : ℕ} {s : Finset SquareEdge}
+    (W : GrimmettRectangleTraceCrossing (2 * l) s)
+    {e : Sym2 SquareVertex}
+    (he : e ∈ ((grimmettTraceExtendedWalkThree W).map
+      (grimmettFreshSquareIso l).toHom).edges) :
+    ¬(squareRectangleBoundaryVertex (2 * (l + 2)) (l + 2) e.out.1 ∧
+      squareRectangleBoundaryVertex (2 * (l + 2)) (l + 2) e.out.2) := by
+  rw [SimpleGraph.Walk.edges_map] at he
+  obtain ⟨f, hf, rfl⟩ := List.mem_map.mp he
+  simp only [grimmettTraceExtendedWalkThree, SimpleGraph.Walk.edges_append,
+    SimpleGraph.Walk.edges_cons, SimpleGraph.Walk.edges_nil, List.mem_append,
+    List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with hf | hf
+  · obtain ⟨u, huf, huRect⟩ :=
+      grimmettTraceExtendedWalk_edge_has_rectangle_endpoint W hf
+    have hu := mem_grimmettRectangleVertices_iff.mp huRect
+    have hnot : ¬squareRectangleBoundaryVertex (2 * (l + 2)) (l + 2)
+        (grimmettFreshSquareIso l u) := by
+      simp only [squareRectangleBoundaryVertex, grimmettFreshSquareIso_apply_zero,
+        grimmettFreshSquareIso_apply_one]
+      omega
+    intro hb
+    apply hnot
+    have humap : grimmettFreshSquareIso l u ∈
+        Sym2.map (grimmettFreshSquareIso l) f :=
+      Sym2.mem_map.mpr ⟨u, huf, rfl⟩
+    rw [← (Sym2.map (grimmettFreshSquareIso l) f).out_eq, Sym2.mem_iff] at humap
+    exact humap.elim (fun h ↦ h ▸ hb.1) (fun h ↦ h ▸ hb.2)
+  · rcases hf with rfl | hf
+    · intro hb
+      have hf := mem_grimmettRectangleRight_iff.mp W.finish_mem
+      have hfirst : ¬squareRectangleBoundaryVertex (2 * (l + 2)) (l + 2)
+          (grimmettFreshSquareIso l (grimmettTraceRightOuterVertex W)) := by
+        simp [squareRectangleBoundaryVertex, grimmettTraceRightOuterVertex,
+          cubicStepFrom, cubicDirectionIncrement, hf]
+        omega
+      apply hfirst
+      have hmem : grimmettFreshSquareIso l (grimmettTraceRightOuterVertex W) ∈
+          Sym2.map (grimmettFreshSquareIso l)
+            s(grimmettTraceRightOuterVertex W,
+              grimmettTraceRightSecondOuterVertex W) := by
+        exact Sym2.mem_map.mpr ⟨_, by simp, rfl⟩
+      rw [← (Sym2.map (grimmettFreshSquareIso l)
+        s(grimmettTraceRightOuterVertex W,
+          grimmettTraceRightSecondOuterVertex W)).out_eq, Sym2.mem_iff] at hmem
+      exact hmem.elim (fun h ↦ h ▸ hb.1) (fun h ↦ h ▸ hb.2)
+    · change f ∈ ([] : List (Sym2 SquareVertex)) at hf
+      simp at hf
+
+private theorem mapped_grimmettTraceExtendedWalkThree_edges_subset_boundaryFreeSquare
+    {l : ℕ} {s : Finset SquareEdge}
+    (W : GrimmettRectangleTraceCrossing (2 * l) s) :
+    walkEdgeFinset ((grimmettTraceExtendedWalkThree W).map
+        (grimmettFreshSquareIso l).toHom) ⊆
+      squareBoundaryFreeRectangleEdges (2 * (l + 2)) (l + 2) := by
+  let q := (grimmettTraceExtendedWalkThree W).map (grimmettFreshSquareIso l).toHom
+  have hrect : walkEdgeFinset q ⊆ squareRectangleEdges (2 * (l + 2)) (l + 2) :=
+    walkEdgeFinset_subset_squareRectangleEdges_of_support q
+      (fun z hz ↦ mapped_grimmettTraceExtendedWalkThree_support_mem_square W hz)
+  intro e he
+  rw [squareBoundaryFreeRectangleEdges, Finset.mem_filter]
+  refine ⟨hrect he, ?_⟩
+  exact mapped_grimmettTraceExtendedWalkThree_edge_not_boundary W
+    ((mem_walkEdgeFinset_iff q e).mp he)
+
+theorem rswHalfSquareWitnessEventThree_subset (l : ℕ) :
+    rswHalfSquareWitnessEventThree l ⊆ rswSquareCrossingEvent (l + 2) := by
+  classical
+  intro ω hω
+  change cubicGraphIsoConfigurationPullback (grimmettFreshSquareIso l) ω ∈
+    grimmettRectangleFreshCrossingEventThree (2 * l) at hω
+  simp only [grimmettRectangleFreshCrossingEventThree,
+    adaptiveFreshOpenExtensionEvent, Set.mem_iUnion, Set.mem_inter_iff] at hω
+  obtain ⟨s, hs, hcyl, hfresh⟩ := hω
+  let W := selectedGrimmettRectangleTraceCrossing (2 * l) ⟨s, hs⟩
+  let q := (grimmettTraceExtendedWalkThree W).map (grimmettFreshSquareIso l).toHom
+  have hsource : walkIsOpen
+      (cubicGraphIsoConfigurationPullback (grimmettFreshSquareIso l) ω)
+      (grimmettTraceExtendedWalkThree W) :=
+    selectedGrimmettTraceExtendedWalkThree_isOpen hs hcyl hfresh
+  have hopen : walkIsOpen ω q :=
+    walkIsOpen_map_cubicGraphIso (grimmettFreshSquareIso l)
+      (grimmettTraceExtendedWalkThree W) hsource
+  have hleft : grimmettFreshSquareIso l (grimmettTraceLeftOuterVertex W) ∈
+      squareRectangleLeft (2 * (l + 2)) (l + 2) := by
+    rw [mem_squareRectangleLeft_iff]
+    have hs' := mem_grimmettRectangleLeft_iff.mp W.start_mem
+    simp [grimmettTraceLeftOuterVertex, cubicStepFrom, cubicDirectionIncrement, hs']
+    omega
+  have hright : grimmettFreshSquareIso l (grimmettTraceRightSecondOuterVertex W) ∈
+      squareRectangleRight (2 * (l + 2)) (l + 2) := by
+    rw [mem_squareRectangleRight_iff]
+    have hf' := mem_grimmettRectangleRight_iff.mp W.finish_mem
+    simp [grimmettTraceRightSecondOuterVertex, grimmettTraceRightOuterVertex,
+      cubicStepFrom, cubicDirectionIncrement, hf']
+    omega
+  simp only [rswSquareCrossingEvent, rswRectangleCrossingEvent,
+    squareBoundaryFreeRectangleCrossingEvent, Set.mem_iUnion]
+  exact ⟨_, hleft, _, hright, q, hopen,
+    mapped_grimmettTraceExtendedWalkThree_edges_subset_boundaryFreeSquare W⟩
+
+theorem one_sixteenth_le_bernoulliBondMeasure_real_grimmettRectangleFreshCrossingEventThree
+    (l : ℕ) (hl : 0 < l) :
+    1 / 16 ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
+      (grimmettRectangleFreshCrossingEventThree (2 * l)) := by
+  classical
+  have hT : grimmettRectangleCrossingTraces (2 * l) ⊆
+      (grimmettRectangleEdges (2 * l)).powerset := by
+    intro s hs
+    exact (Finset.mem_filter.mp hs).1
+  have hext := bernoulliBondMeasure_real_adaptiveFreshOpenExtensionEvent
+    (k := 3) squareHalfDensity (grimmettRectangleEdges (2 * l))
+    (grimmettRectangleCrossingTraces (2 * l)) hT
+    (grimmettRectangleFreshExtensionEdgesThree (2 * l))
+    (grimmettRectangleFreshExtensionEdgesThree_disjoint (2 * l))
+    (card_grimmettRectangleFreshExtensionEdgesThree (2 * l))
+  have hsum : 1 / 2 ≤
+      ∑ s ∈ grimmettRectangleCrossingTraces (2 * l),
+        finiteBernoulliWeight (grimmettRectangleEdges (2 * l)) (1 / 2) s := by
+    have hfinite :=
+      (dependsOn_grimmettRectangleCrossingEvent (2 * l)
+        ).bernoulliBondMeasure_real_eq_finiteBernoulliProbability squareHalfDensity
+    have hlower := half_le_grimmettRectangleCrossingProbability_even l hl
+    rw [hfinite, finiteBernoulliProbability_eq_sum_filter] at hlower
+    simpa [grimmettRectangleCrossingTraces, coe_squareHalfDensity] using hlower
+  rw [grimmettRectangleFreshCrossingEventThree, hext, coe_squareHalfDensity]
+  norm_num at hsum ⊢
+  linarith
+
+theorem one_sixteenth_le_bernoulliBondMeasure_real_rswHalfSquareWitnessEventThree
+    (l : ℕ) (hl : 0 < l) :
+    1 / 16 ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
+      (rswHalfSquareWitnessEventThree l) := by
+  rw [rswHalfSquareWitnessEventThree,
+    bernoulliBondMeasure_real_cubicGraphIsoEvent squareHalfDensity
+      (grimmettFreshSquareIso l)
+      (measurableSet_grimmettRectangleFreshCrossingEventThree (2 * l))]
+  exact one_sixteenth_le_bernoulliBondMeasure_real_grimmettRectangleFreshCrossingEventThree l hl
+
+/-- A completely axiom-free scale-uniform square-crossing input for the critical RSW argument. -/
+theorem one_sixteenth_le_rswSquareCrossingProbability_half
+    (l : ℕ) (hl : 3 ≤ l) :
+    1 / 16 ≤ rswSquareCrossingProbability squareHalfDensity l := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hl
+  rw [show 3 + k = (k + 1) + 2 by omega]
+  change 1 / 16 ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
+    (rswSquareCrossingEvent ((k + 1) + 2))
+  calc
+    (1 / 16 : ℝ) ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
+        (rswHalfSquareWitnessEventThree (k + 1)) :=
+      one_sixteenth_le_bernoulliBondMeasure_real_rswHalfSquareWitnessEventThree
+        (k + 1) (by omega)
+    _ ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
+        (rswSquareCrossingEvent ((k + 1) + 2)) :=
+      measureReal_mono (rswHalfSquareWitnessEventThree_subset (k + 1))
+        (measure_ne_top _ _)
+
 end Percolation

@@ -1,5 +1,5 @@
 import Percolation.Planar.SquareCritical
-import Percolation.Planar.RSWPlacements
+import Percolation.Planar.RSWCircuitIncidence
 
 /-!
 # Externally sourced planar topology
@@ -93,25 +93,6 @@ conclusion of that externally supplied step. -/
 axiom rswThreeHalvesCrossingProbability_ge (p : I) (l : ℕ) :
     (1 - Real.sqrt (1 - rswSquareCrossingProbability p l)) ^ 3 ≤
       rswThreeHalvesCrossingProbability p l
-
-/-- The three boundary-free crossings in Figure 11.25 glue to a crossing of the enclosing
-`4l × 2l` rectangle.  This is the first bare planar-incidence input in Lemma 11.75.  Its
-rigorous content is the alternating-crossings consequence of Proposition 11.2, whose topology
-the book delegates to Kesten (1982, p. 386). -/
-axiom rswGluingTwoIntersection_subset (l : ℕ) (hl : 1 ≤ l) :
-    rswGluingTwoIntersection l ⊆ rswRectangleCrossingEvent 2 l
-
-/-- The three boundary-free crossings in Figure 11.26 glue to a crossing of the enclosing
-`6l × 2l` rectangle.  As above, only this deterministic planar-incidence statement is kept at
-the externally delegated Proposition 11.2 boundary. -/
-axiom rswGluingThreeIntersection_subset (l : ℕ) (hl : 1 ≤ l) :
-    rswGluingThreeIntersection l ⊆ rswRectangleCrossingEvent 3 l
-
-/-- The four boundary-free crossings in Figure 11.27 contain an open circuit in
-`B(3l) \ B(l)` of odd face index about the origin.  The existence of the surrounding simple
-cycle is the final deterministic use of the externally delegated planar topology. -/
-axiom rswCircuitGluingIntersection_subset (l : ℕ) (hl : 1 ≤ l) :
-    rswCircuitGluingIntersection l ⊆ rswAnnulusOpenCircuitEvent l
 
 /-- Self-dual planar circuit separation.  A primal open annular circuit has the same law at
 density `1/2` as a shifted-dual closed circuit, and that dual circuit blocks a primal radial

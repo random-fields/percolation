@@ -1,3 +1,4 @@
+import Percolation.Planar.BondCrossingDuality
 import Percolation.Planar.External
 
 /-!
@@ -153,8 +154,6 @@ theorem bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half (n : ℕ) 
 Theorem 11.11. -/
 theorem cubicCriticalProbability_two_le_half :
     cubicCriticalProbability 2 ≤ 1 / 2 := by
-  apply cubicCriticalProbability_two_le_half_of_crossingProbability
-  intro n
-  rw [bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half]
+  exact cubicCriticalProbability_two_le_half_via_bond_interface
 
 end Percolation

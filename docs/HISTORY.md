@@ -1877,6 +1877,15 @@ Dated milestones and anti-library notes.
     Chapter 2 sharp-threshold interface that all coordinates have equal influence
     whenever the invariant symmetry family is transitive, while leaving a later
     `Subgroup`/`MulAction` facade as polish rather than a mathematical gap.
+164. **Percolation textbook source audit scorecards (2026-06-29).** Imported the
+   optimal-transport repository's autonomous-autoformalization source criterion
+   into `kg/TextbookCriterion/` and added a percolation-specific textbook audit
+   scorecard. The scorecards distinguish the official Grimmett comparator
+   sources from local candidate PDFs by Kesten, Duminil-Copin, and Grimmett's
+   *Probability on Graphs*, and record that planar surrounding-circuit arguments
+   require explicit discrete frontier/parity scaffolding before autonomous proof
+   search.
+
 ## Axiom Ledger
 
 Chapter 11 contains the explicitly cited external-reference axioms listed in

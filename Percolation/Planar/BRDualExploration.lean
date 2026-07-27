@@ -1,6 +1,7 @@
 import Percolation.Bernoulli.FiniteCube
 import Percolation.Bernoulli.FiniteReachability
 import Percolation.Planar.Basic
+import Percolation.Planar.RSWEvents
 
 /-!
 # Stopped dual exploration for the Bollobás--Riordan crossing argument
@@ -10,10 +11,13 @@ Bollobás--Riordan (2006), Lemma 6.  For the primal square `[0,2n] × [-n,n]`, t
 consists of the unit faces with lower-left coordinates in
 `[-1,2n] × [-n,n-1]`.  Its sources are the faces in the added column `x = -1`.
 
-The exploration follows **open dual edges**, hence precisely edges crossing closed primal
-bonds.  A fiber fixing the reached dual faces is determined by the primal bonds crossed by
-dual-frame edges incident to the fixed reached set.  No crossing-event partition or boundary
-path extraction is asserted here; those require the resolved-interface construction.
+The exploration follows the dual complement of the boundary-free primal square: a frame edge is
+open when its crossed primal bond is absent from the RSW edge set, or when that bond is present
+and closed.  Treating absent perimeter bonds deterministically open is necessary for the reached
+set to depend on exactly the same coordinates as `rswSquareCrossingEvent`.  A fiber fixing the
+reached dual faces is therefore determined only by allowed primal bonds crossed by dual-frame
+edges incident to the fixed reached set.  No crossing-event partition or boundary path extraction
+is asserted here; those require the resolved-interface construction.
 -/
 
 namespace Percolation
@@ -102,37 +106,58 @@ def brLeftmostDualEdgeEmbedding (n : ℕ) :
 /-- Configuration explored in the finite dual frame.
 
 A frame edge is declared open exactly when it is an actual edge of the induced frame graph and
-the primal bond crossed by its ambient dual image is closed.  The existential edge proof makes
-this a configuration on all unordered frame-vertex pairs, as required by
-`finiteGraphReachableVertices`; graph walks only query actual frame edges. -/
+its crossed primal bond is either excluded from the boundary-free RSW square or closed in the
+given configuration.  Thus excluded perimeter bonds are deterministic dual-open edges.  The
+existential edge proof makes this a configuration on all unordered frame-vertex pairs, as
+required by `finiteGraphReachableVertices`; graph walks only query actual frame edges. -/
 def brClosedDualExplorationConfiguration
     (n : ℕ) (omega : EdgeConfiguration 2) : Set (Sym2 (BRLeftmostDualVertex n)) :=
   {e | ∃ he : e ∈ (brLeftmostDualGraph n).edgeSet,
-    squareEdgeDualCrossingEquiv.symm
-        (brLeftmostDualEdgeEmbedding n ⟨e, he⟩) ∉ omega}
+    let crossed := squareEdgeDualCrossingEquiv.symm
+      (brLeftmostDualEdgeEmbedding n ⟨e, he⟩)
+    crossed ∉ squareBoundaryFreeRectangleEdges (2 * n) n ∨ crossed ∉ omega}
 
 theorem mem_brClosedDualExplorationConfiguration_iff_of_mem_edgeSet
     {n : ℕ} {omega : EdgeConfiguration 2} {e : Sym2 (BRLeftmostDualVertex n)}
     (he : e ∈ (brLeftmostDualGraph n).edgeSet) :
     e ∈ brClosedDualExplorationConfiguration n omega ↔
-      squareEdgeDualCrossingEquiv.symm
-          (brLeftmostDualEdgeEmbedding n ⟨e, he⟩) ∉ omega := by
+      let crossed := squareEdgeDualCrossingEquiv.symm
+        (brLeftmostDualEdgeEmbedding n ⟨e, he⟩)
+      crossed ∉ squareBoundaryFreeRectangleEdges (2 * n) n ∨ crossed ∉ omega := by
   change (∃ he' : e ∈ (brLeftmostDualGraph n).edgeSet,
-      squareEdgeDualCrossingEquiv.symm
-          (brLeftmostDualEdgeEmbedding n ⟨e, he'⟩) ∉ omega) ↔ _
+      let crossed := squareEdgeDualCrossingEquiv.symm
+        (brLeftmostDualEdgeEmbedding n ⟨e, he'⟩)
+      crossed ∉ squareBoundaryFreeRectangleEdges (2 * n) n ∨ crossed ∉ omega) ↔ _
   constructor
-  · rintro ⟨he', hclosed⟩
-    simpa only [Subsingleton.elim he' he] using hclosed
-  · exact fun hclosed ↦ ⟨he, hclosed⟩
+  · rintro ⟨he', hopen⟩
+    simpa only [Subsingleton.elim he' he] using hopen
+  · exact fun hopen ↦ ⟨he, hopen⟩
 
-/-- Membership in the exploration configuration is literally ambient dual openness. -/
-theorem mem_brClosedDualExplorationConfiguration_iff_dual_open
+/-- On a bond belonging to the boundary-free square, exploration openness is literally ambient
+dual openness (equivalently, primal closedness). -/
+theorem mem_brClosedDualExplorationConfiguration_iff_dual_open_of_crossed_mem
     {n : ℕ} {omega : EdgeConfiguration 2} {e : Sym2 (BRLeftmostDualVertex n)}
-    (he : e ∈ (brLeftmostDualGraph n).edgeSet) :
+    (he : e ∈ (brLeftmostDualGraph n).edgeSet)
+    (hcrossed : squareEdgeDualCrossingEquiv.symm
+      (brLeftmostDualEdgeEmbedding n ⟨e, he⟩) ∈
+        squareBoundaryFreeRectangleEdges (2 * n) n) :
     e ∈ brClosedDualExplorationConfiguration n omega ↔
       brLeftmostDualEdgeEmbedding n ⟨e, he⟩ ∈ dualSquareConfiguration omega := by
   rw [mem_brClosedDualExplorationConfiguration_iff_of_mem_edgeSet he]
+  simp only [hcrossed, not_true, false_or]
   rfl
+
+/-- A frame edge fails to be exploration-open exactly when its crossed primal bond is an allowed
+boundary-free bond and is open in the primal configuration. -/
+theorem not_mem_brClosedDualExplorationConfiguration_iff_of_mem_edgeSet
+    {n : ℕ} {omega : EdgeConfiguration 2} {e : Sym2 (BRLeftmostDualVertex n)}
+    (he : e ∈ (brLeftmostDualGraph n).edgeSet) :
+    e ∉ brClosedDualExplorationConfiguration n omega ↔
+      let crossed := squareEdgeDualCrossingEquiv.symm
+        (brLeftmostDualEdgeEmbedding n ⟨e, he⟩)
+      crossed ∈ squareBoundaryFreeRectangleEdges (2 * n) n ∧ crossed ∈ omega := by
+  rw [mem_brClosedDualExplorationConfiguration_iff_of_mem_edgeSet he]
+  simp
 
 /-- Faces reachable from the left exterior column through dual-open (primal-closed) edges. -/
 def brLeftReachableFaces
@@ -168,18 +193,24 @@ def brIncidentCrossedPrimalEdge (n : ℕ) (R : Finset (BRLeftmostDualVertex n))
 
 /-- Primal coordinates exposed when the stopped dual exploration has reached-face set `R`.
 
-These are exactly the primal bonds crossed by dual-frame edges incident to a face in `R`.
-In particular, an edge joining two faces outside `R` is not included. -/
+These are exactly the *allowed boundary-free* primal bonds crossed by dual-frame edges incident to
+a face in `R`.  Deterministically open perimeter edges are omitted, and an edge joining two faces
+outside `R` is not included. -/
 def brReachableFaceFiberSupport
     (n : ℕ) (R : Finset (BRLeftmostDualVertex n)) : Finset SquareEdge :=
-  (finiteGraphIncidentEdges (brLeftmostDualGraph n) R).attach.image
-    (brIncidentCrossedPrimalEdge n R)
+  ((finiteGraphIncidentEdges (brLeftmostDualGraph n) R).attach.image
+    (brIncidentCrossedPrimalEdge n R)).filter fun e ↦
+      e ∈ squareBoundaryFreeRectangleEdges (2 * n) n
 
 theorem brIncidentCrossedPrimalEdge_mem_fiberSupport
     {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
     {e : Sym2 (BRLeftmostDualVertex n)}
-    (he : e ∈ finiteGraphIncidentEdges (brLeftmostDualGraph n) R) :
+    (he : e ∈ finiteGraphIncidentEdges (brLeftmostDualGraph n) R)
+    (hallowed : brIncidentCrossedPrimalEdge n R ⟨e, he⟩ ∈
+      squareBoundaryFreeRectangleEdges (2 * n) n) :
     brIncidentCrossedPrimalEdge n R ⟨e, he⟩ ∈ brReachableFaceFiberSupport n R := by
+  rw [brReachableFaceFiberSupport, Finset.mem_filter]
+  refine ⟨?_, hallowed⟩
   apply Finset.mem_image.mpr
   exact ⟨⟨e, he⟩, by simp, rfl⟩
 
@@ -203,9 +234,15 @@ theorem dependsOn_brReachableFaceFiber
         (omega := omega) heGraph,
     mem_brClosedDualExplorationConfiguration_iff_of_mem_edgeSet
         (omega := eta) heGraph]
-  have hprimal := hagree (brIncidentCrossedPrimalEdge n R ⟨e, he⟩)
-    (brIncidentCrossedPrimalEdge_mem_fiberSupport he)
-  simpa [brIncidentCrossedPrimalEdge, brIncidentDualEdge] using not_congr hprimal
+  by_cases hallowed : brIncidentCrossedPrimalEdge n R ⟨e, he⟩ ∈
+      squareBoundaryFreeRectangleEdges (2 * n) n
+  · have hprimal := hagree (brIncidentCrossedPrimalEdge n R ⟨e, he⟩)
+      (brIncidentCrossedPrimalEdge_mem_fiberSupport he hallowed)
+    simp only [brIncidentCrossedPrimalEdge, brIncidentDualEdge] at hallowed ⊢
+    simp only [hallowed, not_true, false_or]
+    exact not_congr hprimal
+  · simp only [brIncidentCrossedPrimalEdge, brIncidentDualEdge] at hallowed ⊢
+    simp [hallowed]
 
 /-- Every stopped-exploration fiber is a measurable finite-cylinder event. -/
 theorem measurableSet_brReachableFaceFiber

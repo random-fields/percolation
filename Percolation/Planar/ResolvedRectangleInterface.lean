@@ -143,6 +143,163 @@ theorem squareCellBoundarySplitTag_pairing_of_card_eq_four
     simp [squareCellBoundarySplitTag, squareCellBoundaryTrueEndpoint, hfour,
       se, nw, hbottom, hleft, hse_nw, hz, hse, hnw]
 
+private theorem card_filter_eq_two_of_nodup_four_pairing
+    {α β : Type*} [DecidableEq α] [DecidableEq β]
+    (a b c d : α) (f : α → β) (hnodup : [a, b, c, d].Nodup)
+    (hpair :
+      (f a = f d ∧ f b = f c ∧ f a ≠ f b) ∨
+        (f a = f b ∧ f c = f d ∧ f a ≠ f c))
+    {x : α} (hx : x ∈ [a, b, c, d]) :
+    (([a, b, c, d].toFinset).filter fun y ↦ f y = f x).card = 2 := by
+  simp at hx
+  rcases hpair with ⟨had, hbc, hab⟩ | ⟨hab, hcd, hac⟩
+  · rcases hx with rfl | rfl | rfl | rfl
+    · apply Finset.card_eq_two.mpr
+      refine ⟨x, d, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+    · apply Finset.card_eq_two.mpr
+      refine ⟨x, c, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+    · apply Finset.card_eq_two.mpr
+      refine ⟨b, x, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+    · apply Finset.card_eq_two.mpr
+      refine ⟨a, x, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+  · rcases hx with rfl | rfl | rfl | rfl
+    · apply Finset.card_eq_two.mpr
+      refine ⟨x, b, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+    · apply Finset.card_eq_two.mpr
+      refine ⟨a, x, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+    · apply Finset.card_eq_two.mpr
+      refine ⟨x, d, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+    · apply Finset.card_eq_two.mpr
+      refine ⟨c, x, ?_, ?_⟩
+      · simp_all
+      · ext y
+        simp_all [eq_comm]
+        grind
+
+/-- Every boundary edge belongs to a split-tag fiber of cardinality two. -/
+theorem card_squareCellBoundaryPositiveEdges_filter_splitTag_eq_two
+    (P : SquareVertex → Prop) [DecidablePred P] (z : DualSquareVertex)
+    {b : SquarePositiveEdge} (hb : b ∈ squareCellBoundaryPositiveEdges P z) :
+    ((squareCellBoundaryPositiveEdges P z).filter fun c ↦
+      squareCellBoundarySplitTag P z c = squareCellBoundarySplitTag P z b).card = 2 := by
+  classical
+  by_cases hfour : (squareCellBoundaryPositiveEdges P z).card = 4
+  · let se : SquareVertex := squareVertex (z 0 + 1) (z 1)
+    let nw : SquareVertex := squareVertex (z 0) (z 1 + 1)
+    let bottom : SquarePositiveEdge := ⟨z, (0 : Fin 2)⟩
+    let right : SquarePositiveEdge := ⟨se, (1 : Fin 2)⟩
+    let top : SquarePositiveEdge := ⟨nw, (0 : Fin 2)⟩
+    let left : SquarePositiveEdge := ⟨z, (1 : Fin 2)⟩
+    have hsubset : squareCellBoundaryPositiveEdges P z ⊆ squareCellPositiveEdges z := by
+      intro c hc
+      simpa [squareCellBoundaryPositiveEdges] using (Finset.mem_of_mem_filter c hc)
+    have hboundary_eq :
+        squareCellBoundaryPositiveEdges P z = squareCellPositiveEdges z := by
+      apply Finset.eq_of_subset_of_card_le hsubset
+      rw [card_squareCellPositiveEdges_eq_four, hfour]
+    have hnodup : [bottom, right, top, left].Nodup := by
+      simpa [bottom, right, top, left, se, nw, squareCellPositiveEdgeList] using
+        (squareCellPositiveEdgeList_nodup z)
+    have hpair :
+        (squareCellBoundarySplitTag P z bottom = squareCellBoundarySplitTag P z left ∧
+            squareCellBoundarySplitTag P z right = squareCellBoundarySplitTag P z top ∧
+            squareCellBoundarySplitTag P z bottom ≠
+              squareCellBoundarySplitTag P z right) ∨
+          (squareCellBoundarySplitTag P z bottom = squareCellBoundarySplitTag P z right ∧
+            squareCellBoundarySplitTag P z top = squareCellBoundarySplitTag P z left ∧
+            squareCellBoundarySplitTag P z bottom ≠
+              squareCellBoundarySplitTag P z top) := by
+      simpa [bottom, right, top, left, se, nw] using
+        (squareCellBoundarySplitTag_pairing_of_card_eq_four P z hfour)
+    have hbcell : b ∈ squareCellPositiveEdges z := hsubset hb
+    have hblist : b ∈ [bottom, right, top, left] := by
+      simpa [squareCellPositiveEdges, squareCellPositiveEdgeList,
+        bottom, right, top, left, se, nw] using hbcell
+    have hfiber := card_filter_eq_two_of_nodup_four_pairing
+      bottom right top left (squareCellBoundarySplitTag P z) hnodup hpair hblist
+    rw [hboundary_eq]
+    simpa only [squareCellPositiveEdges, squareCellPositiveEdgeList,
+      bottom, right, top, left, se, nw] using hfiber
+  · have hcard :=
+      card_squareCellBoundaryPositiveEdges_eq_two_of_mem_of_ne_four P z hb hfour
+    simpa [squareCellBoundarySplitTag, hfour] using hcard
+
+private theorem existsUnique_mem_ne_of_card_eq_two
+    {α : Type*} [DecidableEq α] {s : Finset α} {b : α}
+    (hb : b ∈ s) (hcard : s.card = 2) :
+    ∃! c, c ∈ s ∧ c ≠ b := by
+  rcases Finset.card_eq_two.mp hcard with ⟨x, y, hxy, rfl⟩
+  have hb' : b = x ∨ b = y := by simpa using hb
+  rcases hb' with hbx | hby
+  · refine ⟨y, ⟨by simp, ?_⟩, ?_⟩
+    · intro hyb
+      exact hxy (hbx.symm.trans hyb.symm)
+    intro c hc
+    have hc' : c = x ∨ c = y := by simpa using hc.1
+    rcases hc' with hcx | hcy
+    · exact (hc.2 (hcx.trans hbx.symm)).elim
+    · exact hcy
+  · refine ⟨x, ⟨by simp, ?_⟩, ?_⟩
+    · intro hxb
+      exact hxy (hxb.trans hby)
+    intro c hc
+    have hc' : c = x ∨ c = y := by simpa using hc.1
+    rcases hc' with hcx | hcy
+    · exact hcx
+    · exact (hc.2 (hcy.trans hby.symm)).elim
+
+/-- Every cell-boundary edge has a unique distinct partner with the same split tag. This is the
+local successor relation used by a resolved interface graph on interface bonds. -/
+theorem existsUnique_squareCellBoundaryPositiveEdge_partner
+    (P : SquareVertex → Prop) [DecidablePred P] (z : DualSquareVertex)
+    {b : SquarePositiveEdge} (hb : b ∈ squareCellBoundaryPositiveEdges P z) :
+    ∃! c : SquarePositiveEdge,
+      c ∈ squareCellBoundaryPositiveEdges P z ∧ c ≠ b ∧
+        squareCellBoundarySplitTag P z c = squareCellBoundarySplitTag P z b := by
+  classical
+  let fiber := (squareCellBoundaryPositiveEdges P z).filter fun c ↦
+    squareCellBoundarySplitTag P z c = squareCellBoundarySplitTag P z b
+  have hbFiber : b ∈ fiber := by
+    simp [fiber, hb]
+  have hcard : fiber.card = 2 := by
+    simpa [fiber] using
+      (card_squareCellBoundaryPositiveEdges_filter_splitTag_eq_two P z hb)
+  rcases existsUnique_mem_ne_of_card_eq_two hbFiber hcard with ⟨c, hc, hunique⟩
+  refine ⟨c, ?_, ?_⟩
+  · have hcmem := Finset.mem_filter.mp hc.1
+    exact ⟨hcmem.1, hc.2, hcmem.2⟩
+  · intro d hd
+    apply hunique d
+    exact ⟨Finset.mem_filter.mpr ⟨hd.1, hd.2.2⟩, hd.2.1⟩
+
 end
 
 end Percolation

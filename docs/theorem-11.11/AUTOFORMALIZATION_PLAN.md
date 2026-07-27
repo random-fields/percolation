@@ -380,72 +380,94 @@ Required facts, in order:
 Do not define canonical order before this bridge passes. It is the guard against silently proving
 a theorem about a new, narrower crossing convention.
 
-### 6.2 Faces below a crossing and the meet lemma
+### 6.2 Stopped dual exploration and its finite fibers
 
-Still in `CanonicalCrossing.lean`, define the finite explored region with an explicit coordinate
-predicate and prove its finiteness:
+Use a stopped dual flood-fill rather than ordering all primal crossing candidates.  In the
+dual configuration, an open dual edge crosses a closed primal edge.  Flood-fill a finite framed
+dual rectangle from its left exterior faces.  If `R` is the set of reached faces, every edge on
+the edge boundary of `R` is dual-closed and therefore crosses a primal-open edge.  The resolved
+boundary of `R` is the canonical primal interface.
 
-```lean
-noncomputable def SquareRectangleCrossingPath.belowFaces
-    (P : SquareRectangleCrossingPath m n) : Finset DualSquareVertex := ...
-
-noncomputable def SquareRectangleCrossingPath.lowerSupportEdges
-    (P : SquareRectangleCrossingPath m n) : Finset (CubicBond 2) := ...
-```
-
-The exact face type should reuse the repository's shifted-dual/square-face encoding rather than
-creating a new geometric plane. Prove:
-
-- path edges belong to `lowerSupportEdges`;
-- `belowFaces` and `lowerSupportEdges` stay inside a finite expanded rectangle;
-- an edge/configuration change outside `lowerSupportEdges P` cannot alter openness below `P`;
-- for any crossings `P` and `Q`, the boundary of the finite component/union below both contains
-  a left-to-right crossing `R` below both;
-- the boundary walk can be reduced to a path with `Walk.toPath`;
-- endpoint and corner cases are handled by explicit parity bookkeeping.
-
-For the boundary-existence sublemma, use the finite odd-degree partition theorem already exercised
-in `SiteCrossingInterface.lean`. The proof artifact should state exactly which vertices have odd
-degree and why they lie on opposite rectangle sides. The informal phrase “follow the lower
-boundary” is not an acceptable proof step.
-
-### 6.3 Canonical selector and stopping-fiber locality
-
-Choose a deterministic total order on the finite candidates, refined first by the below-region
-order and then by an existing encodable path order. Define:
+The first implementation unit is:
 
 ```lean
-noncomputable def canonicalLowestOpenCrossing
-    (m n : ℕ) (omega : EdgeConfiguration 2) :
-    Option (SquareRectangleCrossingPath m n) := ...
+abbrev BRLeftmostDualVertex (n : ℕ) := ...
 
-def canonicalLowestOpenCrossingFiber
-    (P : SquareRectangleCrossingPath m n) : Set (EdgeConfiguration 2) :=
-  {omega | canonicalLowestOpenCrossing m n omega = some P}
+noncomputable def brLeftmostDualGraph (n : ℕ) :
+    SimpleGraph (BRLeftmostDualVertex n) := ...
+
+noncomputable def brLeftmostDualSources (n : ℕ) :
+    Finset (BRLeftmostDualVertex n) := ...
+
+def brClosedDualExplorationConfiguration
+    (n : ℕ) (omega : EdgeConfiguration 2) :
+    (brLeftmostDualGraph n).edgeSet → Prop := ...
+
+noncomputable def brLeftReachableFaces
+    (n : ℕ) (omega : EdgeConfiguration 2) :
+    Finset (BRLeftmostDualVertex n) := ...
+
+def brReachableFaceFiber (n : ℕ)
+    (R : Finset (BRLeftmostDualVertex n)) : Set (EdgeConfiguration 2) :=
+  {omega | brLeftReachableFaces n omega = R}
 ```
 
-Prove:
+Reuse `finiteGraphReachableVertices` and
+`dependsOn_finiteGraphReachableVertices_fiber`.  Define
+`brReachableFaceFiberSupport n R` as all dual graph edges incident to a vertex in `R`, pulled back
+to primal edges by `squareEdgeDualCrossingEquiv`.  Prove:
 
 ```lean
-theorem canonicalLowestOpenCrossing_eq_some_iff ...
-
-theorem canonicalLowestOpenCrossingFiber_pairwiseDisjoint ...
-
-theorem crossingEvent_eq_biUnion_canonicalLowestOpenCrossingFiber ...
-
-theorem canonicalLowestOpenCrossingFiber_dependsOn_lowerSupportEdges
-    (P : SquareRectangleCrossingPath m n) :
-    DependsOn (canonicalLowestOpenCrossingFiber P) P.lowerSupportEdges
+theorem dependsOn_brReachableFaceFiber (n : ℕ) (R : ...) :
+    DependsOn (brReachableFaceFiberSupport n R) (brReachableFaceFiber n R)
 ```
 
-The last theorem is the key checkpoint. Its proof must show both directions under two
-configurations agreeing on the lower support. It must account for every competing candidate that
-could precede `P`, not only the openness of `P` itself. Use the meet lemma to show that any allegedly
-lower competitor can be witnessed within the explored support.
+Then prove the finite fibers are measurable, pairwise disjoint, and partition the vertical square
+crossing event after filtering to the reachable sets whose resolved boundary crosses the square.
+The partition proof must be an equality of the repository's existing event, not a new convention.
 
-Also define the upper/extension event used by Lemma 6 and prove it depends on a support disjoint
-from `P.lowerSupportEdges`, after removing or assigning shared boundary edges exactly as in the
-source convention. A hand-waved “above and below are independent” is forbidden.
+### 6.3 Resolved boundary and genuinely fresh extension edges
+
+An ordinary cell-interface graph has degree four at a checkerboard cell and forgets the planar
+pairing.  `ResolvedRectangleInterface.lean` splits such a cell by its reachable corner.  Its local
+checkpoint is: for every incident boundary edge `b`, there is exactly one distinct incident edge
+`c` with the same split tag.  Use this to build the finite resolved interface graph, prove its
+interior vertices have degree two, classify its boundary degree-one vertices, and extract the
+unique component selected by the stopped exploration.  Expose:
+
+```lean
+noncomputable def brLeftmostBoundaryPath
+    (n : ℕ) (R : Finset (BRLeftmostDualVertex n)) :
+    Option (SquareBoundaryFreeCrossingPath ... ) := ...
+
+theorem brLeftmostBoundaryPath_isOpen_of_mem_fiber ...
+theorem brSquareVerticalCrossingEvent_eq_biUnion_reachableFaceFiber ...
+```
+
+The local pairing and the global endpoint argument replace both an informal Jordan-curve appeal
+and the earlier proposed meet/lexicographic selector.  Keep the finite candidate/event bridge in
+`CanonicalCrossing.lean` as the semantic guard for the extracted path.
+
+For the Lemma 6 extension, reflect `R` across the horizontal midline and let `B_R` be the union of
+the two stopped regions.  Define `brRightOfBarrierEdges m n R` using only primal edges whose
+crossed dual edge has **both** incident faces outside `B_R`, further restricted to the appropriate
+right component of the large rectangle.  Prove the exact disjointness statement
+
+```lean
+Disjoint (brReachableFaceFiberSupport n R) (brRightOfBarrierEdges m n R)
+```
+
+and define the lower extension event with `connectionEventIn` on precisely that edge finset.
+Trim a horizontal crossing at its first contact with the stopped interface: every random edge in
+the prefix must lie in `brRightOfBarrierEdges`; concatenate the final already-known-open interface
+edge only after the fresh prefix.
+
+This distinction is load-bearing.  Dual boundary edges incident to `R` are exposed by the fiber
+and their crossed primal edges are fixed open.  They may be used deterministically to splice the
+selected interface, but they are not fresh coordinates.  An event stated merely as “connect to
+the selected path from the right” is too large and cannot be declared independent of the fiber.
+The proof must use `dependsOn_connectionEventIn` for the constrained prefix and
+`setBernoulli_real_inter_eq_mul_of_dependsOnCoordinates` for exact factorization.
 
 ### 6.4 Adapted Bollobás–Riordan Lemma 6
 
@@ -469,13 +491,17 @@ rectangle, its Lean center/half-widths, and its transformed event.
 
 Proof structure:
 
-1. partition the relevant vertical-crossing event into disjoint canonical fibers;
-2. for each `P`, identify the extension event above `P`;
-3. use the locality/disjoint-support theorem for independence, or FKG only where the source uses
-   positive association;
-4. use reflection symmetry to obtain the factor `1/2`;
-5. splice the two path witnesses using the proved intersection API;
-6. sum the fiber inequalities with `measureReal_biUnion_finset`;
+1. partition the relevant vertical-crossing event into the finite, pairwise-disjoint stopped-dual
+   reachable-set fibers `F_R`;
+2. for each `R`, form the reflected barrier and the lower outside-extension event `Y_R`;
+3. trim each horizontal crossing at first contact with the barrier and use reflection to prove
+   `mu(H) / 2 <= mu(Y_R)`;
+4. prove the support of `Y_R` is disjoint from the fiber support and factor
+   `mu(F_R ∩ Y_R) = mu(F_R) * mu(Y_R)` exactly;
+5. splice the fresh prefix with the exposed-open interface boundary and prove
+   `F_R ∩ Y_R` is contained in the larger crossing event;
+6. sum with `mul_measureReal_le_biUnion_inter_of_partition`, avoiding conditional probabilities
+   and division by possibly-zero fiber masses;
 7. transport normalized/translated events with graph isomorphisms and `map_measureReal_apply`.
 
 Checkpoint tests must verify the inequality has the correct direction and the factor `1/2`, and
@@ -607,22 +633,25 @@ source/API audit proves the elementary parity route impossible.
    `cubicCriticalProbability_two_le_half`; do not refactor it while RSW work is active.
 3. **Crossing candidate bridge.** Implement finite path candidates and prove exact equivalence to
    `squareBoundaryFreeRectangleCrossingEvent`.
-4. **Planar meet lemma.** Implement below faces/support and prove the finite boundary crossing by
-   parity. This is the first independent geometric-review checkpoint.
-5. **Stopping selector.** Implement the canonical crossing, disjoint fiber decomposition, and
-   `DependsOn` locality theorem. This is the main logical checkpoint.
-6. **BR Lemma 6.** Prove the adapted extension inequality and test symmetry/factor/dimensions.
-7. **BR Corollary 7 at `ρ = 3`.** Prove a uniform positive constant using the existing `1/16`
+4. **Stopped dual fibers.** Instantiate the generic finite-reachability fiber API on the framed
+   dual rectangle and prove the pulled-back primal support theorem.
+5. **Resolved boundary.** Build the split-cell interface graph, prove the degree/endpoints facts,
+   and extract the open boundary crossing. This is the first independent geometric-review
+   checkpoint.
+6. **Fresh extension support.** Define the symmetric barrier, both-outside edge set, and first-hit
+   prefix; prove support disjointness and the exact fiber/extension factorization.
+7. **BR Lemma 6.** Prove the adapted extension inequality and test symmetry/factor/dimensions.
+8. **BR Corollary 7 at `ρ = 3`.** Prove a uniform positive constant using the existing `1/16`
    square lower bound.
-8. **Specialized annulus assembly.** Convert the long-crossing lower bound to a uniform barrier
+9. **Specialized annulus assembly.** Convert the long-crossing lower bound to a uniform barrier
    lower bound with the two proved annulus theorems.
-9. **Critical extinction and exact threshold.** Replace the axiom-dependent critical proof; run
+10. **Critical extinction and exact threshold.** Replace the axiom-dependent critical proof; run
    both `#print axioms` commands immediately.
-10. **Fallback decision.** Only if step 6 or 7 fails for an essential event mismatch, formalize the
+11. **Fallback decision.** Only if step 7 or 8 fails for an essential event mismatch, formalize the
     full Lemma 11.73 statement using the same selector infrastructure.
-11. **Review artifacts.** Run all cases, counterexamples, Comparator, axiom, correspondence, and
+12. **Review artifacts.** Run all cases, counterexamples, Comparator, axiom, correspondence, and
     independent-review gates below.
-12. **Repository records.** Update `docs/HISTORY.md`, `docs/VERIFICATION.md`, `AXIOM_AUDIT.md`, and
+13. **Repository records.** Update `docs/HISTORY.md`, `docs/VERIFICATION.md`, `AXIOM_AUDIT.md`, and
     the relevant `audit/topics/` comparator card only after the frozen review passes.
 
 At every checkpoint run the edited module directly with `lake env lean <file>`, then the relevant
@@ -639,17 +668,19 @@ same production file concurrently.
 |---|---|---|---|---|
 | WP0: source/freeze | both PDFs, integration branch | review manifest and correspondence draft only | none | page-level source inventory, hashes, exact environment |
 | WP1: finite candidates | existing RSW event definitions, `Walk.toPath` | `CanonicalCrossing.lean`, candidate/event bridge section | WP0 | direct Lean build plus boundary cases |
-| WP2: finite planar region | WP1, rectangle intersection/parity APIs | disjoint region/meet section or `CanonicalCrossingGeometry.lean` | WP1 | explicit odd-degree proof and independent pictorial review |
-| WP3: stopping locality | WP1–WP2, `DependsOn` APIs | `LowestCrossing.lean` | WP2 | two-configuration locality test and fiber decomposition |
-| WP4: BR Lemma 6 | WP3, FKG/independence/isomorphism APIs | `BRCrossingExtension.lean` | WP3 | source coordinate table, exact inequality test |
-| WP5: BR Corollary 7 | WP4, square `1/16` bound | `BRUniformCrossing.lean` | WP4 | recurrence algebra and `ρ=3` theorem |
-| WP6: target assembly | WP5, proved annulus/barrier APIs | `SquareThresholdBR.lean` | WP5 | axiom-free theta theorem |
-| WP7: fallback h73 | WP3–WP4 | a replacement theorem matching `External.lean` | only if WP5 is blocked | exact type comparison and `l=0` test |
-| WP8: review suite | frozen production commit | `audit/reviews/...` only | WP6 or WP7 | all mandatory protocol artifacts |
-| WP9: independent review | frozen source and commit | read-only first-pass report | WP8 manifest | falsification attempts and verdict, unedited |
+| WP2: generic stopped fibers | finite graph/reachability and product-measure APIs | `FiniteReachability.lean`, `FiniteFiberIndependence.lean` | WP0 | direct build, support sufficiency review, no conditional division |
+| WP3: dual exploration | WP2, square duality APIs | `BRDualExploration.lean` | WP2 | pulled-back support theorem and finite disjoint partition |
+| WP4: resolved boundary | WP1, WP3, cell parity/interface APIs | `ResolvedRectangleInterface.lean`, `BRResolvedBoundary.lean` | WP1, WP3 | unique local partner, degree/endpoints proof, independent pictorial review |
+| WP5: fresh extension | WP3–WP4, `connectionEventIn` locality | `BRFreshExtension.lean` | WP4 | both-outside support and first-hit-prefix proof |
+| WP6: BR Lemma 6 | WP5, independence/isomorphism APIs | `BRCrossingExtension.lean` | WP5 | source coordinate table, exact factor and inequality test |
+| WP7: BR Corollary 7 | WP6, square `1/16` bound | `BRUniformCrossing.lean` | WP6 | recurrence algebra and `ρ=3` theorem |
+| WP8: target assembly | WP7, proved annulus/barrier APIs | `SquareThresholdBR.lean` | WP7 | axiom-free theta theorem |
+| WP9: fallback h73 | WP4–WP6 | a replacement theorem matching `External.lean` | only if WP7 is blocked | exact type comparison and `l=0` test |
+| WP10: review suite | frozen production commit | `audit/reviews/...` only | WP8 or WP9 | all mandatory protocol artifacts |
+| WP11: independent review | frozen source and commit | read-only first-pass report | WP10 manifest | falsification attempts and verdict, unedited |
 
-WP2 and an API-search subtask can run in parallel after WP1's types freeze. WP4, WP5, and WP6 are
-sequential because each statement depends on the exact previous event encoding. WP8 may prepare
+WP1 and WP2 can run in parallel after WP0. WP3 through WP8 are
+sequential because each statement depends on the exact previous event encoding. WP10 may prepare
 templates early but must run against the frozen final commit. The main integration agent should
 cherry-pick or copy only after inspecting each handoff and should rerun builds rather than trusting
 agent-reported success.

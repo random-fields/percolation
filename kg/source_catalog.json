@@ -20,6 +20,56 @@
       "file": "kg/textbooks/Grimmett-RandomClusterModel-2006.pdf",
       "pages_pdf": 390,
       "msc": ["60K35", "82B20", "82B43"]
+    },
+    {
+      "id": "bollobas-riordan-harris-kesten-2006",
+      "title": "A Short Proof of the Harris–Kesten Theorem",
+      "author": "Béla Bollobás and Oliver Riordan",
+      "journal": "Bulletin of the London Mathematical Society",
+      "volume": 38,
+      "year": 2006,
+      "pages": "470–484",
+      "doi": "10.1112/S002460930601842X",
+      "file": "kg/textbooks/Bollobas-Riordan-Harris-Kesten-2006.pdf",
+      "pages_pdf": 15,
+      "sha256": "bbf6c49ae64f821aa62159272b93dd643f17e3ff4dce00a3285709fd9b6fbef2",
+      "provenance": "User-provided PDF added on 2026-07-26",
+      "redistribution_status": "unreviewed",
+      "role": "secondary proof source for finite duality and RSW crossing lemmas",
+      "msc": ["60K35", "82B43"]
+    },
+    {
+      "id": "kesten-percolation-theory-for-mathematicians",
+      "title": "Percolation Theory for Mathematicians",
+      "author": "Harry Kesten",
+      "file": "kg/textbooks/978-1-4899-2730-9.pdf",
+      "pages_pdf": 432,
+      "sha256": "d942804026408b53663c2a94182718ccd9091af7dfcd9a42cbb2a5b66b0a6993",
+      "provenance": "Imported from pull request 3; original retrieval URL not recorded",
+      "redistribution_status": "unreviewed",
+      "role": "candidate secondary source for planar separation"
+    },
+    {
+      "id": "duminil-copin-introduction-bernoulli-percolation",
+      "title": "Introduction to Bernoulli Percolation",
+      "author": "Hugo Duminil-Copin",
+      "file": "kg/textbooks/2017percolation.pdf",
+      "pages_pdf": 30,
+      "sha256": "b28456c09594b50f6766aa862d54293723584e9e95f34b443505c85d610bfa61",
+      "provenance": "Imported from pull request 3; original retrieval URL not recorded",
+      "redistribution_status": "unreviewed",
+      "role": "candidate overview source"
+    },
+    {
+      "id": "grimmett-probability-on-graphs",
+      "title": "Probability on Graphs: Random Processes on Graphs and Lattices",
+      "author": "Geoffrey Grimmett",
+      "file": "kg/textbooks/ProbOnGraph.pdf",
+      "pages_pdf": 257,
+      "sha256": "89d4bad10fb7ee8e867943779d5babd04e83fe138890d54d03d5b58febd375a1",
+      "provenance": "Imported from pull request 3; original retrieval URL not recorded",
+      "redistribution_status": "unreviewed",
+      "role": "candidate overview source"
     }
   ]
 }

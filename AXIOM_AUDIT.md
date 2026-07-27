@@ -11,18 +11,46 @@ Chapter 11.  All are listed below and vetted in
 - Every project axiom must have a vetting card under `audit/vetting/`.
 - Comparator cards in `audit/topics/` must identify which source theorem is affected.
 
-## Current Snapshot
+## Exact Theorem 11.11 Closure
+
+The kernel audit of the exact-threshold stack at Chapter 12 commit `fa86568` reports
+
+```text
+#print axioms Percolation.theta_two_half_eq_zero
+#print axioms Percolation.cubicCriticalProbability_two_eq_half
+```
+
+as exactly
+
+```text
+[propext, Classical.choice, Quot.sound,
+ Percolation.rswThreeHalvesCrossingProbability_ge]
+```
+
+Thus `rswThreeHalvesCrossingProbability_ge` is the **only live project axiom in the transitive
+closure of Grimmett's Theorem 11.11**.  The two rectangle-gluing inclusions and the circuit-gluing
+inclusion are proved in `RSWIncidence.lean` and `RSWCircuitIncidence.lean`.  The threshold proof
+uses the proved expanded-annulus transfer
+`rswAnnulusOpenCircuitProbability_le_half_expandedBarrier`, not the globally retained legacy axiom
+`rswAnnulusOpenCircuitProbability_le_half_barrier`.  This certificate must be rerun after the
+integration revision is frozen.
+
+## Global Snapshot
+
+This table preserves the full global external boundary.  Rows marked **proved** are retained to
+make the discharge of formerly external RSW inputs explicit; they are not project axioms.
 
 | declaration | file | source | status |
 |---|---|---|---|
 | `existsUnique_boundaryCircuitCrossedEdges` | `Planar/External.lean` | Grimmett Prop. 11.2; Kesten (1982), p. 386 | external topology; discharge by a combinatorial Jordan-curve proof |
 | `grimmettRectangleDualTraceEquiv` | `Planar/External.lean` | Prop. 11.2 / Eq. 11.20; Kesten (1982), p. 386 | external topology; discharge from finite planar duality |
 | `card_grimmettRectangleDualTraceEquiv_apply` | `Planar/External.lean` | same | weight complement for the preceding equivalence |
-| `rswThreeHalvesCrossingProbability_ge` | `Planar/External.lean` | Grimmett Lemma 11.73; Russo (1981) | external lowest-crossing topology |
-| `rswGluingTwoIntersection_subset` | `Planar/External.lean` | Grimmett Eq. 11.76 / Prop. 11.2 | deterministic planar gluing |
-| `rswGluingThreeIntersection_subset` | `Planar/External.lean` | Grimmett Eq. 11.77 / Prop. 11.2 | deterministic planar gluing |
-| `rswCircuitGluingIntersection_subset` | `Planar/External.lean` | Grimmett Eq. 11.78 / Prop. 11.2 | deterministic planar circuit extraction |
-| `rswAnnulusOpenCircuitProbability_le_half_barrier` | `Planar/External.lean` | Prop. 11.2, self-dual separation | deterministic planar separation |
+| `rswThreeHalvesCrossingProbability_ge` | `Planar/External.lean` | Grimmett Lemma 11.73; Russo (1981) | external lowest-crossing topology; sole project axiom in the Theorem 11.11 closure |
+| `rswGluingTwoIntersection_subset` | `Planar/RSWIncidence.lean` | Grimmett Eq. 11.76 / Prop. 11.2 | **proved**, standard axioms; retained discharged row |
+| `rswGluingThreeIntersection_subset` | `Planar/RSWIncidence.lean` | Grimmett Eq. 11.77 / Prop. 11.2 | **proved**, standard axioms; retained discharged row |
+| `rswCircuitGluingIntersection_subset` | `Planar/RSWCircuitIncidence.lean` | Grimmett Eq. 11.78 / Prop. 11.2 | **proved**, standard axioms; retained discharged row |
+| `rswAnnulusOpenCircuitProbability_le_half_barrier` | `Planar/External.lean` | Prop. 11.2, self-dual separation | globally retained legacy project axiom; **not used by Theorem 11.11** |
+| `rswAnnulusOpenCircuitProbability_le_half_expandedBarrier` | `Planar/AnnulusDuality.lean` | shifted-dual separation for expanded annuli | **proved**, standard axioms; this is the transfer used by Theorem 11.11 |
 | `openClustersPerVertex_square_duality` | `Planar/Chapter11External.lean` | Grimmett Thm. 11.4; Kesten (1982), p. 244 | externally sourced face/component correspondence |
 | `eventuallySurroundingOpenCircuit_probability_one` | `Planar/Chapter11External.lean` | Grimmett Lemma 11.13 via Prop. 11.2 | source-facing external descendant |
 | `maxEdgeDisjointGrimmettRectangleCrossings_probability_le_exp` | `Planar/Chapter11External.lean` | Grimmett Lemma 11.22 via Eq. 11.20 | literal source rectangle; centered normalization is proved |

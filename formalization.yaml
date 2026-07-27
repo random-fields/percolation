@@ -15,6 +15,13 @@ sources:
     id: grimmett-random-cluster-2006
     type: textbook
     file: kg/textbooks/Grimmett-RandomClusterModel-2006.pdf
+  - title: "Bollobás–Riordan — A Short Proof of the Harris–Kesten Theorem"
+    id: bollobas-riordan-harris-kesten-2006
+    type: paper
+    file: kg/textbooks/Bollobas-Riordan-Harris-Kesten-2006.pdf
+    role: secondary
+    sha256: bbf6c49ae64f821aa62159272b93dd643f17e3ff4dce00a3285709fd9b6fbef2
+    redistribution_status: unreviewed
   - title: "random-fields/optimal-transport methodology"
     id: random-fields-optimal-transport-methodology
     type: prior_formalization

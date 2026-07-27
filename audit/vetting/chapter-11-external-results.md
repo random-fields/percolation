@@ -2,6 +2,8 @@
 
 Date: 2026-07-16
 
+Last reconciled with the exact Theorem 11.11 transitive audit: 2026-07-26.
+
 Source: Geoffrey Grimmett, *Percolation*, 2nd ed., Chapter 11, pp. 282–332.
 
 Policy: the user explicitly requested that results depending on references outside this book be
@@ -10,14 +12,20 @@ true, what would refute a bad encoding, and how it can eventually be discharged.
 
 ## Planar topology group
 
-Declarations:
+Globally retained external declarations:
 
 - `existsUnique_boundaryCircuitCrossedEdges`;
 - `grimmettRectangleDualTraceEquiv` and
   `card_grimmettRectangleDualTraceEquiv_apply`;
-- `rswGluingTwoIntersection_subset`, `rswGluingThreeIntersection_subset`, and
-  `rswCircuitGluingIntersection_subset`;
 - `rswAnnulusOpenCircuitProbability_le_half_barrier`.
+
+Formerly external rows which are now proved:
+
+- `rswGluingTwoIntersection_subset` and `rswGluingThreeIntersection_subset` in
+  `RSWIncidence.lean`;
+- `rswCircuitGluingIntersection_subset` in `RSWCircuitIncidence.lean`;
+- `rswAnnulusOpenCircuitProbability_le_half_expandedBarrier` in `AnnulusDuality.lean`, the
+  expanded-annulus transfer actually used by the exact-threshold proof.
 
 External source: Grimmett explicitly sends Proposition 11.2 to Kesten, *Percolation Theory for
 Mathematicians* (1982), p. 386; the face/component correspondence used in Theorem 11.4 is also
@@ -32,12 +40,15 @@ Adversarial checks:
   includes ambient incident edges omitted from the subgraph, as in the source;
 - every circuit is required to contain every subgraph vertex at odd face index and every crossed
   primal edge must lie in the edge boundary;
-- rectangle gluing axioms contain only deterministic event inclusions; all probability transport
-  and FKG multiplication is proved separately.
+- the now-proved rectangle and circuit gluing theorems are deterministic event inclusions; all
+  probability transport and FKG multiplication is proved separately;
+- the older unexpanded barrier declaration remains a global project axiom, but the exact-threshold
+  proof uses the proved expanded-annulus transfer and does not depend on that axiom.
 
 Discharge plan: formalize a finite square-cell complex, prove the mod-two Jordan separation
-theorem, identify the exterior boundary component, and derive the trace equivalence and gluing
-inclusions as corollaries.
+theorem, identify the exterior boundary component, and derive the remaining boundary-circuit,
+trace-equivalence, and legacy unexpanded-barrier declarations.  The gluing inclusions and the
+expanded barrier transfer require no discharge: they are already proved.
 
 ## Lowest-crossing group
 
@@ -53,6 +64,33 @@ at `r=1` it is one.
 
 Discharge plan: construct the lowest crossing as the boundary of the finite left-reachable cell
 complex and prove its stopping-set measurability.
+
+## Exact Theorem 11.11 trust boundary
+
+At audited Chapter 12 commit `fa86568`, both
+`#print axioms Percolation.theta_two_half_eq_zero` and
+`#print axioms Percolation.cubicCriticalProbability_two_eq_half` report exactly
+
+```text
+[propext, Classical.choice, Quot.sound,
+ Percolation.rswThreeHalvesCrossingProbability_ge]
+```
+
+Consequently, the lowest-crossing inequality above is the only project axiom in the exact theorem
+closure.  In particular:
+
+- `cubicCriticalProbability_two_le_half` is proved through the bond-interface and subcritical
+  radius-decay route and does not use the external finite-trace axioms;
+- `rswGluingTwoIntersection_subset`, `rswGluingThreeIntersection_subset`, and
+  `rswCircuitGluingIntersection_subset` are proved incidence theorems;
+- `rswAnnulusOpenCircuitProbability_le_half_expandedBarrier`, shifted-annulus independence, the
+  blocking inclusion, and `theta_eq_zero_of_iIndep_barriers` are proved;
+- the global Proposition 11.2, trace-equivalence, source-facing descendant, inhomogeneous, and
+  legacy unexpanded-barrier axioms remain relevant to other declarations, but are not transitive
+  dependencies of Theorem 11.11.
+
+This exact certificate must be rerun on the frozen integration revision; it is narrower than the
+global Chapter 11 axiom inventory below.
 
 ## Source-facing descendants of Proposition 11.2
 

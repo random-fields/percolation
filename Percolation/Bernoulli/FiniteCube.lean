@@ -520,6 +520,17 @@ theorem finiteBernoulliExpectation_congr {E : Finset ι} {p : ℝ} {X Y : Finset
     finiteBernoulliExpectation E p X = finiteBernoulliExpectation E p Y :=
   Finset.sum_congr rfl fun s hs => by rw [h s hs]
 
+/-- Trace events agreeing on the powerset of the support have the same probability. -/
+theorem finiteBernoulliProbability_congr {E : Finset ι} (p : ℝ)
+    {T U : Set (Finset ι)}
+    (h : ∀ s ∈ E.powerset, (s ∈ T ↔ s ∈ U)) :
+    finiteBernoulliProbability E p T = finiteBernoulliProbability E p U :=
+  finiteBernoulliExpectation_congr fun s hs => by
+    by_cases hsT : s ∈ T
+    · rw [Set.indicator_of_mem hsT, Set.indicator_of_mem ((h s hs).mp hsT)]
+    · rw [Set.indicator_of_notMem hsT,
+        Set.indicator_of_notMem fun hsU => hsT ((h s hs).mpr hsU)]
+
 theorem finiteBernoulliExpectation_add (E : Finset ι) (p : ℝ) (X Y : Finset ι → ℝ) :
     finiteBernoulliExpectation E p (fun s => X s + Y s) =
       finiteBernoulliExpectation E p X + finiteBernoulliExpectation E p Y := by

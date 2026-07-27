@@ -257,16 +257,6 @@ theorem finiteBernoulliExpectation_sub (E : Finset ι) (p : ℝ) (X Y : Finset �
     ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun s _ => mul_sub _ _ _
 
-/-- Trace events agreeing on the powerset of the support have the same probability. -/
-theorem finiteBernoulliProbability_congr {E : Finset ι} (p : ℝ) {T U : Set (Finset ι)}
-    (h : ∀ s ∈ E.powerset, (s ∈ T ↔ s ∈ U)) :
-    finiteBernoulliProbability E p T = finiteBernoulliProbability E p U :=
-  finiteBernoulliExpectation_congr fun s hs => by
-    by_cases hsT : s ∈ T
-    · rw [Set.indicator_of_mem hsT, Set.indicator_of_mem ((h s hs).mp hsT)]
-    · rw [Set.indicator_of_notMem hsT,
-        Set.indicator_of_notMem fun hsU => hsT ((h s hs).mpr hsU)]
-
 /-- **Insert splitting for probabilities**: conditioning on the state of a fresh coordinate
 `a` splits the finite probability into the open section `{s | insert a s ∈ T}` and the
 closed section, which reads as `T` itself on the powerset of `E`. -/

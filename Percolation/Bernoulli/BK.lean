@@ -184,18 +184,6 @@ theorem eventTrace_openWitnessDisjointOccurrence (A B : Set (Set ι)) :
 
 /-! ### Finite-cube probability transport -/
 
-/-- Two trace events agreeing on the powerset of the support have the same finite-cube
-probability. -/
-theorem finiteBernoulliProbability_congr {E : Finset ι} {p : ℝ} {T U : Set (Finset ι)}
-    (h : ∀ s ∈ E.powerset, (s ∈ T ↔ s ∈ U)) :
-    finiteBernoulliProbability E p T = finiteBernoulliProbability E p U := by
-  rw [finiteBernoulliProbability, finiteBernoulliProbability]
-  refine finiteBernoulliExpectation_congr fun s hs => ?_
-  by_cases hsT : s ∈ T
-  · rw [Set.indicator_of_mem hsT, Set.indicator_of_mem ((h s hs).mp hsT)]
-  · rw [Set.indicator_of_notMem hsT,
-      Set.indicator_of_notMem fun hsU => hsT ((h s hs).mpr hsU)]
-
 /-- The finite-cube probability as the weight of the trace's powerset filter. -/
 theorem finiteBernoulliProbability_eq_sum_filter (E : Finset ι) (p : ℝ)
     (T : Set (Finset ι)) [DecidablePred (· ∈ T)] :
@@ -697,7 +685,7 @@ theorem finiteBernoulliProbability_bkEvent_self {E : Finset ι} (p : ℝ)
     finiteBernoulliProbability (E.disjSum E) p (bkEvent E T U) =
       finiteBernoulliProbability E p T * finiteBernoulliProbability E p U := by
   rw [← finiteBernoulliProbability_disjSum_left_right]
-  exact finiteBernoulliProbability_congr fun w hw =>
+  exact finiteBernoulliProbability_congr p fun w hw =>
     mem_bkEvent_self_iff hT hU (Finset.mem_powerset.mp hw)
 
 /-- Inhomogeneous endpoint `S=E`: the doubled event factors into the two marginals. -/

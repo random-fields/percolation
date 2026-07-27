@@ -15,41 +15,6 @@ namespace Percolation
 open MeasureTheory ProbabilityTheory
 open scoped unitInterval
 
-/-- Transport an event by a cubic-graph automorphism.  Membership means that the source event
-occurs after pulling the target configuration back along the automorphism. -/
-def cubicGraphIsoEvent {d : ℕ} (F : cubicGraph d ≃g cubicGraph d)
-    (A : Set (EdgeConfiguration d)) : Set (EdgeConfiguration d) :=
-  cubicGraphIsoConfigurationPullback F ⁻¹' A
-
-theorem measurableSet_cubicGraphIsoEvent {d : ℕ}
-    (F : cubicGraph d ≃g cubicGraph d) {A : Set (EdgeConfiguration d)}
-    (hA : MeasurableSet A) : MeasurableSet (cubicGraphIsoEvent F A) :=
-  hA.preimage (measurable_cubicGraphIsoConfigurationPullback F)
-
-theorem isIncreasingEvent_cubicGraphIsoEvent {d : ℕ}
-    (F : cubicGraph d ≃g cubicGraph d) {A : Set (EdgeConfiguration d)}
-    (hA : IsIncreasingEvent A) : IsIncreasingEvent (cubicGraphIsoEvent F A) := by
-  intro ω η hωη hω
-  apply hA
-  · intro e he
-    exact hωη he
-  · exact hω
-
-/-- The iid bond law is invariant under transport by any cubic-graph automorphism. -/
-theorem bernoulliBondMeasure_real_cubicGraphIsoEvent {d : ℕ}
-    (p : I) (F : cubicGraph d ≃g cubicGraph d)
-    {A : Set (EdgeConfiguration d)} (hA : MeasurableSet A) :
-    (bernoulliBondMeasure d p).real (cubicGraphIsoEvent F A) =
-      (bernoulliBondMeasure d p).real A := by
-  have hmap := congrArg
-    (fun μ : Measure (EdgeConfiguration d) ↦ μ.real A)
-    (bernoulliBondMeasure_map_cubicGraphIsoConfigurationPullback p F)
-  change (Measure.map (cubicGraphIsoConfigurationPullback F)
-      (bernoulliBondMeasure d p)).real A =
-    (bernoulliBondMeasure d p).real A at hmap
-  rw [map_measureReal_apply (measurable_cubicGraphIsoConfigurationPullback F) hA] at hmap
-  exact hmap
-
 /-- Swap the two square-lattice coordinates. -/
 def squareCoordinateSwap : Fin 2 ≃ Fin 2 := Equiv.swap 0 1
 

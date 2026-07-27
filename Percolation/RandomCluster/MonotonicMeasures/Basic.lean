@@ -1,3 +1,4 @@
+import Percolation.Bernoulli.Increasing
 import Percolation.RandomCluster.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Tactic
@@ -9,9 +10,9 @@ Source: Grimmett, *The Random-Cluster Model* (2006), Chapter 2, "Monotonic
 Measures", especially Sections 2.1-2.2.
 
 This file sets up finite probability measures on the configuration cube
-`Ω = {0,1}^E`, encoded as `Set ι` ordered by inclusion. The definitions here are
-abstract in the coordinate type and are intended to support the Chapter 2 Holley
-and FKG inequalities before specializing to random-cluster measures in Chapter 3.
+`Ω = {0,1}^E`, encoded as `Set ι` ordered by inclusion. It uses the generic monotonicity
+API from `Percolation.Bernoulli.Increasing` and supports the Chapter 2 Holley and FKG
+inequalities before specializing to random-cluster measures in Chapter 3.
 -/
 
 namespace Percolation
@@ -20,42 +21,15 @@ open scoped BigOperators
 
 variable {ι : Type*}
 
-/-- An increasing event on the configuration cube `Set ι`. -/
-def IsIncreasingEvent (A : Set (Set ι)) : Prop :=
-  ∀ ⦃ω η : Set ι⦄, ω ⊆ η → ω ∈ A → η ∈ A
-
-/-- A decreasing event on the configuration cube `Set ι`. -/
-def IsDecreasingEvent (A : Set (Set ι)) : Prop :=
-  ∀ ⦃ω η : Set ι⦄, η ⊆ ω → ω ∈ A → η ∈ A
-
-/-- An increasing observable on the configuration cube `Set ι`. -/
-def IsIncreasingRandomVariable {α : Type*} [Preorder α] (X : Set ι → α) : Prop :=
-  ∀ ⦃ω η : Set ι⦄, ω ⊆ η → X ω ≤ X η
-
-/-- A decreasing observable on the configuration cube `Set ι`. -/
-def IsDecreasingRandomVariable {α : Type*} [Preorder α] (X : Set ι → α) : Prop :=
-  ∀ ⦃ω η : Set ι⦄, η ⊆ ω → X ω ≤ X η
-
-theorem IsIncreasingEvent.indicator_isIncreasingRandomVariable {A : Set (Set ι)}
-    (hA : IsIncreasingEvent A) :
-    IsIncreasingRandomVariable (fun ω => A.indicator (fun _ => (1 : ℝ)) ω) := by
-  intro ω η hωη
-  by_cases hω : ω ∈ A
-  · have hη : η ∈ A := hA hωη hω
-    simp [Set.indicator_of_mem hω, Set.indicator_of_mem hη]
-  · by_cases hη : η ∈ A
-    · simp [Set.indicator_of_notMem hω, Set.indicator_of_mem hη]
-    · simp [Set.indicator_of_notMem hω, Set.indicator_of_notMem hη]
-
 theorem IsDecreasingEvent.indicator_isDecreasingRandomVariable {A : Set (Set ι)}
     (hA : IsDecreasingEvent A) :
     IsDecreasingRandomVariable (fun ω => A.indicator (fun _ => (1 : ℝ)) ω) := by
   intro ω η hηω
-  by_cases hω : ω ∈ A
-  · have hη : η ∈ A := hA hηω hω
+  by_cases hη : η ∈ A
+  · have hω : ω ∈ A := hA hηω hη
     simp [Set.indicator_of_mem hω, Set.indicator_of_mem hη]
-  · by_cases hη : η ∈ A
-    · simp [Set.indicator_of_notMem hω, Set.indicator_of_mem hη]
+  · by_cases hω : ω ∈ A
+    · simp [Set.indicator_of_mem hω, Set.indicator_of_notMem hη]
     · simp [Set.indicator_of_notMem hω, Set.indicator_of_notMem hη]
 
 theorem IsDecreasingRandomVariable.neg_isIncreasingRandomVariable {X : Set ι → ℝ}

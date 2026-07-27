@@ -1,14 +1,15 @@
 # Pull-request consolidation for Theorem 11.11
 
-Date: 2026-07-26
+Date: 2026-07-27
 
 Integration branch: `codex/theorem-11-11-integration`
 
 This branch consolidates every pull request which was open in
-`random-fields/percolation` when the work began.  The table records the immutable head commit
-reported by GitHub and the disposition used by the integration.  A pull request is counted as
-integrated only when its head commit is an ancestor of the integration branch; copying selected
-files without preserving that ancestry is not sufficient for this ledger.
+`random-fields/percolation` when the work began, plus PR #14, which opened during integration.
+The table records the immutable head commit reported by GitHub and the disposition used by the
+integration.  A pull request is counted as integrated only when its head commit is an ancestor of
+the integration branch; copying selected files without preserving that ancestry is not sufficient
+for this ledger.
 
 | PR | Head commit | Disposition |
 |---:|---|---|
@@ -24,10 +25,12 @@ files without preserving that ancestry is not sufficient for this ledger.
 | #11 | `9481b37` | Already in the Chapter 12 ancestry. |
 | #12 | `35b7d53` | Already in the Chapter 12 ancestry. |
 | #13 | `fa86568` | Initial integration base: the latest Chapter 12 stack. |
+| #14 | `7180033` | Merged as the repository guide, then annotated for the consolidated branch. |
 
-At integration commit `13da9d4`, `git merge-base --is-ancestor <head> HEAD` returned success for
-all twelve heads above.  This check must be rerun after the final consolidation commit, together
-with a fresh GitHub query in case a pull-request head moved or another pull request opened.
+At integration commit `c433f02`, `git merge-base --is-ancestor <head> HEAD` returned success for
+all thirteen heads above.  A fresh `gh pr list` query at that revision reported the same thirteen
+open heads.  This check must be rerun after the final consolidation commit in case a pull-request
+head moves or another pull request opens.
 
 ## Conflict policy
 

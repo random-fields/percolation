@@ -5,6 +5,13 @@ Lean), the **material** it produces (targets, proofs, audits, review runs), and 
 state** (the open PRs, their debt, and an independent faithfulness review). Read this first to know what
 is here and how to navigate it.*
 
+> **Integration-branch note.** This guide was authored on PR #14 as a map of `main` and the then-open
+> PR campaign. On `codex/theorem-11-11-integration`, the exact heads of PRs #1--#14 (excluding the
+> nonexistent #5) are all ancestors of the branch. Section 4 is therefore a historical snapshot of
+> the source branches, not a claim that their files remain separated here. The integration keeps the
+> canonical later APIs and reconciles compatible material from the competing Chapter 2 branches;
+> see [`theorem-11.11/PR_CONSOLIDATION.md`](theorem-11.11/PR_CONSOLIDATION.md).
+
 `main` is a **scaffold** (the framework docs + `kg/` + `audit/` + a small `Percolation/` core). The
 formalized mathematics lives in the **open PR branches** (§4); the per-chapter *review runs* (§3)
 accumulate on those branches, not on `main`.
@@ -83,6 +90,7 @@ model's reasoning.
 | **#11** | Ch 11 | #10 | **23** / 70 | ✅ (conflicting) |
 | **#12** | Ch 8 | #11 | 23 / 70 | ❌ comparator |
 | **#13** | Ch 12 | #12 | 20 / 70 | ❌ comparator |
+| **#14** | repository guide and campaign review | main | docs only | ✅ |
 
 **Two stacks + independents.** Stack A (clean): #7 (Ch4) ← #8 (Ch5). Stack B (debt-laden): #9 (Ch6) ←
 #10 ← #11 ← #12 ← #13 — debt is *generated* at #9 (sorries) and #11 (axioms), then inherited up the

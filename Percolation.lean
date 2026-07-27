@@ -313,3 +313,9 @@ import Percolation.Tests.Chapter11Infrastructure
 import Percolation.Tests.Chapter11AxiomAudit
 import Percolation.Core.EdgeMenger
 import Percolation.Core.EdgeMengerToSet
+import Percolation.RandomCluster.MonotonicMeasures.Basic
+import Percolation.RandomCluster.MonotonicMeasures.Holley
+import Percolation.RandomCluster.MonotonicMeasures.FKG
+import Percolation.RandomCluster.MonotonicMeasures.Conditional
+import Percolation.RandomCluster.MonotonicMeasures.Tilt
+import Percolation.RandomCluster.MonotonicMeasures.Influence

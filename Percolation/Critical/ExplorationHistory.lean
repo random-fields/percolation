@@ -88,11 +88,84 @@ theorem explorationHistoryRejected_append_false
       rcases head with ⟨u, b⟩
       cases b <;> simp [explorationHistoryRejected, ih, Finset.insert_comm]
 
+/-- Forgetting the Boolean answers in a chronological exploration history gives exactly the
+vertices appearing in one of its two decision projections.  This elementary equivalence is
+the bridge from the finite-set well-formedness invariant to the absence of repeated queries. -/
+theorem mem_explorationHistoryAccepted_or_rejected_iff_mem_map_fst
+    {V : Type*} [DecidableEq V] {history : List (V × Bool)} {v : V} :
+    v ∈ explorationHistoryAccepted history ∨
+        v ∈ explorationHistoryRejected history ↔
+      v ∈ history.map Prod.fst := by
+  induction history with
+  | nil => simp [explorationHistoryAccepted, explorationHistoryRejected]
+  | cons head history ih =>
+      rcases head with ⟨u, accepted⟩
+      cases accepted <;>
+        simp [explorationHistoryAccepted, explorationHistoryRejected, ih,
+          or_assoc, or_left_comm]
+
 /-- The finite state and its recorded history contain exactly the same decisions. -/
 def SiteExplorationState.HistoryConsistent
     {V : Type*} [DecidableEq V] (s : SiteExplorationState V) : Prop :=
   s.occupied = explorationHistoryAccepted s.history ∧
     s.rejected = explorationHistoryRejected s.history
+
+namespace SiteExploration
+
+variable {V : Type*} [DecidableEq V] [LinearOrder V]
+
+/-- Static site exploration preserves the equality between state finsets and the two Boolean
+history projections. -/
+theorem step_historyConsistent
+    (E : SiteExploration V) (answer : V → Bool)
+    {s : SiteExplorationState V} (hconsistent : s.HistoryConsistent) :
+    (E.step answer s).HistoryConsistent := by
+  classical
+  unfold SiteExplorationState.HistoryConsistent at hconsistent ⊢
+  unfold SiteExploration.step
+  split
+  · exact hconsistent
+  next v _hnext =>
+    split
+    · simp [hconsistent.1, hconsistent.2]
+    · simp [hconsistent.1, hconsistent.2]
+
+/-- A well-formed, history-consistent static exploration never appends a vertex which already
+occurs in its chronological history. -/
+theorem step_history_map_fst_nodup
+    (E : SiteExploration V) (answer : V → Bool)
+    {s : SiteExplorationState V} (hwell : s.WellFormed)
+    (hconsistent : s.HistoryConsistent)
+    (hnodup : (s.history.map Prod.fst).Nodup) :
+    ((E.step answer s).history.map Prod.fst).Nodup := by
+  classical
+  unfold SiteExploration.step
+  split
+  · exact hnodup
+  next v hnext =>
+    have hvfrontier : v ∈ s.frontier :=
+      SiteExploration.mem_frontier_of_nextVertex_eq_some hnext
+    have hvnotDecided : v ∉ s.decided :=
+      Finset.disjoint_left.mp hwell.2 hvfrontier
+    have hvnotHistory : v ∉ s.history.map Prod.fst := by
+      intro hv
+      have hvProjection :=
+        mem_explorationHistoryAccepted_or_rejected_iff_mem_map_fst.mpr hv
+      apply hvnotDecided
+      rw [SiteExplorationState.decided, hconsistent.1, hconsistent.2]
+      exact Finset.mem_union.mpr hvProjection
+    have happ : (s.history.map Prod.fst ++ [v]).Nodup := by
+      rw [List.nodup_append]
+      refine ⟨hnodup, by simp, ?_⟩
+      intro u huHistory w hwSingleton
+      simp only [List.mem_singleton] at hwSingleton
+      subst w
+      intro huv
+      subst u
+      exact hvnotHistory huHistory
+    split <;> simpa using happ
+
+end SiteExploration
 
 namespace AdaptiveSiteExploration
 

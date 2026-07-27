@@ -386,6 +386,16 @@ noncomputable def next {d : ℕ} (S : SourceFiniteEdgeRevealState d)
     · exact (S.updateData stageRegion p incremented X).updatedLower_eq_old_of_not_mem_ambient
         heStage |>.trans hzero
 
+/-- A source update leaves the lower threshold of every coordinate outside its finite stage
+region unchanged. -/
+theorem next_lower_eq_of_not_mem_stageRegion
+    {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    {e : CubicEdge d} (he : e ∉ stageRegion) :
+    (S.next stageRegion p incremented X).lower e = S.lower e := by
+  exact (S.updateData stageRegion p incremented X).updatedLower_eq_old_of_not_mem_ambient he
+
 /-- A uniform threshold bound is preserved by one literal source-state update. -/
 theorem next_lower_le_of_le {d : ℕ} (S : SourceFiniteEdgeRevealState d)
     (stageRegion : Finset (CubicEdge d)) (p : I)
@@ -407,6 +417,19 @@ theorem coe_next_lower_le_of_le {d : ℕ} (S : SourceFiniteEdgeRevealState d)
     ((S.next stageRegion p incremented X).lower e : ℝ) ≤ q := by
   exact (S.updateData stageRegion p incremented X).coe_updatedLower_le_of_le
     q hlower hincremented hp e
+
+/-- Pointwise form of `coe_next_lower_le_of_le`, used when different physical edges carry
+different accumulated reveal counters. -/
+theorem coe_next_lower_le_of_le_at {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    (q : ℝ) (e : CubicEdge d)
+    (hlower : (S.lower e : ℝ) ≤ q)
+    (hincremented : (incremented e : ℝ) ≤ q)
+    (hp : (p : ℝ) ≤ q) :
+    ((S.next stageRegion p incremented X).lower e : ℝ) ≤ q := by
+  exact (S.updateData stageRegion p incremented X).coe_updatedLower_le_of_le_at
+    q e hlower hincremented hp
 
 theorem explored_subset_nextExplored {d : ℕ} (S : SourceFiniteEdgeRevealState d)
     (stageRegion : Finset (CubicEdge d)) (p : I)

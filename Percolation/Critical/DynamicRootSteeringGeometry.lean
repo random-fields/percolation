@@ -174,6 +174,196 @@ theorem FramedRestartQuery.endpointVertices_restartSupport_subset_centeredBox
   exact cubicEdgeEndpointVertices_framedRestartSupport_subset_centeredBox
     Q.center Q.direction Q.transverseFlip Q.region
 
+/-- A restart whose physical center lies in a coarse half-way box reads vertices only in the
+two radius-`2N` boxes at that bond's endpoints.  The proof uses the sharper transverse
+radius-`n` support bound; the isotropic wide-box estimate alone would lose one block radius. -/
+theorem cubicEdgeEndpointVertices_framedRestartSupport_subset_endpointBoxes_of_center_mem_halfwayBox
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) (R : Finset (Cubic d)) (x : Cubic d)
+    (hcenter : center ∈ grimmettMarstrandHalfwayBox d (m + n + 1) x a) :
+    (cubicEdgeEndpointVertices
+        (framedRestartSupport center a transverseFlip m n R) : Set (Cubic d)) ⊆
+      (cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) x)
+          (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x a))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  intro z hz
+  obtain ⟨w, hw, rfl⟩ :=
+    cubicEdgeEndpointVertices_framedRestartSupport_subset_frameRegion
+      center a transverseFlip R hz
+  have hwWide := positiveSeededRestartRegion_subset_doubleScaleBox d a.1 m n hw
+  rcases a with ⟨i, positive⟩
+  let z := cubicRestartFrameIso center (i, positive) transverseFlip w
+  by_cases hleft :
+      -((2 * (m + n + 1) : ℕ) : ℤ) ≤
+          z i - grimmettMarstrandSiteCenter (m + n + 1) x i ∧
+        z i - grimmettMarstrandSiteCenter (m + n + 1) x i ≤
+          ((2 * (m + n + 1) : ℕ) : ℤ)
+  · left
+    change z ∈ cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) x)
+      (2 * (m + n + 1))
+    rw [mem_cubicMetricBox]
+    intro j
+    by_cases hji : j = i
+    · subst j
+      omega
+    · have hc := mem_cubicMetricBox.mp hcenter j
+      have hwTrans : -(n : ℤ) ≤ w j ∧ w j ≤ (n : ℤ) := by
+        rcases hw with hwBox | hwLayer
+        · simpa [cubicOrigin] using mem_cubicMetricBox.mp hwBox j
+        · exact seededBoundaryLayerRegion_transverse_bounds hji hwLayer
+      cases positive <;>
+        simp [z, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+          grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
+          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+          cubicStepFrom, cubicDirectionIncrement, hji] at hc ⊢ <;>
+        ring_nf at hc ⊢ <;> omega
+  · right
+    change z ∈ cubicMetricBox d
+      (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x (i, positive)))
+      (2 * (m + n + 1))
+    rw [mem_cubicMetricBox]
+    intro j
+    by_cases hji : j = i
+    · subst j
+      have hc := mem_cubicMetricBox.mp hcenter i
+      have hwAxis :
+          -((2 * (m + n + 1) : ℕ) : ℤ) ≤ w i ∧
+            w i ≤ ((2 * (m + n + 1) : ℕ) : ℤ) := by
+        simpa [cubicOrigin] using mem_cubicMetricBox.mp hwWide i
+      cases positive <;>
+        simp [z, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+          grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
+          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+          cubicStepFrom, cubicDirectionIncrement, cubicOrigin] at hc hleft ⊢ <;>
+        ring_nf at hc hleft ⊢ <;> omega
+    · have hc := mem_cubicMetricBox.mp hcenter j
+      have hwTrans : -(n : ℤ) ≤ w j ∧ w j ≤ (n : ℤ) := by
+        rcases hw with hwBox | hwLayer
+        · simpa [cubicOrigin] using mem_cubicMetricBox.mp hwBox j
+        · exact seededBoundaryLayerRegion_transverse_bounds hji hwLayer
+      cases positive <;>
+        simp [z, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+          grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
+          grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+          cubicStepFrom, cubicDirectionIncrement, hji] at hc ⊢ <;>
+        ring_nf at hc ⊢ <;> omega
+
+/-- An anisotropic corridor is the exact geometric invariant needed by every non-root restart.
+Along the requested signed direction the center may range from one site radius behind the
+publishing center all the way to the neighboring site center; in transverse coordinates it
+stays within one site radius.  The sharper reference bounds `[-n,n+2m+1]` axially and
+`[-n,n]` transversely then keep the whole finite support inside the two endpoint `2N` boxes. -/
+theorem cubicEdgeEndpointVertices_framedRestartSupport_subset_endpointBoxes_of_directionalBounds
+    {d m n : ℕ} (center : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) (R : Finset (Cubic d)) (x : Cubic d)
+    (haxis : if a.2 then
+        grimmettMarstrandSiteCenter (m + n + 1) x a.1 - (m + n + 1 : ℕ) ≤
+            center a.1 ∧
+          center a.1 ≤
+            grimmettMarstrandSiteCenter (m + n + 1) x a.1 +
+              4 * (m + n + 1 : ℕ)
+      else
+        grimmettMarstrandSiteCenter (m + n + 1) x a.1 -
+              4 * (m + n + 1 : ℕ) ≤ center a.1 ∧
+          center a.1 ≤
+            grimmettMarstrandSiteCenter (m + n + 1) x a.1 + (m + n + 1 : ℕ))
+    (htrans : ∀ j, j ≠ a.1 →
+      grimmettMarstrandSiteCenter (m + n + 1) x j - (m + n + 1 : ℕ) ≤ center j ∧
+        center j ≤
+          grimmettMarstrandSiteCenter (m + n + 1) x j + (m + n + 1 : ℕ)) :
+    (cubicEdgeEndpointVertices
+        (framedRestartSupport center a transverseFlip m n R) : Set (Cubic d)) ⊆
+      (cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) x)
+          (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x a))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  intro z hz
+  obtain ⟨w, hw, rfl⟩ :=
+    cubicEdgeEndpointVertices_framedRestartSupport_subset_frameRegion
+      center a transverseFlip R hz
+  rcases a with ⟨i, positive⟩
+  let z := cubicRestartFrameIso center (i, positive) transverseFlip w
+  have hwAxis : -(n : ℤ) ≤ w i ∧ w i ≤ (n + 2 * m + 1 : ℕ) := by
+    rcases hw with hwBox | hwLayer
+    · have hi := mem_cubicMetricBox.mp hwBox i
+      simp [cubicOrigin] at hi ⊢
+      omega
+    · obtain ⟨r, hr1, hr2, y, hy, rfl⟩ := hwLayer
+      have hyi := (mem_cubicBoxFace.mp
+        (mem_seededBoundaryQuadrant_iff.mp hy).1).1
+      simp [cubicTranslateAlongCoordinate_same, cubicOrigin] at hyi ⊢
+      omega
+  by_cases hleft :
+      -((2 * (m + n + 1) : ℕ) : ℤ) ≤
+          z i - grimmettMarstrandSiteCenter (m + n + 1) x i ∧
+        z i - grimmettMarstrandSiteCenter (m + n + 1) x i ≤
+          ((2 * (m + n + 1) : ℕ) : ℤ)
+  · left
+    change z ∈ cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) x)
+      (2 * (m + n + 1))
+    rw [mem_cubicMetricBox]
+    intro j
+    by_cases hji : j = i
+    · subst j
+      omega
+    · have hc := htrans j hji
+      have hwTrans : -(n : ℤ) ≤ w j ∧ w j ≤ (n : ℤ) := by
+        rcases hw with hwBox | hwLayer
+        · simpa [cubicOrigin] using mem_cubicMetricBox.mp hwBox j
+        · exact seededBoundaryLayerRegion_transverse_bounds hji hwLayer
+      by_cases hflip : transverseFlip j <;>
+        simp [z, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+          grimmettMarstrandSiteCenter, cubicScale, hji, hflip] at hc ⊢ <;>
+        ring_nf at hc ⊢ <;> omega
+  · right
+    change z ∈ cubicMetricBox d
+      (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x (i, positive)))
+      (2 * (m + n + 1))
+    rw [mem_cubicMetricBox]
+    intro j
+    by_cases hji : j = i
+    · subst j
+      cases positive <;>
+        simp [z, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+          grimmettMarstrandSiteCenter, cubicScale, cubicStepFrom,
+          cubicDirectionIncrement] at haxis hleft ⊢ <;>
+        ring_nf at haxis hleft ⊢ <;> omega
+    · have hc := htrans j hji
+      have hwTrans : -(n : ℤ) ≤ w j ∧ w j ≤ (n : ℤ) := by
+        rcases hw with hwBox | hwLayer
+        · simpa [cubicOrigin] using mem_cubicMetricBox.mp hwBox j
+        · exact seededBoundaryLayerRegion_transverse_bounds hji hwLayer
+      cases positive <;> by_cases hflip : transverseFlip j <;>
+        simp [z, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+          grimmettMarstrandSiteCenter, cubicScale, cubicStepFrom,
+          cubicDirectionIncrement, hji, hflip] at hc ⊢ <;>
+        ring_nf at hc ⊢ <;> omega
+
+/-- A compensating restart begun anywhere in the publishing site's radius-`N` box satisfies
+the directional corridor bounds automatically. -/
+theorem cubicEdgeEndpointVertices_framedRestartSupport_subset_endpointBoxes_of_center_mem_siteBox
+    {d m n : ℕ} (center x : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) (R : Finset (Cubic d))
+    (hcenter : center ∈
+      cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) x) (m + n + 1)) :
+    (cubicEdgeEndpointVertices
+        (framedRestartSupport center a transverseFlip m n R) : Set (Cubic d)) ⊆
+      (cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) x)
+          (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x a))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  apply cubicEdgeEndpointVertices_framedRestartSupport_subset_endpointBoxes_of_directionalBounds
+    center a transverseFlip R x
+  · rcases a with ⟨i, positive⟩
+    have hi := mem_cubicMetricBox.mp hcenter i
+    cases positive <;> simp at hi ⊢ <;> omega
+  · intro j _hja
+    exact mem_cubicMetricBox.mp hcenter j
+
 /-- The local frame of the post-radial extension selected in signed direction `a`. -/
 def RootRadialSeedProfile.postRadialFrame
     {d m n : ℕ} (W : RootRadialSeedProfile d m n) (a : CubicDirection d) :
@@ -598,6 +788,323 @@ theorem cubicRestartFrameIso_positiveSeededRestartRegion_subset_steered
     exact cubicRestartFrameIso_seededBoundaryLayerRegion_subset_steered i
       ⟨w, hw, rfl⟩
 
+/-- Geometry of the two restart applications assigned to one branch.  The first application
+selects `c` in an arbitrary signed frame.  If the second application uses the selected seed's
+physical displacement from `base`, its whole restart region stays in the two radius-`2N`
+endpoint boxes of that same frame. -/
+theorem pairedRestartRegion_subset_endpointBoxes_of_geometry
+    {d m n : ℕ} (base c : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool)
+    (hm : 1 ≤ m)
+    (hgeom : SeedBoxWithinBoundaryLayer d a.1 m n c) :
+    let target := cubicRestartFrameIso base a transverseFlip c
+    cubicGraphIsoRegion
+        (cubicRestartFrameIso target a
+          (inletCompensatingTransverseFlip a
+            (cubicRelativePosition base target)))
+        (positiveSeededRestartRegion d a.1 m n) ⊆
+      (cubicMetricBox d base (2 * (m + n + 1)) : Set (Cubic d)) ∪
+        (cubicMetricBox d
+          (cubicRestartFrameIso base a transverseFlip
+            (grimmettMarstrandSiteCenter (m + n + 1)
+              (cubicStepFrom cubicOrigin (a.1, true))))
+          (2 * (m + n + 1)) : Set (Cubic d)) := by
+  dsimp only
+  intro z hz
+  rcases hz with ⟨q, hq, rfl⟩
+  let G := cubicRestartFrameIso cubicOrigin (a.1, true)
+    (oppositeTransverseRestartFlip (a.1, true))
+  have hGq : G q ∈ steeredPositiveRestartRegion d a.1 m n :=
+    cubicRestartFrameIso_positiveSeededRestartRegion_subset_steered a.1
+      ⟨q, hq, rfl⟩
+  have href :=
+    translated_steeredRestartRegion_subset_endpointBoxes_of_boxWithinBoundaryLayer
+      a.1 hgeom ⟨G q, hGq, rfl⟩
+  have hpos : ∀ j, j ≠ a.1 → 0 < c j := by
+    intro j hja
+    have hc := seedCenter_transverse_bounds_of_boxWithinBoundaryLayer a.1 hgeom hja
+    omega
+  rw [cubicRestartFrameIso_inletCompensating_comp _ _ _ _ hpos]
+  rcases href with href | href
+  · left
+    have himage := (cubicRestartFrameIso_mem_cubicMetricBox_iff
+      base a transverseFlip cubicOrigin
+      (cubicTranslate cubicOrigin c (G q))).2 href
+    simpa only [cubicRestartFrameIso_origin] using himage
+  · right
+    exact (cubicRestartFrameIso_mem_cubicMetricBox_iff
+      base a transverseFlip
+      (grimmettMarstrandSiteCenter (m + n + 1)
+        (cubicStepFrom cubicOrigin (a.1, true)))
+      (cubicTranslate cubicOrigin c (G q))).2 href
+
+/-- The seed selected by the second member of a duplicate restart pair lies in the literal
+half-way box of the corresponding reference bond.  The axial coordinates add to `2N`, while
+the opposite transverse steering leaves only the difference of two coordinates in
+`[m,n-m]`. -/
+theorem translated_compensating_seedCenter_mem_referenceHalfwayBox
+    {d m n : ℕ} (i : Fin d) {c q : Cubic d}
+    (hc : SeedBoxWithinBoundaryLayer d i m n c)
+    (hq : SeedBoxWithinBoundaryLayer d i m n q) :
+    cubicTranslate cubicOrigin c
+        (cubicRestartFrameIso cubicOrigin (i, true)
+          (oppositeTransverseRestartFlip (i, true)) q) ∈
+      grimmettMarstrandHalfwayBox d (m + n + 1) cubicOrigin (i, true) := by
+  change cubicTranslate cubicOrigin c
+      (cubicRestartFrameIso cubicOrigin (i, true)
+        (oppositeTransverseRestartFlip (i, true)) q) ∈
+    cubicMetricBox d
+      (grimmettMarstrandBondCenter (m + n + 1) cubicOrigin
+        (cubicStepFrom cubicOrigin (i, true))) (m + n + 1)
+  rw [mem_cubicMetricBox]
+  intro j
+  by_cases hji : j = i
+  · subst j
+    have hcAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer i hc
+    have hqAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer i hq
+    simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
+      grimmettMarstrandBondCenter, cubicTranslate, cubicRestartFrameIso_apply,
+      cubicRestartFrameFlip, cubicStepFrom, cubicDirectionIncrement, cubicOrigin,
+      hcAxis, hqAxis]
+    omega
+  · have hcBounds := seedCenter_transverse_bounds_of_boxWithinBoundaryLayer i hc hji
+    have hqBounds := seedCenter_transverse_bounds_of_boxWithinBoundaryLayer i hq hji
+    simp [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
+      grimmettMarstrandBondCenter, cubicTranslate, cubicRestartFrameIso_apply,
+      cubicRestartFrameFlip, oppositeTransverseRestartFlip, cubicStepFrom,
+      cubicDirectionIncrement, cubicOrigin, hji]
+    omega
+
+/-- One compensating restart preserves the `N = m+n+1` transverse corridor about its
+deterministic reference center.  This is the elementary invariant used separately at each
+member of an inlet or outgoing restart pair; using the random first target as the second
+reference would not have this property. -/
+theorem inletCompensatingTarget_transverse_bounds_of_bounds
+    {d m n : ℕ} {reference center c : Cubic d} {a : CubicDirection d}
+    {j : Fin d}
+    (hcenterj : reference j - (m + n + 1 : ℕ) ≤ center j ∧
+      center j ≤ reference j + (m + n + 1 : ℕ))
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (hja : j ≠ a.1) :
+    reference j - (m + n + 1 : ℕ) ≤
+        cubicRestartFrameIso center a
+          (inletCompensatingTransverseFlip a
+            (cubicRelativePosition reference center)) c j ∧
+      cubicRestartFrameIso center a
+          (inletCompensatingTransverseFlip a
+            (cubicRelativePosition reference center)) c j ≤
+        reference j + (m + n + 1 : ℕ) := by
+  have hcj := seedCenter_transverse_bounds_of_boxWithinBoundaryLayer a.1 hc hja
+  by_cases hpos : 0 < center j - reference j
+  · have hlt : reference j < center j := by omega
+    simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+      inletCompensatingTransverseFlip, cubicRelativePosition, hja, hlt]
+    constructor <;> omega
+  · have hlt : ¬ reference j < center j := by omega
+    simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+      inletCompensatingTransverseFlip, cubicRelativePosition, hja, hlt]
+    constructor <;> omega
+
+/-- Box-facing wrapper for one compensating transverse step. -/
+theorem inletCompensatingTarget_transverse_bounds
+    {d m n : ℕ} {reference center c : Cubic d} {a : CubicDirection d}
+    (hcenter : center ∈ cubicMetricBox d reference (m + n + 1))
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    {j : Fin d} (hja : j ≠ a.1) :
+    reference j - (m + n + 1 : ℕ) ≤
+        cubicRestartFrameIso center a
+          (inletCompensatingTransverseFlip a
+            (cubicRelativePosition reference center)) c j ∧
+      cubicRestartFrameIso center a
+          (inletCompensatingTransverseFlip a
+            (cubicRelativePosition reference center)) c j ≤
+        reference j + (m + n + 1 : ℕ) := by
+  exact inletCompensatingTarget_transverse_bounds_of_bounds
+    (mem_cubicMetricBox.mp hcenter j) hc hja
+
+/-- Coordinate form of the preceding invariant. -/
+theorem inletCompensatingTarget_mem_transverseCorridor
+    {d m n : ℕ} {reference center c : Cubic d} {a : CubicDirection d}
+    (hcenter : center ∈ cubicMetricBox d reference (m + n + 1))
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c) :
+    ∀ j : Fin d, j ≠ a.1 →
+      reference j - (m + n + 1 : ℕ) ≤
+          cubicRestartFrameIso center a
+            (inletCompensatingTransverseFlip a
+              (cubicRelativePosition reference center)) c j ∧
+        cubicRestartFrameIso center a
+            (inletCompensatingTransverseFlip a
+              (cubicRelativePosition reference center)) c j ≤
+          reference j + (m + n + 1 : ℕ) := by
+  intro j hja
+  exact inletCompensatingTarget_transverse_bounds hcenter hc hja
+
+/-- Two successive restarts which both compensate against the deterministic publishing-site
+center end in the literal half-way box of the chosen coarse bond. -/
+theorem pairedInletCompensatingTarget_mem_halfwayBox
+    {d m n : ℕ} {x center c q : Cubic d} {a : CubicDirection d}
+    (hcenter : center ∈
+      cubicMetricBox d (grimmettMarstrandSiteCenter (m + n + 1) x) (m + n + 1))
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (hq : SeedBoxWithinBoundaryLayer d a.1 m n q) :
+    let reference := grimmettMarstrandSiteCenter (m + n + 1) x
+    let first := cubicRestartFrameIso center a
+      (inletCompensatingTransverseFlip a
+        (cubicRelativePosition reference center)) c
+    cubicRestartFrameIso first a
+        (inletCompensatingTransverseFlip a
+          (cubicRelativePosition reference first)) q ∈
+      grimmettMarstrandHalfwayBox d (m + n + 1) x a := by
+  dsimp only
+  let reference := grimmettMarstrandSiteCenter (m + n + 1) x
+  let first := cubicRestartFrameIso center a
+    (inletCompensatingTransverseFlip a
+      (cubicRelativePosition reference center)) c
+  change cubicRestartFrameIso first a
+      (inletCompensatingTransverseFlip a
+        (cubicRelativePosition reference first)) q ∈
+    cubicMetricBox d (grimmettMarstrandBondCenter (m + n + 1) x
+      (cubicStepFrom x a)) (m + n + 1)
+  rw [mem_cubicMetricBox]
+  intro j
+  by_cases hja : j = a.1
+  · subst j
+    have hcAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer a.1 hc
+    have hqAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer a.1 hq
+    have hcenterAxis := mem_cubicMetricBox.mp hcenter a.1
+    rcases a with ⟨i, positive⟩
+    cases positive <;>
+      simp [first, reference, cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+        grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+        cubicStepFrom, cubicDirectionIncrement, hcAxis, hqAxis] at hcenterAxis ⊢ <;>
+      ring_nf at hcenterAxis ⊢ <;>
+      constructor <;> omega
+  · have hfirst := inletCompensatingTarget_transverse_bounds hcenter hc hja
+    have hsecond := inletCompensatingTarget_transverse_bounds_of_bounds hfirst hq hja
+    rcases a with ⟨i, positive⟩
+    have hji : j ≠ i := hja
+    simp [first, reference, grimmettMarstrandBondCenter,
+      grimmettMarstrandSiteCenter, cubicScale, cubicStepFrom,
+      cubicDirectionIncrement, hji] at hsecond ⊢
+    ring_nf at hsecond ⊢
+    exact hsecond
+
+/-- Starting in the half-way box of a coarse bond, two compensating restarts aimed in that
+bond direction recenter in the radius-`N` box of the destination coarse site. -/
+theorem pairedInletCompensatingTarget_mem_destinationSiteBox
+    {d m n : ℕ} {x inlet c q : Cubic d} {a : CubicDirection d}
+    (hinlet : inlet ∈ grimmettMarstrandHalfwayBox d (m + n + 1) x a)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (hq : SeedBoxWithinBoundaryLayer d a.1 m n q) :
+    let destination := grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x a)
+    let first := cubicRestartFrameIso inlet a
+      (inletCompensatingTransverseFlip a
+        (cubicRelativePosition destination inlet)) c
+    cubicRestartFrameIso first a
+        (inletCompensatingTransverseFlip a
+          (cubicRelativePosition destination first)) q ∈
+      cubicMetricBox d destination (m + n + 1) := by
+  dsimp only
+  let destination := grimmettMarstrandSiteCenter (m + n + 1) (cubicStepFrom x a)
+  let first := cubicRestartFrameIso inlet a
+    (inletCompensatingTransverseFlip a
+      (cubicRelativePosition destination inlet)) c
+  rw [mem_cubicMetricBox]
+  intro j
+  by_cases hja : j = a.1
+  · subst j
+    have hcAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer a.1 hc
+    have hqAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer a.1 hq
+    have hinletAxis := mem_cubicMetricBox.mp hinlet a.1
+    rcases a with ⟨i, positive⟩
+    cases positive <;>
+      simp [first, destination, grimmettMarstrandHalfwayBox,
+        grimmettMarstrandBondBox, grimmettMarstrandBondCenter,
+        grimmettMarstrandSiteCenter, cubicScale, cubicRestartFrameIso_apply,
+        cubicRestartFrameFlip, cubicStepFrom, cubicDirectionIncrement,
+        hcAxis, hqAxis] at hinletAxis ⊢ <;>
+      ring_nf at hinletAxis ⊢ <;>
+      constructor <;> omega
+  · have hinletTransverse : destination j - (m + n + 1 : ℕ) ≤ inlet j ∧
+        inlet j ≤ destination j + (m + n + 1 : ℕ) := by
+      have h := mem_cubicMetricBox.mp hinlet j
+      rcases a with ⟨i, positive⟩
+      have hji : j ≠ i := hja
+      simp [destination, grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
+        grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+        cubicStepFrom, cubicDirectionIncrement, hji] at h ⊢
+      ring_nf at h ⊢
+      exact h
+    have hfirst := inletCompensatingTarget_transverse_bounds_of_bounds
+      hinletTransverse hc hja
+    have hsecond := inletCompensatingTarget_transverse_bounds_of_bounds hfirst hq hja
+    simpa [first, destination] using hsecond
+
+/-- A signed restart frame based at a coarse site carries the reference half-way center to the
+literal bond center joining that coarse site to its signed neighbor. -/
+theorem cubicRestartFrameIso_referenceHalfwayCenter
+    {d N : ℕ} (x : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) :
+    cubicRestartFrameIso (grimmettMarstrandSiteCenter N x) a transverseFlip
+        (grimmettMarstrandBondCenter N cubicOrigin
+          (cubicStepFrom cubicOrigin (a.1, true))) =
+      grimmettMarstrandBondCenter N x (cubicStepFrom x a) := by
+  ext j
+  rcases a with ⟨i, positive⟩
+  by_cases hji : j = i
+  · subst j
+    cases positive <;>
+      simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+        grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+        cubicStepFrom, cubicDirectionIncrement, cubicOrigin] <;>
+      ring
+  · simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip,
+      grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+      cubicStepFrom, cubicDirectionIncrement, cubicOrigin, hji]
+    ring
+
+/-- Consequently the image of the reference half-way box is exactly contained in the literal
+half-way box attached to the framed coarse site. -/
+theorem cubicRestartFrameIso_referenceHalfwayBox_subset_halfwayBox
+    {d N : ℕ} (x : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool) :
+    cubicGraphIsoRegion
+        (cubicRestartFrameIso (grimmettMarstrandSiteCenter N x) a transverseFlip)
+        (grimmettMarstrandHalfwayBox d N cubicOrigin (a.1, true)) ⊆
+      (grimmettMarstrandHalfwayBox d N x a : Set (Cubic d)) := by
+  rintro z ⟨q, hq, rfl⟩
+  have himage := (cubicRestartFrameIso_mem_cubicMetricBox_iff
+    (grimmettMarstrandSiteCenter N x) a transverseFlip
+    (grimmettMarstrandBondCenter N cubicOrigin
+      (cubicStepFrom cubicOrigin (a.1, true))) q).2 hq
+  simpa [grimmettMarstrandHalfwayBox, grimmettMarstrandBondBox,
+    cubicRestartFrameIso_referenceHalfwayCenter] using himage
+
+/-- Physical form of the preceding midpoint calculation.  A duplicate pair begun in an
+arbitrary signed frame publishes a seed in the image of the reference half-way box. -/
+theorem pairedRestartTarget_mem_framedHalfwayBox_of_geometry
+    {d m n : ℕ} (base c q : Cubic d) (a : CubicDirection d)
+    (transverseFlip : Fin d → Bool)
+    (hm : 1 ≤ m)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (hq : SeedBoxWithinBoundaryLayer d a.1 m n q) :
+    let firstTarget := cubicRestartFrameIso base a transverseFlip c
+    cubicRestartFrameIso firstTarget a
+        (inletCompensatingTransverseFlip a
+          (cubicRelativePosition base firstTarget)) q ∈
+      cubicGraphIsoRegion (cubicRestartFrameIso base a transverseFlip)
+        (grimmettMarstrandHalfwayBox d (m + n + 1) cubicOrigin (a.1, true)) := by
+  dsimp only
+  let G := cubicRestartFrameIso cubicOrigin (a.1, true)
+    (oppositeTransverseRestartFlip (a.1, true))
+  have hpos : ∀ j, j ≠ a.1 → 0 < c j := by
+    intro j hja
+    have hj := seedCenter_transverse_bounds_of_boxWithinBoundaryLayer a.1 hc hja
+    omega
+  rw [cubicRestartFrameIso_inletCompensating_comp _ _ _ _ hpos]
+  refine ⟨cubicTranslate cubicOrigin c (G q), ?_, rfl⟩
+  exact translated_compensating_seedCenter_mem_referenceHalfwayBox a.1 hc hq
+
 /-- A post-radial restart from a geometrically valid selected seed stays inside the two
 endpoint site boxes required by the Grimmett--Marstrand construction.  Openness of the seed is
 irrelevant to this containment; only the retained box-in-layer certificate is used. -/
@@ -734,6 +1241,89 @@ theorem rootRadialEdgeSupport_endpointVertices_subset_thickening
   apply grimmettMarstrandCenteredBox_subset_thickening
     (N := m + n + 1) (R := n + 2 * m + 1) hrootF (by omega)
   exact endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges heWide hze
+
+/-- Recentring a second restart at the seed selected by a first restart in the same signed
+direction puts the whole first support strictly behind the second positive target face.  The
+calculation is independent of both transverse masks: axially the old support reaches at most
+`n + 2m + 1`, while the selected seed is exactly at `n + m + 1`. -/
+theorem compensatingFrame_referenceCoord_add_one_lt_of_priorRestart
+    {d m n : ℕ} (hmn : m + 1 < n)
+    (center c : Cubic d) (a : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    {R : Finset (Cubic d)} {f : CubicEdge d}
+    (hf : f ∈ restartEventSupport d a.1 m n R)
+    {w z : Cubic d} (hwf : w ∈ (f : Sym2 (Cubic d)))
+    (hframes :
+      cubicRestartFrameIso
+          (cubicRestartFrameIso center a firstFlip c) a secondFlip z =
+        cubicRestartFrameIso center a firstFlip w) :
+    z a.1 + 1 < (n : ℤ) := by
+  have hwWide : w ∈ cubicMetricBox d cubicOrigin (n + 2 * m + 1) :=
+    endpoint_mem_cubicMetricBox_of_edge_mem_cubicBoxEdges
+      (restartEventSupport_subset_cubicBoxEdges_wide d a.1 m n R hf) hwf
+  have hwBounds := mem_cubicMetricBox.mp hwWide a.1
+  have hcAxis := seedCenter_axis_eq_of_boxWithinBoundaryLayer a.1 hc
+  have hcoord := congrFun hframes a.1
+  rcases a with ⟨i, positive⟩
+  change z i + 1 < (n : ℤ)
+  simp [cubicOrigin] at hwBounds
+  cases positive <;>
+    simp [cubicRestartFrameIso_apply, cubicRestartFrameFlip, hcAxis] at hcoord <;>
+    omega
+
+/-- Support-level form of
+`compensatingFrame_referenceCoord_add_one_lt_of_priorRestart`. -/
+theorem framedRestartSupport_compensatingFrame_endpoint_coord_add_one_lt
+    {d m n : ℕ} (hmn : m + 1 < n)
+    (center c : Cubic d) (a : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (R : Finset (Cubic d)) {e : CubicEdge d}
+    (he : e ∈
+      (framedRestartSupport center a firstFlip m n R).image
+        (cubicRestartFrameIso
+          (cubicRestartFrameIso center a firstFlip c) a secondFlip).symm.mapEdgeSet)
+    {z : Cubic d} (hze : z ∈ (e : Sym2 (Cubic d))) :
+    z a.1 + 1 < (n : ℤ) := by
+  classical
+  let Fnext := cubicRestartFrameIso
+    (cubicRestartFrameIso center a firstFlip c) a secondFlip
+  rw [Finset.mem_image] at he
+  obtain ⟨ePhysical, hePhysical, rfl⟩ := he
+  change z ∈ Sym2.map Fnext.symm (ePhysical : Sym2 (Cubic d)) at hze
+  rw [Sym2.mem_map] at hze
+  obtain ⟨y, hye, rfl⟩ := hze
+  rw [framedRestartSupport, Finset.mem_image] at hePhysical
+  obtain ⟨f, hf, rfl⟩ := hePhysical
+  change y ∈ Sym2.map (cubicRestartFrameIso center a firstFlip)
+    (f : Sym2 (Cubic d)) at hye
+  rw [Sym2.mem_map] at hye
+  obtain ⟨w, hwf, rfl⟩ := hye
+  apply compensatingFrame_referenceCoord_add_one_lt_of_priorRestart
+    hmn center c a firstFlip secondFlip hc hf hwf
+  simp [Fnext]
+
+/-- A first restart support is endpoint-disjoint from the target of the compensating second
+restart in the same direction. -/
+theorem framedRestartSupport_compensatingFrame_targetEndpointFresh
+    {d m n : ℕ} (hmn : m + 1 < n)
+    (center c : Cubic d) (a : CubicDirection d)
+    (firstFlip secondFlip : Fin d → Bool)
+    (hc : SeedBoxWithinBoundaryLayer d a.1 m n c)
+    (R : Finset (Cubic d)) :
+    Disjoint
+      (cubicEdgeEndpointVertices
+        ((framedRestartSupport center a firstFlip m n R).image
+          (cubicRestartFrameIso
+            (cubicRestartFrameIso center a firstFlip c) a secondFlip).symm.mapEdgeSet))
+      (cubicEdgeEndpointVertices (seededBoundaryTargetSupport d a.1 m n)) := by
+  apply disjoint_endpointVertices_seededBoundaryTargetSupport_of_coord_lt
+  intro z hz
+  obtain ⟨e, he, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hz
+  have h := framedRestartSupport_compensatingFrame_endpoint_coord_add_one_lt
+    hmn center c a firstFlip secondFlip hc R he hze
+  omega
 
 /-- Reference-coordinate separation between two distinct post-radial root directions.  A
 restart in direction `b` uses the wide radius only along `b`; in every transverse coordinate it

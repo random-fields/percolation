@@ -195,7 +195,7 @@ theorem step_historyProfile_event_subset
   simpa [step, siteRuntime, seed, incoming, first, directions] using
     LaterSiteRuntime.runFrom_historyProfile_event_subset hmn seed.physicalCenter incoming
       first unusedSecondFlip p delta incremented hmono X
-      (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+      (siteInitialRuntime (m + n + 1) v S seed) 0
       directions
 
 /-- On the common nonnegative support, a realization belongs to the terminal source-history
@@ -217,7 +217,7 @@ theorem mem_step_historyProfile
   simpa [step, siteRuntime, seed, incoming, first, directions] using
     LaterSiteRuntime.mem_runFrom_historyProfile hmn seed.physicalCenter incoming
       first unusedSecondFlip p delta incremented X
-      (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+      (siteInitialRuntime (m + n + 1) v S seed) 0
       directions hnonnegative (by simpa using hcurrent)
 
 /-- Exact-cell stability of one complete later-site decision.  The two hypotheses are precisely
@@ -239,7 +239,7 @@ theorem step_eq_of_mem_terminalHistoryProfile
       ∀ j (hj : j < directions.length) e,
         let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming
           first unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) v S seed) 0
           (directions.take j)
         let a := directions[j]
         (incremented Rj.source a e : ℝ) = (Rj.source.lower e : ℝ) + delta)
@@ -251,7 +251,7 @@ theorem step_eq_of_mem_terminalHistoryProfile
       ∀ j (hj : j < directions.length),
         let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming
           first unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          (siteInitialRuntime (m + n + 1) v S seed) 0
           (directions.take j)
         let a := directions[j]
         let center := Rj.slotCenterFor seed.physicalCenter a j
@@ -269,14 +269,14 @@ theorem step_eq_of_mem_terminalHistoryProfile
   let directions := siteDirectionOrder hd root history v
   have hrun :
       LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
-          p delta incremented Y (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          p delta incremented Y (siteInitialRuntime (m + n + 1) v S seed) 0
             directions =
         LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first unusedSecondFlip
-          p delta incremented X (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+          p delta incremented X (siteInitialRuntime (m + n + 1) v S seed) 0
             directions := by
     apply LaterSiteRuntime.runFrom_eq_of_mem_historyProfile hmn seed.physicalCenter incoming
       first unusedSecondFlip p delta incremented hmono X Y
-      (LaterSiteRuntime.initial S.source seed.physicalCenter) 0
+      (siteInitialRuntime (m + n + 1) v S seed) 0
       directions
     · simpa [seed, incoming, first, directions] using hadds
     · simpa [seed, incoming, first, directions] using hfresh

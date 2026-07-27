@@ -91,6 +91,58 @@ noncomputable def grimmettMarstrandHalfwayBox
     (d N : ℕ) (x : Cubic d) (a : CubicDirection d) : Finset (Cubic d) :=
   grimmettMarstrandBondBox d N x (cubicStepFrom x a)
 
+/-- The midpoint of a signed coarse bond is at `L∞` distance exactly at most `2N` from
+the destination site center. -/
+theorem grimmettMarstrandBondCenter_mem_destinationBox
+    {d N : ℕ} (x : Cubic d) (a : CubicDirection d) :
+    grimmettMarstrandBondCenter N x (cubicStepFrom x a) ∈
+      cubicMetricBox d
+        (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) (2 * N) := by
+  rw [mem_cubicMetricBox]
+  intro i
+  rcases a with ⟨j, positive⟩
+  by_cases hij : i = j
+  · subst i
+    by_cases hp : positive <;>
+      simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+        cubicStepFrom, cubicDirectionIncrement, hp] <;>
+      ring_nf <;> omega
+  · simp [grimmettMarstrandBondCenter, grimmettMarstrandSiteCenter, cubicScale,
+      cubicStepFrom, cubicDirectionIncrement, hij]
+    ring_nf
+    omega
+
+/-- A half-way seed is uniformly local to the destination coarse site.  The radius is `3N`:
+the bond box has radius `N` and its midpoint is `2N` from either endpoint site center. -/
+theorem grimmettMarstrandHalfwayBox_subset_destinationBox
+    {d N : ℕ} (x : Cubic d) (a : CubicDirection d) :
+    (grimmettMarstrandHalfwayBox d N x a : Set (Cubic d)) ⊆
+      cubicMetricBox d
+        (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) (3 * N) := by
+  intro z hz
+  apply mem_cubicMetricBox_iff_lInfDist_le.mpr
+  rw [cubicLInfDist_comm]
+  change z ∈ cubicMetricBox d
+    (grimmettMarstrandBondCenter N x (cubicStepFrom x a)) N at hz
+  have hzCenter : cubicLInfDist z
+      (grimmettMarstrandBondCenter N x (cubicStepFrom x a)) ≤ N := by
+    rw [cubicLInfDist_comm]
+    exact mem_cubicMetricBox_iff_lInfDist_le.mp hz
+  have hcenterDestination : cubicLInfDist
+      (grimmettMarstrandBondCenter N x (cubicStepFrom x a))
+      (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) ≤ 2 * N := by
+    rw [cubicLInfDist_comm]
+    exact mem_cubicMetricBox_iff_lInfDist_le.mp
+      (grimmettMarstrandBondCenter_mem_destinationBox x a)
+  calc
+    cubicLInfDist z (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) ≤
+        cubicLInfDist z (grimmettMarstrandBondCenter N x (cubicStepFrom x a)) +
+          cubicLInfDist (grimmettMarstrandBondCenter N x (cubicStepFrom x a))
+            (grimmettMarstrandSiteCenter N (cubicStepFrom x a)) :=
+      cubicLInfDist_triangle _ _ _
+    _ ≤ N + 2 * N := Nat.add_le_add hzCenter hcenterDestination
+    _ = 3 * N := by omega
+
 /-- The final enlarged region `4NF+B(2N)`, written using the literal Chapter 7 thickening. -/
 def grimmettMarstrandThickening
     (d : ℕ) (F : Set (Cubic d)) (N : ℕ) : Set (Cubic d) :=
@@ -222,7 +274,22 @@ theorem grimmettMarstrandHalfwayBox_subset_thickening
       rwa [← grimmettMarstrandSiteCenter_eq_thickeningCenter]⟩
 
 /-- Order-theoretic conclusion once the block exploration has produced percolation in the
-literal enlarged region at a density no larger than `p_c(F)+eta`. -/
+literal enlarged region at a density no larger than an advertised target `q`.  Keeping `q`
+independent of the coarse region is essential in Theorem 7.2: its slab application chooses the
+final bond density near the ambient cubic critical probability, while the auxiliary region `F`
+is used only to support a supercritical site exploration. -/
+theorem exists_regionCriticalProbability_thickening_le_of_dynamicPercolation
+    {d N : ℕ} {F : Set (Cubic d)} {p : I} {q : ℝ}
+    (hp : (p : ℝ) ≤ q)
+    (hpercolates : 0 < regionHasInfiniteClusterProbability d
+      (grimmettMarstrandThickening d F N) p) :
+    ∃ k : ℕ,
+      regionCriticalProbability d (cubicDilatedThickening d F k) ≤ q := by
+  refine ⟨2 * N, ?_⟩
+  exact (regionCriticalProbability_le_of_hasInfiniteClusterProbability_pos
+    hpercolates).trans hp
+
+/-- Region-relative form retained for the original dynamic-block assembly API. -/
 theorem exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation
     {d N : ℕ} {F : Set (Cubic d)} {p : I} {eta : ℝ}
     (hp : (p : ℝ) ≤ regionCriticalProbability d F + eta)
@@ -230,9 +297,7 @@ theorem exists_regionCriticalProbability_thickening_le_add_of_dynamicPercolation
       (grimmettMarstrandThickening d F N) p) :
     ∃ k : ℕ,
       regionCriticalProbability d (cubicDilatedThickening d F k) ≤
-        regionCriticalProbability d F + eta := by
-  refine ⟨2 * N, ?_⟩
-  exact (regionCriticalProbability_le_of_hasInfiniteClusterProbability_pos
-    hpercolates).trans hp
+        regionCriticalProbability d F + eta :=
+  exists_regionCriticalProbability_thickening_le_of_dynamicPercolation hp hpercolates
 
 end Percolation

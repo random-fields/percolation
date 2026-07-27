@@ -248,9 +248,9 @@ theorem step_source_rootedOpen
   let incoming := incomingDirection hd root history v
   let first := firstFlip hd root history v S
   let directions := siteDirectionOrder hd root history v
-  let R0 := LaterSiteRuntime.initial S.source seed.physicalCenter
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
   have hR0 : R0.source.RootedOpen (thresholdConfiguration pFinal X) cubicOrigin := by
-    simpa [R0, LaterSiteRuntime.initial] using hrooted
+    simpa [R0, siteInitialRuntime, LaterSiteRuntime.initialAt] using hrooted
   have hrun := LaterSiteRuntime.rootedOpen_runFrom hmn seed.physicalCenter incoming first
     unusedSecondFlip p pFinal delta incremented X cubicOrigin R0 0 directions
       hR0 hpFinal hincrementedFinal
@@ -272,16 +272,16 @@ theorem step_source_rootedOpen_of_prefixBounds
       let directions := siteDirectionOrder hd root history v
       LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
         first unusedSecondFlip p pFinal delta incremented X
-        (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 directions) :
+        (siteInitialRuntime (m + n + 1) v S seed) 0 directions) :
     (step hd hmn root history v accepted p delta incremented X S
       ).source.RootedOpen (thresholdConfiguration pFinal X) cubicOrigin := by
   let seed := inletSeed hd root history v S
   let incoming := incomingDirection hd root history v
   let first := firstFlip hd root history v S
   let directions := siteDirectionOrder hd root history v
-  let R0 := LaterSiteRuntime.initial S.source seed.physicalCenter
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
   have hR0 : R0.source.RootedOpen (thresholdConfiguration pFinal X) cubicOrigin := by
-    simpa [R0, LaterSiteRuntime.initial] using hrooted
+    simpa [R0, siteInitialRuntime, LaterSiteRuntime.initialAt] using hrooted
   have hrun := LaterSiteRuntime.rootedOpen_runFrom_of_prefixBounds hmn
     seed.physicalCenter incoming first unusedSecondFlip p pFinal delta incremented X
       cubicOrigin R0 0 directions hR0 hpFinal hbounded
@@ -304,7 +304,7 @@ theorem step_source_rootedOpenWithin_of_prefixBounds
       let directions := siteDirectionOrder hd root history v
       LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
         first unusedSecondFlip p pFinal delta incremented X
-        (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 directions)
+        (siteInitialRuntime (m + n + 1) v S seed) 0 directions)
     (hstageA :
       let seed := inletSeed hd root history v S
       let incoming := incomingDirection hd root history v
@@ -313,7 +313,7 @@ theorem step_source_rootedOpenWithin_of_prefixBounds
       ∀ j (hj : j < directions.length),
         let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
           unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial S.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) v S seed) 0 (directions.take j)
         let a := directions[j]
         let Q := Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip a j
         (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
@@ -323,10 +323,10 @@ theorem step_source_rootedOpenWithin_of_prefixBounds
   let incoming := incomingDirection hd root history v
   let first := firstFlip hd root history v S
   let directions := siteDirectionOrder hd root history v
-  let R0 := LaterSiteRuntime.initial S.source seed.physicalCenter
+  let R0 := siteInitialRuntime (m + n + 1) v S seed
   have hR0 : R0.source.RootedOpenWithin
       (thresholdConfiguration pFinal X) A cubicOrigin := by
-    simpa [R0, LaterSiteRuntime.initial] using hrooted
+    simpa [R0, siteInitialRuntime, LaterSiteRuntime.initialAt] using hrooted
   have hrun := LaterSiteRuntime.rootedOpenWithin_runFrom_of_prefixBounds hmn
     seed.physicalCenter incoming first unusedSecondFlip p pFinal delta incremented X
       cubicOrigin R0 0 directions hR0 hpFinal hbounded (by simpa [R0] using hstageA)
@@ -376,7 +376,7 @@ theorem replayFrom_source_rootedOpen_of_prefixBounds
       let directions := siteDirectionOrder hd root fullHistory v
       LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
         first unusedSecondFlip p pFinal delta incremented X
-        (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 directions) :
+        (siteInitialRuntime (m + n + 1) v T seed) 0 directions) :
     (replayFrom hd hmn root p delta incremented X prior S history
       ).source.RootedOpen (thresholdConfiguration pFinal X) cubicOrigin := by
   induction history generalizing prior S with
@@ -416,7 +416,7 @@ theorem replayFrom_source_rootedOpenWithin_of_prefixBounds
       let directions := siteDirectionOrder hd root fullHistory v
       LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
         first unusedSecondFlip p pFinal delta incremented X
-        (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 directions)
+        (siteInitialRuntime (m + n + 1) v T seed) 0 directions)
     (hstageA : ∀ (pref : List (F × Bool)) (v : F) (accepted : Bool)
       (tail : List (F × Bool)),
       history = pref ++ (v, accepted) :: tail →
@@ -429,7 +429,7 @@ theorem replayFrom_source_rootedOpenWithin_of_prefixBounds
       ∀ j (hj : j < directions.length),
         let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
           unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) v T seed) 0 (directions.take j)
         let a := directions[j]
         let Q := Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip a j
         (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :
@@ -505,7 +505,7 @@ theorem replay_source_rootedOpen_of_prefixBounds
       let directions := siteDirectionOrder hd root fullHistory v
       LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
         first unusedSecondFlip p pFinal delta incremented X
-        (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 directions) :
+        (siteInitialRuntime (m + n + 1) v T seed) 0 directions) :
     (replay hd hmn W root p radialIncremented delta incremented X history
       ).source.RootedOpen (thresholdConfiguration pFinal X) cubicOrigin := by
   exact replayFrom_source_rootedOpen_of_prefixBounds hd hmn root p pFinal delta
@@ -556,7 +556,7 @@ theorem replay_source_rootedOpenWithin_of_prefixBounds
       let directions := siteDirectionOrder hd root fullHistory v
       LaterSiteRuntime.FinalThresholdBoundedOnPrefixes hmn seed.physicalCenter incoming
         first unusedSecondFlip p pFinal delta incremented X
-        (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 directions)
+        (siteInitialRuntime (m + n + 1) v T seed) 0 directions)
     (hsuffixStageA : ∀ (pref : List (F × Bool)) (v : F) (accepted : Bool)
       (tail : List (F × Bool)),
       canonicalSuffix root history = pref ++ (v, accepted) :: tail →
@@ -570,7 +570,7 @@ theorem replay_source_rootedOpenWithin_of_prefixBounds
       ∀ j (hj : j < directions.length),
         let Rj := LaterSiteRuntime.runFrom hmn seed.physicalCenter incoming first
           unusedSecondFlip p delta incremented X
-          (LaterSiteRuntime.initial T.source seed.physicalCenter) 0 (directions.take j)
+          (siteInitialRuntime (m + n + 1) v T seed) 0 (directions.take j)
         let a := directions[j]
         let Q := Rj.restartQuery seed.physicalCenter incoming first unusedSecondFlip a j
         (cubicEdgeEndpointVertices (Q.restartSupport m n) : Set (Cubic d)) ⊆ A) :

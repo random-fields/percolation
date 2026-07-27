@@ -1551,19 +1551,6 @@ Dated milestones and anti-library notes.
     budget and the sharper non-root two-endpoint containment; a larger-radius shortcut is invalid
     because changing the thickening radius also changes its dilation centers.
 
-136. **Grimmett Chapter 11 two-dimensional bond percolation (2026-07-16).** Added the literal
-    `[0,n+1] × [0,n]` rectangle and disjoint-crossing maximum, finite self-dual trace weights,
-    the RSW event/gluing/numerical stack, independent annular barriers, and proved
-    `cubicCriticalProbability_two_eq_half`.  Also proved the centered form of Lemma 11.22 and the
-    complete finite-tube decay package of Lemma 11.27.  Added exact source-facing declarations
-    for every named Chapter 11 result, concrete rooted inhomogeneous square/triangular models,
-    semantic application tests, and transitive axiom audits.  In accordance with the user's
-    policy, Kesten/Russo planar topology and the results which the book delegates to outside
-    literature are explicit named project axioms; the chapter is complete modulo those audited
-    boundaries, not assumption-free.  See
-    `audit/topics/topic-11-bond-percolation-two-dimensions.md` and
-    `audit/vetting/chapter-11-external-results.md`.
-
 135. **Chapter 8 uniqueness, continuity, and qualitative geometry (2026-07-16).**  Formalized
     the compatible-three-partition lemma and the complete Burton–Keane proof that positive
     percolation probability implies almost-sure uniqueness of the infinite open cluster.
@@ -1668,6 +1655,49 @@ Dated milestones and anti-library notes.
     The final Chapter 8 audit build succeeds in 8,603 jobs, the repository-wide build succeeds in
     8,757 jobs, and the measured verification/documentation closeout window was
     22m34s/234,108 tokens.
+
+145. **Grimmett Chapter 11 two-dimensional bond percolation (2026-07-16).** Added the literal
+    `[0,n+1] × [0,n]` rectangle and disjoint-crossing maximum, finite self-dual trace weights,
+    the RSW event/gluing/numerical stack, independent annular barriers, and proved
+    `cubicCriticalProbability_two_eq_half`.  Also proved the centered form of Lemma 11.22 and the
+    complete finite-tube decay package of Lemma 11.27.  Added exact source-facing declarations
+    for every named Chapter 11 result, concrete rooted inhomogeneous square/triangular models,
+    semantic application tests, and transitive axiom audits.  In accordance with the user's
+    policy, Kesten/Russo planar topology and the results which the book delegates to outside
+    literature are explicit named project axioms; the chapter is complete modulo those audited
+    boundaries, not assumption-free.  See
+    `audit/topics/topic-11-bond-percolation-two-dimensions.md` and
+    `audit/vetting/chapter-11-external-results.md`.
+
+146. **Literal non-root confinement and acceptance-time anchor bridge (2026-07-17).** Closed
+    the geometric and infinite-cluster assembly gaps left by the previous checkpoint.  Both
+    slots of every expanded outgoing branch are now localized in the two endpoint boxes of the
+    corresponding coarse bond, and this localization is propagated through every genuine
+    adaptive replay history.  Consequently the final-density rooted walks and every published
+    seed connection stay inside the literal `4NF+B(2N)` thickening.  For a limiting occupied
+    coarse site, the chosen physical anchor is the inlet seed published by its accepted parent;
+    it lies within radius `3N` of the destination site center.  These uniformly local anchors
+    have finite fibres, so an infinite occupied coarse cluster yields an infinite open cluster
+    in the thickening without a false injectivity premise.  The resulting probability theorem
+    and critical-value adapter are unconditional once the concrete replay-stage and
+    final-threshold certificates are supplied.  The full 8,709-job build and the expanded
+    transitive axiom audit pass with only `propext`, `Classical.choice`, and `Quot.sound`.
+    The unique remaining Theorem 7.2 construction issue is the source's global overlap claim
+    behind (7.34): a per-site `4d` attempt bound does not prove that a persistent edge is charged
+    only finitely many times across the whole adaptive exploration.
+
+147. **Scale-uniform non-root reveal accounting (2026-07-17).** Separated the source's `4d`
+    within-site restart attempts from its global spatial overlap accounting.  A fixed physical
+    vertex now has at most `2^d(2d+1)` influencing coarse query sites, independently of the block
+    scale. Canonical replay queries are proved distinct, every literal runtime support is confined
+    to the query's influence region, and pointwise threshold induction charges an edge only when
+    that query can affect its canonical endpoint.  This yields an explicit global replay cap,
+    exact `lower + delta` behavior on every reached runtime prefix, and a concrete
+    `ReplayProgramFinalThresholdCertificate` for the budgeted policy.  The cap is a safe internal
+    packing bound; the public Theorem 7.2 statement and final density are unchanged.  The remaining
+    Theorem 7.2 construction task is the mutually history-indexed stable stage certificate (and
+    thereby concrete adaptive-answer measurability), not final-threshold accounting. No telemetry
+    was reconstructed for this continuation.
 
 ## Axiom Ledger
 

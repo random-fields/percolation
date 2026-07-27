@@ -154,6 +154,22 @@ theorem coe_updatedLower_le_of_le
       · simp [updatedLower, heAmbient, heOld, heNew, hlower e]
   · simp [updatedLower, heAmbient, hlower e]
 
+/-- Pointwise real-valued threshold bound.  Unlike the uniform helper above, this is suitable
+for spatial reveal accounting where the available budget depends on the physical edge. -/
+theorem coe_updatedLower_le_of_le_at
+    (D : RevealThresholdUpdateData ι) (q : ℝ) (e : ι)
+    (hlower : (D.lower e : ℝ) ≤ q)
+    (hincremented : (D.incremented e : ℝ) ≤ q)
+    (hdensity : (D.density : ℝ) ≤ q) :
+    (D.updatedLower e : ℝ) ≤ q := by
+  by_cases heAmbient : e ∈ D.ambient
+  · by_cases heOld : e ∈ D.oldBoundary \ D.nextExplored
+    · simp [updatedLower, heAmbient, heOld, hincremented]
+    · by_cases heNew : e ∈ (D.nextBoundary \ D.oldBoundary) ∩ D.ambient
+      · simp [updatedLower, heAmbient, heOld, heNew, hdensity]
+      · simp [updatedLower, heAmbient, heOld, heNew, hlower]
+  · simp [updatedLower, heAmbient, hlower]
+
 theorem updatedUpper_eq_old_of_mem_oldExplored
     (D : RevealThresholdUpdateData ι) {e : ι} (he : e ∈ D.oldExplored) :
     D.updatedUpper e = D.upper e := by

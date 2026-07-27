@@ -98,7 +98,8 @@ noncomputable def RootRadialSeedProfile.rootOutgoingSeedCenter
     (W.physicalCenter a) a (oppositeTransverseRestartFlip a) p delta X
 
 /-- Full outgoing record offered to the neighboring coarse site.  Besides its physical anchor,
-it retains the reference-frame target center needed by the child's compensating turn. -/
+it retains the physical displacement from the root coarse-site center needed by the child's
+compensating turn. -/
 noncomputable def RootRadialSeedProfile.rootOutgoingSeed
     {d m n : ℕ} (W : RootRadialSeedProfile d m n)
     (p radialIncremented : I) (delta : ℝ)
@@ -106,9 +107,9 @@ noncomputable def RootRadialSeedProfile.rootOutgoingSeed
     (X : CubicEdge d → ℝ) (a : CubicDirection d) :
     Option (LaterSiteOutgoingSeed d) :=
   (W.rootOutgoingWitness p radialIncremented delta incremented X a).map fun U ↦
-    ⟨cubicRestartFrameIso (W.physicalCenter a) a
-        (oppositeTransverseRestartFlip a) U.seedCenter.1,
-      U.seedCenter.1⟩
+    let target := cubicRestartFrameIso (W.physicalCenter a) a
+      (oppositeTransverseRestartFlip a) U.seedCenter.1
+    ⟨target, cubicRelativePosition cubicOrigin target⟩
 
 /-- Completion of all root slots implies success of the query in every signed direction. -/
 theorem RootRadialSeedProfile.mem_rootOutgoingQuery_successEvent_of_completion
@@ -165,7 +166,7 @@ theorem RootRadialSeedProfile.exists_rootOutgoingSeed_of_completion
         (W.physicalCenter a) a (oppositeTransverseRestartFlip a) p delta X hsuccess
 
 /-- Completed-root form of `rootOutgoingSeed`: the full child-steering record is present and
-its reference center is the literal selected mixed witness. -/
+its reference center is the selected physical displacement from the root coarse-site center. -/
 theorem RootRadialSeedProfile.exists_rootOutgoingSeedData_of_completion
     {d m n : ℕ} (W : RootRadialSeedProfile d m n)
     (p radialIncremented : I) (delta : ℝ)
@@ -176,8 +177,9 @@ theorem RootRadialSeedProfile.exists_rootOutgoingSeedData_of_completion
     (a : CubicDirection d) :
     ∃ U : RestartSeedWitnessIndex d a.1 m n,
       W.rootOutgoingSeed p radialIncremented delta incremented X a =
-        some ⟨cubicRestartFrameIso (W.physicalCenter a) a
-          (oppositeTransverseRestartFlip a) U.seedCenter.1, U.seedCenter.1⟩ ∧
+        (let target := cubicRestartFrameIso (W.physicalCenter a) a
+            (oppositeTransverseRestartFlip a) U.seedCenter.1;
+          some ⟨target, cubicRelativePosition cubicOrigin target⟩) ∧
       U.IsMixedRestartWitness
         (W.rootOutgoingQuery p radialIncremented incremented X a).region p
         (W.rootOutgoingQuery p radialIncremented incremented X a).beta delta
@@ -193,6 +195,47 @@ theorem RootRadialSeedProfile.exists_rootOutgoingSeedData_of_completion
   · simpa [RootRadialSeedProfile.rootOutgoingSeed,
       RootRadialSeedProfile.rootOutgoingWitness, S, hselected]
   · simpa [RootRadialSeedProfile.rootOutgoingQuery, S] using hU
+
+/-- Every root-published inlet anchor lies in the literal half-way box joining the root coarse
+site to the advertised signed neighbor.  This keeps the sharper bond-box location needed by
+the two inlet restarts; the coarser radius-`2N` endpoint-box bound loses that information. -/
+theorem RootRadialSeedProfile.rootOutgoingSeed_physicalCenter_mem_halfwayBox_of_completion
+    {d m n : ℕ} (W : RootRadialSeedProfile d m n)
+    (p radialIncremented : I) (delta : ℝ)
+    (incremented : RootExtensionThresholdPolicy d)
+    (X : CubicEdge d → ℝ)
+    (hX : X ∈ W.mixedExtensionPrefixSuccessEvent p radialIncremented delta
+      incremented (rootExtensionDirectionOrder d).length)
+    (a : CubicDirection d) (U : LaterSiteOutgoingSeed d)
+    (hU : W.rootOutgoingSeed p radialIncremented delta incremented X a = some U) :
+    U.physicalCenter ∈
+      grimmettMarstrandHalfwayBox d (m + n + 1) cubicOrigin a := by
+  obtain ⟨V, hVSeed, hV⟩ := W.exists_rootOutgoingSeedData_of_completion
+    p radialIncremented delta incremented X hX a
+  have hUeq : U.physicalCenter = W.postRadialFrame a V.seedCenter.1 := by
+    have hrecord := Option.some.inj (hU.symm.trans hVSeed)
+    simpa [RootRadialSeedProfile.postRadialFrame] using
+      congrArg LaterSiteOutgoingSeed.physicalCenter hrecord
+  have hc : SeedBoxWithinBoundaryLayer d a.1 m n (W a).seedCenter.1 :=
+    (hX.1.2 a).1.2.2.1
+  have hq : SeedBoxWithinBoundaryLayer d a.1 m n V.seedCenter.1 :=
+    hV.1.2.2.1
+  let qref := cubicTranslate cubicOrigin (W a).seedCenter.1
+    (cubicRestartFrameIso cubicOrigin (a.1, true)
+      (oppositeTransverseRestartFlip (a.1, true)) V.seedCenter.1)
+  have hqref : qref ∈
+      grimmettMarstrandHalfwayBox d (m + n + 1) cubicOrigin (a.1, true) := by
+    exact translated_compensating_seedCenter_mem_referenceHalfwayBox
+      a.1 hc hq
+  have himage : W.postRadialFrame a V.seedCenter.1 ∈
+      cubicGraphIsoRegion
+        (cubicRestartFrameIso cubicOrigin a (rootRadialTransverseFlip a))
+        (grimmettMarstrandHalfwayBox d (m + n + 1) cubicOrigin (a.1, true)) := by
+    refine ⟨qref, hqref, ?_⟩
+    exact (W.postRadialFrame_apply a V.seedCenter.1).symm
+  rw [hUeq]
+  exact cubicRestartFrameIso_referenceHalfwayBox_subset_halfwayBox
+    cubicOrigin a (rootRadialTransverseFlip a) himage
 
 /-- Every outgoing seed advertised by a completed root block has already been absorbed into
 the completed source exploration.  This is the root-to-later-site inlet invariant: the first
@@ -219,8 +262,9 @@ theorem RootRadialSeedProfile.rootOutgoingSeed_seedBox_subset_completedExplored
   obtain ⟨V, hVSeed, hV⟩ := W.exists_rootOutgoingSeedData_of_completion
     p radialIncremented delta incremented X hX a
   have hUeq : U =
-      ⟨cubicRestartFrameIso (W.physicalCenter a) a
-        (oppositeTransverseRestartFlip a) V.seedCenter.1, V.seedCenter.1⟩ := by
+      (let target := cubicRestartFrameIso (W.physicalCenter a) a
+          (oppositeTransverseRestartFlip a) V.seedCenter.1;
+        ⟨target, cubicRelativePosition cubicOrigin target⟩) := by
     exact Option.some.inj (hU.symm.trans hVSeed)
   subst U
   have hgeom : ∀ b : CubicDirection d,

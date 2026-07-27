@@ -203,6 +203,70 @@ theorem referenceExploredEdges_image {d : ℕ} (S : SourceFiniteEdgeRevealState 
   rw [referenceExploredEdges, hsymm, Finset.image_image]
   simpa using Finset.image_id S.explored
 
+/-- Physical-coordinate criterion for target freshness.  It is often easier to decompose the
+accumulated physical explored set into earlier restart supports and prove that each piece misses
+the transported target. -/
+theorem targetEndpointFresh_of_disjoint_physicalTarget
+    {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (F : cubicGraph d ≃g cubicGraph d) (T : Finset (CubicEdge d))
+    (hphysical : Disjoint (cubicEdgeEndpointVertices S.explored)
+      ((cubicEdgeEndpointVertices T).image F)) :
+    Disjoint (cubicEdgeEndpointVertices (S.referenceExploredEdges F))
+      (cubicEdgeEndpointVertices T) := by
+  classical
+  rw [Finset.disjoint_left]
+  intro z hzExplored hzTarget
+  have hzPhysicalTarget : F z ∈ (cubicEdgeEndpointVertices T).image F :=
+    Finset.mem_image.mpr ⟨z, hzTarget, rfl⟩
+  have hzPhysicalExplored : F z ∈ cubicEdgeEndpointVertices S.explored := by
+    obtain ⟨e, heReference, hze⟩ :=
+      mem_cubicEdgeEndpointVertices_iff.mp hzExplored
+    have hePhysical : F.mapEdgeSet e ∈ S.explored := by
+      have heImage : F.mapEdgeSet e ∈
+          (S.referenceExploredEdges F).image F.mapEdgeSet :=
+        Finset.mem_image.mpr ⟨e, heReference, rfl⟩
+      rwa [S.referenceExploredEdges_image F] at heImage
+    apply mem_cubicEdgeEndpointVertices_iff.mpr
+    refine ⟨F.mapEdgeSet e, hePhysical, ?_⟩
+    change F z ∈ Sym2.map F (e : Sym2 (Cubic d))
+    exact Sym2.mem_map.mpr ⟨z, hze, rfl⟩
+  exact Finset.disjoint_left.mp hphysical hzPhysicalExplored hzPhysicalTarget
+
+/-- Target freshness is preserved by one source update when it holds separately for the old
+explored set and for the finite stage support, both expressed in the next query's reference
+frame. -/
+theorem targetEndpointFresh_next_of_old_and_stage
+    {d : ℕ} (S : SourceFiniteEdgeRevealState d)
+    (stageRegion : Finset (CubicEdge d)) (p : I)
+    (incremented : CubicEdge d → I) (X : CubicEdge d → ℝ)
+    (F : cubicGraph d ≃g cubicGraph d) (T : Finset (CubicEdge d))
+    (hOld : Disjoint (cubicEdgeEndpointVertices (S.referenceExploredEdges F))
+      (cubicEdgeEndpointVertices T))
+    (hStage : Disjoint
+      (cubicEdgeEndpointVertices (stageRegion.image F.symm.mapEdgeSet))
+      (cubicEdgeEndpointVertices T)) :
+    Disjoint
+      (cubicEdgeEndpointVertices
+        ((S.next stageRegion p incremented X).referenceExploredEdges F))
+      (cubicEdgeEndpointVertices T) := by
+  classical
+  rw [Finset.disjoint_left]
+  intro z hzNext hzTarget
+  obtain ⟨e, heReference, hze⟩ := mem_cubicEdgeEndpointVertices_iff.mp hzNext
+  rw [referenceExploredEdges, Finset.mem_image] at heReference
+  obtain ⟨f, hfNext, rfl⟩ := heReference
+  have hfAllowed := S.nextExplored_subset_explored_union_stageRegion
+    stageRegion p incremented X hfNext
+  rcases Finset.mem_union.mp hfAllowed with hfOld | hfStage
+  · apply Finset.disjoint_left.mp hOld
+    · exact mem_cubicEdgeEndpointVertices_iff.mpr
+        ⟨F.symm.mapEdgeSet f, Finset.mem_image.mpr ⟨f, hfOld, rfl⟩, hze⟩
+    · exact hzTarget
+  · apply Finset.disjoint_left.mp hStage
+    · exact mem_cubicEdgeEndpointVertices_iff.mpr
+        ⟨F.symm.mapEdgeSet f, Finset.mem_image.mpr ⟨f, hfStage, rfl⟩, hze⟩
+    · exact hzTarget
+
 /-- Canonical framed query extracted from a literal source state.  Its reference vertex region
 is the endpoint set of the physical explored edges pulled back through the steering frame, and
 its reference threshold is the physical lower threshold pulled through that same frame. -/

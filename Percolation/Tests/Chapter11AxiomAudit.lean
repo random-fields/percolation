@@ -1,0 +1,33 @@
+import Percolation.Planar.Inhomogeneous
+
+/-!
+# Chapter 11 transitive axiom audit
+
+The exact-threshold, RSW-algebra, tube-decay, and centered-crossing declarations below should use
+only standard Lean axioms plus the explicitly isolated planar-topology inputs in
+`Percolation.Planar.External`.  Source results which Grimmett delegates outside the book are
+deliberately project axioms in `Chapter11External` or `Inhomogeneous`.
+-/
+
+#print axioms Percolation.existsUnique_boundaryCircuitCrossedEdges
+#print axioms Percolation.openClustersPerVertex_square_duality
+#print axioms Percolation.theta_two_half_eq_zero
+#print axioms Percolation.cubicCriticalProbability_two_eq_half
+#print axioms Percolation.bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half
+#print axioms Percolation.maxEdgeDisjointSquareRectangleCrossings_probability_le_exp
+#print axioms Percolation.maxEdgeDisjointGrimmettRectangleCrossings_probability_le_exp
+#print axioms Percolation.eventuallySurroundingOpenCircuit_probability_one
+#print axioms Percolation.truncatedTwoPointConnectivity_logRate_tendsto
+#print axioms Percolation.finiteCorrelationLength_eq_half_correlationLength_complement
+#print axioms Percolation.finiteCorrelationLength_pos_lt_top
+#print axioms Percolation.finiteClusterSizeProbability_le_exp_neg_sqrt_of_supercritical
+#print axioms Percolation.tubeConnectivityDecayRate_properties
+#print axioms Percolation.logarithmicProfileRegion_criticalProbability
+#print axioms Percolation.clusterFunctionalSum_centralLimitTheorem
+#print axioms Percolation.rswThreeHalvesCrossingProbability_ge
+#print axioms Percolation.rsw_gluing_inequalities
+#print axioms Percolation.rswAnnulusOpenCircuitProbability_ge
+#print axioms Percolation.squareCritical_powerLaw_bounds
+#print axioms Percolation.squareNearCritical_powerLaw_bounds
+#print axioms Percolation.inhomogeneousSquare_criticalSurface
+#print axioms Percolation.inhomogeneousTriangular_criticalSurface

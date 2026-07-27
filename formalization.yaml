@@ -15,6 +15,13 @@ sources:
     id: grimmett-random-cluster-2006
     type: textbook
     file: kg/textbooks/Grimmett-RandomClusterModel-2006.pdf
+  - title: "Bollobás–Riordan — A Short Proof of the Harris–Kesten Theorem"
+    id: bollobas-riordan-harris-kesten-2006
+    type: paper
+    file: kg/textbooks/Bollobas-Riordan-Harris-Kesten-2006.pdf
+    role: secondary
+    sha256: bbf6c49ae64f821aa62159272b93dd643f17e3ff4dce00a3285709fd9b6fbef2
+    redistribution_status: unreviewed
   - title: "random-fields/optimal-transport methodology"
     id: random-fields-optimal-transport-methodology
     type: prior_formalization
@@ -33,7 +40,15 @@ status:
   axioms:
     standard: [propext, Classical.choice, Quot.sound]
     project: []
-  main_results: []
+  main_results:
+    - Percolation.radiusTail_exponential_decay_of_lt_critical
+    - Percolation.susceptibilityThreshold_eq_criticalProbability
+    - Percolation.boxRadiusTail_exponential_decay_of_susceptibility_lt_top
+    - Percolation.boxRadiusTail_logRate_tendsto
+    - Percolation.twoPointConnectivity_twoSided_decay
+    - Percolation.clusterSizeAtLeast_exponential_decay_of_lt_critical
+    - Percolation.clusterSizeProbability_logRate_tendsto
+    - Percolation.clusterDensity_and_susceptibility_analytic_belowCritical
 
 automation:
   framework: "Lean 4 + Mathlib v4.30.0"
@@ -45,6 +60,7 @@ fidelity:
     - "Initial Lean files are scaffolding, not final encodings. Production definitions must be comparator-mapped before theorem claims are marked faithful."
 
 review:
-  status: "design scaffold"
-  reviewers: []
-  notes: "Run two independent design reviews before deep proving."
+  status: "chapter-scale implementation with comparator-style source audit"
+  reviewers:
+    - "independent Codex read-only Chapter 6 fidelity review"
+  notes: "Chapter 6 review artifacts record source corrections, application tests, anti-targets, axiom audits, and unavailable local Comparator prerequisites."

@@ -22,6 +22,8 @@ interactive goal inspection was used.
 1. Pick one target from `docs/PLAN.md` or `docs/VALIDATION.md`.
 2. Search Mathlib and local repos first. Do not re-prove existing graph, measure, probability,
    order, or lattice facts.
+   For any figure-dependent, planar-separation, lowest/leftmost-path, or “clear from the picture”
+   step, first read and follow [`docs/PICTORIAL_PROOF_PROTOCOL.md`](docs/PICTORIAL_PROOF_PROTOCOL.md).
 3. Scaffold the smallest useful file under `Percolation/<Layer>/`.
 4. Prove incrementally using Lean LSP/lean4-skills. Keep statements general where it is free,
    but concrete for classical lattice theorems whose source is concrete.
@@ -49,6 +51,11 @@ Every serious theorem needs a source-to-formal comparator trail:
 Do not mark a theorem "faithful" until this trail exists. If an axiom is introduced, run an
 independent read-only review whose job is to refute it, then record the result in
 `audit/vetting/`.
+
+For chapter-scale, multi-theorem, or generated autoformalization batches, read and follow
+[`AUTOMATED_REVIEW.md`](AUTOMATED_REVIEW.md) before claiming completion or opening the final PR.
+Its source inventory, test-case, counterexample, Comparator, transitive-axiom, independent-review,
+and PR-summary gates are mandatory for those batches.
 
 ## Axiom and Sorry Rules
 

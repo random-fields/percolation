@@ -1,5 +1,9 @@
 # percolation
 
+> **📖 New here? Read [`docs/REPOSITORY_GUIDE.md`](docs/REPOSITORY_GUIDE.md)** — a map of all the material
+> (process, methodology, per-chapter review runs), the open-PR campaign state, and an independent
+> faithfulness review of the key PRs.
+
 A Lean 4 / Mathlib formalization workspace for **percolation theory** and the
 **random-cluster model**, built for autoformalization in the `random-fields` organization.
 
@@ -30,5 +34,8 @@ source corpus in `kg/`, planning and verification docs in `docs/`, Lean modules 
 4. [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — informal-to-formal map and source links.
 5. [`audit/`](audit/) + [`formalization.yaml`](formalization.yaml) — comparator-facing
    faithfulness, validation, and axiom/sorry tracking.
+6. [`AUTOMATED_REVIEW.md`](AUTOMATED_REVIEW.md) — mandatory chapter/batch review protocol with
+   source correspondence, concrete and adversarial tests, Comparator challenges, axiom audits,
+   independent-agent review, and PR reporting.
 
 Working with an agent? Start with [`AGENTS.md`](AGENTS.md).

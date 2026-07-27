@@ -1877,6 +1877,7 @@ Dated milestones and anti-library notes.
     Chapter 2 sharp-threshold interface that all coordinates have equal influence
     whenever the invariant symmetry family is transitive, while leaving a later
     `Subgroup`/`MulAction` facade as polish rather than a mathematical gap.
+
 164. **Percolation textbook source audit scorecards (2026-06-29).** Imported the
    optimal-transport repository's autonomous-autoformalization source criterion
    into `kg/TextbookCriterion/` and added a percolation-specific textbook audit
@@ -1885,6 +1886,18 @@ Dated milestones and anti-library notes.
    *Probability on Graphs*, and record that planar surrounding-circuit arguments
    require explicit discrete frontier/parity scaffolding before autonomous proof
    search.
+
+165. **PR 3 semantic reconciliation (2026-07-26).** Merged the GPT-5 Pro Chapter 2
+    branch while retaining the established public meanings of decreasing events,
+    open-witness disjoint occurrence, symmetric pivotality, and the canonical
+    argument order of `thetaFrom`. Added its three compatible deterministic cluster
+    transport results:
+    `cubicOpenClusterFrom_subset_of_walkIsOpen`,
+    `hasInfiniteOpenClusterFrom_of_walkIsOpen`, and
+    `hasInfiniteOpenClusterFrom_iff_of_walkIsOpen`. The branch's alternative
+    low-cardinality Reimer experiment and decidability-only rewrites were not exported
+    into the canonical API: the former has a native-decision axiom footprint and the
+    full Reimer theorem is already recorded below as outside the cited source scope.
 
 ## Axiom Ledger
 

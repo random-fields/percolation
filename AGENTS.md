@@ -22,6 +22,8 @@ interactive goal inspection was used.
 1. Pick one target from `docs/PLAN.md` or `docs/VALIDATION.md`.
 2. Search Mathlib and local repos first. Do not re-prove existing graph, measure, probability,
    order, or lattice facts.
+   For any figure-dependent, planar-separation, lowest/leftmost-path, or “clear from the picture”
+   step, first read and follow [`docs/PICTORIAL_PROOF_PROTOCOL.md`](docs/PICTORIAL_PROOF_PROTOCOL.md).
 3. Scaffold the smallest useful file under `Percolation/<Layer>/`.
 4. Prove incrementally using Lean LSP/lean4-skills. Keep statements general where it is free,
    but concrete for classical lattice theorems whose source is concrete.

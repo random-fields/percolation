@@ -1,5 +1,9 @@
 # percolation
 
+> **📖 New here? Read [`docs/REPOSITORY_GUIDE.md`](docs/REPOSITORY_GUIDE.md)** — a map of all the material
+> (process, methodology, per-chapter review runs), the open-PR campaign state, and an independent
+> faithfulness review of the key PRs.
+
 A Lean 4 / Mathlib formalization workspace for **percolation theory** and the
 **random-cluster model**, built for autoformalization in the `random-fields` organization.
 

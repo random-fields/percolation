@@ -1,13 +1,14 @@
 import Percolation.Planar.RSWHalf
 import Percolation.Planar.AnnulusDuality
+import Percolation.Planar.CriticalSelfDuality
 
 /-!
 # The exact square-lattice critical probability
 
-This file closes Grimmett's RSW proof of Lemma 11.12 and Theorem 11.11.  The exact finite
-self-duality count gives a uniform square-crossing lower bound, RSW turns it into a uniform
-annular-circuit lower bound, shifted disjoint annuli give independent closed barriers, and the
-barrier product forces the critical percolation probability to vanish.
+This file exposes the public declarations for Grimmett's Lemma 11.12 and Theorem 11.11.  The
+historical RSW annular-barrier infrastructure remains available below, while the public critical
+nonpercolation theorem uses the standard-axiom-only strict shifted-dual crossing proof from
+`CriticalSelfDuality`.
 -/
 
 namespace Percolation
@@ -83,27 +84,14 @@ theorem squareCriticalBarrierLowerBound_le_probability (k : ℕ) :
 
 /-- **Grimmett, Lemma 11.12.** There is no infinite open origin cluster in the square lattice
 at the self-dual density `1/2`. -/
-theorem theta_two_half_eq_zero : theta 2 squareHalfDensity = 0 := by
-  let barrier : ℕ → Set (EdgeConfiguration 2) :=
-    expandedCriticalAnnulusBarrierEvent
-  apply theta_eq_zero_of_iIndep_barriers squareHalfDensity barrier
-      measurableSet_expandedCriticalAnnulusBarrierEvent
-      (iIndepSet_expandedCriticalAnnulusBarrierEvent squareHalfDensity)
-      squareCriticalBarrierLowerBound_pos squareCriticalBarrierLowerBound_le_one
-  · intro k
-    exact squareCriticalBarrierLowerBound_le_probability k
-  · intro omega hinfinite
-    simp only [barrier, Set.mem_iInter, Set.mem_compl_iff]
-    intro k hbarrier
-    have hall :=
-      hasInfiniteOpenCluster_subset_iInter_expandedCriticalAnnulusBarrierEvent_compl hinfinite
-    exact (Set.mem_iInter.mp hall k) hbarrier
+theorem theta_two_half_eq_zero : theta 2 squareHalfDensity = 0 :=
+  theta_two_half_eq_zero_via_strictDualCrossing
 
 /-- **Grimmett, Theorem 11.11.** The critical probability of bond percolation on
 `ℤ²` is exactly `1/2`. -/
 theorem cubicCriticalProbability_two_eq_half :
     cubicCriticalProbability 2 = 1 / 2 := by
-  apply le_antisymm cubicCriticalProbability_two_le_half
+  apply le_antisymm cubicCriticalProbability_two_le_half_via_bond_interface
   exact half_le_cubicCriticalProbability_two_of_theta_half_eq_zero
     theta_two_half_eq_zero
 

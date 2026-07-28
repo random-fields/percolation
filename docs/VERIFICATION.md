@@ -126,7 +126,8 @@ This is the human-readable comparator surface. Each row should eventually cite a
 | proved lower bound; upper bound conditional on exact missing positivity input | supercritical finite-cluster size bounds (Theorem 8.61 and equation 8.64) | `Percolation.exists_supercriticalClusterSize_scale`, `Percolation.finiteClusterSizeProbability_ge_exp_neg_surface_of_critical_lt`, `Percolation.finiteClusterSizeTail_le_exp_neg_rpow_of_radiusRate_pos` | `grimmett-percolation-1999`, Ch. 8, pp. 215–223 | the lower bound includes the full 8.68/8.72/8.82 construction. The weak upper bound proves every endpoint from `0<a(p)`; supplying that premise is exactly the unfinished Theorem 8.21/Chapter 7 slab dependency |
 | proved on `(p_c,1)` from explicit Chapter 7 premise; `p=1` remains | infinite differentiability of `theta`, finite susceptibility, and cluster density (Theorem 8.92) | `Percolation.summable_nat_pow_mul_exp_neg_mul_rpow`, `Percolation.exists_uniformFiniteClusterSizeTailStretchedExponential_of_slabCriticalApproximation`, `Percolation.theta_finiteSusceptibility_clusterDensity_contDiffOn_supercriticalInterior_of_slabCriticalApproximation` | `grimmett-percolation-1999`, Ch. 8, Theorem 8.92, pp. 224–225 | a strip fixed at the compact interval's left endpoint yields one uniform (8.91) constant, and exact animal derivative majorants give `C∞` on the whole open interval for `d≥3` under `SlabCriticalApproximation d`. The one-sided endpoint still requires the omitted topology behind (8.88); standard axioms only |
 | proved from the positive radius exponent | infinite-cluster interior/boundary edge balance and almost-sure ratio (Theorem 8.99) | `Percolation.one_sub_p_mul_infiniteClusterInteriorEdgeEvent_probability_eq`, `Percolation.one_sub_p_mul_infiniteClusterInteriorEdgeIntensity_eq`, `Percolation.translatedEventAverage_tendsto_ae_of_summable_cylinderApprox`, `Percolation.infiniteClusterEdgeDensityLimits_of_radiusRate_pos`, `Percolation.infiniteClusterBoundaryInteriorEdgeRatio_tendsto_ae_of_radiusRate_pos` | `grimmett-percolation-1999`, Ch. 8, Theorem 8.99, pp. 226–227 | one-edge deletion gives the exact balance. Exponentially accurate finite-cylinder approximations, Borel–Cantelli on square boxes, deterministic boundary comparison, and square-to-all-radius interpolation prove both pointwise density laws. The only remaining premise is `0 < finiteClusterRadiusDecayRate d p`, exactly Theorem 8.21's unfinished conclusion; no ergodic axiom is used |
-| proved modulo one named RSW axiom | Square-lattice bond threshold `p_c = 1/2` | `Percolation.cubicCriticalProbability_two_eq_half`, `Percolation.theta_two_half_eq_zero`, `Percolation.bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half` | `grimmett-percolation-1999`, Ch. 11, Thm. 11.11, Lemmas 11.12/11.21, pp. 287–294 | the exact-threshold closure uses only standard axioms plus `Percolation.rswThreeHalvesCrossingProbability_ge`; the gluing/incidence results, expanded-annulus barrier transfer, independence, and blocking theorem are proved. The finite-rectangle theorem has its own global trace-axiom dependency but is not in the exact-threshold transitive closure. |
+| proved; standard axioms only | Square-lattice bond threshold `p_c = 1/2` via strict shifted-dual crossings | `Percolation.theta_two_half_eq_zero_via_strictDualCrossing`, public `Percolation.theta_two_half_eq_zero`, `Percolation.cubicCriticalProbability_two_eq_half` | `grimmett-percolation-1999`, Ch. 11, Thm. 11.11 and Lemmas 11.12/11.21, pp. 287–294; proof divergence recorded in `docs/theorem-11.11/STRICT_DUAL_CROSSING_PROOF.md` | `FullVerticalCrossing`, `StrictDualCrossing`, `FullVerticalDuality`, and `CriticalSelfDuality` prove the standard-only route: an even-source four-fresh-edge event has mass at least `1/32`, finite parity makes it disjoint from a full vertical crossing, and qualitative supercritical crossing convergence gives `theta(1/2)=0`. The public wrapper is rewired, the full build passed through `8877/8877`, and all five exact axiom checks report `[propext, Classical.choice, Quot.sound]`. Comparator and independent review are user-deferred, not completion gates. |
+| superseded historical route: proved modulo one named RSW axiom | Earlier RSW/expanded-annulus proof of the same square-lattice threshold | `Percolation.cubicCriticalProbability_two_eq_half`, `Percolation.theta_two_half_eq_zero` at audited commit `fa86568` | same source target; Grimmett §11.7 RSW implementation route | the old exact-threshold closure used standard axioms plus `Percolation.rswThreeHalvesCrossingProbability_ge`. This remains an accurate historical certificate but is not the intended public dependency graph. The odd-source exact rectangle identity has a separate custom trace-axiom dependency and is explicitly excluded from the strict-dual route. |
 | proved modulo cited external results | Complete named-result interface for two-dimensional bond percolation | `Percolation.existsUnique_boundaryCircuitCrossedEdges`, `Percolation.openClustersPerVertex_square_duality`, `Percolation.maxEdgeDisjointGrimmettRectangleCrossings_probability_le_exp`, `Percolation.finiteCorrelationLength_eq_half_correlationLength_complement`, `Percolation.tubeConnectivityDecayRate_properties`, `Percolation.logarithmicProfileRegion_criticalProbability`, `Percolation.clusterFunctionalSum_centralLimitTheorem`, `Percolation.rswAnnulusOpenCircuitProbability_ge`, `Percolation.squareCritical_powerLaw_bounds`, `Percolation.squareNearCritical_powerLaw_bounds`, `Percolation.inhomogeneousSquare_criticalSurface`, `Percolation.inhomogeneousTriangular_criticalSurface` | `grimmett-percolation-1999`, Ch. 11, pp. 282–332 | complete mapping and divergences in `audit/topics/topic-11-bond-percolation-two-dimensions.md`; external statements are isolated under the user-selected reference policy |
 | target | Random-cluster FKG for `q ≥ 1` | TBD | RC Ch. 3 | finite graph first |
 | target | Edwards-Sokal marginal theorem | TBD | RC Thm. 1.10/1.13 | exact finite graph coupling |
@@ -138,7 +139,7 @@ in `AXIOM_AUDIT.md`; their joint vetting and discharge plan is
 `audit/vetting/chapter-11-external-results.md`.  All other audited headline results use only
 standard Lean axioms.
 
-The exact Theorem 11.11 certificate is narrower than the global list.  At audited Chapter 12
+The earlier RSW certificate for the public Theorem 11.11 is historical. At audited Chapter 12
 commit `fa86568`, both
 
 ```text
@@ -153,9 +154,29 @@ report exactly
  Percolation.rswThreeHalvesCrossingProbability_ge]
 ```
 
-Hence `rswThreeHalvesCrossingProbability_ge` is the only live project axiom in that closure.
+Thus `rswThreeHalvesCrossingProbability_ge` was the only project axiom in that **superseded RSW
+closure**.
 `rswGluingTwoIntersection_subset`, `rswGluingThreeIntersection_subset`, and
 `rswCircuitGluingIntersection_subset` are proved.  The proof also uses the proved
 `rswAnnulusOpenCircuitProbability_le_half_expandedBarrier`, rather than the globally retained
-legacy axiom `rswAnnulusOpenCircuitProbability_le_half_barrier`.  Rerun this certificate after the
-integration revision is frozen.
+legacy axiom `rswAnnulusOpenCircuitProbability_le_half_barrier`.
+
+The active strict-dual route was certified by printing:
+
+```text
+#print axioms Percolation.one_thirty_second_le_strictDualHorizontalCrossingEvent_half
+#print axioms Percolation.dualWalkIsOpen_not_mem_fullVerticalCrossingEvent
+#print axioms Percolation.theta_two_half_eq_zero_via_strictDualCrossing
+#print axioms Percolation.theta_two_half_eq_zero
+#print axioms Percolation.cubicCriticalProbability_two_eq_half
+```
+
+Each command reported exactly `[propext, Classical.choice, Quot.sound]`; the full build also passed
+through `8877/8877`. Thus neither `rswThreeHalvesCrossingProbability_ge` nor
+`grimmettRectangleDualTraceEquiv` occurs in the active theorem closure. The latter is why the
+odd-source `1/16` shortcut through
+`bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half` was rejected. The accepted
+even-source `1/32` proof uses `half_le_grimmettRectangleCrossingProbability_even` instead.
+
+This establishes both `theta(1/2)=0` and `p_c(ℤ²)=1/2` with standard axioms only. Comparator and
+independent review were user-deferred and are not completion gates for this formalization result.

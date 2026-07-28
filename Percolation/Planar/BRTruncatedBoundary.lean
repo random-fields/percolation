@@ -1,3 +1,4 @@
+import Percolation.Planar.BRFiberGeometry
 import Percolation.Planar.BRResolvedDegree
 
 /-!
@@ -136,6 +137,241 @@ theorem mem_brTruncatedResolvedIncidentCells_iff
       brStoppedInterfaceIncidentAt z d.toStopped ∧
         z ∈ brTruncatedBoundaryCells n := by
   simp [brTruncatedResolvedIncidentCells, mem_brResolvedIncidentCells_iff]
+
+/-! ### Neighbors selected by retained incident cells -/
+
+/-- An incident cell retained by the truncation whose canonical resolved partner is also a
+retained boundary edge.  These are exactly the incident-cell witnesses which give neighbors in
+`brTruncatedResolvedBoundaryGraph`. -/
+abbrev BRTruncatedPartnerIncidentCell
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (d : BRTruncatedInterfaceEdge n R) :=
+  {z : BRResolvedIncidentCell d.toStopped //
+    z.1 ∈ brTruncatedBoundaryCells n ∧
+      (brResolvedBoundaryPartner d.toStopped z).1 ∈
+        brTruncatedDualBoundaryPositiveEdges n R}
+
+/-- Send a retained incident cell to the truncated neighbor selected by its canonical resolved
+partner. -/
+def brTruncatedPartnerIncidentCellToNeighbor
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (d : BRTruncatedInterfaceEdge n R) :
+    BRTruncatedPartnerIncidentCell d →
+      (brTruncatedResolvedBoundaryGraph n R).neighborSet d :=
+  fun z ↦
+    let e : BRTruncatedInterfaceEdge n R :=
+      ⟨(brResolvedBoundaryPartner d.toStopped z.1).1, z.2.2⟩
+    ⟨e, brTruncatedResolvedBoundaryGraph_adj_iff.mpr
+      ⟨z.1.1, z.2.1, by
+        simpa [e] using brResolvedBoundaryPartner_pairedAt d.toStopped z.1⟩⟩
+
+theorem brTruncatedPartnerIncidentCellToNeighbor_injective
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (d : BRTruncatedInterfaceEdge n R) :
+    Function.Injective (brTruncatedPartnerIncidentCellToNeighbor d) := by
+  intro z w hzw
+  apply Subtype.ext
+  apply brResolvedBoundaryPartner_injective d.toStopped
+  apply Subtype.ext
+  exact congrArg
+    (fun e : (brTruncatedResolvedBoundaryGraph n R).neighborSet d ↦ e.1.1) hzw
+
+theorem brTruncatedPartnerIncidentCellToNeighbor_surjective
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (d : BRTruncatedInterfaceEdge n R) :
+    Function.Surjective (brTruncatedPartnerIncidentCellToNeighbor d) := by
+  rintro ⟨e, he⟩
+  rcases brTruncatedResolvedBoundaryGraph_adj_iff.mp he with ⟨z, hz, hpair⟩
+  have hzIncident : z ∈ brResolvedIncidentCells d.toStopped :=
+    mem_brResolvedIncidentCells_iff.mpr hpair.1
+  let z' : BRResolvedIncidentCell d.toStopped := ⟨z, hzIncident⟩
+  have hpartner : brResolvedBoundaryPartner d.toStopped z' = e.toStopped :=
+    brResolvedBoundaryPairedAt_right_unique
+      (brResolvedBoundaryPartner_pairedAt d.toStopped z') hpair
+  have hpartnerMem :
+      (brResolvedBoundaryPartner d.toStopped z').1 ∈
+        brTruncatedDualBoundaryPositiveEdges n R := by
+    rw [hpartner]
+    exact e.2
+  let z'' : BRTruncatedPartnerIncidentCell d := ⟨z', hz, hpartnerMem⟩
+  refine ⟨z'', ?_⟩
+  apply Subtype.ext
+  apply Subtype.ext
+  exact congrArg (fun x : BRStoppedInterfaceEdge n R ↦ x.1) hpartner
+
+/-- Retained partner cells are canonically equivalent to neighbors in the truncated resolved
+boundary graph. -/
+noncomputable def brTruncatedPartnerIncidentCellEquivNeighborSet
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (d : BRTruncatedInterfaceEdge n R) :
+    BRTruncatedPartnerIncidentCell d ≃
+      (brTruncatedResolvedBoundaryGraph n R).neighborSet d :=
+  Equiv.ofBijective (brTruncatedPartnerIncidentCellToNeighbor d)
+    ⟨brTruncatedPartnerIncidentCellToNeighbor_injective d,
+      brTruncatedPartnerIncidentCellToNeighbor_surjective d⟩
+
+noncomputable instance instFintypeBRTruncatedResolvedBoundaryGraphNeighborSet
+    (n : ℕ) (R : Finset (BRLeftmostDualVertex n))
+    (d : BRTruncatedInterfaceEdge n R) :
+    Fintype ((brTruncatedResolvedBoundaryGraph n R).neighborSet d) :=
+  Fintype.ofInjective Subtype.val Subtype.val_injective
+
+/-- The degree of a truncated boundary edge is the number of retained incident cells whose
+canonical resolved partners are retained. -/
+theorem degree_brTruncatedResolvedBoundaryGraph_eq_card_partner_cells
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (d : BRTruncatedInterfaceEdge n R) :
+    (brTruncatedResolvedBoundaryGraph n R).degree d =
+      Fintype.card (BRTruncatedPartnerIncidentCell d) := by
+  rw [← SimpleGraph.card_neighborSet_eq_degree]
+  exact (Fintype.card_congr
+    (brTruncatedPartnerIncidentCellEquivNeighborSet d)).symm
+
+/-! ### Realizable fibers retain every partner from a retained cell -/
+
+private theorem brReachedDualFace_iff_mem
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    {z : BRLeftmostDualVertex n} :
+    brReachedDualFace n R z.1 ↔ z ∈ R := by
+  rw [brReachedDualFace, brReachedFaceCoordinates, Finset.mem_map]
+  constructor
+  · rintro ⟨w, hw, hwz⟩
+    have : w = z := Subtype.ext hwz
+    simpa only [this] using hw
+  · intro hz
+    exact ⟨z, hz, rfl⟩
+
+/-- Every side of a retained dual-coordinate cell has both endpoints in the exploration frame. -/
+theorem squareCellPositiveEdge_endpoints_mem_brLeftmostDualFaces
+    {n : ℕ} {z : DualSquareVertex} {e : DualSquarePositiveEdge}
+    (hz : z ∈ brTruncatedBoundaryCells n)
+    (he : e ∈ squareCellPositiveEdges z) :
+    e.base ∈ brLeftmostDualFaces n ∧
+      cubicStepFrom e.base (e.axis, true) ∈ brLeftmostDualFaces n := by
+  rw [mem_brTruncatedBoundaryCells_iff] at hz
+  simp [squareCellPositiveEdges, squareCellPositiveEdgeList] at he
+  rcases he with rfl | rfl | rfl | rfl
+  all_goals
+    constructor <;>
+      rw [mem_brLeftmostDualFaces_iff] <;>
+      simp [squareVertex, cubicStepFrom, cubicDirectionIncrement] <;>
+      omega
+
+private theorem squareEdgeDualCrossingEquiv_symm_dualPositiveEdge_toEdge
+    (e : DualSquarePositiveEdge) :
+    squareEdgeDualCrossingEquiv.symm e.toEdge =
+      (dualToPrimalCrossingPositiveEdge e).toEdge := by
+  have horient : SquarePositiveEdge.edgeEquiv.symm e.toEdge = e := by
+    apply SquarePositiveEdge.edgeEquiv.injective
+    simp [SquarePositiveEdge.edgeEquiv_apply]
+  simp [squareEdgeDualCrossingEquiv, squarePositiveEdgeDualCrossingEquiv,
+    SquarePositiveEdge.edgeEquiv_apply, horient]
+
+/-- A stopped boundary edge whose endpoints lie in the frame crosses an allowed boundary-free
+bond whenever its reached-face set is realized by an exploration fiber. -/
+theorem dualToPrimalCrossingPositiveEdge_mem_boundaryFree_of_mem_fiber
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    {omega : EdgeConfiguration 2} (homega : omega ∈ brReachableFaceFiber n R)
+    (e : BRStoppedInterfaceEdge n R)
+    (hbase : e.1.base ∈ brLeftmostDualFaces n)
+    (hstep : cubicStepFrom e.1.base (e.1.axis, true) ∈ brLeftmostDualFaces n) :
+    (dualToPrimalCrossingPositiveEdge e.1).toEdge ∈
+      squareBoundaryFreeRectangleEdges (2 * n) n := by
+  let x : BRLeftmostDualVertex n := ⟨e.1.base, hbase⟩
+  let y : BRLeftmostDualVertex n :=
+    ⟨cubicStepFrom e.1.base (e.1.axis, true), hstep⟩
+  have hxy : (brLeftmostDualGraph n).Adj x y := by
+    rw [brLeftmostDualGraph_adj_iff]
+    exact cubicGraph_adj_stepFrom e.1.base (e.1.axis, true)
+  have hdual :
+      brLeftmostDualEdgeEmbedding n
+          ⟨s(x, y), (brLeftmostDualGraph n).mem_edgeSet.mpr hxy⟩ = e.1.toEdge := by
+    apply Subtype.ext
+    rfl
+  by_contra hallowed
+  have hcrossed :
+      squareEdgeDualCrossingEquiv.symm
+          (brLeftmostDualEdgeEmbedding n
+            ⟨s(x, y), (brLeftmostDualGraph n).mem_edgeSet.mpr hxy⟩) ∉
+        squareBoundaryFreeRectangleEdges (2 * n) n := by
+    rw [hdual, squareEdgeDualCrossingEquiv_symm_dualPositiveEdge_toEdge]
+    exact hallowed
+  have hsame := mem_brLeftReachableFaces_iff_of_adj_of_crossed_not_mem
+    (omega := omega) hxy hcrossed
+  change brLeftReachableFaces n omega = R at homega
+  rw [homega] at hsame
+  have hsameFace :
+      brReachedDualFace n R e.1.base ↔
+        brReachedDualFace n R (cubicStepFrom e.1.base (e.1.axis, true)) := by
+    exact brReachedDualFace_iff_mem.trans
+      (hsame.trans brReachedDualFace_iff_mem.symm)
+  exact e.2 hsameFace
+
+/-- In a realized fiber, the canonical partner selected at a retained incident cell is itself a
+retained boundary edge. -/
+theorem brResolvedBoundaryPartner_mem_truncated_of_mem_fiber
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    {omega : EdgeConfiguration 2} (homega : omega ∈ brReachableFaceFiber n R)
+    (d : BRTruncatedInterfaceEdge n R) (z : BRResolvedIncidentCell d.toStopped)
+    (hz : z.1 ∈ brTruncatedBoundaryCells n) :
+    (brResolvedBoundaryPartner d.toStopped z).1 ∈
+      brTruncatedDualBoundaryPositiveEdges n R := by
+  classical
+  have hpair := brResolvedBoundaryPartner_pairedAt d.toStopped z
+  have hpartnerCell :
+      (brResolvedBoundaryPartner d.toStopped z).1 ∈ squareCellPositiveEdges z.1 := by
+    have hincident := hpair.2.1
+    rw [brStoppedInterfaceIncidentAt, squareCellBoundaryPositiveEdges,
+      Finset.mem_filter] at hincident
+    exact hincident.1
+  have hendpoints :=
+    squareCellPositiveEdge_endpoints_mem_brLeftmostDualFaces hz hpartnerCell
+  rw [mem_brTruncatedDualBoundaryPositiveEdges_iff]
+  exact ⟨(brResolvedBoundaryPartner d.toStopped z).2, hendpoints.1, hendpoints.2,
+    dualToPrimalCrossingPositiveEdge_mem_boundaryFree_of_mem_fiber homega
+      (brResolvedBoundaryPartner d.toStopped z) hendpoints.1 hendpoints.2⟩
+
+/-- On a realized fiber, retained partner cells are equivalent to the geometrically retained
+incident-cell finset. -/
+noncomputable def brTruncatedPartnerIncidentCellEquivResolvedIncidentCells
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    {omega : EdgeConfiguration 2} (homega : omega ∈ brReachableFaceFiber n R)
+    (d : BRTruncatedInterfaceEdge n R) :
+    BRTruncatedPartnerIncidentCell d ≃
+      {z : DualSquareVertex // z ∈ brTruncatedResolvedIncidentCells d} where
+  toFun z := ⟨z.1.1, by
+    rw [brTruncatedResolvedIncidentCells, Finset.mem_filter]
+    exact ⟨z.1.2, z.2.1⟩⟩
+  invFun z := by
+    have hz := mem_brTruncatedResolvedIncidentCells_iff.mp z.2
+    let z' : BRResolvedIncidentCell d.toStopped :=
+      ⟨z.1, mem_brResolvedIncidentCells_iff.mpr hz.1⟩
+    exact ⟨z', hz.2,
+      brResolvedBoundaryPartner_mem_truncated_of_mem_fiber homega d z' hz.2⟩
+  left_inv z := by
+    apply Subtype.ext
+    apply Subtype.ext
+    rfl
+  right_inv z := by
+    apply Subtype.ext
+    rfl
+
+/-- For a realizable stopped fiber, truncated degree is the number of geometrically retained
+incident cells. -/
+theorem degree_brTruncatedResolvedBoundaryGraph
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (hreal : ∃ omega, omega ∈ brReachableFaceFiber n R)
+    (d : BRTruncatedInterfaceEdge n R) :
+    (brTruncatedResolvedBoundaryGraph n R).degree d =
+      (brTruncatedResolvedIncidentCells d).card := by
+  rcases hreal with ⟨omega, homega⟩
+  rw [degree_brTruncatedResolvedBoundaryGraph_eq_card_partner_cells]
+  calc
+    Fintype.card (BRTruncatedPartnerIncidentCell d) =
+        Fintype.card {z : DualSquareVertex // z ∈ brTruncatedResolvedIncidentCells d} :=
+      Fintype.card_congr
+        (brTruncatedPartnerIncidentCellEquivResolvedIncidentCells homega d)
+    _ = (brTruncatedResolvedIncidentCells d).card := Fintype.card_coe _
 
 end
 

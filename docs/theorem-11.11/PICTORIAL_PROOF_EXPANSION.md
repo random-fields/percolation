@@ -27,7 +27,81 @@ Declaration names below were rechecked against the expanded Chapter 12 implement
 new lemmas are described by their mathematical statements and are explicitly labelled
 **proposed** rather than presented as existing declarations.
 
-## Recommendation about the proof source
+## Current accepted pictorial replacement: strict duality
+
+The active proof no longer needs the canonical-leftmost/RSW construction developed in the older
+sections of this note. The rigorous argument is written in full in
+[`STRICT_DUAL_CROSSING_PROOF.md`](STRICT_DUAL_CROSSING_PROOF.md); the following is its finite
+geometric core.
+
+Fix `l ≥ 1`, use the even Grimmett rectangle at scale `2*l`, and set `N = l + 2`. For every exact
+internal crossing trace, choose the existing trace crossing and add four trace-dependent fresh
+horizontal bonds: two outside its left endpoint and two outside its right endpoint. The fresh
+coordinates are disjoint from the rectangle support and have cardinality four. At density one
+half, adaptive independence therefore contributes `(1/2)^4`; the standard-only theorem
+`half_le_grimmettRectangleCrossingProbability_even` contributes another factor `1/2`. Hence the
+four-edge extension event has probability at least `1/32`.
+
+Translate the extended walk by `grimmettFreshSquareIso l`. Its start has first coordinate `-1`,
+its finish has first coordinate `2*N`, and every support vertex lies in
+
+```text
+brLeftmostDualFaces N = {z | -1 ≤ z₀ ≤ 2N and -N ≤ z₁ < N}.
+```
+
+Pull this translated event back through `dualSquareConfiguration`. At density one half the dual
+map preserves the Bernoulli law. Membership now supplies a shifted-dual open walk across the
+strict face frame, which means every crossed primal bond is closed.
+
+Suppose simultaneously that the full primal box `[0,2N] × [-N,N]` has a bottom-to-top open walk.
+Append `brLeftExteriorClosureWalk` to make it closed. The ray-count parity
+`closedSquareWalkFaceParity` differs between the strict dual walk's left and right endpoints by
+`brClosedBottomTopWalk_faceParity_ne`. The finite walk lemma
+`exists_dualWalk_edge_crossing_closedWalk_of_faceParity_ne` therefore produces a dual edge crossing
+the closed primal walk. Its endpoints lie in the strict face frame, so
+`squareEdgeDualCrossingEquiv_symm_not_mem_brLeftExteriorClosureWalk` rules out the artificial
+closure. The crossed bond belongs to the original primal walk and is open; dual openness says the
+same bond is closed, a contradiction. This argument does not require a simple path, a simple
+cycle, an inside/outside predicate, or a Jordan theorem.
+
+The formal wrappers are:
+
+- `FullVerticalCrossing`: `fullVerticalCrossingEvent` and
+  `fullVerticalCrossing_probability_tendsto_one`;
+- `StrictDualCrossing`: `strictDualHorizontalCrossingEvent`,
+  `exists_strictDualHorizontalCrossingWitness_of_mem`, and
+  `one_thirty_second_le_strictDualHorizontalCrossingEvent_half`;
+- `FullVerticalDuality`: `dualWalkIsOpen_not_mem_fullVerticalCrossingEvent`;
+- `CriticalSelfDuality`:
+  `strictDualHorizontalCrossingEvent_subset_fullVerticalCrossingEvent_compl`,
+  `fullVerticalCrossingProbability_half_le_thirty_one_over_thirty_two`, and
+  `theta_two_half_eq_zero_via_strictDualCrossing`.
+
+If `theta 2 squareHalfDensity` were positive, the full vertical crossing probabilities would tend
+to one, while the disjoint strict-dual event forces them to stay at most `31/32`. This proves
+critical nonpercolation and feeds the existing two critical-probability inequalities. The code is
+implemented, the public theorem has been rewired, and the full build passed through `8877/8877`.
+The five exact kernel checks for the strict-dual kernel, deterministic exclusion, private theta
+theorem, public theta theorem, and public exact threshold each reported only
+`[propext, Classical.choice, Quot.sound]`. Comparator and independent review were explicitly
+deferred and are outside the present formalization scope.
+
+Two tempting pictorial shortcuts were explicitly rejected.
+
+1. A full vertical crossing need not be boundary-free. Opening only the vertical bonds on the
+   left side gives a full bottom-to-top crossing, but every such bond is deleted from
+   `squareBoundaryFreeRectangleEdges`. Shrinking the full box by one also leaves its endpoints on
+   the wrong rows, so there is no event inclusion into the larger boundary-free crossing.
+2. The odd-source three-fresh-edge geometry is valid and would yield `1/16` from an exact source
+   probability `1/2`, but that exact identity depends transitively on the project axiom
+   `grimmettRectangleDualTraceEquiv`. The even-source four-edge kernel uses the weaker axiom-free
+   source bound and is the accepted standard-only route.
+
+## Historical recommendation about the proof source
+
+The remainder of Sections 1--9 records the earlier RSW/BR analysis. It remains useful for future
+RSW formalization, but its canonical-leftmost and annular-barrier steps are superseded for the
+public Theorem 11.11 proof.
 
 Use Grimmett as the primary source, with Bollobás--Riordan as a supplementary source for two
 finite planar constructions.
@@ -62,7 +136,7 @@ Thus the recommended proof is:
 This route preserves the source theorem while avoiding both the Friedgut--Kalai theorem and the
 global four-infinite-arm separation hidden in Figure 11.7.
 
-## Dependency skeleton
+## Historical RSW/BR dependency skeleton
 
 ```text
 finite primal/dual edge crossing equivalence
@@ -530,13 +604,18 @@ branch.  Because the finite-barrier proof avoids it, this global route is not re
 threshold theorem even though the required uniqueness theorem is available on the Chapter 8
 branch.
 
-## 10. Current verified Lean inventory
+## 10. Current Lean inventory
 
-The following declarations were verified on the expanded Chapter 12 implementation and can be
-reused directly.
+The historical declarations in this table were verified on the expanded Chapter 12
+implementation. The strict-dual rows are now implemented, build-green, publicly wired, and audited
+with only the three standard axioms.
 
 | Role | Verified declarations |
 |---|---|
+| Full vertical crossing placement | `fullVerticalCrossingPlacementIso`, `fullVerticalCrossingEvent`, `measurableSet_fullVerticalCrossingEvent`, `bernoulliBondMeasure_real_fullVerticalCrossingEvent`, `fullVerticalCrossing_probability_tendsto_one` |
+| Strict-dual probability event | `grimmettRectangleFreshExtensionEdgesFour`, `grimmettRectangleFreshCrossingEventFour`, `one_thirty_second_le_grimmettRectangleFreshCrossingEventFour_half`, `strictDualHorizontalCrossingEvent`, `StrictDualHorizontalCrossingWitness`, `one_thirty_second_le_strictDualHorizontalCrossingEvent_half` |
+| Finite primal/dual exclusion | `dualWalkIsOpen_not_mem_fullVerticalCrossingEvent`, `strictDualHorizontalCrossingEvent_subset_fullVerticalCrossingEvent_compl` |
+| Critical strict-dual contradiction | `fullVerticalCrossingProbability_half_le_thirty_one_over_thirty_two`, `theta_two_half_eq_zero_via_strictDualCrossing` |
 | Primal/dual bonds and status | `squareEdgeDualCrossingEquiv`, `dualSquareConfiguration`, `dualSquareConfiguration_open_iff`, `dualWalkIsOpen`, `DualCircuit.IsOpen` |
 | Literal source rectangle | `grimmettRectangleVertices`, `grimmettRectangleEdges`, `grimmettRectangleLeft`, `grimmettRectangleRight`, `grimmettRectangleCrossingEvent` |
 | Exact crossing interface | `grimmettRectangleCrossingProbability_add_complement`, `bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half` |
@@ -551,14 +630,27 @@ reused directly.
 | Independent barrier limit | `theta_eq_zero_of_iIndep_barriers`, `theta_two_eq_zero_of_criticalAnnulusBarrier_probability` |
 | Threshold assembly | `half_le_cubicCriticalProbability_two_of_theta_half_eq_zero`, `cubicCriticalProbability_two_eq_half` |
 
-Kernel auditing now shows that `cubicCriticalProbability_two_eq_half` and
-`theta_two_half_eq_zero` depend on exactly the three standard axioms plus the single project axiom
-`rswThreeHalvesCrossingProbability_ge`. The finite rectangle interface, all three deterministic
-RSW gluing inclusions, annular duality, direct expanded barriers, barrier independence, and the
-upper-bound analysis are already standard-axiom-only. Older six-axiom audit artifacts are retained
-only as immutable historical records and must not be used as the current completion status.
+The last completed audit of the **old public proof** showed that `cubicCriticalProbability_two_eq_half`
+and `theta_two_half_eq_zero` used the three standard axioms plus
+`rswThreeHalvesCrossingProbability_ge`. That is a superseded historical certificate. The new
+strict-dual closure has since passed the full build and exact transitive kernel checks; none of its
+five audited declarations contains that RSW axiom or the rejected dual-trace axiom.
 
-## 11. Proposed implementation order
+## 11. Implementation order
+
+The completed order was:
+
+1. build and audit `FullVerticalCrossing`;
+2. build and audit the four-edge probability and strict-frame witness in `StrictDualCrossing`;
+3. build and audit the parity exclusion in `FullVerticalDuality`;
+4. build and audit the limit contradiction in `CriticalSelfDuality`;
+5. rewire the public theta/exact-threshold declarations, run the full build, and audit the five
+   exact declarations with `#print axioms`.
+
+All five steps passed. Comparator and independent review are deferred external processes and were
+not part of this formalization pass.
+
+The older work-package list below is retained as the superseded BR/RSW plan.
 
 The labels in this section are work packages, not claims that declarations with these names
 already exist.

@@ -1,22 +1,31 @@
 # Source selection audit for Grimmett Theorem 11.11
 
-Audit date: 2026-07-26. Rubric: `kg/TextbookCriterion/autoformalization-source-audit-prompt.md`
-v2, applied without weakening its grounding or verdict gates.
+Audit date: 2026-07-26; route update: 2026-07-27. Rubric:
+`kg/TextbookCriterion/autoformalization-source-audit-prompt.md` v2, applied without weakening its
+grounding or verdict gates.
 
 ## Decision
 
-Use **Grimmett, Theorem 11.11, as the primary statement source and comparator**. Use the
-Bollobás--Riordan finite-planar segment (Lemma 3, Lemma 6, Corollary 7, and Theorem 8) only as a
-secondary proof source for discharging the remaining RSW/lowest-crossing obligation. Do not switch
-the primary proof route to the complete Bollobás--Riordan paper: its short upper-bound argument is
-short only after importing the Friedgut--Kalai sharp-threshold theorem, for which the pinned
-Mathlib and this repository have no implementation.
+Use **Grimmett, Theorem 11.11, as the primary statement source and comparator**. Keep the
+Bollobás--Riordan paper as an evaluated secondary source and retain its finite-planar modules as
+reusable infrastructure, but do **not** use its Lemma 6/Corollary 7 route in the intended public
+Theorem 11.11 dependency closure.
 
-This choice is driven by the current formal frontier, not by page count. The repository already
-contains `Percolation.cubicCriticalProbability_two_eq_half`; its only recorded nonstandard
-transitive dependency is the precisely stated axiom
-`Percolation.rswThreeHalvesCrossingProbability_ge`. The finite duality, FKG gluing, annular
-incidence, shifted barriers, barrier independence, and upper-bound route are proved declarations.
+The accepted implementation route is the finite strict-dual proof in
+[`STRICT_DUAL_CROSSING_PROOF.md`](STRICT_DUAL_CROSSING_PROOF.md). It combines the standard-only
+even-rectangle lower bound with four adaptive fresh edges, transports the resulting walk through
+half-density shifted duality, excludes a full primal vertical crossing by finite mod-two parity,
+and contradicts qualitative supercritical crossing convergence. This is a documented proof
+divergence from both Grimmett's four-infinite-arm presentation and Bollobás--Riordan's RSW/annulus
+presentation. It was chosen because it reuses verified local APIs and removes all need for a
+canonical leftmost path, a global Jordan theorem, RSW, or Friedgut--Kalai/KKL.
+
+The strict-dual Lean implementation is complete: the public theta theorem is rewired, the full
+`lake build` passed through job `8877/8877`, and all five audited declarations reported exactly
+`[propext, Classical.choice, Quot.sound]`. The previously recorded public closure through
+`Percolation.rswThreeHalvesCrossingProbability_ge` remains an accurate historical certificate for
+the old proof, not the status of the completed strict-dual proof. Comparator and independent review
+were explicitly deferred and are outside the present formalization scope.
 
 ## Source custody and reproducibility
 
@@ -66,9 +75,13 @@ BR-all additionally depends on the external Friedgut--Kalai theorem and torus sy
 BR-finite is therefore scored separately even though it is literally a subsegment of BR-all.
 The split is provisional pending the scores and is revisited at the end.
 
-## Dependency comparison
+## Historical source-route dependency comparison
 
-The selected formal dependency graph is:
+The dependency graphs and scorecards in this section describe the source alternatives evaluated
+before the strict-dual route was found. They justify source custody and rejected scope, but do not
+describe the intended public theorem closure after the 2026-07-27 update.
+
+The formal dependency graph selected at the time of the original audit was:
 
 ```text
 Grimmett Theorem 11.11 / cubicCriticalProbability_two_eq_half
@@ -347,33 +360,42 @@ The provisional source split **survives** the scoring.
   separate source candidates. The shell is only conditionally complete until that kernel is
   discharged, so no optimistic re-score is warranted.
 
-Final units are therefore unchanged: **G as primary comparator**, **BR-finite as secondary RSW
-discharge source**, and **BR-all rejected as the implementation route**.
+The source units remain **G as primary comparator**, **BR-finite as an evaluated secondary source**,
+and **BR-all rejected as an implementation route**. The operational proof route has changed:
+strict duality now supersedes BR-finite for the public theorem. The scorecards above are retained
+because they explain why neither complete printed proof is a short direct transcription.
 
 ## Operational consequence
 
-The next source-driven task should not re-formalize the final equality. It should replace
-`rswThreeHalvesCrossingProbability_ge` with a theorem. Start from the smaller BR Lemma 6 interface:
+The source-driven work completed this dependency order:
 
-1. define a finite canonical leftmost top--bottom crossing;
-2. prove existence/uniqueness and a finite edge-support characterization;
-3. prove that selection of a particular crossing is insensitive to edges on its right;
-4. define the reflected first-hit extension event and its disjoint support;
-5. derive a uniform positive long-rectangle crossing bound (BR Corollary 7), without preserving
-   BR's exact numerical constant unless it is free;
-6. feed that bound through the already proved RSW gluing, annular barrier, and independence stack;
-7. rerun `#print axioms Percolation.theta_two_half_eq_zero` and
-   `#print axioms Percolation.cubicCriticalProbability_two_eq_half`.
+1. `FullVerticalCrossing`: translated full-box event and supercritical convergence;
+2. `StrictDualCrossing`: even-source four-fresh-edge event, probability at least `1/32`, strict
+   frame witness, and half-density dual-law transfer;
+3. `FullVerticalDuality`: parity/exterior-closure proof that the strict dual walk excludes a full
+   primal vertical crossing;
+4. `CriticalSelfDuality`: the `31/32` upper bound and
+   `theta_two_half_eq_zero_via_strictDualCrossing`;
+5. public theta/exact-threshold rewiring, full build, and transitive axiom audit.
 
-This preserves Grimmett Theorem 11.11 as the comparator while using the shorter paper only where
-it actually reduces the remaining formal burden.
+Every item above passed. The separate Comparator and independent-review processes were deferred.
+
+Two shortcuts are specifically rejected. First, a full vertical crossing is not contained in a
+boundary-free crossing event: a crossing along the left boundary witnesses the failure. Second,
+the odd-source three-fresh-edge construction obtains the attractive constant `1/16` only through
+`bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half`, whose closure contains the custom
+axiom `grimmettRectangleDualTraceEquiv`. The accepted even-source construction pays one additional
+fresh-edge factor and uses `half_le_grimmettRectangleCrossingProbability_even`, giving the
+standard-only constant `1/32`.
 
 ## Validation note
 
 The source hashes, metadata, page locations, declaration names, and no-hit claims above were
-checked in the pinned worktree. At the time this audit was finalized, the integration target build
-was still in progress, so this document claims no fresh compiler-level axiom certificate for
-integration revision `13da9d47...`. The existing mechanical axiom certificate remains pinned to
-revision `fa86568` until the integration build completes and the two `#print axioms` commands above
-are rerun. The “one remaining RSW axiom” statement is therefore the current recorded audit status,
-corroborated here by the exact source dependency, not a newly issued integration certificate.
+checked in the pinned worktree. The earlier mechanical certificate at revision `fa86568` describes
+the superseded RSW public proof. The current strict-dual implementation has a separate successful
+certificate: `lake build` completed through `8877/8877`, and exact checks of
+`one_thirty_second_le_strictDualHorizontalCrossingEvent_half`,
+`dualWalkIsOpen_not_mem_fullVerticalCrossingEvent`,
+`theta_two_half_eq_zero_via_strictDualCrossing`, the public `theta_two_half_eq_zero`, and
+`cubicCriticalProbability_two_eq_half` each reported
+`[propext, Classical.choice, Quot.sound]`.

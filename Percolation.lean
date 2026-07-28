@@ -303,6 +303,10 @@ import Percolation.Planar.SiteCrossingFrontier
 import Percolation.Planar.SiteCrossingInterface
 import Percolation.Planar.BondCrossingInterface
 import Percolation.Planar.BondCrossingDuality
+import Percolation.Planar.FullVerticalCrossing
+import Percolation.Planar.StrictDualCrossing
+import Percolation.Planar.FullVerticalDuality
+import Percolation.Planar.CriticalSelfDuality
 import Percolation.Planar.SiteCrossingPeierls
 import Percolation.Planar.CrossingMenger
 import Percolation.Planar.Inhomogeneous

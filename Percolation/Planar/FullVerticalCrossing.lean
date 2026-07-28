@@ -30,7 +30,7 @@ theorem fullVerticalCrossingPlacementIso_one (n : ℕ) (x : SquareVertex) :
   simp [fullVerticalCrossingPlacementIso, cubicTranslationIso_apply, cubicTranslate,
     cubicOrigin, squareVertex]
 
-/-- A full bottom-to-top crossing of `[0, 2n] x [-n, n]`, expressed as a translated box event. -/
+/-- A full bottom-to-top crossing of `[0, 2n] x [-n, n]`. -/
 def fullVerticalCrossingEvent (n : ℕ) : Set (EdgeConfiguration 2) :=
   cubicGraphIsoEvent (fullVerticalCrossingPlacementIso n)
     (leftRightCrossingEvent 2 n (1 : Fin 2))
@@ -41,8 +41,7 @@ theorem measurableSet_fullVerticalCrossingEvent (n : ℕ) :
     (measurableSet_leftRightCrossingEvent 2 n (1 : Fin 2))
 
 /-- Translation does not change the Bernoulli probability of the full vertical crossing. -/
-theorem bernoulliBondMeasure_real_fullVerticalCrossingEvent
-    (p : I) (n : ℕ) :
+theorem bernoulliBondMeasure_real_fullVerticalCrossingEvent (p : I) (n : ℕ) :
     (bernoulliBondMeasure 2 p).real (fullVerticalCrossingEvent n) =
       (bernoulliBondMeasure 2 p).real
         (leftRightCrossingEvent 2 n (1 : Fin 2)) :=
@@ -51,8 +50,7 @@ theorem bernoulliBondMeasure_real_fullVerticalCrossingEvent
 
 /-- If the percolation probability is positive, translated full vertical crossings tend to
 probability one. -/
-theorem fullVerticalCrossing_probability_tendsto_one
-    (p : I) (htheta : 0 < theta 2 p) :
+theorem fullVerticalCrossing_probability_tendsto_one (p : I) (htheta : 0 < theta 2 p) :
     Tendsto (fun n ↦ (bernoulliBondMeasure 2 p).real
       (fullVerticalCrossingEvent n)) atTop (nhds 1) := by
   simpa only [bernoulliBondMeasure_real_fullVerticalCrossingEvent] using

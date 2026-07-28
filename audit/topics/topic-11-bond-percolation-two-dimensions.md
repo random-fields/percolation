@@ -4,17 +4,24 @@ Source id: `grimmett-percolation-1999`
 
 Source: Geoffrey Grimmett, *Percolation*, 2nd edition, Chapter 11, pp. 282–332.
 
-This card is the source-first inventory for the complete named-result scope of Chapter 11.  The
-repository contains a proof of the exact square-lattice threshold modulo one isolated RSW axiom,
-the finite rectangle calculation, the RSW algebra above its explicitly isolated lowest-crossing
-input, supercritical centered-rectangle
-crossings, and finite-tube decay.  In accordance with the user's instruction, a source-facing
+This card is the source-first inventory for the complete named-result scope of Chapter 11. The
+public exact square-lattice threshold is now proved through strict duality in
+`FullVerticalCrossing`, `StrictDualCrossing`, `FullVerticalDuality`, and `CriticalSelfDuality`.
+The public wrapper is rewired, the full build passed through `8877/8877`, and each of the five exact
+kernel checks reported `[propext, Classical.choice, Quot.sound]`. The old RSW status is retained
+below only as a historical certificate. The repository also
+contains the finite rectangle calculation, the RSW algebra above its explicitly isolated
+lowest-crossing input, supercritical centered-rectangle crossings, and finite-tube decay. In
+accordance with the user's instruction, a source-facing
 result which depends on a reference outside the book is isolated as an axiom (or has that cited
 result as a visible transitive axiom).  This is a complete **source-facing interface**, not a
-complete proof development and not an assumption-free chapter: among the 19 named source rows,
-six are proved declarations (four modulo named external primitives and two with standard axioms),
-11 are direct external axioms, and two are wrappers over external axioms.  A separately proved
-centered-rectangle normalization supplements the literal, axiomatized Lemma 11.22.
+complete proof development and not an assumption-free chapter. Before the strict-dual implementation,
+the 19 named source rows comprised six proved declarations (four modulo named external primitives
+and two with standard axioms), 11 direct external axioms, and two wrappers over external axioms.
+The two exact-threshold rows are now standard-axiom proofs; the other Chapter 11 classifications
+are unchanged. Comparator and independent review were user-deferred and are not completion gates.
+A separately proved centered-rectangle normalization supplements the literal, axiomatized Lemma
+11.22.
 
 ## Named-result correspondence
 
@@ -22,8 +29,8 @@ centered-rectangle normalization supplements the literal, axiomatized Lemma 11.2
 |---|---|---|---|---|---|---:|---:|
 | Proposition 11.2, p. 284 | Every finite connected square-lattice subgraph has a unique surrounding dual circuit, every edge of which crosses the graph's edge boundary. | `existsUnique_boundaryCircuitCrossedEdges` | Kesten (1982), p. 386 | external axiom | Uniqueness is extensional equality of the crossed primal-edge finset, quotienting cyclic base-point and reversal choices that make literal walk uniqueness false. | not individually measured | not individually measured |
 | Theorem 11.4, p. 285 | `K(p)=K(1-p)+1-2p` for square-lattice cluster density. | `openClustersPerVertex_square_duality` | face/component correspondence attributed to Kesten, Euler formula | external axiom | `openClustersPerVertex` is the repository's real `E(1/|C|)` normalization. | not individually measured | not individually measured |
-| Theorem 11.11, p. 287 | The bond critical probability of `ℤ²` equals `1/2`. | `cubicCriticalProbability_two_eq_half` | 11.12; the proved bond-interface upper bound; RSW | proved modulo `rswThreeHalvesCrossingProbability_ge` only | Exact equality in `ℝ`; the three gluing inclusions and expanded barrier transfer are proved, and no Kesten trace/barrier axiom occurs in this theorem's transitive closure. | not individually measured | not individually measured |
-| Lemma 11.12, p. 288 | `θ(1/2)=0`, hence `p_c≥1/2`. | `theta_two_half_eq_zero` | 11.70, proved expanded-annulus transfer, independent annular barriers | proved modulo `rswThreeHalvesCrossingProbability_ge` only | Exact rooted percolation probability; shifted-annulus independence, blocking, and the barrier limit are proved. | not individually measured | not individually measured |
+| Theorem 11.11, p. 287 | The bond critical probability of `ℤ²` equals `1/2`. | `cubicCriticalProbability_two_eq_half` | strict-dual Lemma 11.12 proof; proved bond-interface upper bound | proved; standard axioms only | Exact equality in `ℝ`. The public closure uses a finite strict-dual crossing and qualitative supercritical full-crossing convergence, not RSW; its exact axiom output is `[propext, Classical.choice, Quot.sound]`. The previous status “proved modulo `rswThreeHalvesCrossingProbability_ge`” applies only to the superseded public proof at `fa86568`. | not individually measured | not individually measured |
+| Lemma 11.12, p. 288 | `θ(1/2)=0`, hence `p_c≥1/2`. | `theta_two_half_eq_zero_via_strictDualCrossing`; public `theta_two_half_eq_zero` | even-source rectangle lower bound, four adaptive fresh edges, shifted duality, finite face parity, qualitative supercritical crossing | proved; standard axioms only | Replaces Grimmett's four-infinite-arm picture and the old RSW/annulus implementation by a strict dual walk of probability at least `1/32` disjoint from every full primal vertical crossing. Both private and public theta declarations print exactly `[propext, Classical.choice, Quot.sound]`. Exact details: `docs/theorem-11.11/STRICT_DUAL_CROSSING_PROOF.md`. | not individually measured | not individually measured |
 | Lemma 11.13, p. 288 | If `θ(p)>0`, then almost surely some open circuit surrounds each fixed `B(n)`. | `eventuallySurroundingOpenCircuit_probability_one` | Proposition 11.2 | external axiom | The event quantifies over literal finite square-lattice cycles and requires odd face index for every vertex of `B(n)`. | not individually measured | not individually measured |
 | Lemma 11.21, p. 294 | A left–right crossing of `[0,n+1]×[0,n]` has probability exactly `1/2` at density `1/2`. | `bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half` | finite trace weights, external Kesten dual-trace bijection | proved modulo named external topology axiom | Literal source rectangle and endpoints. | not individually measured | not individually measured |
 | Lemma 11.22, p. 295 | For `p>1/2`, `P(M_{n+1}≤βn)≤e^{-γn}` for positive `β,γ` and all `n≥1`. | `maxEdgeDisjointGrimmettRectangleCrossings_probability_le_exp`; proved normalization `maxEdgeDisjointSquareRectangleCrossings_probability_le_exp` | 11.20/Proposition 11.2, ACCFR, arbitrary finite edge Menger | literal source form external; centered normalization proved modulo external topology | `maxEdgeDisjointGrimmettRectangleCrossings` is the exact maximum in `[0,n+1]×[0,n]`; the independently proved reusable theorem uses `[0,n+1]×[-n,n]`. | not individually measured | not individually measured |
@@ -50,6 +57,7 @@ displayed proof steps, or consequences rather than additional named results.
 | 11.1 | Shifted dual square-lattice definitions: `dualSquareGraph`, `squareEdgeDualCrossingEquiv`, `dualSquareConfiguration`. |
 | 11.3 | Isoperimetric comparison following externally sourced Proposition 11.2; not exposed as a separate headline because later public statements use direct radius/size encodings. |
 | 11.5–11.10 | Euler/face proof of Theorem 11.4; represented by the source-facing external theorem axiom. |
+| 11.12 strict-dual proof divergence | `fullVerticalCrossingEvent`, `one_thirty_second_le_strictDualHorizontalCrossingEvent_half`, `dualWalkIsOpen_not_mem_fullVerticalCrossingEvent`, and `theta_two_half_eq_zero_via_strictDualCrossing`. The finite parity proof replaces the source's four-infinite-arm picture; the closure is proved with standard axioms only. |
 | 11.14–11.20 | Square-root trick, finite crossing traces, complementary weights, and crossing alternative: `grimmettRectangleCrossingProbability_add_complement`, FKG APIs, and the isolated trace/topology axioms in `External.lean`. |
 | 11.23, 11.26, 11.28–11.32 | Truncated connectivity, tube events, tube rates, exponential upper bound, width monotonicity, and unrestricted limit: `truncatedTwoPointConnectivity`, `squareTube`, `tubeTwoPointConnectivity`, `tubeConnectivityDecayRate`, and `tubeConnectivityDecayRate_properties`. |
 | 11.33–11.54 | Proof steps for 11.24/11.25 and definitions of profile regions/critical probability; either proved as tube helpers or covered by the explicitly sourced external headline declarations. |
@@ -70,23 +78,38 @@ project axioms occur only in:
   outside itself or states without proof;
 - `Percolation/Planar/Inhomogeneous.lean`: the original inhomogeneous critical-surface results.
 
-The exact threshold closure is much narrower than this global inventory.  At audited Chapter 12
-commit `fa86568`, both `theta_two_half_eq_zero` and `cubicCriticalProbability_two_eq_half` print
-exactly `[propext, Classical.choice, Quot.sound,
-Percolation.rswThreeHalvesCrossingProbability_ge]`.  Therefore Theorem 11.11 is reported as proved
-modulo that one Russo lowest-crossing axiom, not modulo any Kesten trace, gluing, or barrier axiom.
-The three incidence/gluing declarations and the expanded-annulus barrier transfer used by the
-proof are proved with standard axioms.  The certificate must be rerun on the frozen integration
-revision.
+The historical exact-threshold closure is much narrower than this global inventory. At audited
+Chapter 12 commit `fa86568`, both `theta_two_half_eq_zero` and
+`cubicCriticalProbability_two_eq_half` printed exactly `[propext, Classical.choice, Quot.sound,
+Percolation.rswThreeHalvesCrossingProbability_ge]`. This remains the certificate for the
+superseded RSW proof, not a completion claim for the strict-dual route.
+
+The replacement certificate printed axioms for
+`one_thirty_second_le_strictDualHorizontalCrossingEvent_half`,
+`dualWalkIsOpen_not_mem_fullVerticalCrossingEvent`,
+`theta_two_half_eq_zero_via_strictDualCrossing`, the public `theta_two_half_eq_zero`, and
+`cubicCriticalProbability_two_eq_half`. Every command reported exactly
+`[propext, Classical.choice, Quot.sound]`, and the full build passed through `8877/8877`. Thus the
+active closure excludes both `rswThreeHalvesCrossingProbability_ge` and
+`grimmettRectangleDualTraceEquiv`. The odd-source `1/16` shortcut is rejected because it uses the
+exact rectangle identity with the latter custom axiom; the accepted even-source four-edge route
+uses `half_le_grimmettRectangleCrossingProbability_even` and obtains `1/32`. A full vertical box
+crossing is also not replaced by a boundary-free crossing event: a path along the left boundary is
+a concrete counterexample. Comparator and independent review were user-deferred and are not
+completion gates.
 
 ## Semantic tests
 
-`Percolation/Tests/Chapter11Infrastructure.lean` includes application checks for the exact
-threshold, rectangle probability, RSW, exact and centered Lemma 11.22 encodings, surrounding
+`Percolation/Tests/Chapter11Infrastructure.lean` includes application checks for the historical
+exact threshold, rectangle probability, RSW, exact and centered Lemma 11.22 encodings, surrounding
 circuits, truncated correlation length, supercritical cluster tails, tube rates, Proposition
 11.2, Theorem 11.4, critical power laws, and both inhomogeneous surfaces.  Arithmetic oracles
 independently verify `p_h+p_v=1` for `(1/4,3/4)` and
 `p_h+p_v+p_d-p_hp_vp_d=11/8` for `(1/2,1/2,1/2)`.
+
+If the user later resumes the deferred review process, useful adversarial cases include the
+full-vs-boundary-free counterexample, four-edge support cardinality/freshness, strict frame bounds,
+half-density dual-law transfer, exclusion of artificial closure edges, and the `31/32` estimate.
 
 ## Telemetry
 

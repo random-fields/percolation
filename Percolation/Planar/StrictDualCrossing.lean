@@ -39,8 +39,8 @@ def grimmettTraceExtendedWalkFour
     (grimmettTraceExtendedWalkThree W)
 
 /-- Four trace-dependent fresh edges: two on each horizontal side. -/
-noncomputable def grimmettRectangleFreshExtensionEdgesFour
-    (n : ℕ) (s : Finset SquareEdge) : Finset SquareEdge := by
+noncomputable def grimmettRectangleFreshExtensionEdgesFour (n : ℕ) (s : Finset SquareEdge) :
+    Finset SquareEdge := by
   classical
   exact if hs : s ∈ grimmettRectangleCrossingTraces n then
     let W := selectedGrimmettRectangleTraceCrossing n ⟨s, hs⟩
@@ -156,8 +156,7 @@ theorem card_grimmettRectangleFreshExtensionEdgesFour
     card_grimmettRectangleFreshExtensionEdgesThree n s hs]
 
 /-- The four-fresh-edge extension event for an even Grimmett rectangle. -/
-noncomputable def grimmettRectangleFreshCrossingEventFour (n : ℕ) :
-    Set (EdgeConfiguration 2) :=
+noncomputable def grimmettRectangleFreshCrossingEventFour (n : ℕ) : Set (EdgeConfiguration 2) :=
   adaptiveFreshOpenExtensionEvent (grimmettRectangleEdges n)
     (grimmettRectangleCrossingTraces n) (grimmettRectangleFreshExtensionEdgesFour n)
 
@@ -372,6 +371,7 @@ private theorem mapped_grimmettTraceExtendedWalkFour_support_mem_frame
     strictDual_grimmettFreshSquareIso_apply_one]
   omega
 
+/-- Even rectangles have four-fresh-edge crossing probability at least `1 / 32` at half density. -/
 theorem one_thirty_second_le_grimmettRectangleFreshCrossingEventFour_half
     (l : ℕ) (hl : 0 < l) :
     1 / 32 ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
@@ -400,16 +400,15 @@ theorem one_thirty_second_le_grimmettRectangleFreshCrossingEventFour_half
   norm_num at hsum ⊢
   linarith
 
-/-- At scale `n`, use the even trace rectangle of height `2 * (n - 2)`, translate it into
-the dual frame, and pull it back through primal/dual complementation. -/
+/-- A strict shifted-dual horizontal crossing event across the face frame at scale `n`. -/
 noncomputable def strictDualHorizontalCrossingEvent (n : ℕ) :
     Set (EdgeConfiguration 2) :=
   dualSquareConfiguration ⁻¹' cubicGraphIsoEvent (grimmettFreshSquareIso (n - 2))
     (grimmettRectangleFreshCrossingEventFour (2 * (n - 2)))
 
 theorem measurableSet_strictDualHorizontalCrossingEvent (n : ℕ) :
-    MeasurableSet (strictDualHorizontalCrossingEvent n) := by
-  exact (measurableSet_cubicGraphIsoEvent _
+    MeasurableSet (strictDualHorizontalCrossingEvent n) :=
+  (measurableSet_cubicGraphIsoEvent _
     (measurableSet_grimmettRectangleFreshCrossingEventFour _)).preimage
       measurable_dualSquareConfiguration
 
@@ -439,8 +438,7 @@ theorem crossedPrimalEdge_not_mem
 
 end StrictDualHorizontalCrossingWitness
 
-/-- Membership in the finite event supplies the strict shifted-dual walk used in the parity
-contradiction. -/
+/-- Every configuration in the strict crossing event has a strict shifted-dual open crossing. -/
 theorem exists_strictDualHorizontalCrossingWitness_of_mem
     {n : ℕ} (hn : 3 ≤ n) {omega : EdgeConfiguration 2}
     (homega : omega ∈ strictDualHorizontalCrossingEvent n) :

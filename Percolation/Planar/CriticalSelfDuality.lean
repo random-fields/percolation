@@ -40,8 +40,7 @@ theorem fullVerticalCrossingProbability_half_le_thirty_one_over_thirty_two
   have hlower := one_thirty_second_le_strictDualHorizontalCrossingEvent_half hn
   linarith
 
-/-- Critical half-density percolation is impossible by strict primal/dual crossing
-incompatibility and qualitative supercritical crossing convergence. -/
+/-- Critical half-density percolation is impossible on the square lattice. -/
 theorem theta_two_half_eq_zero_via_strictDualCrossing :
     theta 2 squareHalfDensity = 0 := by
   apply le_antisymm

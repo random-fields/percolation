@@ -34,8 +34,7 @@ theorem dualWalkIsOpen_not_mem_fullVerticalCrossingEvent
   obtain ⟨w, hwOpen, hwEdges⟩ := huv
   let F := fullVerticalCrossingPlacementIso n
   let p : squareGraph.Walk (F u) (F v) := w.map F.toHom
-  have hpOpen : walkIsOpen ω p := by
-    exact walkIsOpen_map_cubicGraphIso F w hwOpen
+  have hpOpen : walkIsOpen ω p := walkIsOpen_map_cubicGraphIso F w hwOpen
   have huData := mem_cubicBoxFace.mp huFace
   have hvData := mem_cubicBoxFace.mp hvFace
   have huOther := huData.2 (0 : Fin 2) (by decide)

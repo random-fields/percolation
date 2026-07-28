@@ -1899,6 +1899,35 @@ Dated milestones and anti-library notes.
     into the canonical API: the former has a native-decision axiom footprint and the
     full Reimer theorem is already recorded below as outside the cited source scope.
 
+166. **Theorem 11.11 formalized through strict duality (2026-07-27).** Replaced the public
+    dependency on the RSW/BR lowest-crossing route by a finite strict
+    shifted-dual crossing argument. `FullVerticalCrossing` packages the translated full
+    bottom-to-top box event and its convergence to one under positive theta.
+    `StrictDualCrossing` extends an even-source Grimmett rectangle crossing by four adaptive fresh
+    bonds, obtains the standard-only lower bound `1/32`, translates the witness into the
+    strict face frame, and transfers it through half-density duality. `FullVerticalDuality` uses
+    the existing exterior closure and mod-two face-parity APIs to show that this dual walk excludes
+    every full primal vertical crossing. `CriticalSelfDuality` packages the resulting `31/32`
+    bound and `theta_two_half_eq_zero_via_strictDualCrossing`. The public
+    `theta_two_half_eq_zero` theorem is rewired to this result, and
+    `cubicCriticalProbability_two_eq_half` closes through the standard-only lower and upper
+    critical-probability bounds. The complete rigorous proof and API map are in
+    `docs/theorem-11.11/STRICT_DUAL_CROSSING_PROOF.md`.
+
+    The canonical-leftmost BR recurrence, RSW annulus route, and its historical
+    `rswThreeHalvesCrossingProbability_ge` dependency remain useful infrastructure but are
+    superseded for the intended public theorem. Two shortcuts were rejected: full box crossings
+    are not boundary-free (a path along the left side is a counterexample), and the odd-source
+    three-fresh-edge `1/16` calculation depends on the custom
+    `grimmettRectangleDualTraceEquiv` axiom through the exact rectangle identity. The accepted
+    even-source route instead uses `half_le_grimmettRectangleCrossingProbability_even` and four
+    fresh bonds. The full build completed successfully through `8877/8877`, and exact kernel checks
+    of the strict-dual probability theorem, primal/dual exclusion, private and public theta
+    theorems, and public exact-threshold theorem each reported exactly
+    `[propext, Classical.choice, Quot.sound]`. Thus both `theta(1/2)=0` and Theorem 11.11 are proved
+    with standard axioms only. Comparator and independent review were user-deferred and are not
+    completion gates for this formalization result.
+
 ## Axiom Ledger
 
 Chapter 11 contains the explicitly cited external-reference axioms listed in

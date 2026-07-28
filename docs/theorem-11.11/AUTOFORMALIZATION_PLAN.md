@@ -1,5 +1,75 @@
 # Autoformalization plan for Grimmett, Theorem 11.11
 
+## Current route update (2026-07-27)
+
+The accepted completion route is now the **strict shifted-dual crossing** argument documented in
+[`STRICT_DUAL_CROSSING_PROOF.md`](STRICT_DUAL_CROSSING_PROOF.md).  It replaces the former plan to
+discharge `rswThreeHalvesCrossingProbability_ge` through a canonical leftmost crossing and the
+Bollobás--Riordan recurrence.  The RSW/BR sections below are retained as a historical design and
+as reusable crossing infrastructure; they are not dependencies intended for the public Theorem
+11.11 closure.
+
+The strict-dual Lean formalization is complete in the active worktree. The public
+`theta_two_half_eq_zero` theorem has been rewired to the strict-dual proof, the public exact-threshold
+theorem builds through that wrapper, and the full `lake build` succeeded through job `8877/8877`.
+Exact `#print axioms` checks for the five declarations listed in Section 11.3 each reported
+`[propext, Classical.choice, Quot.sound]`, with no project axiom. Comparator and independent-review
+work were explicitly deferred and are outside the present formalization scope. Historical output
+showing `rswThreeHalvesCrossingProbability_ge` remains evidence about the old public proof, not the
+completed strict-dual closure.
+
+The accepted dependency order is:
+
+```text
+half_le_grimmettRectangleCrossingProbability_even
+  + adaptive fresh-extension probability
+  -> one_thirty_second_le_grimmettRectangleFreshCrossingEventFour_half
+  -> one_thirty_second_le_strictDualHorizontalCrossingEvent_half
+
+leftRightCrossing_probability_tendsto_one
+  -> fullVerticalCrossing_probability_tendsto_one
+
+finite face parity + exterior-closure edge exclusion
+  -> dualWalkIsOpen_not_mem_fullVerticalCrossingEvent
+
+strict-dual lower bound + deterministic exclusion
+  -> fullVerticalCrossingProbability_half_le_thirty_one_over_thirty_two
+  -> theta_two_half_eq_zero_via_strictDualCrossing
+  -> theta_two_half_eq_zero                 [public wrapper, rewired and audited]
+  -> cubicCriticalProbability_two_eq_half  [public target, built and audited]
+```
+
+The declarations are divided as follows.
+
+| Module | New declaration/API | Role |
+|---|---|---|
+| `Percolation.Planar.FullVerticalCrossing` | `fullVerticalCrossingPlacementIso`, `fullVerticalCrossingEvent`, `measurableSet_fullVerticalCrossingEvent`, `bernoulliBondMeasure_real_fullVerticalCrossingEvent`, `fullVerticalCrossing_probability_tendsto_one` | Translate the qualitative full-box crossing theorem into `[0,2n] × [-n,n]`. |
+| `Percolation.Planar.FullVerticalDuality` | `dualWalkIsOpen_not_mem_fullVerticalCrossingEvent` | Reduce primal/dual incompatibility to the existing finite mod-two parity and exterior-closure lemmas. |
+| `Percolation.Planar.StrictDualCrossing` | `grimmettRectangleFreshExtensionEdgesFour`, `grimmettRectangleFreshCrossingEventFour`, `one_thirty_second_le_grimmettRectangleFreshCrossingEventFour_half`, `strictDualHorizontalCrossingEvent`, `StrictDualHorizontalCrossingWitness`, `exists_strictDualHorizontalCrossingWitness_of_mem`, `one_thirty_second_le_strictDualHorizontalCrossingEvent_half` | Add four fresh bonds to an even-source rectangle crossing, translate it into the strict face frame, and transfer it through half-density duality. |
+| `Percolation.Planar.CriticalSelfDuality` | `strictDualHorizontalCrossingEvent_subset_fullVerticalCrossingEvent_compl`, `fullVerticalCrossingProbability_half_le_thirty_one_over_thirty_two`, `theta_two_half_eq_zero_via_strictDualCrossing` | Obtain a uniform upper bound on full vertical crossings and contradict convergence to one under positive `theta`. |
+
+The main probability/Mathlib-facing APIs are
+`bernoulliBondMeasure_real_adaptiveFreshOpenExtensionEvent`,
+`bernoulliBondMeasure_map_dualSquareConfiguration`, `map_measureReal_apply`,
+`measureReal_mono`, `probReal_compl_eq_one_sub`, `Metric.tendsto_atTop`, and `Tendsto` at `atTop`.
+The deterministic graph layer uses `SimpleGraph.Walk.map`, `Walk.append`, support/edge membership,
+`squareEdgeDualCrossingEquiv`, and the existing closed-walk face-parity theorems. No unverified
+Mathlib or project lemma name is assumed by this plan.
+
+This route deliberately uses the **full** vertical crossing event.  A full crossing is not
+contained in the repository's boundary-free crossing event: a path running vertically along the
+left boundary is a counterexample.  Shrinking the full box by one also does not repair the
+inclusion because its endpoints lie on the wrong horizontal rows.  The dual construction instead
+adds sufficient fresh horizontal buffer to block boundary-running primal paths.
+
+The superficially shorter odd-source construction is also rejected for the standard-axiom goal.
+Its three-fresh-edge event would have probability `1/16`, but its exact source probability invokes
+`bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half`, whose transitive closure contains
+the project axiom `grimmettRectangleDualTraceEquiv`.  The accepted even-source construction uses
+four fresh edges and the standard-only lower bound
+`half_le_grimmettRectangleCrossingProbability_even`, yielding `1/32`; any fixed positive constant
+suffices for the limit contradiction.
+
 ## 1. Scope, completion criterion, and status vocabulary
 
 The source target is Grimmett, *Percolation*, second edition (1999), Theorem 11.11:
@@ -14,10 +84,11 @@ theorem Percolation.cubicCriticalProbability_two_eq_half :
     cubicCriticalProbability 2 = 1 / 2
 ```
 
-“Completely formalized” means that this declaration is kernel-checked, its transitive axiom set
-contains only the standard Lean/Mathlib axioms permitted by this project, its source-to-formal
-correspondence has passed independent review, and the one-theorem Comparator challenge passes.
-A green build while the theorem still depends on a project axiom is not completion.
+For the present Lean-formalization scope, “completely formalized” means that this declaration is
+kernel-checked, the full project builds, and its transitive axiom set contains only the standard
+Lean/Mathlib axioms permitted by this project. Those conditions now hold. Source-to-formal
+Comparator and independent-review gates are separate repository processes; the user deferred them,
+so this document does not claim that those external processes have run.
 
 This plan uses the following labels throughout:
 
@@ -25,6 +96,8 @@ This plan uses the following labels throughout:
 - **[AXIOM]**: the declaration exists as a project axiom and is the remaining logical gap.
 - **[PROPOSED]**: a declaration name and type shape proposed by this plan; it does not yet exist.
 - **[CHECK]**: existing code that must be rechecked after the integration branch is frozen.
+- **[FORMALIZED]**: the declaration exists, builds, and its audited closure contains only standard
+  axioms.
 
 The proof stack was independently checked at Chapter 12 commit `fa86568`. At that revision:
 
@@ -45,7 +118,12 @@ In particular, the upper bound, RSW gluing/incidence results, annulus transfer, 
 independence, and the independent-barrier limit are already assumption-free. The current
 integration tree was observed at commit `13da9d47fed5e6d8bfcf839df4154d5356c55216`, with Lean
 `4.30.0` and Mathlib `c5ea00351c28e24afc9f0f84379aa41082b1188f`; these are observations,
-not a frozen final review. Every gate below must be rerun on the final integrated revision.
+not a frozen final review. At that time, the plan required every gate below to be rerun on the
+final integrated revision.
+
+That paragraph is the historical baseline. On the current strict-dual implementation, the public
+rewiring and full build have passed, and the five exact kernel checks in Section 11.3 each report
+only `[propext, Classical.choice, Quot.sound]`.
 
 There may be `sorry` in temporary design or Comparator challenge files as allowed by
 `AUTOMATED_REVIEW.md`, but no production theorem, review case, counterexample, Comparator
@@ -131,17 +209,34 @@ Use **Grimmett Chapter 11 as the primary source** for the theorem statement, the
 and the source-to-formal dependency inventory. It aligns with the existing declarations and
 already-formal upper-bound proof.
 
-Use **Bollobás–Riordan Lemma 6, Corollary 7, and Theorem 8 as a secondary discharge route** for
-the sole missing Harris/RSW input. The operational proof will use Lemma 6 and the `ρ = 3` instance
-of Corollary 7, then reuse the repository's proved circuit/barrier implementation of Theorem 8.
-This is a documented proof divergence, not a claim that the repository formalizes every sentence
-of the short paper.
+The earlier plan used **Bollobás–Riordan Lemma 6, Corollary 7, and Theorem 8 as a secondary
+discharge route** for the Harris/RSW input.  That source evaluation and the resulting BR modules
+remain valuable, but the strict-dual proof supersedes them for Theorem 11.11.  The active proof
+uses Grimmett for the target statement and the already formalized upper-bound/rectangle
+infrastructure, then makes an explicit repository-level proof divergence: a finite strict-dual
+crossing plus qualitative supercritical crossing convergence.  It does not claim to formalize
+every sentence of either source proof.
 
 Do not formalize the complete Bollobás–Riordan paper for this goal. In particular, do not add
 Friedgut–Kalai/KKL merely to reprove an upper bound already proved axiom-free by the bond-interface
 and subcritical-decay stack.
 
 ## 3. Source-to-formal theorem map
+
+The active target rows are now:
+
+| Source role | Lean declaration | Status | Important divergence |
+|---|---|---|---|
+| Grimmett Theorem 11.11 | `Percolation.cubicCriticalProbability_two_eq_half` | **[FORMALIZED]** | The public wrapper uses the strict-dual theta proof; exact equality is in `ℝ` for the repository's `sSup` definition. |
+| Grimmett Lemma 11.12 conclusion | `Percolation.theta_two_half_eq_zero_via_strictDualCrossing`, then public `Percolation.theta_two_half_eq_zero` | **[FORMALIZED]** | Replaces Grimmett's four-infinite-arm picture by finite strict-dual crossings and the qualitative supercritical full-crossing theorem. |
+| Strict-dual probability kernel | `one_thirty_second_le_strictDualHorizontalCrossingEvent_half` | **[FORMALIZED]** | Uses an even source and four fresh bonds; avoids the custom odd-source trace-equivalence axiom. |
+| Primal/dual exclusion | `dualWalkIsOpen_not_mem_fullVerticalCrossingEvent` | **[FORMALIZED]** | Finite mod-two parity replaces Jordan separation; the primal event includes boundary bonds. |
+| Lower critical bound from critical extinction | `half_le_cubicCriticalProbability_two_of_theta_half_eq_zero` | **[PROVED]** | Repository order-theoretic bridge. |
+| Upper critical bound | `cubicCriticalProbability_two_le_half_via_bond_interface` | **[PROVED]** | Uses the local interface/subcritical-decay route, not BR sharp threshold. |
+
+The following table records the **superseded public RSW closure and its supporting infrastructure**.
+Rows marked `[AXIOM]` below describe that old route; they are not intended dependencies of the new
+public theorem.
 
 | Source role | Lean declaration | Status | Important divergence |
 |---|---|---|---|
@@ -161,9 +256,10 @@ and subcritical-decay stack.
 
 ## 4. Verified dependency graphs
 
-### 4.1 Current target closure
+### 4.1 Superseded public target closure
 
-The current proof has the following mathematical DAG. A star marks the one project axiom.
+Before the strict-dual implementation, the public proof had the following mathematical DAG. A
+star marks its one project axiom.
 
 ```text
 cubicCriticalProbability_two_eq_half
@@ -184,14 +280,16 @@ cubicCriticalProbability_two_eq_half
         └── theta_eq_zero_of_iIndep_barriers                    [PROVED]
 ```
 
-All gluing and barrier inputs once described as axiomatic in older audit prose must be reclassified:
-they are proved. `AXIOM_AUDIT.md` must be updated to name only the live RSW axiom and, after its
-discharge, to record no project axiom in the target closure.
+At the time of this historical plan, all gluing and barrier inputs once described as axiomatic had
+been reclassified as proved, leaving only the RSW axiom in that old target closure. The active
+strict-dual audit now records that neither the RSW axiom nor the Grimmett trace-equivalence axiom
+occurs in the public theorem closure.
 
-### 4.2 Shortest specialized discharge DAG
+### 4.2 Superseded specialized BR discharge DAG
 
-The fastest completion does not need to prove the current general Lemma 11.73-shaped axiom. It
-needs only a uniform positive lower bound for a `6l × 2l` crossing at density `1/2`:
+This was the previously selected discharge plan.  It is retained for the BR infrastructure audit,
+but is no longer the shortest completion route.  It needed a uniform positive lower bound for a
+`6l × 2l` crossing at density `1/2`:
 
 ```text
 finite crossing candidate enumeration + planar meet/boundary lemma
@@ -230,7 +328,7 @@ This route bypasses these declarations in the final target closure:
 - `rswThreeHalvesCrossingProbability_ge`;
 - `rswRectangleCrossingProbability_two_ge`;
 - `rswRectangleCrossingProbability_three_ge`;
-- the explicit `RSWNumeric` expression used by the current proof.
+- the explicit `RSWNumeric` expression used by the superseded proof.
 
 They may remain useful proved infrastructure, but the target must not transitively use the axiom.
 
@@ -338,7 +436,10 @@ The limit theorem is already general. Its Mathlib core uses a product bound and 
 powers; `tendsto_pow_atTop_nhds_zero_of_lt_one` is available if a specialized wrapper needs it.
 Do not reprove Borel–Cantelli or an infinite-product theorem for this target.
 
-## 6. Proposed declaration-level implementation
+## 6. Superseded BR/RSW declaration-level implementation
+
+This section records the former canonical-crossing discharge plan. It is not the active
+Theorem 11.11 implementation order; see the current-route update and Section 8.1.
 
 Names below are proposed and may be adjusted to local naming conventions after `/lean4:review`.
 Each source-facing declaration must receive a docstring and comparator/source annotation in the
@@ -592,10 +693,11 @@ that variant initially: the circuit incidence and annulus transfer are already p
 Use the direct-barrier variant only if the BR Corollary 7 event cannot be bridged to the existing
 `rswRectangleCrossingProbability` without changing boundary conventions.
 
-## 7. Fallback: full formalization of Grimmett Lemma 11.73
+## 7. Historical fallback: full formalization of Grimmett Lemma 11.73
 
-If the specialized BR recurrence cannot be made to match the existing boundary-free event, retain
-the canonical-crossing scaffold and discharge the current axiom directly. This is the larger but
+If the specialized BR recurrence could not be made to match the existing boundary-free event, the
+historical fallback was to retain the canonical-crossing scaffold and discharge the RSW axiom
+directly. This is the larger but
 semantically exact fallback.
 
 The endpoint `l = 0` must be separated first. Existing exploration showed
@@ -626,6 +728,34 @@ coordinate bounds. No discrete Jordan curve theorem may be introduced unless an 
 source/API audit proves the elementary parity route impossible.
 
 ## 8. Implementation order and checkpoints
+
+### 8.1 Accepted strict-dual implementation order
+
+1. **Full vertical placement.** Translate `leftRightCrossingEvent 2 n 1` to
+   `[0,2n] × [-n,n]`; transfer measurability, probability, and convergence to one under
+   `0 < theta 2 p`.
+2. **Four-edge adaptive extension.** Starting from an even Grimmett rectangle crossing, add the
+   second left exterior edge to the existing three-edge extension. Prove freshness,
+   pairwise distinctness, cardinality four, and selected-walk openness on every trace cylinder.
+3. **Standard-only probability bound.** Use
+   `bernoulliBondMeasure_real_adaptiveFreshOpenExtensionEvent` and
+   `half_le_grimmettRectangleCrossingProbability_even` to obtain `1/32`.
+4. **Strict dual frame.** Translate the extended walk by `grimmettFreshSquareIso`; prove its
+   endpoints are on columns `-1` and `2n` and its support is in `brLeftmostDualFaces n`. Pull the
+   event back through `dualSquareConfiguration` at half density.
+5. **Deterministic exclusion.** Use `brClosedBottomTopWalk_faceParity_ne`,
+   `exists_dualWalk_edge_crossing_closedWalk_of_faceParity_ne`, and
+   `squareEdgeDualCrossingEquiv_symm_not_mem_brLeftExteriorClosureWalk` to prove the strict dual
+   walk crosses an open primal bond that dual openness says is closed.
+6. **Limit contradiction.** Deduce the full vertical probability is at most `31/32` for every
+   scale at least three, contradict `fullVerticalCrossing_probability_tendsto_one` if theta is
+   positive.
+7. **Public assembly and kernel audit (completed).** The public theta theorem was rewired, the two
+   critical inequalities were assembled, the full build passed through `8877/8877`, and all five
+   exact `#print axioms` checks reported only the three standard axioms. Comparator and independent
+   review are deferred external processes, not unfinished Lean proof obligations.
+
+### 8.2 Superseded BR implementation record
 
 1. **Freeze baseline.** Record commit, dirty diff/tree hash, Lean, Mathlib, source hashes, and run
    `lake build`, `rg` checks for `sorry`/`axiom`, and the current `#print axioms` audit.
@@ -658,7 +788,7 @@ At every checkpoint run the edited module directly with `lake env lean <file>`, 
 module build, then full `lake build`. Use Lean LSP when available; if it is unavailable, record
 that fact and do not claim interactive-goal evidence.
 
-## 9. Parallel work packages and ownership
+## 9. Superseded BR/RSW parallel work packages and ownership
 
 The work is suitable for subagents only with disjoint file ownership. The integration agent owns
 imports, theorem renames, and final edits to `SquareThresholdExact.lean`; no two agents edit the
@@ -695,11 +825,16 @@ Create three to seven meaningful cases for each new major public theorem. At min
    `cubicCriticalProbability 2 = (1 : ℝ) / 2` with no independent proof;
 2. separately apply the proved upper bound and the new theta/lower-bound branch;
 3. apply `theta_two_half_eq_zero` at the exact `squareHalfDensity` definition;
-4. test the smallest nontrivial rectangle admitted by BR Lemma 6;
-5. test the `l = 0` RSW event if the full Lemma 11.73 fallback is used;
-6. test an expanded annulus at `k = 0`, including the scale arithmetic;
-7. test the event bridge on a small finite rectangle with an independent finite oracle where
-   feasible.
+4. apply `one_thirty_second_le_strictDualHorizontalCrossingEvent_half` at the smallest admitted
+   scale `n = 3`;
+5. exercise `dualWalkIsOpen_not_mem_fullVerticalCrossingEvent` with all endpoint/support
+   hypotheses visible;
+6. check the four trace-dependent fresh edges are outside the observed rectangle and have
+   cardinality four on a small source scale;
+7. test the translated support inequalities at their left, right, bottom, and strict-top bounds.
+
+If the superseded BR/RSW work is reviewed independently, also retain its smallest-rectangle,
+`l = 0`, expanded-annulus, and event-bridge cases; they are no longer target-closure tests.
 
 Application tests must visibly invoke the reviewed declaration, preferably with `exact` and named
 arguments. Narrow `simpa only` is acceptable; unrestricted automation that could prove the case
@@ -711,21 +846,29 @@ The adversarial suite must try to refute or reject at least:
 
 - `cubicCriticalProbability 2 < 1 / 2` and `1 / 2 < cubicCriticalProbability 2`;
 - `0 < theta 2 squareHalfDensity`;
-- a fake uniform crossing statement that includes an invalid degenerate dimension;
-- a version of BR Lemma 6 with the inequality reversed or the `1/2` factor omitted;
-- a locality claim using only the path edges rather than the entire explored lower support;
-- a bridge equating boundary-free crossings to a stricter fixed-corner event;
-- an annulus statement with overlapping “independent” supports;
-- accidental `Nat` underflow in `2 * m - n` outside the source hypothesis.
+- the false inclusion of `fullVerticalCrossingEvent n` in a boundary-free vertical event, using
+  the explicit left-boundary path counterexample;
+- the false inclusion obtained by translating a radius-`n-1` crossing into the scale-`n`
+  boundary-free event, whose endpoint rows disagree;
+- an odd-source `1/16` proof presented as standard-only despite its exact rectangle theorem's
+  `grimmettRectangleDualTraceEquiv` dependency;
+- a frame support statement with `z₁ ≤ n` in place of the required strict `z₁ < n`;
+- a parity proof that fails to exclude the artificial exterior-closure edge before invoking
+  primal openness.
+
+The older BR reversed-inequality, incomplete-locality, overlapping-annulus, degenerate-dimension,
+and `Nat`-underflow anti-targets remain attached to the independent RSW infrastructure review.
 
 For tiny rectangles, enumerate configurations when practical and independently check the event
 normalization. A failed search is evidence only when the search domain, command, and bounds are
 recorded. Each abstract test must include a satisfiability witness; vacuous proofs from inconsistent
 hypotheses do not count.
 
-## 11. Comparator and review gates
+## 11. Formalization audit and deferred external gates
 
-Follow `AUTOMATED_REVIEW.md` in full. The following details are mandatory for this theorem.
+The kernel/full-build gate described below has passed. Comparator and independent review were
+explicitly deferred and were not run as part of the present formalization work. Their specifications
+are retained for a future repository-audit pass.
 
 ### 11.1 Frozen manifest and inventory
 
@@ -773,16 +916,21 @@ statement equivalence, not source fidelity; the correspondence review remains ma
 `AxiomAudit.lean` must contain at least:
 
 ```lean
+#print axioms Percolation.one_thirty_second_le_strictDualHorizontalCrossingEvent_half
+#print axioms Percolation.dualWalkIsOpen_not_mem_fullVerticalCrossingEvent
+#print axioms Percolation.theta_two_half_eq_zero_via_strictDualCrossing
 #print axioms Percolation.theta_two_half_eq_zero
 #print axioms Percolation.cubicCriticalProbability_two_eq_half
 ```
 
-The accepted final result is exactly the project's permitted standard set, expected here to be
-`propext`, `Classical.choice`, and `Quot.sound`. Any occurrence of
+All five commands above were run after the public rewiring and each reported exactly
+`[propext, Classical.choice, Quot.sound]`. Thus the accepted result contains no project axiom. Any
+future occurrence of
 `Percolation.rswThreeHalvesCrossingProbability_ge` fails completion, even if that axiom remains in
-an unused compatibility module. Also run transitive searches for `axiom`, `sorry`, `admit`, and
-unsafe declarations in the reviewed closure. A textual search supplements but does not replace
-`#print axioms`.
+an unused compatibility module. Any occurrence of `Percolation.grimmettRectangleDualTraceEquiv`
+also fails, because it signals that the rejected odd-source exact-probability shortcut entered the
+closure. Also run transitive searches for `axiom`, `sorry`, `admit`, and unsafe declarations in the
+reviewed closure. A textual search supplements but does not replace `#print axioms`.
 
 ### 11.4 Independent read-only review
 
@@ -791,22 +939,31 @@ falsify—not confirm—the claimed correspondence. The first pass is read-only 
 
 - both inequality directions and the normalization of `1 / 2`;
 - the definition of `cubicCriticalProbability` and endpoint conventions;
-- the event bridge used in BR Lemma 6/Corollary 7;
-- whether the canonical-fiber locality theorem really includes all deciding edges;
-- whether annulus supports are disjoint and every infinite path is blocked by a barrier;
+- freshness and cardinality four for every trace-dependent extension set;
+- exact support bounds and endpoint columns for the translated strict-dual witness;
+- half-density measure transfer through `dualSquareConfiguration`;
+- whether the parity-crossed primal edge is proved outside the artificial exterior closure;
+- the full-vs-boundary-free counterexample and rejection of the smaller-box endpoint shortcut;
+- exclusion of the odd-source exact rectangle theorem from the transitive closure;
 - exact transitive axioms and absence of hidden source assumptions;
 - all documented proof divergences from Grimmett and Bollobás–Riordan.
+
+The old BR canonical-fiber and annular-support questions remain appropriate if those modules are
+reviewed as independent RSW work, but they are no longer required dependencies of Theorem 11.11.
 
 Store the unedited first-pass report and the producer's disposition in `independent-review.md`.
 If a defect is repaired, freeze a new revision and rerun every affected downstream gate.
 
-### 11.5 Gate summary
+### 11.5 External repository-process gate summary
 
-Completion requires all of the following:
+The Lean formalization has satisfied these items:
 
-- full `lake build` passes on the frozen revision;
-- every production/review solution file is sorry-free;
-- the exact final and theta declarations have only permitted standard axioms;
+- the full `lake build` passes through `8877/8877`;
+- the exact final and theta declarations have only permitted standard axioms.
+
+The following repository-process items are deferred and were not assessed in this pass:
+
+- production/review solution-file checks specific to the external review suite;
 - all source inventory rows have a disposition;
 - application, boundary, finite-oracle, and adversarial cases pass;
 - the one-theorem Comparator passes in the required modes;
@@ -816,20 +973,25 @@ Completion requires all of the following:
 - the PR summary lists exact commands and does not call the result assumption-free before these
   gates pass.
 
-## 12. Definition of done
+## 12. Formalization result
 
-The shortest successful endpoint is:
+The Lean formalization has reached the following endpoint:
 
-1. the adapted BR Lemma 6 canonical-crossing locality argument is formal;
-2. BR Corollary 7 supplies a uniform positive `k = 3` rectangle-crossing constant at `p = 1/2`;
-3. existing annulus, duality, independence, and barrier theorems give
-   `theta 2 squareHalfDensity = 0`;
-4. the existing upper bound and critical-probability bridge give
+1. the four-fresh-edge even-source event has a kernel-checked half-density lower bound `1/32`
+   without a project axiom;
+2. its translated strict-dual witness is kernel-checked with exact endpoint columns, strict frame
+   support, and dual openness;
+3. the parity/exterior-closure proof excludes every full primal vertical crossing and the
+   supercritical limit yields `theta 2 squareHalfDensity = 0`;
+4. the existing standard-only upper bound and critical-probability bridge give
    `cubicCriticalProbability 2 = 1 / 2`;
 5. `#print axioms` shows no project axiom in either theorem;
-6. the one-theorem Comparator and the independent review pass.
+6. Comparator and independent review remain explicitly deferred and out of the current scope.
 
-If the specialized source/event bridge fails, the fallback endpoint is the exact same final state
-after proving the full existing `rswThreeHalvesCrossingProbability_ge` statement. Either endpoint
-completely formalizes Grimmett Theorem 11.11; neither endpoint is complete while the current RSW
-axiom remains in the final theorem's transitive closure.
+The adapted BR Lemma 6/Corollary 7 route and the full
+`rswThreeHalvesCrossingProbability_ge` discharge remain fallback or independent mathematical
+targets. They are not requirements for the strict-dual public closure. The completion claim here is
+supported by the rewired public wrappers, the successful `8877/8877` full build, and exact standard-
+axiom kernel output—not merely by the existence of
+`theta_two_half_eq_zero_via_strictDualCrossing`. No claim is made about the deferred Comparator or
+independent-review processes.

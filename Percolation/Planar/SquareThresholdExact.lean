@@ -84,8 +84,8 @@ theorem squareCriticalBarrierLowerBound_le_probability (k : ℕ) :
 
 /-- **Grimmett, Lemma 11.12.** There is no infinite open origin cluster in the square lattice
 at the self-dual density `1/2`. -/
-theorem theta_two_half_eq_zero : theta 2 squareHalfDensity = 0 := by
-  exact theta_two_half_eq_zero_via_strictDualCrossing
+theorem theta_two_half_eq_zero : theta 2 squareHalfDensity = 0 :=
+  theta_two_half_eq_zero_via_strictDualCrossing
 
 /-- **Grimmett, Theorem 11.11.** The critical probability of bond percolation on
 `ℤ²` is exactly `1/2`. -/

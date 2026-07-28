@@ -6,10 +6,10 @@ import Percolation.Planar.BRTruncatedCrossing
 # Conditional Bollobás--Riordan crossing extension
 
 This module assembles the probability inequality in Bollobás--Riordan Lemma 6 from the stopped
-dual-fiber decomposition and the finite first-contact argument.  Its sole geometric premise is
-the explicitly stated stopping-set implication `hfresh`: every full-support lower contact with
-the selected crossing can be witnessed using coordinates outside the symmetric exploration
-support.
+dual-fiber decomposition and a direct fresh-cover premise.  For each realizable exploration
+fiber, the premise says that every doubled-rectangle crossing belongs to one of the two reflected
+fresh extension events.  This is the exact geometric conclusion supplied by a correct canonical
+outer-frontier argument.
 
 The premise is required only for realizable good fibers.  The finite partition also contains
 empty candidate fibers; a private totalization by the universal event lets the abstract fiber
@@ -33,18 +33,20 @@ private def brLowerFreshExtensionEventOrUniv
     else
       Set.univ
 
-/-- Conditional probability form of the adapted Bollobás--Riordan Lemma 6.
+/-- Direct-fresh-cover probability form of the adapted Bollobás--Riordan Lemma 6.
 
 The factor on the left is the horizontal crossing probability of the translated doubled
-rectangle times the vertical square-crossing probability, divided by two.  The hypothesis
-`hfresh` is exactly the still-missing outermost-selector implication; all remaining deterministic,
-independence, finite-fiber summation, and probability steps are discharged here. -/
-theorem brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_contact_fresh
-    (p : I) (m n : ℕ) (hm : 2 * n ≤ m) (hn : 0 < n)
-    (hfresh : ∀ (R : Finset (BRLeftmostDualVertex n))
+rectangle times the vertical square-crossing probability, divided by two.  All deterministic,
+independence, finite-fiber summation, and probability steps after the direct per-fiber cover are
+discharged here. -/
+theorem brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_fresh_cover
+    (p : I) (m n : ℕ) (hn : 0 < n)
+    (hcover : ∀ (R : Finset (BRLeftmostDualVertex n))
         (_hgood : R ∈ brGoodReachableFaceFiberIndices n)
         (hR : BRAdmissibleSeparatingFiber n R),
-      brLowerContactEvent m hn hR ⊆ brLowerFreshExtensionEvent m R hn hR) :
+      brExtensionRectangleCrossingEvent m n ⊆
+        brLowerFreshExtensionEvent m R hn hR ∪
+          brUpperFreshExtensionEvent m R hn hR) :
     ((bernoulliBondMeasure 2 p).real (brExtensionRectangleCrossingEvent m n) *
         rswSquareCrossingProbability p n) / 2 ≤
       (bernoulliBondMeasure 2 p).real (brSourceXEvent m n) := by
@@ -65,8 +67,8 @@ theorem brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_conta
     · intro R hgood
       by_cases hR : BRAdmissibleSeparatingFiber n R
       · simpa only [Y, brLowerFreshExtensionEventOrUniv, dif_pos hR] using
-          bernoulliBondMeasure_real_extensionCrossing_div_two_le_lowerFresh_of_contact_fresh
-            p m R hm hn hR (hfresh R hgood hR)
+          bernoulliBondMeasure_real_extensionCrossing_div_two_le_lowerFresh_of_fresh_cover
+            p m R hn hR (hcover R hgood hR)
       · simp only [Y, brLowerFreshExtensionEventOrUniv, dif_neg hR, probReal_univ]
         have hnonneg : 0 ≤ (bernoulliBondMeasure 2 p).real
             (brExtensionRectangleCrossingEvent m n) := measureReal_nonneg
@@ -89,7 +91,42 @@ theorem brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_conta
           rswSquareCrossingProbability p n := by ring
     _ ≤ (bernoulliBondMeasure 2 p).real (brSourceXEvent m n) := hcore
 
-/-- Source-normalized version of the conditional Bollobás--Riordan Lemma 6. -/
+/-- Compatibility wrapper deriving the direct fresh cover from the former contact-to-fresh
+premise.  The unrestricted premise has a finite counterexample and is retained only for auditing
+the previously completed algebra. -/
+theorem brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_contact_fresh
+    (p : I) (m n : ℕ) (hm : 2 * n ≤ m) (hn : 0 < n)
+    (hfresh : ∀ (R : Finset (BRLeftmostDualVertex n))
+        (_hgood : R ∈ brGoodReachableFaceFiberIndices n)
+        (hR : BRAdmissibleSeparatingFiber n R),
+      brLowerContactEvent m hn hR ⊆ brLowerFreshExtensionEvent m R hn hR) :
+    ((bernoulliBondMeasure 2 p).real (brExtensionRectangleCrossingEvent m n) *
+        rswSquareCrossingProbability p n) / 2 ≤
+      (bernoulliBondMeasure 2 p).real (brSourceXEvent m n) := by
+  apply brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_fresh_cover
+    p m n hn
+  intro R hgood hR
+  exact brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
+    m R hm hn hR (hfresh R hgood hR)
+
+/-- Source-normalized version of the direct-fresh-cover Bollobás--Riordan Lemma 6. -/
+theorem brLemmaSix_probability_of_fresh_cover
+    (p : I) (m n : ℕ) (hn : 0 < n)
+    (hcover : ∀ (R : Finset (BRLeftmostDualVertex n))
+        (_hgood : R ∈ brGoodReachableFaceFiberIndices n)
+        (hR : BRAdmissibleSeparatingFiber n R),
+      brExtensionRectangleCrossingEvent m n ⊆
+        brLowerFreshExtensionEvent m R hn hR ∪
+          brUpperFreshExtensionEvent m R hn hR) :
+    ((bernoulliBondMeasure 2 p).real
+          (squareBoundaryFreeRectangleCrossingEvent m (2 * n)) *
+        rswSquareCrossingProbability p n) / 2 ≤
+      (bernoulliBondMeasure 2 p).real (brSourceXEvent m n) := by
+  rw [← bernoulliBondMeasure_real_brExtensionRectangleCrossingEvent p m n]
+  exact brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_fresh_cover
+    p m n hn hcover
+
+/-- Source-normalized compatibility wrapper for the former contact-to-fresh scaffold. -/
 theorem brLemmaSix_probability_of_contact_fresh
     (p : I) (m n : ℕ) (hm : 2 * n ≤ m) (hn : 0 < n)
     (hfresh : ∀ (R : Finset (BRLeftmostDualVertex n))
@@ -100,9 +137,10 @@ theorem brLemmaSix_probability_of_contact_fresh
           (squareBoundaryFreeRectangleCrossingEvent m (2 * n)) *
         rswSquareCrossingProbability p n) / 2 ≤
       (bernoulliBondMeasure 2 p).real (brSourceXEvent m n) := by
-  rw [← bernoulliBondMeasure_real_brExtensionRectangleCrossingEvent p m n]
-  exact brExtensionCrossingProbability_mul_rswSquare_div_two_le_sourceX_of_contact_fresh
-    p m n hm hn hfresh
+  apply brLemmaSix_probability_of_fresh_cover p m n hn
+  intro R hgood hR
+  exact brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
+    m R hm hn hR (hfresh R hgood hR)
 
 end
 

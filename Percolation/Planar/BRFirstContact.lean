@@ -738,6 +738,26 @@ theorem brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
       brLowerFreshExtensionEvent m R hn hR
     exact hfresh hUpper
 
+/-- Bollobás--Riordan half estimate from a direct cover by the two reflected fresh events.
+
+This is the probability-theoretic entry point for a source-faithful outer-frontier argument:
+the geometry only has to prove `hcover`, without passing through the false unrestricted
+full-contact-to-fresh implication. -/
+theorem bernoulliBondMeasure_real_extensionCrossing_div_two_le_lowerFresh_of_fresh_cover
+    (p : I) (m : ℕ) {n : ℕ} (R : Finset (BRLeftmostDualVertex n))
+    (hn : 0 < n) (hR : BRAdmissibleSeparatingFiber n R)
+    (hcover : brExtensionRectangleCrossingEvent m n ⊆
+      brLowerFreshExtensionEvent m R hn hR ∪
+        brUpperFreshExtensionEvent m R hn hR) :
+    (bernoulliBondMeasure 2 p).real (brExtensionRectangleCrossingEvent m n) / 2 ≤
+      (bernoulliBondMeasure 2 p).real
+        (brLowerFreshExtensionEvent m R hn hR) := by
+  exact measureReal_div_two_le_of_subset_union_of_eq
+    (bernoulliBondMeasure 2 p)
+    hcover
+    (bernoulliBondMeasure_real_brUpperFreshExtensionEvent_eq_lower
+      p m R hn hR)
+
 /-- Conditional Bollobás--Riordan half estimate.  The sole geometric premise `hfresh` is the
 outermost-selector/stopping-set implication isolated by the audit; no such implication is
 asserted for the current arbitrary parity selector. -/
@@ -749,12 +769,10 @@ theorem bernoulliBondMeasure_real_extensionCrossing_div_two_le_lowerFresh_of_con
     (bernoulliBondMeasure 2 p).real (brExtensionRectangleCrossingEvent m n) / 2 ≤
       (bernoulliBondMeasure 2 p).real
         (brLowerFreshExtensionEvent m R hn hR) := by
-  exact measureReal_div_two_le_of_subset_union_of_eq
-    (bernoulliBondMeasure 2 p)
-    (brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
-      m R hm hn hR hfresh)
-    (bernoulliBondMeasure_real_brUpperFreshExtensionEvent_eq_lower
-      p m R hn hR)
+  apply bernoulliBondMeasure_real_extensionCrossing_div_two_le_lowerFresh_of_fresh_cover
+    p m R hn hR
+  exact brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
+    m R hm hn hR hfresh
 
 end
 

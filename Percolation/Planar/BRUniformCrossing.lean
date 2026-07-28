@@ -60,6 +60,24 @@ theorem brThreeHalvesCrossingProbability_even_ge_of_sourceX_lower
       mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hab0 hx 2) hb0
     _ ≤ rswThreeHalvesCrossingProbability p (2 * n) := hglue
 
+/-- Even-scale BR recurrence from a direct fresh cover on every realizable stopped fiber. -/
+theorem brThreeHalvesCrossingProbability_even_ge_of_fresh_cover
+    (p : I) (n : ℕ) (hn : 0 < n)
+    (hcover : ∀ (R : Finset (BRLeftmostDualVertex n))
+        (_hgood : R ∈ brGoodReachableFaceFiberIndices n)
+        (hR : BRAdmissibleSeparatingFiber n R),
+      brExtensionRectangleCrossingEvent (4 * n) n ⊆
+        brLowerFreshExtensionEvent (4 * n) R hn hR ∪
+          brUpperFreshExtensionEvent (4 * n) R hn hR) :
+    rswSquareCrossingProbability p (2 * n) ^ 2 *
+          rswSquareCrossingProbability p n ^ 3 / 4 ≤
+      rswThreeHalvesCrossingProbability p (2 * n) := by
+  apply brThreeHalvesCrossingProbability_even_ge_of_sourceX_lower
+  have h := brLemmaSix_probability_of_fresh_cover p (4 * n) n hn hcover
+  have hwidth : 4 * n = 2 * (2 * n) := by omega
+  simpa [rswSquareCrossingProbability, rswSquareCrossingEvent,
+    rswRectangleCrossingEvent, hwidth] using h
+
 /-- Conditional compatibility wrapper for the former contact-to-fresh scaffold.
 
 The hypothesis is deliberately not advertised as a future geometry target: the corresponding
@@ -76,11 +94,10 @@ theorem brThreeHalvesCrossingProbability_even_ge_of_contact_fresh
     rswSquareCrossingProbability p (2 * n) ^ 2 *
           rswSquareCrossingProbability p n ^ 3 / 4 ≤
       rswThreeHalvesCrossingProbability p (2 * n) := by
-  apply brThreeHalvesCrossingProbability_even_ge_of_sourceX_lower
-  have h := brLemmaSix_probability_of_contact_fresh p (4 * n) n (by omega) hn hfresh
-  have hwidth : 4 * n = 2 * (2 * n) := by omega
-  simpa [rswSquareCrossingProbability, rswSquareCrossingEvent,
-    rswRectangleCrossingEvent, hwidth] using h
+  apply brThreeHalvesCrossingProbability_even_ge_of_fresh_cover p n hn
+  intro R hgood hR
+  exact brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
+    (4 * n) R (by omega) hn hR (hfresh R hgood hR)
 
 /-- Explicit lower bound obtained by one BR recurrence followed by the two RSW rectangle gluings.
 -/
@@ -91,18 +108,16 @@ theorem brAspectThreeCrossingLowerBound_pos : 0 < brAspectThreeCrossingLowerBoun
   unfold brAspectThreeCrossingLowerBound
   positivity
 
-/-- Uniform aspect-three crossing bound under the explicit former contact-to-fresh scaffold.
-
-This implication is retained as a conditional input for algebra auditing, not claimed as a valid
-selector theorem.  It is restricted to the only instances read by the calculation: `m = 4n` and
-`n ≥ 3`. -/
-theorem brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_contact_fresh
-    (hfresh : ∀ (n : ℕ) (hn : 0 < n), 3 ≤ n →
+/-- Uniform aspect-three crossing bound from direct fresh covers at the half-scales used by the
+calculation. -/
+theorem brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_fresh_cover
+    (hcover : ∀ (n : ℕ) (hn : 0 < n), 3 ≤ n →
       ∀ (R : Finset (BRLeftmostDualVertex n))
         (_hgood : R ∈ brGoodReachableFaceFiberIndices n)
         (hR : BRAdmissibleSeparatingFiber n R),
-          brLowerContactEvent (4 * n) hn hR ⊆
-            brLowerFreshExtensionEvent (4 * n) R hn hR)
+          brExtensionRectangleCrossingEvent (4 * n) n ⊆
+            brLowerFreshExtensionEvent (4 * n) R hn hR ∪
+              brUpperFreshExtensionEvent (4 * n) R hn hR)
     (k : ℕ) :
     brAspectThreeCrossingLowerBound ≤
       rswRectangleCrossingProbability squareHalfDensity 3
@@ -130,8 +145,8 @@ theorem brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_conta
             rswSquareCrossingProbability squareHalfDensity n ^ 3 / 4 ≤
         rswThreeHalvesCrossingProbability squareHalfDensity l := by
     simpa [hln] using
-      brThreeHalvesCrossingProbability_even_ge_of_contact_fresh
-        squareHalfDensity n hn (hfresh n hn hn3)
+      brThreeHalvesCrossingProbability_even_ge_of_fresh_cover
+        squareHalfDensity n hn (hcover n hn hn3)
   let t : ℝ := c₀ ^ 5 / 4
   have ht0 : 0 ≤ t := by
     dsimp [t]
@@ -182,9 +197,41 @@ theorem brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_conta
         (expandedCriticalAnnulusScale k) := by
       rfl
 
+/-- Uniform aspect-three compatibility wrapper for the former contact-to-fresh scaffold. -/
+theorem brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_contact_fresh
+    (hfresh : ∀ (n : ℕ) (hn : 0 < n), 3 ≤ n →
+      ∀ (R : Finset (BRLeftmostDualVertex n))
+        (_hgood : R ∈ brGoodReachableFaceFiberIndices n)
+        (hR : BRAdmissibleSeparatingFiber n R),
+          brLowerContactEvent (4 * n) hn hR ⊆
+            brLowerFreshExtensionEvent (4 * n) R hn hR)
+    (k : ℕ) :
+    brAspectThreeCrossingLowerBound ≤
+      rswRectangleCrossingProbability squareHalfDensity 3
+        (expandedCriticalAnnulusScale k) := by
+  apply brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_fresh_cover
+    (k := k)
+  intro n hn hn3 R hgood hR
+  exact brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
+    (4 * n) R (by omega) hn hR (hfresh n hn hn3 R hgood hR)
+
+/-- Self-dual nonpercolation from direct fresh covers at all required half-scales. -/
+theorem theta_two_half_eq_zero_of_br_fresh_cover
+    (hcover : ∀ (n : ℕ) (hn : 0 < n), 3 ≤ n →
+      ∀ (R : Finset (BRLeftmostDualVertex n))
+        (_hgood : R ∈ brGoodReachableFaceFiberIndices n)
+        (hR : BRAdmissibleSeparatingFiber n R),
+          brExtensionRectangleCrossingEvent (4 * n) n ⊆
+            brLowerFreshExtensionEvent (4 * n) R hn hR ∪
+              brUpperFreshExtensionEvent (4 * n) R hn hR) :
+    theta 2 squareHalfDensity = 0 := by
+  apply theta_two_half_eq_zero_of_uniform_rswRectangleCrossingProbability
+    brAspectThreeCrossingLowerBound_pos
+  exact fun k ↦
+    brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_fresh_cover hcover k
+
 /-- Algebraically conditional self-dual nonpercolation under the former contact-to-fresh
-scaffold.  A source-faithful theorem should instead be rewired through a direct fresh-cover or
-half-probability estimate. -/
+scaffold.  The wrapper factors through the direct-cover theorem above. -/
 theorem theta_two_half_eq_zero_of_br_contact_fresh
     (hfresh : ∀ (n : ℕ) (hn : 0 < n), 3 ≤ n →
       ∀ (R : Finset (BRLeftmostDualVertex n))
@@ -193,10 +240,10 @@ theorem theta_two_half_eq_zero_of_br_contact_fresh
           brLowerContactEvent (4 * n) hn hR ⊆
             brLowerFreshExtensionEvent (4 * n) R hn hR) :
     theta 2 squareHalfDensity = 0 := by
-  apply theta_two_half_eq_zero_of_uniform_rswRectangleCrossingProbability
-    brAspectThreeCrossingLowerBound_pos
-  exact fun k ↦
-    brAspectThreeCrossingLowerBound_le_expandedCriticalAnnulusScale_of_contact_fresh hfresh k
+  apply theta_two_half_eq_zero_of_br_fresh_cover
+  intro n hn hn3 R hgood hR
+  exact brExtensionRectangleCrossingEvent_subset_fresh_union_of_contact_fresh
+    (4 * n) R (by omega) hn hR (hfresh n hn hn3 R hgood hR)
 
 end
 

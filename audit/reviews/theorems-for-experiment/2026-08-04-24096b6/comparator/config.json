@@ -1,0 +1,15 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "Solution",
+  "theorem_names": [
+    "Review.TheoremsForExperiment.grimmett_theorem_3_7",
+    "Review.TheoremsForExperiment.grimmett_theorem_11_70",
+    "Review.TheoremsForExperiment.duminilCopin_proposition_2_14"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "enable_nanoda": false
+}

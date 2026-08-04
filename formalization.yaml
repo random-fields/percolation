@@ -15,6 +15,13 @@ sources:
     id: grimmett-random-cluster-2006
     type: textbook
     file: kg/textbooks/Grimmett-RandomClusterModel-2006.pdf
+  - title: "Duminil-Copin — Graphical Representations of Lattice Spin Models"
+    id: duminil-copin-graphical-representations-2016
+    type: textbook
+    file: kg/textbooks/Duminil-Copin-Graphical-Representations-Lattice-Spin-Models-2016.pdf
+    sha256: c29e39e3600e76530efcb150ba211d3b1ca5373f6b190b99495da84cc6630e1d
+    provenance: author-hosted UNIGE PDF downloaded 2026-08-04
+    redistribution_status: unreviewed
   - title: "Bollobás–Riordan — A Short Proof of the Harris–Kesten Theorem"
     id: bollobas-riordan-harris-kesten-2006
     type: paper
@@ -35,7 +42,7 @@ status:
   scope: "Design-stage Lean 4 / Mathlib formalization of Bernoulli percolation and the random-cluster model.
     Initial focus: finite graph configurations, product measures, increasing events, FKG/BK/Russo,
     critical probability, planar duality, and finite-volume random-cluster measures."
-  sorry_count: 0
+  sorry_count: 3
   sorry_in_definitions: 0
   axioms:
     standard: [propext, Classical.choice, Quot.sound]

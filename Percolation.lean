@@ -310,6 +310,7 @@ import Percolation.Planar.CriticalSelfDuality
 import Percolation.Planar.SiteCrossingPeierls
 import Percolation.Planar.CrossingMenger
 import Percolation.Planar.Inhomogeneous
+import Percolation.TheoremsForExperiment
 import Percolation.RandomCluster.Basic
 import Percolation.Tests.Chapter7Infrastructure
 import Percolation.Tests.Chapter7AxiomAudit

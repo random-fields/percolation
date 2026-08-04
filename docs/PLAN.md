@@ -14,7 +14,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P5 | Ch. 2.2 | FKG inequality for product percolation | Bernoulli | **proved**: finite-support FKG via four functions theorem (`FKG.lean`) and general increasing measurable events via measure-density approximation (`FKGInfinite.lean`); Thm 2.8 in `Critical/VertexIndependence.lean` |
 | P6 | Ch. 2.3 | BK/Reimer disjoint-occurrence inequality | Bernoulli | **proved**: BK 2.12/2.14/2.15 by the two-copy method (`BK.lean`), limit form (2.17) (`DisjointConnections.lean`); Reimer 2.19 recorded as anti-target |
 | P7 | Ch. 2.4 | Russo's formula and pivotal edges | Bernoulli | **proved**: Thm 2.25 + (2.29)/(2.31)/2.32/(2.33) (`Russo.lean`); §2.5 reliability inequalities 2.34/2.36/2.38 (`Reliability.lean`); §2.6 sprinkling 2.45 proved (`Sprinkling.lean`) |
-| P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | absent |
+| P8 | Ch. 3 | Equalities and inequalities for critical probabilities | Critical | **statement target added**: Theorem 3.7, `p_c(T) < p_c(L²)`, in `TheoremsForExperiment.lean` |
 | P9 | Ch. 4 | Number of open clusters per vertex | Critical | **4.20 and 4.31 proved unconditionally**: concrete rooted animals discharge (4.25), `cubicAnimal_largeDeviation_sharp_one_le` has the source prefactor/exponent for every `n≥1`, and `concreteClusterDensitySeries_contDiffOn_unitInterval` proves `C¹` on `[0,1]`; Theorem 4.2 remains conditional on the multiparameter box-ergodic/boundary inputs and its `L¹` conclusion remains a target |
 | P10 | Ch. 5 | Menshikov/Aizenman-Barsky subcritical threshold methods | Critical | **proved for the selected complete chapter scope**: both independent proofs of 5.2, 5.3–5.8, full sausage/renewal chain 5.12–5.24, ghost equations 5.42–5.53, and Appendix I limits 5.64–5.66; see `audit/topics/topic-05-exponential-decay.md` |
 | P11 | Ch. 6 | Systematic subcritical phase estimates | Critical | **proved for the declared complete chapter scope**: 6.1/6.10/6.14, two-point and correlation-length results, tree-graph moments, corrected 6.75, exact-size rate 6.78, and genuine complex-series analyticity 6.108; false literal readings of 6.75 and 6.87 are rejected with proved corrected forms; see `audit/topics/topic-06-exponential-decay-analyticity.md` |
@@ -22,7 +22,7 @@ this into page-anchored JSON in `kg/derived/`.
 | P13 | Ch. 8 | Supercritical phase: uniqueness, continuity, finite-cluster rates, and geometry | Critical | **substantial assumption-free core plus complete Chapter 8 strip argument**: Theorems 8.1, 8.8, 8.18, 8.53, 8.61, and 8.97 and their named lemmas are complete. Equations 8.43–8.48 now include arbitrary-coordinate independence, canonical fresh-strip entrances, iterated contraction, and exponential absorption. For `d≥3`, Theorem 8.21, compact-uniform (8.91), open-interval Theorem 8.92, (8.64), and Theorem 8.99 are assembled from the single visible `SlabCriticalApproximation d` premise, exactly unfinished Chapter 7 Theorem 7.2. Remaining: discharge that premise, the separate planar route, Theorem 8.65's source-omitted high-dimensional topology, and the `p=1` endpoint of 8.92 based on (8.88). See `audit/topics/topic-08-supercritical-phase.md`. |
 | P14 | Ch. 9 | Scaling theory and critical exponents, informal interface | Critical | external/interface first |
 | P15 | Ch. 10 | High-dimensional mean-field/lace-expansion statements | Critical | external/interface first |
-| P16 | Ch. 11 | Planar duality and `p_c = 1/2` for square-lattice bond percolation | Planar | **complete modulo explicitly cited external-reference axioms**: exact `p_c(ℤ²)=1/2`, half-density rectangle duality, RSW algebra, centered supercritical crossing tails, and tube decay are proved; Proposition 11.2/Kesten topology, Russo lowest crossing, source-facing descendants, the cited CLT, and inhomogeneous critical surfaces are isolated and audited as project axioms; see `audit/topics/topic-11-bond-percolation-two-dimensions.md` |
+| P16 | Ch. 11 | Planar duality and `p_c = 1/2` for square-lattice bond percolation | Planar | **complete modulo explicitly cited external-reference axioms**: exact `p_c(ℤ²)=1/2`, half-density rectangle duality, RSW algebra, centered supercritical crossing tails, and tube decay are proved; Proposition 11.2/Kesten topology, Russo lowest crossing, source-facing descendants, the cited CLT, and inhomogeneous critical surfaces are isolated and audited as project axioms. An exact source-shaped Theorem 11.70 experiment statement is in `TheoremsForExperiment.lean`; see `audit/topics/topic-11-bond-percolation-two-dimensions.md` |
 | P17 | Ch. 12 | Extensions: mixed/AB/long-range, surfaces, entanglement, rigidity, invasion, oriented, first-passage, and continuum percolation | Extensions | **active**: complete source inventory, dependency/API plan, fidelity rules, and telemetry/review protocol are frozen in `audit/topics/topic-12-extensions-of-percolation.md`; implementation begins with the countable inhomogeneous product and long-range graph stack |
 | P18 | Ch. 13 | Percolative systems: contact processes, electrical networks, random-cluster and related models | Extensions | later |
 
@@ -42,6 +42,12 @@ this into page-anchored JSON in `kg/derived/`.
 | RC10 | Ch. 9 | Flow polynomial and random-current-adjacent representations | RandomCluster | later |
 | RC11 | Ch. 10 | Complete graph and binary tree exact calculations | RandomCluster | later |
 | RC12 | Ch. 11 | Applications to Potts, Ashkin-Teller, spin-glass, lattice-gas models | Interfaces | later |
+
+## Source H — Duminil-Copin, *Graphical Representations of Lattice Spin Models*
+
+| order | source | target | layer | Mathlib/local status |
+|---|---|---|---|---|
+| H1 | Ch. 2 §2.4, Prop. 2.14 | Uniform `1/128` lower bound for a critical vertical rectangle crossing | Planar | **statement target added** in `TheoremsForExperiment.lean`; proof intentionally `sorry` |
 
 ## First Concrete Sprint
 

@@ -9,6 +9,7 @@ The source corpus lives in `kg/textbooks/`.
 | `textbooks/Bollobas-Riordan-Harris-Kesten-2006.pdf` | Béla Bollobás and Oliver Riordan, “A Short Proof of the Harris–Kesten Theorem,” secondary source for Theorem 11.11 |
 | `textbooks/978-1-4899-2730-9.pdf` | Harry Kesten, *Percolation Theory for Mathematicians*, candidate planar-topology source |
 | `textbooks/2017percolation.pdf` | Hugo Duminil-Copin, *Introduction to Bernoulli Percolation*, candidate overview source |
+| `textbooks/Duminil-Copin-Graphical-Representations-Lattice-Spin-Models-2016.pdf` | Hugo Duminil-Copin, *Graphical Representations of Lattice Spin Models*, source for Proposition 2.14 |
 | `textbooks/ProbOnGraph.pdf` | Geoffrey Grimmett, *Probability on Graphs*, candidate overview source |
 | `source_catalog.json` | source metadata used by docs and comparator cards |
 | `percolation_targets.seed.json` | initial target list; replace/enrich with page-anchored extraction |

@@ -33,6 +33,30 @@
       "status": "target"
     },
     {
+      "id": "P3.7",
+      "source": "grimmett-percolation-1999",
+      "location": "Theorem 3.7, printed page 59",
+      "title": "Strict triangular/square critical-probability inequality",
+      "layer": "Critical/Planar",
+      "status": "statement_target"
+    },
+    {
+      "id": "P11.70",
+      "source": "grimmett-percolation-1999",
+      "location": "Theorem 11.70 and Equation 11.71, printed page 315",
+      "title": "Explicit RSW annular-circuit lower bound",
+      "layer": "Planar",
+      "status": "statement_target"
+    },
+    {
+      "id": "H2.14",
+      "source": "duminil-copin-graphical-representations-2016",
+      "location": "Chapter 2 Section 2.4, Proposition 2.14, printed page 19",
+      "title": "Critical vertical rectangle-crossing lower bound",
+      "layer": "Planar",
+      "status": "statement_target"
+    },
+    {
       "id": "RC1",
       "source": "grimmett-random-cluster-2006",
       "location": "Chapter 1.2",

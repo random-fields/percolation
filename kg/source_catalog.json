@@ -61,6 +61,22 @@
       "role": "candidate overview source"
     },
     {
+      "id": "duminil-copin-graphical-representations-2016",
+      "title": "Graphical Representations of Lattice Spin Models",
+      "author": "Hugo Duminil-Copin",
+      "publisher": "Spartacus-Idh",
+      "year": 2016,
+      "isbn": "9782366930221",
+      "file": "kg/textbooks/Duminil-Copin-Graphical-Representations-Lattice-Spin-Models-2016.pdf",
+      "pages_pdf": 110,
+      "sha256": "c29e39e3600e76530efcb150ba211d3b1ca5373f6b190b99495da84cc6630e1d",
+      "provenance": "Downloaded from the author's UNIGE publication page on 2026-08-04",
+      "source_url": "https://www.unige.ch/~duminil/publi/2016Peccot.pdf",
+      "redistribution_status": "unreviewed",
+      "role": "primary comparator source for Proposition 2.14",
+      "msc": ["60K35", "82B20", "82B43"]
+    },
+    {
       "id": "grimmett-probability-on-graphs",
       "title": "Probability on Graphs: Random Processes on Graphs and Lattices",
       "author": "Geoffrey Grimmett",

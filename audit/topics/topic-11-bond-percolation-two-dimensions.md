@@ -67,6 +67,17 @@ displayed proof steps, or consequences rather than additional named results.
 | 11.90–11.113 | Critical/near-critical power inequalities and their proof chain; represented by exact source-facing Theorems 11.89 and 11.93 at the externally sourced topology boundary. The OCR text has no separately labelled 11.102. |
 | 11.114 | Rooted inhomogeneous percolation definitions: `inhomogeneousSquareTheta` and `inhomogeneousTriangularTheta`. |
 
+## Experiment statement targets
+
+The following declarations are collected in `Percolation/TheoremsForExperiment.lean`. They are
+statement-only targets on the experiment branch and are not classified as proved or faithful.
+
+| Source result | Informal statement | Exact Lean declaration | Status | Fidelity note |
+|---|---|---|---|---|
+| Grimmett, Theorem 3.7, printed p. 59 | The triangular-lattice bond critical probability is strictly below the square-lattice value: `p_c(T) < p_c(L²)`. | `Percolation.grimmett_theorem_3_7` | target (`sorry`) | `triangularGraph` is exactly the square lattice plus north-east diagonals; `triangularCriticalProbability` uses the same supremum-of-zero-theta normalization as `cubicCriticalProbability`. |
+| Grimmett, Theorem 11.70 / Eq. 11.71, printed p. 315 | If `P_p(LR(l)) = tau`, then `P_p(O(l)) ≥ {tau(1-√(1-tau))^4}^12`. | `Percolation.grimmett_theorem_11_70` | target (`sorry`) | Retains the source's named `tau` and equality hypothesis instead of substituting the crossing probability into the conclusion. Existing boundary-free `LR(l)` and parity-based annular event `O(l)` are reused. |
+| Duminil-Copin, Proposition 2.14, printed p. 19 / PDF p. 27 | For every `n ≥ 1`, `P_{1/2}[C_v([-n,n]×[-n,2n])] ≥ 1/128`. | `Percolation.duminilCopin_proposition_2_14` | target (`sorry`) | Source id `duminil-copin-graphical-representations-2016`; the literal asymmetric rectangle, bottom/top sides, internal bonds, and vertical connection event are explicit. |
+
 ## Trust boundary
 
 `Percolation/Tests/Chapter11AxiomAudit.lean` prints the full transitive axiom sets.  Globally,

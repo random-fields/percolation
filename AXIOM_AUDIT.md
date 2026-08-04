@@ -11,6 +11,13 @@ Chapter 11.  All are listed below and vetted in
 - Every project axiom must have a vetting card under `audit/vetting/`.
 - Comparator cards in `audit/topics/` must identify which source theorem is affected.
 
+## Experiment design targets
+
+`Percolation/TheoremsForExperiment.lean` contains exactly three intentional `sorry` theorem
+bodies: `grimmett_theorem_3_7`, `grimmett_theorem_11_70`, and
+`duminilCopin_proposition_2_14`. They are statement-only targets requested for the experiment;
+they are not project axioms and are not classified as proved or faithful.
+
 ## Exact Theorem 11.11 Closure
 
 The kernel audit of the exact-threshold stack at Chapter 12 commit `fa86568` reports

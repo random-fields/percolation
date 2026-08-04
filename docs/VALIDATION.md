@@ -98,6 +98,12 @@ Status legend: `[target]`, `[done]`, `[done mod axioms]`.
 - **[done mod axioms]** `p_c = 1/2` for bond percolation on `Z^2`, proved in Lean from the exact
   finite rectangle calculation, RSW/independent barriers, and the explicitly named external
   planar-topology boundary.
+- **[target]** Grimmett Theorem 3.7: `p_c(T) < p_c(L²)` for triangular versus square bond
+  percolation (`grimmett_theorem_3_7`).
+- **[target]** Grimmett Theorem 11.70 in its literal equation-(11.71) RSW form
+  (`grimmett_theorem_11_70`).
+- **[target]** Duminil-Copin Proposition 2.14: the critical `[-n,n] × [-n,2n]` vertical
+  crossing probability is at least `1/128` (`duminilCopin_proposition_2_14`).
 - **[target]** Random-cluster planar duality and the critical-point formula target
   `p_c(q) = sqrt q / (1 + sqrt q)` under the theorem's valid hypotheses.
 

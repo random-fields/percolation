@@ -1928,6 +1928,14 @@ Dated milestones and anti-library notes.
     with standard axioms only. Comparator and independent review were user-deferred and are not
     completion gates for this formalization result.
 
+167. **Experiment theorem-statement batch (2026-08-04).** Added the author-hosted PDF of Hugo
+    Duminil-Copin's *Graphical Representations of Lattice Spin Models* to the source corpus with
+    checksum and provenance metadata. Added `Percolation/TheoremsForExperiment.lean`, containing
+    exact source-facing statement targets for Grimmett Theorem 3.7, Grimmett Theorem 11.70, and
+    Duminil-Copin Proposition 2.14. The homogeneous triangular model and the asymmetric vertical
+    rectangle are explicit; all three theorem bodies are intentionally `sorry` for this design
+    branch.
+
 ## Axiom Ledger
 
 Chapter 11 contains the explicitly cited external-reference axioms listed in

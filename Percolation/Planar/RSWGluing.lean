@@ -1,12 +1,12 @@
-import Percolation.Planar.External
+import Percolation.Planar.SquareCritical
+import Percolation.Planar.RSWCircuitIncidence
 
 /-!
 # FKG gluing for the RSW theorem
 
 This file proves all three probability inequalities in Grimmett, Lemma 11.75.  The placements
 and their probabilities are handled by explicit graph automorphisms, FKG is applied in Lean,
-and only the three bare planar event inclusions remain at the Proposition 11.2 topology boundary
-recorded in `Percolation.Planar.External`.
+and the three bare planar event inclusions are proved directly.
 -/
 
 namespace Percolation

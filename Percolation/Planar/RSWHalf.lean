@@ -1,5 +1,4 @@
 import Percolation.Bernoulli.AdaptiveFreshExtension
-import Percolation.Planar.RSWNumeric
 import Percolation.Planar.SquareThreshold
 
 /-!
@@ -409,62 +408,6 @@ theorem rswHalfSquareWitnessEvent_subset (l : ℕ) (hl : 1 ≤ l) :
   · simpa [q, Nat.mul_assoc] using
       mapped_grimmettTraceExtendedWalk_edges_subset_boundaryFreeSquare hl W
 
-theorem bernoulliBondMeasure_real_grimmettRectangleFreshCrossingEvent_half
-    (n : ℕ) :
-    (bernoulliBondMeasure 2 squareHalfDensity).real
-        (grimmettRectangleFreshCrossingEvent n) = 1 / 8 := by
-  classical
-  have hT : grimmettRectangleCrossingTraces n ⊆ (grimmettRectangleEdges n).powerset := by
-    intro s hs
-    exact (Finset.mem_filter.mp hs).1
-  have hext := bernoulliBondMeasure_real_adaptiveFreshOpenExtensionEvent
-    (k := 2) squareHalfDensity (grimmettRectangleEdges n)
-    (grimmettRectangleCrossingTraces n) hT
-    (grimmettRectangleFreshExtensionEdges n)
-    (grimmettRectangleFreshExtensionEdges_disjoint n)
-    (card_grimmettRectangleFreshExtensionEdges n)
-  have hsum :
-      ∑ s ∈ grimmettRectangleCrossingTraces n,
-          finiteBernoulliWeight (grimmettRectangleEdges n) (1 / 2) s = 1 / 2 := by
-    have hfinite :=
-      (dependsOn_grimmettRectangleCrossingEvent n
-        ).bernoulliBondMeasure_real_eq_finiteBernoulliProbability squareHalfDensity
-    rw [bernoulliBondMeasure_real_grimmettRectangleCrossingEvent_half] at hfinite
-    rw [finiteBernoulliProbability_eq_sum_filter] at hfinite
-    simpa [grimmettRectangleCrossingTraces, coe_squareHalfDensity] using hfinite.symm
-  rw [grimmettRectangleFreshCrossingEvent, hext, coe_squareHalfDensity, hsum]
-  norm_num
-
-theorem bernoulliBondMeasure_real_rswHalfSquareWitnessEvent_half (l : ℕ) :
-    (bernoulliBondMeasure 2 squareHalfDensity).real (rswHalfSquareWitnessEvent l) =
-      1 / 8 := by
-  rw [rswHalfSquareWitnessEvent,
-    bernoulliBondMeasure_real_cubicGraphIsoEvent squareHalfDensity
-      (grimmettFreshSquareIso l)
-      (measurableSet_grimmettRectangleFreshCrossingEvent (2 * l - 1)),
-    bernoulliBondMeasure_real_grimmettRectangleFreshCrossingEvent_half]
-
-/-- The exact half-density trace count supplies a scale-uniform positive square-crossing
-probability.  This explicit `1/8` is sufficient for the RSW barrier proof. -/
-theorem one_eighth_le_rswSquareCrossingProbability_half
-    (l : ℕ) (hl : 2 ≤ l) :
-    1 / 8 ≤ rswSquareCrossingProbability squareHalfDensity l := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hl
-  rw [show 2 + k = (k + 1) + 1 by omega]
-  change 1 / 8 ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
-    (rswSquareCrossingEvent ((k + 1) + 1))
-  rw [← bernoulliBondMeasure_real_rswHalfSquareWitnessEvent_half (k + 1)]
-  exact measureReal_mono (rswHalfSquareWitnessEvent_subset (k + 1) (by omega))
-    (measure_ne_top _ _)
-
-/-! ### Axiom-free even-rectangle variant
-
-The preceding source-literal route starts from the exact trace count for the odd member of
-Grimmett's rectangle family.  The finite bond-interface proof gives a lower bound for the even
-members instead.  One additional fresh edge on the right absorbs this parity shift while keeping
-a scale-independent cost. -/
-
-/-- The second outward edge to the right of a selected Grimmett crossing. -/
 def grimmettTraceRightSecondExtensionEdge
     {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s) : SquareEdge :=
   cubicStepEdge (grimmettTraceRightOuterVertex W) ((0 : Fin 2), true)

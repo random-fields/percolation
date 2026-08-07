@@ -1,5 +1,5 @@
-import Percolation.Planar.Chapter11External
 import Percolation.Bernoulli.Inhomogeneous
+import Percolation.Planar.SupercriticalCrossings
 
 /-!
 # Inhomogeneous planar percolation
@@ -40,32 +40,6 @@ noncomputable def inhomogeneousSquareTheta (pₕ pᵥ : I) : ℝ :=
 def inhomogeneousSquareCriticalPolynomial (pₕ pᵥ : I) : ℝ :=
   (pₕ : ℝ) + pᵥ
 
-/-- **Grimmett, Theorem 11.115.**  The critical surface of inhomogeneous square-lattice
-percolation is `pₕ+pᵥ=1`.  The book states the theorem without proof. -/
-axiom inhomogeneousSquareTheta_eq_zero_iff
-    {pₕ pᵥ : I} (hpₕ : (pₕ : ℝ) < 1) (hpᵥ : (pᵥ : ℝ) < 1) :
-    inhomogeneousSquareTheta pₕ pᵥ = 0 ↔
-      inhomogeneousSquareCriticalPolynomial pₕ pᵥ ≤ 1
-
-/-- Positive half of Grimmett, Theorem 11.115. -/
-axiom inhomogeneousSquareTheta_pos_iff
-    {pₕ pᵥ : I} (hpₕ : (pₕ : ℝ) < 1) (hpᵥ : (pᵥ : ℝ) < 1) :
-    0 < inhomogeneousSquareTheta pₕ pᵥ ↔
-      1 < inhomogeneousSquareCriticalPolynomial pₕ pᵥ
-
-/-- Source-facing combined form of Grimmett, Theorem 11.115. -/
-theorem inhomogeneousSquare_criticalSurface
-    {pₕ pᵥ : I} (hpₕ : (pₕ : ℝ) < 1) (hpᵥ : (pᵥ : ℝ) < 1) :
-    (inhomogeneousSquareCriticalPolynomial pₕ pᵥ ≤ 1 →
-        inhomogeneousSquareTheta pₕ pᵥ = 0) ∧
-      (1 < inhomogeneousSquareCriticalPolynomial pₕ pᵥ →
-        0 < inhomogeneousSquareTheta pₕ pᵥ) := by
-  exact ⟨fun h ↦ (inhomogeneousSquareTheta_eq_zero_iff hpₕ hpᵥ).2 h,
-    fun h ↦ (inhomogeneousSquareTheta_pos_iff hpₕ hpᵥ).2 h⟩
-
-/-! ## Triangular lattice -/
-
-/-- A north-east diagonal step in the square-coordinate embedding of the triangular lattice. -/
 def triangularDiagonalStep (x y : SquareVertex) : Prop :=
   y = fun i ↦ x i + 1
 
@@ -130,31 +104,5 @@ noncomputable def inhomogeneousTriangularTheta (pₕ pᵥ pₑ : I) : ℝ :=
 `psi(p)=pₕ+pᵥ+pₑ-pₕpᵥpₑ`. -/
 def inhomogeneousTriangularCriticalPolynomial (pₕ pᵥ pₑ : I) : ℝ :=
   (pₕ : ℝ) + pᵥ + pₑ - (pₕ : ℝ) * pᵥ * pₑ
-
-/-- **Grimmett, Theorem 11.116.**  The critical surface of inhomogeneous triangular-lattice
-percolation is `pₕ+pᵥ+pₑ-pₕpᵥpₑ=1`.  The book states the theorem without proof. -/
-axiom inhomogeneousTriangularTheta_eq_zero_iff
-    {pₕ pᵥ pₑ : I}
-    (hpₕ : (pₕ : ℝ) < 1) (hpᵥ : (pᵥ : ℝ) < 1) (hpₑ : (pₑ : ℝ) < 1) :
-    inhomogeneousTriangularTheta pₕ pᵥ pₑ = 0 ↔
-      inhomogeneousTriangularCriticalPolynomial pₕ pᵥ pₑ ≤ 1
-
-/-- Positive half of Grimmett, Theorem 11.116. -/
-axiom inhomogeneousTriangularTheta_pos_iff
-    {pₕ pᵥ pₑ : I}
-    (hpₕ : (pₕ : ℝ) < 1) (hpᵥ : (pᵥ : ℝ) < 1) (hpₑ : (pₑ : ℝ) < 1) :
-    0 < inhomogeneousTriangularTheta pₕ pᵥ pₑ ↔
-      1 < inhomogeneousTriangularCriticalPolynomial pₕ pᵥ pₑ
-
-/-- Source-facing combined form of Grimmett, Theorem 11.116. -/
-theorem inhomogeneousTriangular_criticalSurface
-    {pₕ pᵥ pₑ : I}
-    (hpₕ : (pₕ : ℝ) < 1) (hpᵥ : (pᵥ : ℝ) < 1) (hpₑ : (pₑ : ℝ) < 1) :
-    (inhomogeneousTriangularCriticalPolynomial pₕ pᵥ pₑ ≤ 1 →
-        inhomogeneousTriangularTheta pₕ pᵥ pₑ = 0) ∧
-      (1 < inhomogeneousTriangularCriticalPolynomial pₕ pᵥ pₑ →
-        0 < inhomogeneousTriangularTheta pₕ pᵥ pₑ) := by
-  exact ⟨fun h ↦ (inhomogeneousTriangularTheta_eq_zero_iff hpₕ hpᵥ hpₑ).2 h,
-    fun h ↦ (inhomogeneousTriangularTheta_pos_iff hpₕ hpᵥ hpₑ).2 h⟩
 
 end Percolation

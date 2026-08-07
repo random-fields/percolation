@@ -66,7 +66,7 @@ theorem brickFacetKind_card (d : ℕ) :
   simp
   ring
 
-example : Fintype.card (BrickFacetKind 3) = 12 := by native_decide
+example : Fintype.card (BrickFacetKind 3) = 12 := by decide
 
 /-- Placement of a brick by a cubic-lattice graph automorphism.  Concrete explorations use the
 translation and signed-coordinate-permutation isomorphisms from `CubicSymmetry`. -/

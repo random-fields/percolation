@@ -1,9 +1,0 @@
-import Percolation.Critical.LSSGoodBlocks
-
-#print axioms Percolation.stochasticallyDominates_of_finiteCylinder_measureReal_le
-#print axioms Percolation.sequentialLowerBound_stochasticallyDominates
-#print axioms Percolation.lss_stochasticallyDominates
-#print axioms Percolation.exists_lssDominationDensity
-#print axioms Percolation.cubic_lss_stochasticallyDominates'
-#print axioms Percolation.exists_cubic_lssDominationDensity
-#print axioms Percolation.epsilonGoodBlockLaw_lss_stochasticallyDominates

@@ -53,37 +53,6 @@ private theorem squareCriticalBarrierLowerBound_le_rswExpression
     (pow_nonneg (by norm_num) 48)
     (pow_nonneg hr0 12)
 
-/-- Every shifted critical annulus has a uniformly positive closed-barrier probability at
-density `1/2`. -/
-theorem squareCriticalBarrierLowerBound_le_probability (k : ℕ) :
-    squareCriticalBarrierLowerBound ≤
-      (bernoulliBondMeasure 2 squareHalfDensity).real
-        (expandedCriticalAnnulusBarrierEvent k) := by
-  let l := expandedCriticalAnnulusScale k
-  let r := rswSquareCrossingProbability squareHalfDensity l
-  have hl16 : 16 ≤ l := by
-    simpa [l] using expandedCriticalAnnulusScale_ge_sixteen k
-  have hl1 : 1 ≤ l := one_le_pow₀ (by omega : 1 ≤ (4 : ℕ))
-  have hl2 : 2 ≤ l := by omega
-  have hr : 1 / 16 ≤ r := by
-    exact one_sixteenth_le_rswSquareCrossingProbability_half l (by omega)
-  have hr1 : r ≤ 1 := measureReal_le_one
-  calc
-    squareCriticalBarrierLowerBound ≤
-        r ^ 12 * (1 - Real.sqrt (1 - r)) ^ 48 :=
-      squareCriticalBarrierLowerBound_le_rswExpression hr hr1
-    _ ≤ rswAnnulusOpenCircuitProbability squareHalfDensity l := by
-      simpa [r] using
-        rswAnnulusOpenCircuitProbability_ge squareHalfDensity l hl1
-    _ ≤ (bernoulliBondMeasure 2 squareHalfDensity).real
-        (squareAnnulusBarrierEvent (l - 2) (3 * l + 2)) :=
-      rswAnnulusOpenCircuitProbability_le_half_expandedBarrier hl2
-    _ = (bernoulliBondMeasure 2 squareHalfDensity).real
-        (expandedCriticalAnnulusBarrierEvent k) := by
-      rfl
-
-/-- **Grimmett, Lemma 11.12.** There is no infinite open origin cluster in the square lattice
-at the self-dual density `1/2`. -/
 theorem theta_two_half_eq_zero : theta 2 squareHalfDensity = 0 :=
   theta_two_half_eq_zero_via_strictDualCrossing
 

@@ -372,7 +372,7 @@ private theorem fourCycle_trueCorner_connection :
       let y := fourSideTrueCorner v j
       x = y ∨ fourCycleAdj x y ∨
         ∃ m, v m = true ∧ fourCycleAdj x m ∧ fourCycleAdj m y := by
-  native_decide
+  decide
 
 /-- The four corners of a square cell in cyclic order. -/
 private def squareCellIndexedCorner (z : DualSquareVertex) : Fin 4 → SquareVertex :=

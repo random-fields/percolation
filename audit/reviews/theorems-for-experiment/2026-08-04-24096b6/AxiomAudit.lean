@@ -1,5 +1,0 @@
-import Percolation.TheoremsForExperiment
-
-#print axioms Percolation.grimmett_theorem_3_7
-#print axioms Percolation.grimmett_theorem_11_70
-#print axioms Percolation.duminilCopin_proposition_2_14

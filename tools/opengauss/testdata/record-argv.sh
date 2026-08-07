@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-for argument in "$@"; do
-  printf '%s\n' "$argument"
-done

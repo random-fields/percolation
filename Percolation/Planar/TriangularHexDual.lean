@@ -8,8 +8,8 @@ each unit square.  Its triangular faces come in two orientations.  We index a fa
 in `Z^2` and a Boolean orientation; the three neighbors of a face are obtained by toggling the
 orientation and applying one of three explicit anchor shifts.
 
-This coordinate model is intended for the standard-only Peierls proof used by
-`TheoremsForExperiment`.  In particular, the direction label is retained: after the first step a
+This coordinate model is intended for a standard-only Peierls proof.  In particular, the
+direction label is retained: after the first step a
 non-backtracking hexagonal walk has only two choices, and six consecutive turns in one direction
 close a hexagon.
 -/

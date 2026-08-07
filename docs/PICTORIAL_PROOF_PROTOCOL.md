@@ -1,463 +1,272 @@
 # Pictorial proof protocol
 
-This protocol applies whenever a theorem, definition, or proof refers to a figure or relies on
-visual language such as “clearly surrounds”, “must cross”, “as in the picture”, “leftmost”,
-“lowest”, “inside”, “outside”, “above”, or an unstated Jordan-curve argument.
+Use this whenever a proof leans on a figure or on visual language — "clearly surrounds", "must
+cross", "as in the picture", "leftmost", "lowest", "inside", "outside", or an unstated
+Jordan-curve step.
 
-The protocol is deliberately broader than planar separation. A figure may encode coordinates,
-incidence, symmetry, a gluing construction, a stopping rule, coordinate independence, a
-commutative diagram, or only intuition. The first task is to determine which role it plays.
+> A picture may identify a conjectured finite certificate. It is never itself a Lean proof object.
 
-The governing principle is:
+**What this protocol is for.** It is a correctness gate, not a proving accelerator. It earns its
+cost by catching a wrong transcription before you build on it, and by naming the exact obligation
+that is missing. Once the model survives falsification, stop expanding documents and go prove
+Lean. Expanding this protocol's artifacts is not progress on the mathematics.
 
-> A picture may identify a conjectured finite certificate, but it is never itself a Lean proof
-> object.
+## Natural language versus Lean
 
-For a proof-bearing figure, replace every visual inference by an explicit statement about
-coordinates, finite vertices or edges, walks, reachability, order, parity, maps, or disjoint
-supports. Record that replacement in the source-to-formal comparator trail.
+These are two distinct artifacts and must not be blurred.
 
-## Fast path for an autoformalizing agent
+| | Natural language | Lean |
+|---|---|---|
+| Lives in | `docs/<target>/PROOF_EXPANSION.md` | `Percolation/…` |
+| Says | what is true and why, in full prose | the machine-checked statement |
+| Quantifiers | may be implicit | always explicit |
+| "Obvious" allowed | never, but prose steps are permitted | nothing is implicit |
+| Failure means | the mathematics is wrong or incomplete | the mathematics *or* the encoding is wrong |
 
-Run this decision procedure before editing Lean.
+Write the natural-language proof **first and completely**. A visual obligation you cannot state
+in a paragraph of English you cannot state in Lean either.
 
-1. Locate every figure cited in the proof and the sentences that use it.
-2. Classify each figure using the table below.
-3. For every proof-bearing figure, create visual obligations `V1`, `V2`, and so on. Each
-   obligation has explicit hypotheses, a precise conclusion, and one downstream use.
-4. Freeze the coordinate and boundary conventions. Do not infer them from apparent scale,
-   angle, spacing, color, or drawing accuracy.
-5. Try to falsify each obligation on the smallest legal instances and on nearby degenerate
-   instances.
-6. Search Mathlib and the local repository for the exact deterministic API.
-7. Choose the smallest certificate from the replacement ladder below.
-8. Prove deterministic geometry before defining or estimating probabilities.
-9. Compile the application that recovers the source step, audit axioms and sorries, and update
-   the comparator record.
+### Translating a natural-language step into Lean
 
-If a coordinate convention, boundary rule, or visual implication is genuinely ambiguous, stop
-with status `BLOCKED_SOURCE_AMBIGUITY`. Do not silently select the interpretation that is easiest
-to prove.
+For each prose step, in this order:
+
+1. **Name the objects.** Every "the region below γ", "the first crossing" becomes a named finite
+   object — a `Finset`, a `Walk`, a function of an index. If you cannot name it without the
+   picture, the step is not yet a statement.
+2. **Fix the quantifiers.** Decide `∀`/`∃`, and whether existence or *canonical choice* is meant.
+   Source existence never becomes Lean uniqueness because the picture draws one object.
+3. **Fix the types.** `ℕ` vs `ℤ` vs `ℝ` vs `I`; vertices vs faces; walks vs paths; strict vs
+   non-strict; inclusive vs exclusive boundary; primal vs dual.
+4. **State the conclusion as the weakest thing the next step consumes.** Not the strongest thing
+   the picture suggests.
+5. **Write the statement with `sorry` and compile it.** A statement that does not elaborate is not
+   a statement. Do this before attempting any proof.
+6. **Record the pair** — prose step ↔ Lean declaration — in the expansion document.
+
+If prose and Lean diverge, one of them is wrong. Fix the prose too; do not let the document drift
+from the code.
 
 ## Figure classification
 
-Every figure in scope receives one of these classifications.
+Classify every figure in scope. A figure may carry several roles — split it into separate
+obligations rather than giving the whole picture one vague reading.
 
 | Class | Meaning | Required action |
 |---|---|---|
-| `ILLUSTRATIVE_ONLY` | The prose proof is complete without the figure. | Record why no formal obligation comes from it. |
-| `DEFINITIONAL` | The figure fixes notation, coordinates, orientation, or boundary pieces. | Transcribe those conventions and test them on concrete points. |
-| `WITNESS_CONSTRUCTION` | The figure shows how to trim, concatenate, reflect, or select witnesses. | State the construction as a finite function or existence lemma with invariants. |
-| `INCIDENCE_OR_SEPARATION` | The proof uses “meets”, “crosses”, “surrounds”, “blocks”, or “lies on one side”. | Replace it by reachability, a cut, parity, or a finite intersection lemma. |
-| `SYMMETRY_OR_TRANSPORT` | The figure identifies objects after translation, rotation, reflection, duality, or complementation. | Define the map and prove its action on vertices, edges, events, and measure. |
-| `SELECTION_OR_STOPPING` | The proof conditions on a lowest, leftmost, first, last, or outermost object. | Define the finite candidate family, deterministic selector, fibers, and support locality. |
-| `DEPENDENCY_SCHEMATIC` | The picture suggests that events use separate randomness. | Prove exact coordinate supports and their disjointness; the drawn separation is insufficient. |
-| `COMMUTATIVE_DIAGRAM` | The argument is equality of composites or a universal property. | State every object and arrow and prove the path equalities; geometry is irrelevant. |
-| `PLOT_OR_SIMULATION` | The figure presents numerical or experimental evidence. | Do not extract an exact theorem unless the surrounding text states one. |
-
-A single figure may have several classes. Split it into separate visual obligations rather than
-giving the whole figure one vague interpretation.
-
-## Producer and reviewer separation
-
-For a substantial proof-bearing figure, use a fresh proof-expansion reviewer when the host
-supports independent agents. Give the reviewer the source pages, theorem context, transcription
-sheet, and proposed visual obligations, but do not prompt it to confirm the producer's intended
-proof. Its first pass is read-only and must:
-
-- restate the visual claim without using “obvious” geometric language;
-- expose hidden boundary, simplicity, finiteness, and nondegeneracy hypotheses;
-- try to falsify the claim on the smallest boxes;
-- search for a smaller finite certificate;
-- distinguish a false statement from a missing proof;
-- return its report before suggesting repairs.
-
-The producing agent may continue when no independent-agent facility exists, but must record
-`independent review unavailable`; a producer's second reading is not independent. If
-[`AUTOMATED_REVIEW.md`](../AUTOMATED_REVIEW.md) applies, its independent-review release gate still
-has to be satisfied.
-
-## Phase 1: freeze the source evidence
-
-Record the following before proposing Lean declarations:
-
-- source id, edition or revision, printed page, PDF page, figure number, and caption;
-- the exact surrounding sentences that invoke the figure;
-- the theorem hypotheses already in force at that point;
-- which parts of the figure are defined by prose or a legend;
-- which apparent features are merely artistic and must not be used;
-- the precise later step that consumes the visual claim.
-
-OCR is only a navigation aid. Verify symbols, strict inequalities, subscripts, open or closed
-endpoints, and orientations against the rendered page. If the image conflicts with the prose,
-record the conflict and treat the mathematical statement as ambiguous until resolved.
-
-If a proof-bearing figure is unavailable, illegible, or missing a referenced panel, use status
-`BLOCKED_SOURCE_AMBIGUITY`. Do not reconstruct it from memory or from a later author's redraw.
-Treat every panel of a multi-panel figure separately when the proof uses different implications
-from different panels.
-
-### Figure transcription sheet
-
-For a geometric or combinatorial figure, explicitly fill in:
-
-- ambient type: for example `Z^2`, a finite graph, faces, primal edges, or shifted-dual edges;
-- coordinate axes, origin, orientation, units, translation, and scaling;
-- exact vertex region and edge region;
-- all named sides, corners, ports, boxes, annuli, and overlap regions;
-- inclusive versus exclusive boundaries;
-- whether paths may use boundary edges and whether endpoints may coincide;
-- open/closed, primal/dual, occupied/vacant, and orientation conventions;
-- every symmetry map used and its fixed points;
-- every asserted disjointness relation;
-- the smallest permitted scale.
-
-Never infer any of the following solely from a drawing:
+| `ILLUSTRATIVE_ONLY` | Prose is complete without it. | Record why no obligation follows. |
+| `DEFINITIONAL` | Fixes notation, coordinates, orientation, boundaries. | Transcribe conventions; test on concrete points. |
+| `WITNESS_CONSTRUCTION` | Shows how to trim, concatenate, reflect, or select. | State as a finite function or existence lemma with invariants. |
+| `INCIDENCE_OR_SEPARATION` | Uses "meets", "crosses", "surrounds", "blocks", "one side of". | Replace by reachability, a cut, parity, or finite intersection. |
+| `SYMMETRY_OR_TRANSPORT` | Identifies objects after a map. | Define the map; prove its action on vertices, edges, events, measure. |
+| `SELECTION_OR_STOPPING` | Conditions on a lowest, leftmost, first, last, or outermost object. | See [`STOPPING_SETS.md`](STOPPING_SETS.md) — this class has its own checklist and its own failure modes. |
+| `DEPENDENCY_SCHEMATIC` | Suggests events use separate randomness. | Prove exact coordinate supports and disjointness. Drawn separation proves nothing. |
+| `COMMUTATIVE_DIAGRAM` | Equality of composites or a universal property. | State objects and arrows; prove path equalities. Geometry is irrelevant. |
+| `PLOT_OR_SIMULATION` | Numerical or experimental evidence. | Extract no exact theorem unless the text states one. |
 
-- equality of lengths, angles, or probabilities;
-- tangency, uniqueness, simplicity, or connectedness;
-- disjointness of paths or coordinate supports;
-- a path being inside a region between its endpoints;
-- an exhaustive list of cases;
-- preservation of an event under a visual symmetry;
-- which side of a boundary is open or closed.
+## Phases
 
-## Phase 2: extract atomic visual obligations
+Each phase has one output and one gate. Do not pass a failed gate.
 
-Start from the downstream theorem, not from the strongest claim suggested by the picture. Ask:
+### Phase 1 — Extract the image
 
-> What is the weakest deterministic statement that makes the next non-visual proof line valid?
+Read the figure and write down what it actually says, before interpreting it.
 
-Create a ledger with one row per atomic inference.
+Record: source id, edition, printed and PDF page, figure number, caption; the exact sentences
+that invoke it; the hypotheses already in force; which features are defined by prose or legend;
+which are artistic; and the precise later step that consumes the visual claim.
 
-| Id | Source phrase or feature | Explicit hypotheses | Exact conclusion | Downstream use | Status |
-|---|---|---|---|---|---|
-| `V1` | “the paths must meet” | endpoints, regions, graph, boundary order | supports intersect | concatenate witnesses | target |
-| `V2` | reflected placement in figure | exact affine map and region inequalities | mapped path stays in target region | apply symmetry | target |
+For a geometric figure also fix: ambient type; axes, origin, orientation, scale; exact vertex and
+edge regions; named sides, corners, boxes, annuli; inclusive vs exclusive boundaries; whether
+paths may use boundary edges; open/closed, primal/dual, occupied/vacant conventions; every
+symmetry map and its fixed points; every asserted disjointness; the smallest legal scale.
 
-Do not combine deterministic geometry, measurability, independence, FKG, and numerical algebra in
-one obligation. A typical figure produces several declarations:
+Never read off a drawing: equal lengths or angles; tangency, uniqueness, simplicity,
+connectedness; disjointness of paths or supports; that a path stays inside a region; an exhaustive
+case list; preservation of an event under a visual symmetry; which side of a boundary is closed.
 
-1. coordinate membership;
-2. witness trimming or transport;
-3. deterministic incidence or event inclusion;
-4. finite support and measurability;
-5. independence, FKG, or measure transport;
-6. the numerical consequence.
+OCR is a navigation aid only — verify symbols, inequalities, subscripts and endpoints against the
+rendered page. If the image contradicts the prose, record the conflict and treat the statement as
+ambiguous.
 
-### Statement-safety checks
+> **Gate 1.** Citation, classification, conventions, and consuming step are recorded. If a figure
+> is missing, illegible, or genuinely ambiguous, stop and say so. Do not reconstruct it from
+> memory or pick the reading that is easiest to prove.
 
-For every proposed obligation, compare:
+### Phase 2 — Replace the image with a statement
 
-- all source quantifiers and all new Lean quantifiers;
-- natural, integer, real, and unit-interval domains;
-- strict and non-strict boundaries;
-- paths versus walks, simple paths versus arbitrary walks, and vertices versus faces;
-- finite versus infinite objects;
-- primal versus dual edge states;
-- existence versus uniqueness or canonical choice;
-- an event inclusion versus an event equality;
-- the source scale range and Lean behavior at scale zero.
+Ask, for each visual inference:
 
-If the source uses only existence, do not add uniqueness because the picture appears to show one
-object. If the downstream argument uses only a barrier, do not formalize a unique surrounding
-cycle merely because one is drawn.
+> What is the **weakest** deterministic statement that makes the next non-visual line valid?
 
-## Phase 3: falsify before proving
+Work backwards from the downstream theorem, never forwards from the strongest claim the picture
+suggests. Give each inference an id, explicit hypotheses, an exact conclusion, and exactly one
+downstream use. Keep them atomic — do not mix geometry, measurability, independence and
+arithmetic in one obligation. A single figure typically yields: coordinate membership; witness
+trimming or transport; deterministic incidence; finite support and measurability; independence or
+transport; the numerical consequence.
 
-Try to break the proposed deterministic statement before investing in its proof.
+> **Gate 2.** Every visual inference has an id, an exact statement in English, and a named
+> downstream consumer. Deleting the figure now loses nothing.
 
-1. Check scale `0`, scale `1`, width-one rectangles, empty side sets, coincident corners, and
-   touching inner and outer boundaries.
-2. Reverse orientations and swap endpoints.
-3. Allow a walk to repeat vertices or edges unless simplicity is an explicit hypothesis.
-4. Put a path along the boundary and check whether the claimed intersection still follows.
-5. Distinguish vertex intersection, edge intersection, and primal/dual geometric crossing.
-6. Check whether “disjoint regions” actually implies disjoint edge-coordinate supports.
-7. Enumerate all configurations on a very small finite edge set when this is cheap.
+### Phase 3 — Sanity-check the edge cases in Lean
 
-Prefer compiling Lean regression examples for discovered boundary behavior. Computation with
-`decide` or `native_decide` may test a finite model, but passing examples never proves the general
-claim. One checked counterexample is decisive and must be recorded.
+Try to break each statement before investing in a proof. Compile the definitions and statements
+so far and test them at: scale `0` and `1`; width-one rectangles; empty side sets; coincident
+corners; touching inner and outer boundaries; reversed orientation; swapped endpoints; walks that
+repeat vertices; paths running along the boundary.
 
-Add source-compatible hypotheses only when the source genuinely supplies them. Otherwise weaken
-or reject the proposed obligation.
+Distinguish vertex, edge, and primal/dual crossing. Check whether "disjoint regions" really gives
+disjoint edge-coordinate supports. Enumerate a very small finite configuration set when cheap.
 
-## Phase 4: search before designing new geometry
+`decide` on a finite model tests; it never proves the general claim. **One checked counterexample
+is decisive** — record it, then weaken or reject the obligation. Add hypotheses only when the
+source genuinely supplies them.
 
-Search Mathlib and the local repository before naming or implementing a lemma. Search by concept,
-type signature, and neighboring declarations, not only by the source's terminology.
+> **Gate 3.** Degenerate and small instances checked; counterexamples recorded as regression
+> examples; surviving statements elaborate in Lean.
 
-For this repository, inspect at least the relevant parts of:
+### Phase 4 — Look for existing API
 
-- `Percolation/Planar/` for crossings, duality, parity, graph isomorphisms, and annuli;
-- graph walk APIs for `takeUntil`, `dropUntil`, `append`, support, edges, and `toPath`;
-- finite reachability, cuts, connected components, degree parity, and cycle extraction;
-- `DependsOn`, finite-coordinate measurability, independence, and measure transport;
-- translations, reflections, rotations, complementation, and primal/dual edge equivalences.
+Search Mathlib and this repository before naming anything new. Search by concept, by type
+signature, and by neighbouring declarations — not only by the source's vocabulary.
 
-Useful local architectures include `AlternatingPaths.lean` for mod-two intersection and the
-finite frontier construction used by the planar Peierls development. Reuse the architecture, not
-unverified declaration names. Every name in the proof-expansion artifact must be marked either
-`verified existing` or `proposed`.
+Record what you find in **`docs/<target>/GEOMETRY_API.md`**: for each declaration, its exact Lean
+statement and *how it is used geometrically* — what picture-level move it performs. This file is
+the point of the phase; keep it current as later phases add new geometry.
 
-## Phase 5: choose the smallest finite certificate
+Mark every name in your expansion either `verified existing` (you compiled it) or `proposed`.
+Reuse architecture, not remembered names.
 
-Use the first rung that proves the required downstream consequence.
+> **Gate 4.** `GEOMETRY_API.md` exists and every cited name is verified or explicitly proposed.
 
-### 1. Coordinate normalization and explicit maps
+### Phase 5 — Find the simplest proof
 
-Many figures hide only arithmetic. Define the translation, quarter-turn, reflection, scaling, or
-dual-edge map. Prove pointwise formulas, region membership, adjacency preservation, and the image
-of each named side. Do not jump directly to a probability symmetry theorem.
+Prove the specific thing you need. Do not develop a general theory first.
 
-### 2. First-hit and last-exit trimming
+Take the first rung that discharges the downstream consequence:
 
-Replace a ray or loosely drawn path by a finite subwalk. Choose a finite endpoint outside the
-relevant box, retain the segment from its last visit to the inner region to its first visit to the
-outer boundary, and prove every retained vertex and edge lies in the intended support.
-
-### 3. Finite reachability and flood fill
-
-Define “inside”, “below”, “left of”, or “reachable from the boundary” using reachability in a
-finite induced graph after deleting the proposed separator. Its edge boundary is a concrete
-finite set. This is the preferred representation of a lowest or leftmost region.
-
-### 4. Local even-degree parity
-
-Around a square cell, membership in a vertex predicate changes zero, two, or four times. Use this
-to show a finite frontier has even degree at interior dual vertices and explicit odd boundary
-ports. Extract paths or cycles from the resulting finite graph.
-
-### 5. Mod-two intersection
-
-When paths have alternating boundary endpoints, define a parity index along one path. Show it
-changes exactly when an edge crosses the other path. Different endpoint parities force an
-intersection. Reuse the architecture in `Percolation/Planar/AlternatingPaths.lean`.
-
-### 6. Graph-theoretic extraction
-
-Use finite components, cuts, even-degree graphs, bridges, cycle decomposition, and walk
-normalization. If a closed walk is enough, do not first prove the existence of a unique simple
-cycle. If a path is needed, erase loops with `Walk.toPath` only after preserving the required
-support and endpoint facts.
-
-### 7. Weaken to the actual downstream consequence
-
-Examples:
-
-- replace “there is a unique surrounding simple cycle” by “every inner-to-outer path intersects
-  one of these four dual crossings”;
-- replace a full numerical RSW formula by a positive scale-uniform crossing bound when that is
-  all the theorem uses;
-- replace a global four-infinite-arm separation theorem by finite annular barriers;
-- replace an informal trace bijection by an explicit complement/dual/rotation involution on a
-  finite edge set.
-
-### 8. General topology only as a last resort
-
-Do not add a discrete Jordan curve theorem, winding-number library, or global embedding theorem
-until the finite alternatives above have been exhausted. A proposal for a larger topological
-primitive must:
-
-- state the exact finite consequence that could not be obtained elementarily;
-- explain why every earlier rung is insufficient;
-- identify all embedding and nondegeneracy hypotheses;
-- include small-instance falsification attempts;
-- receive an independent read-only review before it becomes a project axiom or trusted boundary.
-
-Never axiomatize the final probability inequality merely because its deterministic picture is
-hard. At most isolate the smallest true deterministic incidence lemma.
-
-## Phase 6: design the Lean declaration bundle
-
-The useful unit of autoformalization is normally a small interface, not one giant theorem.
-
-### Deterministic layer
-
-Define, as needed:
-
-- the finite vertex and edge regions;
-- named side and corner finsets;
-- normalized witness types or predicates;
-- coordinate transformations;
-- first-hit, last-exit, reflection, or concatenation constructions;
-- reachability regions and frontier edge sets;
-- incidence, separation, parity, and event-inclusion lemmas.
-
-Prove the deterministic target in a file that does not import probability merely for convenience.
-This makes false geometry easier to detect and the result reusable.
-
-### Event and probability layer
-
-Only after the deterministic inclusion builds, add:
-
-- the event definition as existence of a finite witness;
-- a finite `DependsOn` support;
-- measurability;
-- exact disjointness of coordinate supports;
-- symmetry or measure transport;
-- independence or FKG;
-- finite union, disjoint-union, or summation identities;
-- numerical inequalities.
-
-Do not prove probability algebra around an unproved geometric inclusion. A compiling probability
-shell with an axiomatized picture is not progress on the pictorial step.
-
-## Common proof recipes
-
-### Crossing and gluing figures
-
-For a figure claiming that several crossings create a larger crossing:
-
-1. extract normalized finite witness walks from each event;
-2. trim them to the overlap region;
-3. prove the required pairwise intersections by alternating endpoints or an existing incidence
-   lemma;
-4. choose explicit first intersection vertices;
-5. take the necessary subwalks, append them, and prove openness edge by edge;
-6. prove the appended support lies in the target region;
-7. use `toPath` only if the target event requires a path;
-8. package the construction as an event inclusion;
-9. apply FKG or independence in a later theorem.
-
-The phrase “the crossings can clearly be joined” hides steps 2--7.
-
-### Surrounding circuits and barriers
-
-First ask whether the downstream proof needs a circuit or merely a barrier. Four transverse
-crossings may directly imply that every radial path meets a dual closed edge. If an actual cycle
-is required, concatenate to a finite closed walk, prove odd ray-crossing parity, decompose the
-even-degree graph into cycles, and select an odd component.
-
-### Infinite paths and arms
-
-Never reason directly from how an infinite ray is drawn. Choose a finite outer scale, select a
-finite path to a vertex outside it, trim by last exit and first hit, prove the finite annular
-statement, and only then quantify over scales or pass to an intersection of events.
-
-### Symmetry, reflection, and duality figures
-
-Provide an explicit vertex equivalence, its induced edge equivalence, the configuration map, and
-the event preimage or image theorem. Then prove that the measure is preserved or transported.
-Visual congruence of rectangles does not imply equality of events without this chain.
-
-## Canonical crossing and stopping-set checklist
-
-A lowest, leftmost, first, last, highest, or outermost-path argument is incomplete until all of
-the following are formalized:
-
-- a finite type or finset of candidate normalized paths;
-- existence of a candidate on the source event;
-- a deterministic order, reachable-side region, or tie-breaking rule;
-- existence and uniqueness of the selected normalized path;
-- an exact characterization of the fiber `{selectedPath = P}`;
-- a finite `DependsOn` support for that fiber event;
-- a proof that the extension event uses a disjoint coordinate support;
-- measurability and the resulting independence or conditional identity;
-- a finite disjoint-union or summation theorem over all possible selected paths.
-
-A lexicographically least path is not automatically a valid lowest path: its fiber must have the
-locality property needed by the probability argument. The phrase “condition on the leftmost
-crossing” is never accepted as one informal step.
-
-## Phase gates
-
-Do not advance past a failed gate.
-
-| Gate | Required evidence |
-|---|---|
-| `G0 Source` | Figure classification, exact citation, surrounding text, and conventions are recorded. |
-| `G1 Obligations` | Every visual inference has an atomic `V`-id, exact statement, and downstream use. |
-| `G2 Falsification` | Degenerate cases and small legal instances were checked; counterexamples are recorded. |
-| `G3 API` | Existing declarations were searched and verified; proposed names are labeled proposed. |
-| `G4 Deterministic` | Coordinate, trimming, incidence, separation, or parity lemmas compile without probability shortcuts. |
-| `G5 Event` | Event inclusion, finite support, and measurability compile. |
-| `G6 Probability` | Independence/FKG/transport hypotheses are explicit and the numerical consequence compiles. |
-| `G7 Trust` | Relevant builds pass; sorry/admit and transitive axiom audits are recorded. |
-| `G8 Comparator` | The source-to-formal trail states all encoding differences and recovers the source step. |
-
-For a figure classified `ILLUSTRATIVE_ONLY`, only `G0` and a short justification are required.
-For a definition-only figure, use `G0`, the relevant part of `G1`, and concrete transcription
-tests. All proof-bearing figures require every applicable gate.
-
-## Required proof-expansion artifact
-
-For each substantial proof-bearing figure, add a document under `docs/<target>/`. Use this
-minimum structure:
-
-```text
-# Pictorial proof expansion for <target>
-
-## Source evidence
-source id, pages, figures, caption, invoking prose
-
-## Figure classification and transcription
-role, coordinates, regions, boundaries, states, symmetries
-
-## Visual-obligation ledger
-V-id, hypotheses, conclusion, downstream use, status
-
-## Falsification record
-degenerate instances, finite enumeration, rejected stronger statements
-
-## Finite rigorous proof
-one subsection per V-id
-
-## Lean interface
-verified existing declarations and clearly labeled proposed declarations
-
-## Dependency and implementation order
-deterministic layer, event layer, probability layer
-
-## Review and trust
-builds, sorry scan, #print axioms, reviewer findings, remaining boundary
-```
-
-The artifact must also state:
-
-- elementary alternatives considered and why the selected certificate is smallest;
-- any divergence from the source picture;
-- counterexamples to tempting stronger formulations;
-- an axiom-discharge plan if a true statement remains external.
-
-For a substantial new topological primitive, canonical stopping-set construction, or proposed
-axiom, obtain a fresh read-only proof-expansion review. When an independent agent is unavailable,
-record that limitation; do not call a producer's second pass independent. The independent report
-must be preserved before repairs, following
-[`AUTOMATED_REVIEW.md`](../AUTOMATED_REVIEW.md) when that protocol applies.
-
-## Status vocabulary
-
-Use precise status labels in the artifact and comparator record:
-
-- `ILLUSTRATIVE_ONLY`: no proof step depends on the figure;
-- `TRANSCRIBED`: definitions and coordinate conventions are formalized;
-- `DETERMINISTIC_COMPLETE`: every visual incidence or construction lemma is proved;
-- `FORMALIZED`: deterministic, event, probability, trust, and comparator gates pass;
-- `BLOCKED_SOURCE_AMBIGUITY`: the source does not determine a necessary convention;
-- `BLOCKED_MISSING_GEOMETRY`: an exact true deterministic lemma remains unproved;
-- `REJECTED_FALSE`: a proposed visual inference has a counterexample;
-- `PROVED_MODULO_NAMED_AXIOM`: only a specifically cited and vetted true axiom remains.
-
-Do not label a theorem `FORMALIZED` when only the probability algebra builds, when the decisive
-event inclusion is an axiom, or when the picture was translated into a stronger unreviewed claim.
-
-## Final completion checklist
-
-A proof-bearing figure is discharged only when:
-
-- every visual obligation has a proved Lean declaration or an explicit accepted disposition;
+1. **Coordinate normalization** — define the translation, rotation, reflection, or dual map; prove
+   pointwise formulas, region membership, adjacency, and images of named sides.
+2. **First-hit / last-exit trimming** — replace a loosely drawn or infinite path by a finite
+   subwalk between explicit stopping vertices; prove the retained support.
+3. **Finite reachability** — define "inside", "below", "left of" as reachability in a finite graph
+   after deleting a separator. Its edge boundary is a concrete finite set. Preferred for any
+   lowest or leftmost region.
+4. **Local parity** — around a square cell, a vertex predicate changes 0, 2, or 4 times; use it
+   for even degree at interior dual vertices and explicit odd boundary ports.
+5. **Mod-two intersection** — with alternating boundary endpoints, a parity index along one path
+   changes exactly at crossings; different endpoint parities force an intersection.
+6. **Graph extraction** — finite components, cuts, cycle decomposition, walk normalization. If a
+   closed walk suffices, do not prove a unique simple cycle exists.
+7. **Weaken to what is actually consumed** — replace "there is a unique surrounding cycle" by
+   "every inner-to-outer path meets one of these four crossings"; replace an exact formula by the
+   bound the theorem uses.
+
+**General topology is the last resort.** Do not reach for a discrete Jordan curve theorem, winding
+number library, or embedding theorem until the rungs above are exhausted. In practice the finite
+substitute has always existed: where a Jordan argument is tempting, the missing ingredient is
+usually that the interface graph *forgets the local non-crossing pairing at degree-four cells* —
+encode that pairing explicitly instead.
+
+If a general statement really would settle it, **write it down as prose and record it in
+`DESIGN_DECISIONS.md`** as a candidate for later development. Do not axiomatize it to make the
+current proof compile. Never axiomatize the final probability inequality because its picture is
+hard; at most isolate the smallest true deterministic incidence lemma, and only with the owner's
+explicit approval.
+
+> **Gate 5.** The chosen certificate is the smallest that works, and the document says why each
+> earlier rung was insufficient.
+
+### Phase 6 — Deterministic geometry before any probability
+
+Prove the geometry in a file that does not import probability. Finite regions, side finsets,
+coordinate maps, trimming and concatenation constructions, reachability regions, frontier edge
+sets, incidence and separation lemmas.
+
+Only once the deterministic inclusion compiles, add: the event as existence of a finite witness;
+its finite support; measurability; exact disjointness of supports; symmetry or measure transport;
+independence or FKG; the finite summation; the numerical bound.
+
+A compiling probability shell wrapped around an unproved geometric inclusion is not progress.
+
+> **Gate 6.** Deterministic layer compiles with no probability import and no shortcuts. Then the
+> event and probability layers compile on top of it.
+
+### Phase 7 — When it does not work
+
+Failure is expected. Iterate rather than patching Lean around a broken idea.
+
+1. **Locate the failure in the prose.** Take the failing Lean goal and find which sentence of the
+   Phase 1–2 expansion it corresponds to. There is always one; if there is not, the expansion is
+   incomplete, and that is the bug.
+2. **Decide which is wrong** — the mathematics, or the encoding. If Lean rejects a step the source
+   asserts, look for a hidden hypothesis the picture supplied silently.
+3. **Repair the prose first**, using the Lean feedback. Update `PROOF_EXPANSION.md`, then re-enter
+   at the earliest phase the repair affects — usually Phase 2 or 3, not Phase 6.
+4. **Record the failed attempt** in `DESIGN_DECISIONS.md`, with the reason it failed. A rejected
+   approach is a result; the next agent must not spend the same hours rediscovering it.
+5. If the obstruction is a genuinely missing global theorem, say so precisely and stop. A
+   precisely identified blocker is a legitimate outcome. Generating more figure commentary is not.
+
+> **Gate 7.** Every failure is traced to a prose step; the prose is repaired; the attempt and its
+> reason are recorded.
+
+## Artifacts
+
+Three files per target, under `docs/<target>/`.
+
+**`PROOF_EXPANSION.md`** — the single source of truth for the natural-language proof.
+Source evidence and figure transcription; the obligation ledger (id, hypotheses, exact
+conclusion, downstream use, status); the falsification record; the full expanded prose proof, one
+section per obligation; and the **mapping from each prose step to its Lean declaration**. Phase 7
+updates this file — it must never fall behind the code. Have an independent agent verify the
+prose ↔ Lean mapping when the proof is substantial.
+
+**`GEOMETRY_API.md`** — Lean statements plus what each does geometrically. Started in Phase 4,
+extended whenever new reusable geometry is created. Prefer general, reusable statements over
+one-off lemmas *when the general form costs nothing extra*; Phase 5 still says prove the specific
+thing first.
+
+**`DESIGN_DECISIONS.md`** — every choice made in turning the picture into Lean, and why:
+encodings picked and rejected, divergences from the source picture, counterexamples to tempting
+stronger formulations, approaches that failed and the reason, and general statements worth
+developing later.
+
+## Review
+
+For any substantial proof-bearing figure, get a fresh reviewer that did not produce the expansion.
+Give it the source pages, the theorem context, and the expansion — but do **not** ask it to
+confirm the intended proof. Its first pass is read-only and must be preserved before any repair.
+
+A figure review is not an ordinary code review. It must:
+
+- restate each visual claim without geometric hand-waving;
+- check the transcription against the rendered page — coordinates, boundary inclusivity,
+  orientation, primal/dual, the smallest legal scale;
+- expose hidden simplicity, finiteness, and nondegeneracy hypotheses the picture supplied
+  silently;
+- attempt falsification on the smallest legal instances, and report explicit counterexample
+  witnesses;
+- check that each obligation is the *weakest* statement its downstream step needs;
+- verify the prose ↔ Lean mapping declaration by declaration;
+- separate "this is false" from "this is unproved" — the two demand different repairs;
+- report before proposing fixes.
+
+If no independent agent is available, record `independent review unavailable`. A producer's second
+reading is not independent.
+
+## Release
+
+A proof-bearing figure is discharged when every gate above has passed and:
+
+- every visual obligation has a proved Lean declaration or an explicitly accepted disposition;
 - the source theorem is recovered by a compiling application;
-- deterministic geometry is not hidden inside a probability axiom;
-- all witness supports, transformations, and boundary conventions are explicit;
-- degenerate scales and discovered counterexamples have regression coverage;
-- event support and measurability are explicit where probability is used;
-- independence, FKG, and symmetry claims use proved hypotheses;
-- file and relevant root builds pass;
-- sorry/admit scans and `#print axioms` have the intended result;
-- the comparator topic card records the figure replacement and all divergences;
-- stale axiom-ledger entries are updated.
+- no deterministic geometry is hidden inside a probability axiom;
+- discovered counterexamples have regression coverage;
+- the file and root builds pass, with `sorry`/`admit` scans and `#print axioms` recording the
+  intended result exactly;
+- `PROOF_EXPANSION.md`, `GEOMETRY_API.md`, and `DESIGN_DECISIONS.md` match the code.
 
-For Grimmett Theorem 11.11, the worked example is
-[`theorem-11.11/PICTORIAL_PROOF_EXPANSION.md`](theorem-11.11/PICTORIAL_PROOF_EXPANSION.md).
+Report the axiom closure exactly as Lean prints it. Do not describe a theorem as proved when only
+the probability algebra compiles, when the decisive inclusion is an axiom or `sorry`, or when the
+picture was silently strengthened.

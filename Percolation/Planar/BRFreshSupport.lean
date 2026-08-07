@@ -19,6 +19,10 @@ open scoped unitInterval
 
 noncomputable section
 
+local instance instDecidableRelBRFreshSupport (n : ℕ) :
+    DecidableRel (brLeftmostDualGraph n).Adj :=
+  Classical.decRel _
+
 /-- Translate the rectangle centered at height zero upward so that its center is `y=n`. -/
 def brExtensionRectangleTranslateIso (n : ℕ) : squareGraph ≃g squareGraph :=
   squareCrossingTranslateIso cubicOrigin (squareVertex 0 (n : ℤ))
@@ -104,6 +108,40 @@ def brSymmetricReachableFaceFiberSupport
     (n : ℕ) (R : Finset (BRLeftmostDualVertex n)) : Finset SquareEdge :=
   brReachableFaceFiberSupport n R ∪ brReflectedReachableFaceFiberSupport n R
 
+/-- Enlarging a reached-face set can only enlarge the finite set of queried primal bonds. -/
+theorem brReachableFaceFiberSupport_mono
+    {n : ℕ} {R H : Finset (BRLeftmostDualVertex n)} (hRH : R ⊆ H) :
+    brReachableFaceFiberSupport n R ⊆ brReachableFaceFiberSupport n H := by
+  intro e he
+  rw [brReachableFaceFiberSupport, Finset.mem_filter] at he ⊢
+  rcases Finset.mem_image.mp he.1 with ⟨d, _hdAttach, hde⟩
+  have hdH : d.1 ∈ finiteGraphIncidentEdges (brLeftmostDualGraph n) H := by
+    have hdR : d.1 ∈ finiteGraphIncidentEdges (brLeftmostDualGraph n) R := d.2
+    unfold finiteGraphIncidentEdges at hdR ⊢
+    rw [Finset.mem_biUnion]
+    rw [Finset.mem_biUnion] at hdR
+    rcases hdR with ⟨x, hxR, hdx⟩
+    exact ⟨x, hRH hxR, hdx⟩
+  let dH : {q // q ∈ finiteGraphIncidentEdges (brLeftmostDualGraph n) H} :=
+    ⟨d.1, hdH⟩
+  refine ⟨Finset.mem_image.mpr ⟨dH, by simp, ?_⟩, ?_⟩
+  · simpa [dH, brIncidentCrossedPrimalEdge, brIncidentDualEdge] using hde
+  · simpa [dH, brIncidentCrossedPrimalEdge, brIncidentDualEdge] using he.2
+
+/-- The symmetric queried support is monotone in the reached-face set. -/
+theorem brSymmetricReachableFaceFiberSupport_mono
+    {n : ℕ} {R H : Finset (BRLeftmostDualVertex n)} (hRH : R ⊆ H) :
+    brSymmetricReachableFaceFiberSupport n R ⊆
+      brSymmetricReachableFaceFiberSupport n H := by
+  intro e he
+  rw [brSymmetricReachableFaceFiberSupport, Finset.mem_union] at he ⊢
+  rcases he with he | he
+  · exact Or.inl (brReachableFaceFiberSupport_mono hRH he)
+  · right
+    rw [brReflectedReachableFaceFiberSupport, Finset.mem_map] at he ⊢
+    rcases he with ⟨q, hq, rfl⟩
+    exact ⟨q, brReachableFaceFiberSupport_mono hRH hq, rfl⟩
+
 @[simp]
 theorem mem_brReflectedReachableFaceFiberSupport_iff
     {n : ℕ} {R : Finset (BRLeftmostDualVertex n)} {e : SquareEdge} :
@@ -139,6 +177,15 @@ theorem brPrimalTopReflectionIso_mem_symmetricFiberSupport_iff
 def brFreshExtensionEdges
     (m n : ℕ) (R : Finset (BRLeftmostDualVertex n)) : Finset SquareEdge :=
   brExtensionRectangleEdges m n \ brSymmetricReachableFaceFiberSupport n R
+
+/-- Filling more explored faces leaves fewer fresh extension coordinates. -/
+theorem brFreshExtensionEdges_anti
+    (m : ℕ) {n : ℕ} {R H : Finset (BRLeftmostDualVertex n)} (hRH : R ⊆ H) :
+    brFreshExtensionEdges m n H ⊆ brFreshExtensionEdges m n R := by
+  intro e he
+  rw [brFreshExtensionEdges, Finset.mem_sdiff] at he ⊢
+  exact ⟨he.1, fun heR ↦ he.2
+    (brSymmetricReachableFaceFiberSupport_mono hRH heR)⟩
 
 /-- Reflection across the top of the source square preserves the fresh coordinate set. -/
 theorem brPrimalTopReflectionIso_image_freshExtensionEdges

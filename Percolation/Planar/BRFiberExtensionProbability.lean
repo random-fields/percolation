@@ -102,6 +102,44 @@ theorem brFiberExtensionProbability_mul_rswSquare_le_sourceX_of_event_eq
   exact brFiberExtensionProbability_mul_unreached_le_sourceX
     p m n Y hY hYlower hsubset
 
+/-- Generic uniform-lower-bound form of the stopped-fiber assembler.  This is the form used by
+the square-root trick, where the per-fiber fresh event has the nonlinear lower bound
+`1 - sqrt (1 - P(H))` rather than the elementary `P(H) / 2`. -/
+theorem brFiberExtensionProbability_mul_rswSquare_le_sourceX_of_uniform_lower
+    (p : I) (m n : ℕ) (q : ℝ)
+    (Y : Finset (BRLeftmostDualVertex n) → Set (EdgeConfiguration 2))
+    (hY : ∀ R ∈ brGoodReachableFaceFiberIndices n,
+      DependsOn (brFreshExtensionEdges m n R) (Y R))
+    (hYlower : ∀ R ∈ brGoodReachableFaceFiberIndices n,
+      q ≤ (bernoulliBondMeasure 2 p).real (Y R))
+    (hsubset :
+      (⋃ R ∈ brGoodReachableFaceFiberIndices n,
+        brReachableFaceFiber n R ∩ Y R) ⊆ brSourceXEvent m n)
+    (hunreached :
+      brRightTargetsUnreachedEvent n = brSquareVerticalCrossingEvent n) :
+    q * rswSquareCrossingProbability p n ≤
+      (bernoulliBondMeasure 2 p).real (brSourceXEvent m n) := by
+  rw [← bernoulliBondMeasure_real_brSquareVerticalCrossingEvent p n,
+    ← hunreached]
+  apply mul_measureReal_brRightTargetsUnreachedEvent_le_of_fiber_extensions
+    (bernoulliBondMeasure 2 p) n Y (brSourceXEvent m n) q
+  · exact fun R hR ↦ (hY R hR).measurableSet
+  · intro R hR
+    have hfiberNonneg :
+        0 ≤ (bernoulliBondMeasure 2 p).real (brReachableFaceFiber n R) :=
+      measureReal_nonneg
+    calc
+      q * (bernoulliBondMeasure 2 p).real (brReachableFaceFiber n R) ≤
+          (bernoulliBondMeasure 2 p).real (Y R) *
+            (bernoulliBondMeasure 2 p).real (brReachableFaceFiber n R) :=
+        mul_le_mul_of_nonneg_right (hYlower R hR) hfiberNonneg
+      _ = (bernoulliBondMeasure 2 p).real
+          (brReachableFaceFiber n R ∩ Y R) := by
+        rw [mul_comm]
+        exact (bernoulliBondMeasure_real_brReachableFaceFiber_inter_fresh_eq_mul
+          p m n R (hY R hR)).symm
+  · exact hsubset
+
 end
 
 end Percolation

@@ -264,7 +264,7 @@ theorem bernoulliBondMeasure_real_brUpperFreshExtensionEvent_eq_lower
 
 /-! ### A fresh lower arm gives the source `X(R)` event on its fiber -/
 
-private theorem walk_support_mem_rectangle_of_boundaryFree_edges
+theorem walk_support_mem_rectangle_of_boundaryFree_edges
     {m n : ℕ} {u v : SquareVertex} (w : squareGraph.Walk u v)
     (hv : v ∈ squareRectangleVertices m n)
     (hw : walkEdgeFinset w ⊆ squareBoundaryFreeRectangleEdges m n) :
@@ -280,7 +280,7 @@ private theorem walk_support_mem_rectangle_of_boundaryFree_edges
     exact endpoint_mem_squareRectangle_of_edge_mem
       (Finset.mem_filter.mp heAllowed).1 hze
 
-private theorem walkEdgeFinset_takeUntil_subset
+theorem walkEdgeFinset_takeUntil_subset
     {u v z : SquareVertex} (w : squareGraph.Walk u v) (hz : z ∈ w.support) :
     walkEdgeFinset (w.takeUntil z hz) ⊆ walkEdgeFinset w := by
   intro e he
@@ -288,7 +288,7 @@ private theorem walkEdgeFinset_takeUntil_subset
   rw [mem_walkEdgeFinset_iff]
   exact w.edges_takeUntil_subset hz he
 
-private theorem walkEdgeFinset_dropUntil_subset
+theorem walkEdgeFinset_dropUntil_subset
     {u v z : SquareVertex} (w : squareGraph.Walk u v) (hz : z ∈ w.support) :
     walkEdgeFinset (w.dropUntil z hz) ⊆ walkEdgeFinset w := by
   intro e he
@@ -296,7 +296,7 @@ private theorem walkEdgeFinset_dropUntil_subset
   rw [mem_walkEdgeFinset_iff]
   exact w.edges_dropUntil_subset hz he
 
-private theorem walkEdgeFinset_reverse_subset
+theorem walkEdgeFinset_reverse_subset
     {u v : SquareVertex} (w : squareGraph.Walk u v) :
     walkEdgeFinset w.reverse ⊆ walkEdgeFinset w := by
   intro e he

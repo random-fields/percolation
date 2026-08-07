@@ -220,20 +220,30 @@ private theorem exists_brSelectedPrimalWalk
         (brSelectedTopPort_mem hn hR)).1
 
 /-- A fixed primal bottom-to-top walk selected from the reached set `R`.  No configuration is an
-argument of this definition. -/
+argument of this definition.  Loop erasure makes the selected interface a genuine simple path;
+this is essential when its last visit to a horizontal cut is used as a stopping point. -/
 def brSelectedPrimalWalk
     {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
     (hn : 0 < n) (hR : BRAdmissibleSeparatingFiber n R) :
     squareGraph.Walk
       (brSelectedBottomPrimalVertex hn hR) (brSelectedTopPrimalVertex hn hR) :=
-  Classical.choose (exists_brSelectedPrimalWalk hn hR)
+  (Classical.choose (exists_brSelectedPrimalWalk hn hR)).toPath
+
+theorem brSelectedPrimalWalk_isPath
+    {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
+    (hn : 0 < n) (hR : BRAdmissibleSeparatingFiber n R) :
+    (brSelectedPrimalWalk hn hR).IsPath :=
+  (Classical.choose (exists_brSelectedPrimalWalk hn hR)).toPath.property
 
 theorem walkEdgeFinset_brSelectedPrimalWalk_subset_interface
     {n : ℕ} {R : Finset (BRLeftmostDualVertex n)}
     (hn : 0 < n) (hR : BRAdmissibleSeparatingFiber n R) :
     walkEdgeFinset (brSelectedPrimalWalk hn hR) ⊆
       brTruncatedInterfacePrimalEdges n R :=
-  Classical.choose_spec (exists_brSelectedPrimalWalk hn hR)
+  fun e he ↦ Classical.choose_spec (exists_brSelectedPrimalWalk hn hR)
+    ((mem_walkEdgeFinset_iff _ e).mpr
+      ((Classical.choose (exists_brSelectedPrimalWalk hn hR)).edges_toPath_subset
+        ((mem_walkEdgeFinset_iff _ e).mp he)))
 
 /-- Every retained crossed primal bond lies in the boundary-free square support. -/
 theorem brTruncatedInterfacePrimalEdges_subset_boundaryFree

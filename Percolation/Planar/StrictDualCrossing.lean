@@ -168,7 +168,7 @@ theorem measurableSet_grimmettRectangleFreshCrossingEventFour (n : ℕ) :
   exact (Finset.mem_filter.mp hs).1
 
 set_option maxHeartbeats 800000 in
-private theorem selectedGrimmettTraceExtendedWalkFour_isOpen
+theorem selectedGrimmettTraceExtendedWalkFour_isOpen
     {n : ℕ} {s : Finset SquareEdge} (hs : s ∈ grimmettRectangleCrossingTraces n)
     {omega : EdgeConfiguration 2}
     (hcyl : omega ∈ finiteCylinder (grimmettRectangleEdges n) s)
@@ -325,7 +325,7 @@ private theorem grimmettTraceExtendedWalkFour_edge_bounds
   · have h := strictDual_grimmettTraceExtendedWalkThree_edge_bounds W hthree hz
     omega
 
-private theorem grimmettTraceExtendedWalkFour_support_bounds
+theorem grimmettTraceExtendedWalkFour_support_bounds
     {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s)
     {z : SquareVertex} (hz : z ∈ (grimmettTraceExtendedWalkFour W).support) :
     (-2 : ℤ) ≤ z 0 ∧ z 0 ≤ (n + 3 : ℕ) ∧ 0 ≤ z 1 ∧ z 1 ≤ (n : ℤ) := by

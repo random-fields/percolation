@@ -580,7 +580,7 @@ theorem card_grimmettRectangleFreshExtensionEdgesThree
     card_grimmettRectangleFreshExtensionEdges n s hs]
 
 set_option maxHeartbeats 800000 in
-private theorem selectedGrimmettTraceExtendedWalkThree_isOpen
+theorem selectedGrimmettTraceExtendedWalkThree_isOpen
     {n : ℕ} {s : Finset SquareEdge} (hs : s ∈ grimmettRectangleCrossingTraces n)
     {ω : EdgeConfiguration 2}
     (hcyl : ω ∈ finiteCylinder (grimmettRectangleEdges n) s)
@@ -632,7 +632,7 @@ private theorem grimmettTraceExtendedWalkThree_edge_bounds
     · change e ∈ ([] : List (Sym2 SquareVertex)) at he
       simp at he
 
-private theorem grimmettTraceExtendedWalkThree_support_bounds
+theorem grimmettTraceExtendedWalkThree_support_bounds
     {n : ℕ} {s : Finset SquareEdge} (W : GrimmettRectangleTraceCrossing n s)
     {z : SquareVertex} (hz : z ∈ (grimmettTraceExtendedWalkThree W).support) :
     (-1 : ℤ) ≤ z 0 ∧ z 0 ≤ (n + 3 : ℕ) ∧ 0 ≤ z 1 ∧ z 1 ≤ (n : ℤ) := by

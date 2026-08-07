@@ -165,6 +165,24 @@ def brLeftReachableFaces
   finiteGraphReachableVertices (brLeftmostDualGraph n) (brLeftmostDualSources n)
     (brClosedDualExplorationConfiguration n omega)
 
+/-- Opening more primal bonds can only shrink the stopped closed-dual reachable set. -/
+theorem brLeftReachableFaces_anti
+    {n : ℕ} {omega eta : EdgeConfiguration 2}
+    (hmono : omega ⊆ eta) :
+    brLeftReachableFaces n eta ⊆ brLeftReachableFaces n omega := by
+  intro x hx
+  rw [brLeftReachableFaces, mem_finiteGraphReachableVertices_iff] at hx ⊢
+  rcases hx with ⟨a, ha, w, hw⟩
+  refine ⟨a, ha, w, ?_⟩
+  intro e he
+  have heGraph : e ∈ (brLeftmostDualGraph n).edgeSet :=
+    w.edges_subset_edgeSet he
+  have hwE := hw e he
+  rw [mem_brClosedDualExplorationConfiguration_iff_of_mem_edgeSet heGraph] at hwE ⊢
+  rcases hwE with houtside | hclosed
+  · exact Or.inl houtside
+  · exact Or.inr (fun hopen ↦ hclosed (hmono hopen))
+
 /-- The stopping fiber on which the dual flood fill reaches exactly the prescribed faces. -/
 def brReachableFaceFiber (n : ℕ) (R : Finset (BRLeftmostDualVertex n)) :
     Set (EdgeConfiguration 2) :=

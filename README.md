@@ -39,6 +39,6 @@ printed and PDF page for any figure you rely on.
 ## Working on a proof with a figure
 
 1. Read [`docs/PICTORIAL_PROOF_PROTOCOL.md`](docs/PICTORIAL_PROOF_PROTOCOL.md).
-2. If the proof conditions on a lowest, leftmost, first, or outermost object, also read
-   [`docs/STOPPING_SETS.md`](docs/STOPPING_SETS.md).
+2. If the source is a percolation, lattice, or statistical-physics argument, also read
+   [`docs/PERCOLATION_STRATEGIES.md`](docs/PERCOLATION_STRATEGIES.md).
 3. Produce the three artifacts under `docs/<target>/` that the protocol requires.
